@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คลังสื่อคณิตศาสตร์ | ครูเอฟ</title>
+<meta name="description" content="คลังสื่อการสอนคณิตศาสตร์แบบอินเทอร์แอกทีฟ โดยครูเอฟ (Natthaphat Thongsom) รวมเกมและบทเรียนคณิตศาสตร์ที่เปิดใช้งานได้ทันที">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pridi:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF6;
+    --grid-line: rgba(27,58,107,0.08);
+    --board-green:#1E3B32;
+    --board-green-dark:#132922;
+    --chalk-yellow:#F0C33B;
+    --chalk-white:#F7F5EE;
+    --ink-blue:#1B3A6B;
+    --ink-blue-soft: rgba(27,58,107,0.62);
+    --pencil-red:#D9503F;
+    --card-bg:#FFFFFE;
+    --card-border:#E4DFD2;
+    --shadow: 0 14px 34px rgba(19,41,34,0.10);
+    --shadow-hover: 0 20px 44px rgba(19,41,34,0.16);
+    --font-display:'Pridi', 'Noto Serif Thai', serif;
+    --font-body:'IBM Plex Sans Thai','Noto Sans Thai', sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size:28px 28px;
+    font-family:var(--font-body);
+    color:#233;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; }
+  a{ color:inherit; }
+  :focus-visible{ outline:3px solid var(--ink-blue); outline-offset:3px; border-radius:4px; }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    background:
+      radial-gradient(ellipse at 15% 15%, rgba(255,255,255,0.05), transparent 45%),
+      linear-gradient(155deg, var(--board-green) 0%, var(--board-green-dark) 100%);
+    padding:76px 0 96px;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size:7px 7px;
+    pointer-events:none;
+  }
+  .hero-inner{
+    position:relative; z-index:2;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:40px; flex-wrap:wrap;
+  }
+  .hero-text{ flex:1 1 380px; max-width:560px; }
+  .eyebrow{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    letter-spacing:.14em;
+    color:var(--chalk-yellow);
+    background:rgba(240,195,59,0.12);
+    border:1px solid rgba(240,195,59,0.35);
+    padding:5px 11px;
+    border-radius:100px;
+    margin-bottom:20px;
+  }
+  .hero-text h1{
+    color:var(--chalk-white);
+    font-size:clamp(34px,5.2vw,52px);
+    font-weight:600;
+    line-height:1.18;
+  }
+  .underline-svg{ display:block; margin:6px 0 18px; width:220px; max-width:70%; }
+  .hero-text p{
+    color:rgba(247,245,238,0.86);
+    font-size:16.5px;
+    line-height:1.75;
+    max-width:46ch;
+    margin:0 0 26px;
+  }
+  .stat-chip{
+    display:inline-flex; align-items:center; gap:9px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--board-green-dark);
+    background:var(--chalk-white);
+    padding:8px 14px;
+    border-radius:8px;
+    font-weight:500;
+  }
+  .stat-chip b{ color:var(--pencil-red); font-size:15px; }
+
+  .doodle{ flex:0 1 340px; width:100%; max-width:340px; }
+
+  .torn-edge{
+    position:absolute; left:0; right:0; bottom:-2px; height:34px; z-index:3;
+    background:var(--paper);
+    clip-path: polygon(0% 100%,0% 45%,3% 78%,6% 22%,9% 62%,12% 12%,15% 58%,18% 8%,21% 68%,24% 28%,27% 52%,30% 5%,33% 62%,36% 18%,39% 72%,42% 15%,45% 58%,48% 10%,51% 65%,54% 30%,57% 52%,60% 8%,63% 68%,66% 20%,69% 55%,72% 12%,75% 62%,78% 18%,81% 70%,84% 25%,87% 55%,90% 10%,93% 65%,96% 20%,100% 45%,100% 100%);
+  }
+
+  /* ---------- MAIN ---------- */
+  main{ padding:56px 0 40px; }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+    margin-bottom:28px;
+    padding-bottom:14px;
+    border-bottom:2px solid var(--card-border);
+  }
+  .section-head h2{
+    font-size:24px; font-weight:600; color:var(--ink-blue);
+  }
+  .section-head .count{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--ink-blue-soft);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(270px,1fr));
+    gap:26px;
+  }
+
+  .card{
+    position:relative;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:28px 26px 24px;
+    box-shadow:var(--shadow);
+    text-decoration:none;
+    display:block;
+    color:inherit;
+    opacity:0; transform:translateY(16px);
+    transition:opacity .5s ease, transform .5s ease, box-shadow .25s ease, border-color .25s ease;
+  }
+  .card.in-view{ opacity:1; transform:translateY(0); }
+  .card:hover, .card:focus-visible{
+    box-shadow:var(--shadow-hover);
+    border-color:var(--ink-blue);
+    transform:translateY(-4px);
+  }
+  .hole{
+    position:absolute; top:14px; left:20px;
+    width:11px; height:11px; border-radius:50%;
+    background:var(--paper);
+    box-shadow: inset 0 1px 3px rgba(19,41,34,0.35), 24px 0 0 var(--paper), 24px 0 0 2px transparent;
+  }
+  .hole::after{
+    content:""; position:absolute; top:0; left:24px;
+    width:11px; height:11px; border-radius:50%;
+    background:var(--paper);
+    box-shadow: inset 0 1px 3px rgba(19,41,34,0.35);
+  }
+  .tag{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:.06em;
+    color:var(--ink-blue);
+    background:rgba(27,58,107,0.07);
+    border-radius:100px;
+    padding:4px 11px;
+    margin:20px 0 14px;
+  }
+  .card h3{
+    font-size:21px; font-weight:600; color:#1a2b2a;
+    margin-bottom:10px; line-height:1.35;
+  }
+  .card p{
+    font-size:14.5px; line-height:1.7; color:#4a5555;
+    margin:0 0 20px;
+  }
+  .file-caption{
+    font-family:var(--font-mono);
+    font-size:11.5px; color:#9a9488;
+    margin-bottom:16px; word-break:break-all;
+  }
+  .cta{
+    display:inline-flex; align-items:center; gap:7px;
+    font-weight:600; font-size:14.5px; color:var(--ink-blue);
+  }
+  .cta svg{ transition:transform .25s ease; width:16px; height:16px; }
+  .card:hover .cta svg, .card:focus-visible .cta svg{ transform:translateX(4px); }
+
+  .card.placeholder{
+    border:2px dashed var(--card-border);
+    box-shadow:none;
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+    min-height:100%;
+    color:#9a9488;
+  }
+  .card.placeholder .plus{
+    width:34px; height:34px; border-radius:50%;
+    border:2px dashed #c9c2b2;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:18px; margin-bottom:16px; color:#b7ae9b;
+  }
+  .card.placeholder h3{ color:#8b8474; font-size:18px; }
+  .card.placeholder p{ color:#a29a89; margin:0; }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    margin-top:40px;
+    border-top:2px solid var(--card-border);
+    padding:30px 0 44px;
+  }
+  .footer-row{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px;
+  }
+  .credit{ font-size:14.5px; color:#3a4442; }
+  .credit b{ color:var(--ink-blue); font-weight:600; }
+  .footer-meta{ font-family:var(--font-mono); font-size:12px; color:#9a9488; }
+
+  @media (max-width:640px){
+    .hero{ padding:56px 0 84px; }
+    .hero-inner{ text-align:left; }
+    .doodle{ display:none; }
+    main{ padding:44px 0 24px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .card{ transition:none; opacity:1; transform:none; }
+    .card:hover, .card:focus-visible{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-text">
+      <span class="eyebrow">สื่อการสอนคณิตศาสตร์แบบเปิด</span>
+      <h1>คลังสื่อคณิตศาสตร์</h1>
+      <svg class="underline-svg" viewBox="0 0 220 14" fill="none" aria-hidden="true">
+        <path d="M3 9C40 2 80 12 110 6C140 0 180 11 217 5" stroke="#F0C33B" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <p>รวมสื่อการเรียนการสอนคณิตศาสตร์แบบอินเทอร์แอกทีฟ โดยครูเอฟ สำหรับใช้ประกอบการเรียนในห้องเรียน หรือฝึกฝนด้วยตนเอง เปิดใช้งานได้ทันทีผ่านเบราว์เซอร์</p>
+      <span class="stat-chip"><b>02</b> สื่อการสอนพร้อมใช้งาน</span>
+    </div>
+
+    <div class="doodle" aria-hidden="true">
+      <svg viewBox="0 0 400 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- axes -->
+        <line x1="55" y1="30" x2="55" y2="300" stroke="#F7F5EE" stroke-opacity="0.55" stroke-width="1.6"/>
+        <line x1="30" y1="270" x2="380" y2="270" stroke="#F7F5EE" stroke-opacity="0.55" stroke-width="1.6"/>
+        <path d="M50 34 L55 24 L60 34" stroke="#F7F5EE" stroke-opacity="0.55" stroke-width="1.6" fill="none"/>
+        <path d="M370 265 L380 270 L370 275" stroke="#F7F5EE" stroke-opacity="0.55" stroke-width="1.6" fill="none"/>
+        <!-- parabola -->
+        <path d="M75 250 Q220 40 355 250" stroke="#F0C33B" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- compass circle -->
+        <circle cx="230" cy="150" r="62" stroke="#F7F5EE" stroke-opacity="0.5" stroke-width="1.6" stroke-dasharray="4 5"/>
+        <line x1="230" y1="150" x2="292" y2="150" stroke="#F7F5EE" stroke-opacity="0.5" stroke-width="1.6" stroke-dasharray="4 5"/>
+        <circle cx="230" cy="150" r="2.5" fill="#F7F5EE" fill-opacity="0.7"/>
+        <!-- floating glyphs -->
+        <text x="18" y="90" font-family="IBM Plex Mono, monospace" font-size="26" fill="#F7F5EE" fill-opacity="0.5" transform="rotate(-8 18 90)">π</text>
+        <text x="300" y="60" font-family="IBM Plex Mono, monospace" font-size="24" fill="#F0C33B" fill-opacity="0.65" transform="rotate(6 300 60)">∑</text>
+        <text x="335" y="200" font-family="IBM Plex Mono, monospace" font-size="22" fill="#F7F5EE" fill-opacity="0.5" transform="rotate(-4 335 200)">∞</text>
+        <text x="70" y="320" font-family="IBM Plex Mono, monospace" font-size="20" fill="#F7F5EE" fill-opacity="0.45" transform="rotate(5 70 320)">√x</text>
+      </svg>
+    </div>
+  </div>
+  <div class="torn-edge"></div>
+</header>
+
+<main class="wrap">
+  <section class="resources">
+    <div class="section-head">
+      <h2>สื่อการเรียนรู้ทั้งหมด</h2>
+      <span class="count">02 รายการ</span>
+    </div>
+
+    <div class="grid">
+
+      <a class="card" href="Math-card-game.html" aria-label="เปิดเกมไพ่คณิตศาสตร์">
+        <span class="hole"></span>
+        <span class="tag">เกมฝึกทักษะ</span>
+        <h3>เกมไพ่คณิตศาสตร์</h3>
+        <p>ฝึกทักษะการคิดคำนวณผ่านเกมจับคู่และไพ่คณิตศาสตร์ เหมาะสำหรับฝึกความไวในการคำนวณอย่างสนุกสนาน</p>
+        <div class="file-caption">ไฟล์: Math-card-game.html</div>
+        <span class="cta">เปิดเล่น
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a class="card" href="logic-connectives.html" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์">
+        <span class="hole"></span>
+        <span class="tag">ตรรกศาสตร์</span>
+        <h3>ตัวเชื่อมประพจน์ตรรกศาสตร์</h3>
+        <p>เรียนรู้ตัวเชื่อมประพจน์ และ, หรือ, ไม่ใช่, ถ้า...แล้ว ผ่านสื่อโต้ตอบพร้อมตัวอย่างประกอบความเข้าใจ</p>
+        <div class="file-caption">ไฟล์: logic-connectives.html</div>
+        <span class="cta">เปิดเรียน
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <div class="card placeholder">
+        <span class="plus">+</span>
+        <h3>เร็ว ๆ นี้</h3>
+        <p>สื่อการสอนใหม่กำลังจะถูกเพิ่มเข้ามาในคลังนี้</p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="footer-row">
+    <div class="credit">จัดทำโดย <b>Natthaphat Thongsom (Kru F)</b></div>
+    <div class="footer-meta">MATH RESOURCE HUB · GITHUB PAGES</div>
+  </div>
+</footer>
+
+<script>
+  const cards = document.querySelectorAll('.card:not(.placeholder)');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    cards.forEach(c => c.classList.add('in-view'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('in-view'), i * 90);
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    cards.forEach(c => io.observe(c));
+  }
+</script>
+
+</body>
+</html>
