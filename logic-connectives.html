@@ -128,6 +128,7 @@
     min-width:84px; text-align:center; color:var(--paper-dim); transition:color .2s, border-color .2s;
   }
   .value-badge.true{color:var(--amber); border-color:var(--amber);}
+  .value-badge.fixed{border-style:dashed;}
 
   .divider{
     height:1px; margin:18px 0;
@@ -197,6 +198,7 @@
 
   .switch{cursor:pointer;}
   .switch:focus-visible{outline:2px solid var(--amber); outline-offset:4px;}
+  .switch.fixed-switch{cursor:default; opacity:.62;}
   .lever{stroke:var(--line-dim); stroke-width:4; stroke-linecap:round; transition:stroke .25s ease, transform .3s ease;}
   .switch.live .lever{stroke:var(--amber);}
   .switch-label{fill:var(--paper-dim); font-family:var(--font-mono); font-size:15px;}
@@ -237,6 +239,23 @@
     box-shadow:inset 4px 0 0 var(--amber);
   }
 
+  /* ---------- Additional examples ---------- */
+  .example-block{margin-top:40px;}
+  .example-block:first-child{margin-top:0;}
+  .example-block:not(:first-child){padding-top:36px; border-top:1px solid var(--line-dim);}
+  .example-head{display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+  .example-tag{
+    background:var(--bg); border:1px solid var(--amber); color:var(--amber);
+    padding:2px 8px; border-radius:4px; font-weight:600; font-family:var(--font-mono);
+    font-size:13px; flex-shrink:0;
+  }
+  .example-expr{font-family:var(--font-mono); font-size:1.3rem; color:var(--paper); margin:0; font-weight:700;}
+  .insight{
+    margin-top:16px; border-left:3px solid var(--amber); background:rgba(255,180,84,0.07);
+    padding:10px 16px; border-radius:0 10px 10px 0; font-size:14px; color:var(--paper); line-height:1.7;
+  }
+  .insight b{color:var(--amber);}
+
   /* ---------- Footer / toast ---------- */
   .site-footer{
     margin-top:60px; padding-top:20px; border-top:1px solid var(--line-dim);
@@ -271,9 +290,10 @@
   <nav class="tabs" role="tablist" aria-label="เลือกตัวเชื่อมประพจน์">
     <button class="tab active" data-mode="and" role="tab" aria-selected="true">และ <span class="tab-symbol">(AND, ∧)</span></button>
     <button class="tab" data-mode="or" role="tab" aria-selected="false">หรือ <span class="tab-symbol">(OR, ∨)</span></button>
-    <button class="tab" data-mode="not" role="tab" aria-selected="false">นิเสธ <span class="tab-symbol">(NOT, ¬)</span></button>
+    <button class="tab" data-mode="not" role="tab" aria-selected="false">นิเสธ <span class="tab-symbol">(NOT, ~)</span></button>
     <button class="tab" data-mode="cond" role="tab" aria-selected="false">ถ้า...แล้ว... <span class="tab-symbol">(→)</span></button>
     <button class="tab" data-mode="bicond" role="tab" aria-selected="false">ก็ต่อเมื่อ <span class="tab-symbol">(↔)</span></button>
+    <button class="tab" data-mode="examples" role="tab" aria-selected="false">ตัวอย่างเพิ่มเติม <span class="tab-symbol">(4 ตัวอย่าง)</span></button>
   </nav>
 
   <main>
@@ -391,7 +411,7 @@
       <div class="layout-grid">
 
         <aside class="panel">
-          <h2 class="panel-title">ตัวเชื่อม “นิเสธ” <span class="symbol">¬</span></h2>
+          <h2 class="panel-title">ตัวเชื่อม “นิเสธ” <span class="symbol">~</span></h2>
 
           <div class="switch-row">
             <span class="var-name">p</span>
@@ -402,7 +422,7 @@
           <div class="divider"></div>
 
           <div class="result-row">
-            <span class="result-label">¬p =</span>
+            <span class="result-label">~p =</span>
             <span class="result-value true" data-mode="not" data-readout="result">จริง (T)</span>
           </div>
           <p class="bulb-status true" data-mode="not" data-readout="bulb">หลอดไฟ: สว่าง</p>
@@ -421,11 +441,11 @@
       <div class="explain-card">
         <h3>หลักการ</h3>
         <p>สวิตช์ตัวนี้ต่อวงจรแบบพิเศษ เรียกว่า “สวิตช์ปกติปิด (Normally-Closed Switch)” ต่างจากสวิตช์ในวงจร “และ” และ “หรือ” ที่ต้องสลับไปตำแหน่ง ON ก่อนกระแสไฟฟ้าจึงจะไหลผ่านได้ สวิตช์ปกติปิดจะปล่อยให้กระแสไหลผ่านได้เองอยู่แล้วตามค่าเริ่มต้น โดยไม่ต้องสลับตำแหน่งใดๆ เมื่อสลับสวิตช์ p ไปที่ตำแหน่ง ON หน้าสัมผัสภายในจะถูกดันแยกออกจากกัน วงจรจึงขาด กระแสไฟฟ้าหยุดไหล หลอดไฟจึงดับ แต่เมื่อสวิตช์ p อยู่ที่ตำแหน่ง OFF หน้าสัมผัสจะกลับมาแตะกันตามเดิม กระแสไฟฟ้าไหลผ่านได้ตามปกติ หลอดไฟจึงสว่าง</p>
-        <p>นี่คือหลักการเดียวกับตัวเชื่อม “นิเสธ” (¬) ในวิชาตรรกศาสตร์ ค่าความจริงของประพจน์ ¬p จะตรงข้ามกับค่าความจริงของ p เสมอ ถ้า p เป็นจริง ¬p จะเป็นเท็จ และถ้า p เป็นเท็จ ¬p จะเป็นจริง</p>
+        <p>นี่คือหลักการเดียวกับตัวเชื่อม “นิเสธ” (~) ในวิชาตรรกศาสตร์ ค่าความจริงของประพจน์ ~p จะตรงข้ามกับค่าความจริงของ p เสมอ ถ้า p เป็นจริง ~p จะเป็นเท็จ และถ้า p เป็นเท็จ ~p จะเป็นจริง</p>
       </div>
 
       <table class="truth-table" data-mode="not">
-        <thead><tr><th>p</th><th>¬p</th></tr></thead>
+        <thead><tr><th>p</th><th>~p</th></tr></thead>
         <tbody>
           <tr data-p="1"><td>จริง</td><td>เท็จ</td></tr>
           <tr data-p="0" class="current-row"><td>เท็จ</td><td>จริง</td></tr>
@@ -461,7 +481,7 @@
         </aside>
 
         <div class="circuit-card">
-          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 4</span> วงจรขนาน: ¬p (ปกติปิด) กับ q (ปกติเปิด)</div>
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 4</span> วงจรขนาน: ~p (ปกติปิด) กับ q (ปกติเปิด)</div>
           <div class="circuit-canvas" id="cond-canvas"></div>
           <ul class="legend">
             <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
@@ -472,8 +492,8 @@
 
       <div class="explain-card">
         <h3>หลักการ</h3>
-        <p>วงจรนี้เป็นวงจรขนานเหมือนกับตัวเชื่อม “หรือ” แต่กิ่งบนเปลี่ยนจากสวิตช์ปกติเปิดมาเป็น “สวิตช์ปกติปิด” แบบเดียวกับที่ใช้แทนตัวเชื่อม “นิเสธ” เพื่อแทนค่า ¬p ส่วนกิ่งล่างยังคงใช้สวิตช์ปกติเปิดแทนค่า q เหมือนวงจร “หรือ” ทุกประการ กระแสไฟฟ้าจะไหลถึงหลอดไฟได้ ก็ต่อเมื่อมีอย่างน้อยหนึ่งกิ่งที่นำกระแสได้ ไม่ว่าจะเป็นกิ่ง ¬p หรือกิ่ง q</p>
-        <p>นี่คือหลักการเดียวกับตัวเชื่อม “ถ้า...แล้ว...” (→) ในวิชาตรรกศาสตร์ ซึ่งพิสูจน์ได้ว่าประพจน์ p → q สมมูลกับ ¬p ∨ q เสมอ ประพจน์ p → q จะเป็นเท็จเพียงกรณีเดียวเท่านั้น คือเมื่อ p เป็นจริงแต่ q เป็นเท็จ เปรียบเสมือนสัญญาที่ผิดคำพูด ส่วนกรณีอื่นทั้งหมดถือว่า p → q เป็นจริงเสมอ แม้แต่กรณีที่ p เป็นเท็จ (เงื่อนไขไม่เกิดขึ้นจริง) ก็ยังถือว่าประพจน์เป็นจริงโดยปริยาย</p>
+        <p>วงจรนี้เป็นวงจรขนานเหมือนกับตัวเชื่อม “หรือ” แต่กิ่งบนเปลี่ยนจากสวิตช์ปกติเปิดมาเป็น “สวิตช์ปกติปิด” แบบเดียวกับที่ใช้แทนตัวเชื่อม “นิเสธ” เพื่อแทนค่า ~p ส่วนกิ่งล่างยังคงใช้สวิตช์ปกติเปิดแทนค่า q เหมือนวงจร “หรือ” ทุกประการ กระแสไฟฟ้าจะไหลถึงหลอดไฟได้ ก็ต่อเมื่อมีอย่างน้อยหนึ่งกิ่งที่นำกระแสได้ ไม่ว่าจะเป็นกิ่ง ~p หรือกิ่ง q</p>
+        <p>นี่คือหลักการเดียวกับตัวเชื่อม “ถ้า...แล้ว...” (→) ในวิชาตรรกศาสตร์ ซึ่งพิสูจน์ได้ว่าประพจน์ p → q สมมูลกับ ~p ∨ q เสมอ ประพจน์ p → q จะเป็นเท็จเพียงกรณีเดียวเท่านั้น คือเมื่อ p เป็นจริงแต่ q เป็นเท็จ เปรียบเสมือนสัญญาที่ผิดคำพูด ส่วนกรณีอื่นทั้งหมดถือว่า p → q เป็นจริงเสมอ แม้แต่กรณีที่ p เป็นเท็จ (เงื่อนไขไม่เกิดขึ้นจริง) ก็ยังถือว่าประพจน์เป็นจริงโดยปริยาย</p>
       </div>
 
       <table class="truth-table" data-mode="cond">
@@ -515,7 +535,7 @@
         </aside>
 
         <div class="circuit-card">
-          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 5</span> วงจรผสม: (p ∧ q) ขนาน (¬p ∧ ¬q)</div>
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 5</span> วงจรผสม: (p ∧ q) ขนาน (~p ∧ ~q)</div>
           <div class="circuit-canvas" id="bicond-canvas"></div>
           <ul class="legend">
             <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
@@ -526,8 +546,8 @@
 
       <div class="explain-card">
         <h3>หลักการ</h3>
-        <p>วงจรนี้รวมทุกแนวคิดที่เรียนมาไว้ในวงจรเดียว มีสองกิ่งต่อแบบขนานเหมือนตัวเชื่อม “หรือ” กิ่งบนต่อสวิตช์ปกติเปิดสองตัวแบบอนุกรมเหมือนวงจร “และ” แทนค่า p ∧ q ส่วนกิ่งล่างต่อสวิตช์ปกติปิดสองตัวแบบอนุกรมแทนค่า ¬p ∧ ¬q กระแสไฟฟ้าจะไหลถึงหลอดไฟได้ ก็ต่อเมื่อมีกิ่งใดกิ่งหนึ่งนำกระแสได้ตลอดทั้งกิ่ง คือ p กับ q เป็นจริงพร้อมกันทั้งคู่ (กิ่งบน) หรือ p กับ q เป็นเท็จพร้อมกันทั้งคู่ (กิ่งล่าง)</p>
-        <p>นี่คือหลักการเดียวกับตัวเชื่อม “ก็ต่อเมื่อ” (↔) ในวิชาตรรกศาสตร์ ซึ่งพิสูจน์ได้ว่าประพจน์ p ↔ q สมมูลกับ (p ∧ q) ∨ (¬p ∧ ¬q) เสมอ กล่าวคือ p ↔ q จะเป็นจริงก็ต่อเมื่อ p และ q มีค่าความจริงตรงกัน ไม่ว่าจะจริงทั้งคู่หรือเท็จทั้งคู่ก็ตาม แต่ถ้า p และ q มีค่าความจริงต่างกัน ประพจน์ p ↔ q จะเป็นเท็จทันที</p>
+        <p>วงจรนี้รวมทุกแนวคิดที่เรียนมาไว้ในวงจรเดียว มีสองกิ่งต่อแบบขนานเหมือนตัวเชื่อม “หรือ” กิ่งบนต่อสวิตช์ปกติเปิดสองตัวแบบอนุกรมเหมือนวงจร “และ” แทนค่า p ∧ q ส่วนกิ่งล่างต่อสวิตช์ปกติปิดสองตัวแบบอนุกรมแทนค่า ~p ∧ ~q กระแสไฟฟ้าจะไหลถึงหลอดไฟได้ ก็ต่อเมื่อมีกิ่งใดกิ่งหนึ่งนำกระแสได้ตลอดทั้งกิ่ง คือ p กับ q เป็นจริงพร้อมกันทั้งคู่ (กิ่งบน) หรือ p กับ q เป็นเท็จพร้อมกันทั้งคู่ (กิ่งล่าง)</p>
+        <p>นี่คือหลักการเดียวกับตัวเชื่อม “ก็ต่อเมื่อ” (↔) ในวิชาตรรกศาสตร์ ซึ่งพิสูจน์ได้ว่าประพจน์ p ↔ q สมมูลกับ (p ∧ q) ∨ (~p ∧ ~q) เสมอ กล่าวคือ p ↔ q จะเป็นจริงก็ต่อเมื่อ p และ q มีค่าความจริงตรงกัน ไม่ว่าจะจริงทั้งคู่หรือเท็จทั้งคู่ก็ตาม แต่ถ้า p และ q มีค่าความจริงต่างกัน ประพจน์ p ↔ q จะเป็นเท็จทันที</p>
       </div>
 
       <table class="truth-table" data-mode="bicond">
@@ -539,6 +559,143 @@
           <tr data-p="0" data-q="0" class="current-row"><td>เท็จ</td><td>เท็จ</td><td>จริง</td></tr>
         </tbody>
       </table>
+    </section>
+
+    <!-- ============ ADDITIONAL EXAMPLES SECTION ============ -->
+    <section class="mode-section" id="section-examples" data-mode="examples" hidden>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">ตัวอย่างที่ 1</span>
+          <h3 class="example-expr">p ∧ ~p</h3>
+        </div>
+        <div class="layout-grid">
+          <aside class="panel">
+            <div class="switch-row">
+              <span class="var-name">p</span>
+              <button class="toggle-switch" role="switch" aria-checked="false" data-mode="ex1" data-var="p" aria-label="สวิตช์ p"><span class="thumb"></span></button>
+              <span class="value-badge" data-mode="ex1" data-readout="p">เท็จ (F)</span>
+            </div>
+            <div class="divider"></div>
+            <div class="result-row">
+              <span class="result-label">p ∧ ~p =</span>
+              <span class="result-value" data-mode="ex1" data-readout="result">เท็จ (F)</span>
+            </div>
+            <p class="bulb-status" data-mode="ex1" data-readout="bulb">หลอดไฟ: ดับ</p>
+          </aside>
+          <div class="circuit-card">
+            <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 6</span> วงจรอนุกรม: p กับ ~p (ปกติปิด)</div>
+            <div class="circuit-canvas" id="ex1-canvas"></div>
+            <ul class="legend">
+              <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
+              <li><span class="dot"></span> สายไฟไม่มีกระแสไหล = เท็จ</li>
+            </ul>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> ลองสลับสวิตช์ p ดูได้ แต่สวิตช์ p กับ ~p ต่อกันแบบอนุกรมและไม่มีวันปิดพร้อมกันเลย หลอดไฟจึง<strong>ดับเสมอ</strong> ไม่ว่า p จะเป็นค่าใด ⇒ p ∧ ~p เป็น<strong>เท็จเสมอ</strong> เรียกว่า <b>Contradiction</b> (ข้อขัดแย้งในตัวเอง)</p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">ตัวอย่างที่ 2</span>
+          <h3 class="example-expr">p ∨ ~p</h3>
+        </div>
+        <div class="layout-grid">
+          <aside class="panel">
+            <div class="switch-row">
+              <span class="var-name">p</span>
+              <button class="toggle-switch" role="switch" aria-checked="false" data-mode="ex2" data-var="p" aria-label="สวิตช์ p"><span class="thumb"></span></button>
+              <span class="value-badge" data-mode="ex2" data-readout="p">เท็จ (F)</span>
+            </div>
+            <div class="divider"></div>
+            <div class="result-row">
+              <span class="result-label">p ∨ ~p =</span>
+              <span class="result-value true" data-mode="ex2" data-readout="result">จริง (T)</span>
+            </div>
+            <p class="bulb-status true" data-mode="ex2" data-readout="bulb">หลอดไฟ: สว่าง</p>
+          </aside>
+          <div class="circuit-card">
+            <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 7</span> วงจรขนาน: p กับ ~p (ปกติปิด)</div>
+            <div class="circuit-canvas" id="ex2-canvas"></div>
+            <ul class="legend">
+              <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
+              <li><span class="dot"></span> สายไฟไม่มีกระแสไหล = เท็จ</li>
+            </ul>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> ลองสลับสวิตช์ p ดูได้ แต่ p กับ ~p ต่อกันแบบขนาน จึงมีกิ่งใดกิ่งหนึ่งนำกระแสได้เสมอ หลอดไฟจึง<strong>ติดเสมอ</strong> ไม่ว่า p จะเป็นค่าใด ⇒ p ∨ ~p เป็น<strong>จริงเสมอ</strong> เรียกว่า <b>Tautology</b> (สัจนิรันดร์)</p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">ตัวอย่างที่ 3</span>
+          <h3 class="example-expr">จริง ∧ q</h3>
+        </div>
+        <div class="layout-grid">
+          <aside class="panel">
+            <div class="switch-row">
+              <span class="var-name">p</span>
+              <span class="value-badge fixed true">จริง (T) · คงที่</span>
+            </div>
+            <div class="switch-row">
+              <span class="var-name">q</span>
+              <button class="toggle-switch" role="switch" aria-checked="false" data-mode="ex3" data-var="q" aria-label="สวิตช์ q"><span class="thumb"></span></button>
+              <span class="value-badge" data-mode="ex3" data-readout="q">เท็จ (F)</span>
+            </div>
+            <div class="divider"></div>
+            <div class="result-row">
+              <span class="result-label">จริง ∧ q =</span>
+              <span class="result-value" data-mode="ex3" data-readout="result">เท็จ (F)</span>
+            </div>
+            <p class="bulb-status" data-mode="ex3" data-readout="bulb">หลอดไฟ: ดับ</p>
+          </aside>
+          <div class="circuit-card">
+            <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 8</span> วงจรอนุกรม: สวิตช์ p ล็อกปิดตลอด กับ q</div>
+            <div class="circuit-canvas" id="ex3-canvas"></div>
+            <ul class="legend">
+              <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
+              <li><span class="dot"></span> สายไฟไม่มีกระแสไหล = เท็จ</li>
+            </ul>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> เมื่อสวิตช์ p ถูกล็อกให้ปิดตลอด (จริงเสมอ) กระแสไฟฟ้าจะขึ้นอยู่กับสวิตช์ q เพียงตัวเดียว หลอดไฟจะติดหรือดับ<strong>ตาม q ทุกประการ</strong> ⇒ จริง ∧ q สมมูลกับ q เสมอ</p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">ตัวอย่างที่ 4</span>
+          <h3 class="example-expr">เท็จ ∨ q</h3>
+        </div>
+        <div class="layout-grid">
+          <aside class="panel">
+            <div class="switch-row">
+              <span class="var-name">p</span>
+              <span class="value-badge fixed">เท็จ (F) · คงที่</span>
+            </div>
+            <div class="switch-row">
+              <span class="var-name">q</span>
+              <button class="toggle-switch" role="switch" aria-checked="false" data-mode="ex4" data-var="q" aria-label="สวิตช์ q"><span class="thumb"></span></button>
+              <span class="value-badge" data-mode="ex4" data-readout="q">เท็จ (F)</span>
+            </div>
+            <div class="divider"></div>
+            <div class="result-row">
+              <span class="result-label">เท็จ ∨ q =</span>
+              <span class="result-value" data-mode="ex4" data-readout="result">เท็จ (F)</span>
+            </div>
+            <p class="bulb-status" data-mode="ex4" data-readout="bulb">หลอดไฟ: ดับ</p>
+          </aside>
+          <div class="circuit-card">
+            <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 9</span> วงจรขนาน: กิ่ง p ล็อกเปิดตลอด กับกิ่ง q</div>
+            <div class="circuit-canvas" id="ex4-canvas"></div>
+            <ul class="legend">
+              <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
+              <li><span class="dot"></span> สายไฟไม่มีกระแสไหล = เท็จ</li>
+            </ul>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> เมื่อกิ่ง p ถูกล็อกให้เปิดตลอด (เท็จเสมอ) กระแสไฟฟ้าจะไหลผ่านได้ทางกิ่ง q เพียงทางเดียว หลอดไฟจะติดหรือดับ<strong>ตาม q ทุกประการ</strong> ⇒ เท็จ ∨ q สมมูลกับ q เสมอ</p>
+      </div>
+
     </section>
 
   </main>
@@ -559,7 +716,11 @@
     or:  { p:false, q:false },
     not: { p:false },
     cond:{ p:false, q:false },
-    bicond:{ p:false, q:false }
+    bicond:{ p:false, q:false },
+    ex1: { p:false },
+    ex2: { p:false },
+    ex3: { q:false },
+    ex4: { q:false }
   };
 
   function computeResult(mode, p, q){
@@ -568,6 +729,10 @@
     if(mode === 'not') return !p;
     if(mode === 'cond') return (!p) || q;
     if(mode === 'bicond') return (p && q) || (!p && !q);
+    if(mode === 'ex1') return p && !p;
+    if(mode === 'ex2') return p || !p;
+    if(mode === 'ex3') return true && q;
+    if(mode === 'ex4') return false || q;
   }
 
   function truthText(val){
@@ -611,7 +776,7 @@
         '<circle class="terminal" cx="' + xLeft + '" cy="' + y + '" r="4"></circle>' +
         '<circle class="terminal" cx="' + xRight + '" cy="' + y + '" r="4"></circle>' +
         '<line class="lever" data-pivot-x="' + pivotX + '" data-pivot-y="' + y + '" x1="' + pivotX + '" y1="' + y + '" x2="' + freeX + '" y2="' + y + '" transform="rotate(' + initialAngle + ' ' + pivotX + ' ' + y + ')"></line>' +
-        '<text class="switch-label" x="' + ((xLeft+xRight)/2) + '" y="' + (y-16) + '" text-anchor="middle">' + shown + '</text>' +
+        '<text class="switch-label" x="' + ((xLeft+xRight)/2) + '" y="' + (y-40) + '" text-anchor="middle">' + shown + '</text>' +
       '</g>';
   }
 
@@ -690,7 +855,7 @@
 
     s += '<line class="wire g-cond-p" x1="' + splitX + '" y1="' + FT + '" x2="260" y2="' + FT + '"></line>';
     s += generateSwitch('cond','p',260,340,FT,true);
-    s += '<text class="component-label" x="300" y="' + (FT + 34) + '">ปกติปิด: แทน ¬p</text>';
+    s += '<text class="component-label" x="300" y="' + (FT + 34) + '">ปกติปิด: แทน ~p</text>';
     s += '<line class="wire g-cond-p" x1="340" y1="' + FT + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
 
     s += '<line class="wire g-cond-q" x1="' + splitX + '" y1="' + branchQY + '" x2="260" y2="' + branchQY + '"></line>';
@@ -726,9 +891,9 @@
     s += '<line class="wire g-bicond-topA" x1="' + sw2R + '" y1="' + FT + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
 
     s += '<line class="wire g-bicond-botB" x1="' + splitX + '" y1="' + branchLowY + '" x2="' + sw1L + '" y2="' + branchLowY + '"></line>';
-    s += generateSwitch('bicond','p',sw1L,sw1R,branchLowY,true,'b','¬p');
+    s += generateSwitch('bicond','p',sw1L,sw1R,branchLowY,true,'b','~p');
     s += '<line class="wire g-bicond-botB" x1="' + sw1R + '" y1="' + branchLowY + '" x2="' + sw2L + '" y2="' + branchLowY + '"></line>';
-    s += generateSwitch('bicond','q',sw2L,sw2R,branchLowY,true,'b','¬q');
+    s += generateSwitch('bicond','q',sw2L,sw2R,branchLowY,true,'b','~q');
     s += '<line class="wire g-bicond-botB" x1="' + sw2R + '" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + branchLowY + '"></line>';
 
     s += '<line class="wire g-bicond-botB" x1="' + rejoinX + '" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
@@ -736,6 +901,110 @@
     s += '<line class="wire g-bicond-common" x1="' + rejoinX + '" y1="' + FT + '" x2="' + FR + '" y2="' + FT + '"></line>';
 
     s += '<line class="wire g-bicond-common" x1="' + FR + '" y1="' + FB + '" x2="' + FL + '" y2="' + FB + '"></line>';
+    s += '<text class="component-label" x="' + FL + '" y="' + LY + '">แบตเตอรี่</text>';
+    s += '<text class="component-label" x="' + FR + '" y="' + LY + '">หลอดไฟ</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function generateFixedSwitch(displayLabel, xLeft, xRight, y, closed){
+    var pivotX = xLeft + 6, freeX = xRight - 6;
+    var angle = closed ? 0 : -34;
+    return '' +
+      '<g class="switch fixed-switch' + (closed ? ' live' : '') + '">' +
+        '<circle class="terminal" cx="' + xLeft + '" cy="' + y + '" r="4"></circle>' +
+        '<circle class="terminal" cx="' + xRight + '" cy="' + y + '" r="4"></circle>' +
+        '<line class="lever" x1="' + pivotX + '" y1="' + y + '" x2="' + freeX + '" y2="' + y + '" transform="rotate(' + angle + ' ' + pivotX + ' ' + y + ')"></line>' +
+        '<text class="switch-label" x="' + ((xLeft+xRight)/2) + '" y="' + (y-40) + '" text-anchor="middle">' + displayLabel + '</text>' +
+      '</g>';
+  }
+
+  function buildEx1Svg(){
+    var s = '<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วงจรอนุกรมของ p กับ นิเสธ p">';
+    s += generateBattery(FL, FT, FB, 'g-ex1');
+    s += generateBulb('ex1-bulb', FR, FT, FB, 'g-ex1');
+    s += '<line class="wire g-ex1" x1="' + FL + '" y1="' + FT + '" x2="210" y2="' + FT + '"></line>';
+    s += generateSwitch('ex1','p',210,290,FT,false,'a','p');
+    s += '<line class="wire g-ex1" x1="290" y1="' + FT + '" x2="390" y2="' + FT + '"></line>';
+    s += generateSwitch('ex1','p',390,470,FT,true,'b','~p');
+    s += '<line class="wire g-ex1" x1="470" y1="' + FT + '" x2="' + FR + '" y2="' + FT + '"></line>';
+    s += '<line class="wire g-ex1" x1="' + FR + '" y1="' + FB + '" x2="' + FL + '" y2="' + FB + '"></line>';
+    s += '<text class="component-label" x="' + FL + '" y="' + LY + '">แบตเตอรี่</text>';
+    s += '<text class="component-label" x="' + FR + '" y="' + LY + '">หลอดไฟ</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function buildEx2Svg(){
+    var splitX=180, rejoinX=460, branchLowY=200;
+    var s = '<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วงจรขนานของ p กับ นิเสธ p">';
+    s += generateBattery(FL, FT, FB, 'g-ex2-common');
+    s += generateBulb('ex2-bulb', FR, FT, FB, 'g-ex2-common');
+
+    s += '<line class="wire g-ex2-common" x1="' + FL + '" y1="' + FT + '" x2="' + splitX + '" y2="' + FT + '"></line>';
+    s += '<circle class="structural junction-dot" cx="' + splitX + '" cy="' + FT + '" r="3.5"></circle>';
+    s += '<line class="wire g-ex2-bot" x1="' + splitX + '" y1="' + FT + '" x2="' + splitX + '" y2="' + branchLowY + '"></line>';
+
+    s += '<line class="wire g-ex2-top" x1="' + splitX + '" y1="' + FT + '" x2="260" y2="' + FT + '"></line>';
+    s += generateSwitch('ex2','p',260,340,FT,false,'a','p');
+    s += '<line class="wire g-ex2-top" x1="340" y1="' + FT + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
+
+    s += '<line class="wire g-ex2-bot" x1="' + splitX + '" y1="' + branchLowY + '" x2="260" y2="' + branchLowY + '"></line>';
+    s += generateSwitch('ex2','p',260,340,branchLowY,true,'b','~p');
+    s += '<line class="wire g-ex2-bot" x1="340" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + branchLowY + '"></line>';
+
+    s += '<line class="wire g-ex2-bot" x1="' + rejoinX + '" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
+    s += '<circle class="structural junction-dot" cx="' + rejoinX + '" cy="' + FT + '" r="3.5"></circle>';
+    s += '<line class="wire g-ex2-common" x1="' + rejoinX + '" y1="' + FT + '" x2="' + FR + '" y2="' + FT + '"></line>';
+
+    s += '<line class="wire g-ex2-common" x1="' + FR + '" y1="' + FB + '" x2="' + FL + '" y2="' + FB + '"></line>';
+    s += '<text class="component-label" x="' + FL + '" y="' + LY + '">แบตเตอรี่</text>';
+    s += '<text class="component-label" x="' + FR + '" y="' + LY + '">หลอดไฟ</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function buildEx3Svg(){
+    var s = '<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วงจรอนุกรมของ จริง กับ q">';
+    s += generateBattery(FL, FT, FB, 'g-ex3');
+    s += generateBulb('ex3-bulb', FR, FT, FB, 'g-ex3');
+    s += '<line class="wire g-ex3" x1="' + FL + '" y1="' + FT + '" x2="210" y2="' + FT + '"></line>';
+    s += generateFixedSwitch('p', 210, 290, FT, true);
+    s += '<text class="component-label" x="250" y="' + (FT + 34) + '">คงที่ = จริง (T)</text>';
+    s += '<line class="wire g-ex3" x1="290" y1="' + FT + '" x2="390" y2="' + FT + '"></line>';
+    s += generateSwitch('ex3','q',390,470,FT);
+    s += '<line class="wire g-ex3" x1="470" y1="' + FT + '" x2="' + FR + '" y2="' + FT + '"></line>';
+    s += '<line class="wire g-ex3" x1="' + FR + '" y1="' + FB + '" x2="' + FL + '" y2="' + FB + '"></line>';
+    s += '<text class="component-label" x="' + FL + '" y="' + LY + '">แบตเตอรี่</text>';
+    s += '<text class="component-label" x="' + FR + '" y="' + LY + '">หลอดไฟ</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function buildEx4Svg(){
+    var splitX=180, rejoinX=460, branchLowY=200;
+    var s = '<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วงจรขนานของ เท็จ กับ q">';
+    s += generateBattery(FL, FT, FB, 'g-ex4-common');
+    s += generateBulb('ex4-bulb', FR, FT, FB, 'g-ex4-common');
+
+    s += '<line class="wire g-ex4-common" x1="' + FL + '" y1="' + FT + '" x2="' + splitX + '" y2="' + FT + '"></line>';
+    s += '<circle class="structural junction-dot" cx="' + splitX + '" cy="' + FT + '" r="3.5"></circle>';
+    s += '<line class="wire g-ex4-bot" x1="' + splitX + '" y1="' + FT + '" x2="' + splitX + '" y2="' + branchLowY + '"></line>';
+
+    s += '<line class="wire g-ex4-top" x1="' + splitX + '" y1="' + FT + '" x2="260" y2="' + FT + '"></line>';
+    s += generateFixedSwitch('p', 260, 340, FT, false);
+    s += '<text class="component-label" x="300" y="' + (FT + 34) + '">คงที่ = เท็จ (F)</text>';
+    s += '<line class="wire g-ex4-top" x1="340" y1="' + FT + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
+
+    s += '<line class="wire g-ex4-bot" x1="' + splitX + '" y1="' + branchLowY + '" x2="260" y2="' + branchLowY + '"></line>';
+    s += generateSwitch('ex4','q',260,340,branchLowY);
+    s += '<line class="wire g-ex4-bot" x1="340" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + branchLowY + '"></line>';
+
+    s += '<line class="wire g-ex4-bot" x1="' + rejoinX + '" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
+    s += '<circle class="structural junction-dot" cx="' + rejoinX + '" cy="' + FT + '" r="3.5"></circle>';
+    s += '<line class="wire g-ex4-common" x1="' + rejoinX + '" y1="' + FT + '" x2="' + FR + '" y2="' + FT + '"></line>';
+
+    s += '<line class="wire g-ex4-common" x1="' + FR + '" y1="' + FB + '" x2="' + FL + '" y2="' + FB + '"></line>';
     s += '<text class="component-label" x="' + FL + '" y="' + LY + '">แบตเตอรี่</text>';
     s += '<text class="component-label" x="' + FR + '" y="' + LY + '">หลอดไฟ</text>';
     s += '</svg>';
@@ -792,7 +1061,9 @@
       bulbStatusEl.classList.toggle('true', result);
     }
 
-    updateSwitchVisual(mode, 'p', p);
+    if('p' in state[mode]){
+      updateSwitchVisual(mode, 'p', p);
+    }
     if('q' in state[mode]){
       updateSwitchVisual(mode, 'q', q);
     }
@@ -813,6 +1084,18 @@
       setLive('.g-bicond-common', result);
       setLive('.g-bicond-topA', p && q);
       setLive('.g-bicond-botB', (!p) && (!q));
+    } else if(mode === 'ex1'){
+      setLive('.g-ex1', result);
+    } else if(mode === 'ex2'){
+      setLive('.g-ex2-common', result);
+      setLive('.g-ex2-top', p);
+      setLive('.g-ex2-bot', !p);
+    } else if(mode === 'ex3'){
+      setLive('.g-ex3', result);
+    } else if(mode === 'ex4'){
+      setLive('.g-ex4-common', result);
+      setLive('.g-ex4-top', false);
+      setLive('.g-ex4-bot', q);
     }
 
     var bulbEl = document.getElementById(mode + '-bulb');
@@ -821,13 +1104,14 @@
     var rows = document.querySelectorAll('.truth-table[data-mode="' + mode + '"] tbody tr');
     for(var k=0;k<rows.length;k++){
       var tr = rows[k];
-      var rp = tr.getAttribute('data-p') === '1';
-      if(tr.hasAttribute('data-q')){
-        var rq = tr.getAttribute('data-q') === '1';
-        tr.classList.toggle('current-row', rp === p && rq === q);
-      } else {
-        tr.classList.toggle('current-row', rp === p);
+      var matches = true;
+      if(tr.hasAttribute('data-p')){
+        matches = matches && ((tr.getAttribute('data-p') === '1') === p);
       }
+      if(tr.hasAttribute('data-q')){
+        matches = matches && ((tr.getAttribute('data-q') === '1') === q);
+      }
+      tr.classList.toggle('current-row', matches);
     }
   }
 
@@ -888,7 +1172,7 @@
   }
 
   function initCircuitSwitches(){
-    var switches = document.querySelectorAll('.switch');
+    var switches = document.querySelectorAll('.switch:not(.fixed-switch)');
     for(var i=0;i<switches.length;i++){
       (function(sw){
         sw.setAttribute('tabindex','0');
@@ -913,6 +1197,10 @@
   document.getElementById('not-canvas').innerHTML = buildNotSvg();
   document.getElementById('cond-canvas').innerHTML = buildCondSvg();
   document.getElementById('bicond-canvas').innerHTML = buildBicondSvg();
+  document.getElementById('ex1-canvas').innerHTML = buildEx1Svg();
+  document.getElementById('ex2-canvas').innerHTML = buildEx2Svg();
+  document.getElementById('ex3-canvas').innerHTML = buildEx3Svg();
+  document.getElementById('ex4-canvas').innerHTML = buildEx4Svg();
 
   initToggles();
   initTabs();
@@ -923,6 +1211,10 @@
   updateMode('not');
   updateMode('cond');
   updateMode('bicond');
+  updateMode('ex1');
+  updateMode('ex2');
+  updateMode('ex3');
+  updateMode('ex4');
 
 })();
 </script>
