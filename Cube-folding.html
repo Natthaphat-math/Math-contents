@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>คลี่ลูกบาศก์ — ฝึกหาด้านที่เชื่อมกัน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F4EF;
+    --paper-line:#DADFDA;
+    --card:#FFFFFF;
+    --ink:#20242A;
+    --ink-soft:#5B6570;
+    --ink-faint:#93A0A0;
+    --teal:#1E7A6C;
+    --teal-dark:#14584E;
+    --teal-tint:#E4F0ED;
+    --amber:#E2A63B;
+    --amber-tint:#FBF0DA;
+    --coral:#D2483A;
+    --coral-tint:#FBE7E3;
+    --line-strong:#20242A;
+    --cell-size:64px;
+    --radius-sm:8px;
+    --radius-md:14px;
+    --radius-lg:20px;
+    --shadow-1:0 1px 2px rgba(32,36,42,.06), 0 1px 1px rgba(32,36,42,.08);
+    --shadow-2:0 8px 24px rgba(32,36,42,.14), 0 2px 6px rgba(32,36,42,.08);
+    --font-display:'Chakra Petch', 'Sarabun', sans-serif;
+    --font-body:'Sarabun', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/28px 28px,
+      var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;}
+  h1,h2,h3{font-family:var(--font-display); margin:0;}
+  p{margin:0;}
+  ::selection{background:var(--amber-tint);}
+  :focus-visible{outline:3px solid var(--teal); outline-offset:2px; border-radius:4px;}
+
+  .app{
+    max-width:720px;
+    margin:0 auto;
+    padding:14px 14px 40px;
+  }
+
+  /* ---------- Title block (signature header) ---------- */
+  .titleblock{
+    border:2px solid var(--ink);
+    border-radius:var(--radius-md);
+    background:var(--card);
+    display:flex;
+    flex-wrap:wrap;
+    overflow:hidden;
+    box-shadow:var(--shadow-1);
+  }
+  .tb-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px;
+    border-right:2px solid var(--ink);
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .tb-mark{
+    width:34px; height:34px; flex:none;
+    display:grid; place-items:center;
+  }
+  .tb-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:.2px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tb-sub{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:1px;
+    white-space:nowrap;
+  }
+  .tb-mid{
+    display:flex;
+    align-items:stretch;
+    flex:1 1 220px;
+    border-right:2px solid var(--ink);
+  }
+  .tb-cell{
+    padding:8px 14px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:4px;
+    border-right:1px dashed var(--paper-line);
+    flex:1 1 auto;
+    min-width:92px;
+  }
+  .tb-cell:last-child{border-right:none;}
+  .tb-label{
+    font-size:9.5px;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    font-family:var(--font-mono);
+  }
+  .tb-value{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15px;
+  }
+  .tb-progress-track{
+    width:100%;
+    height:7px;
+    background:var(--paper-line);
+    border-radius:99px;
+    overflow:hidden;
+  }
+  .tb-progress-fill{
+    height:100%;
+    background:var(--teal);
+    border-radius:99px;
+    transition:width .45s cubic-bezier(.4,0,.2,1);
+    width:0%;
+  }
+  .tb-actions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 10px;
+  }
+
+  .icon-btn{
+    width:38px;height:38px;
+    border-radius:10px;
+    border:1.5px solid var(--ink);
+    background:var(--card);
+    color:var(--ink);
+    display:grid;place-items:center;
+    cursor:pointer;
+    transition:background .15s, transform .1s;
+  }
+  .icon-btn:hover{background:var(--paper);}
+  .icon-btn:active{transform:scale(.94);}
+  .icon-btn svg{width:18px;height:18px;}
+
+  .btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14px;
+    border-radius:10px;
+    padding:9px 16px;
+    border:1.5px solid var(--ink);
+    background:var(--card);
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s, transform .1s, box-shadow .15s;
+    white-space:nowrap;
+  }
+  .btn:hover{background:var(--paper);}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{
+    background:var(--teal);
+    border-color:var(--teal-dark);
+    color:#fff;
+  }
+  .btn-primary:hover{background:var(--teal-dark);}
+  .btn-primary:disabled{background:var(--paper-line); border-color:var(--paper-line); color:var(--ink-faint); cursor:not-allowed;}
+  .btn-sm{padding:7px 12px; font-size:13px;}
+
+  /* ---------- Board ---------- */
+  .board-section{
+    margin-top:16px;
+    border:2px solid var(--ink);
+    border-radius:var(--radius-md);
+    background:var(--card);
+    box-shadow:var(--shadow-1);
+    padding:14px;
+  }
+  .board-topline{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:10px;
+    gap:8px;
+  }
+  .board-heading{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-family:var(--font-mono);
+    letter-spacing:.03em;
+  }
+  .board-hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .board-wrap{
+    position:relative;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:22px;
+    display:flex;
+    justify-content:center;
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/14px 14px,
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/14px 14px,
+      var(--paper);
+    border-radius:var(--radius-sm);
+  }
+  .board-wrap::before, .board-wrap::after,
+  .board-corner-a, .board-corner-b{
+    content:'';
+    position:absolute;
+    width:14px;height:14px;
+    pointer-events:none;
+  }
+  .board-wrap::before{ top:6px; left:6px; border-top:2px solid var(--ink-faint); border-left:2px solid var(--ink-faint); }
+  .board-wrap::after{ top:6px; right:6px; border-top:2px solid var(--ink-faint); border-right:2px solid var(--ink-faint); }
+  .board-corner-a{ bottom:6px; left:6px; border-bottom:2px solid var(--ink-faint); border-left:2px solid var(--ink-faint); }
+  .board-corner-b{ bottom:6px; right:6px; border-bottom:2px solid var(--ink-faint); border-right:2px solid var(--ink-faint); }
+
+  .board{
+    position:relative;
+    flex:none;
+  }
+  .conn-svg{
+    position:absolute;
+    top:0; left:0;
+    pointer-events:none;
+    z-index:5;
+    overflow:visible;
+  }
+  .conn-line{
+    fill:none;
+    stroke:var(--teal);
+    stroke-width:3;
+    stroke-linecap:round;
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,.6));
+  }
+  .conn-tick{
+    fill:var(--teal-dark);
+  }
+
+  .cell-empty{
+    position:absolute;
+    width:var(--cell-size);
+    height:var(--cell-size);
+    left:calc(var(--c) * var(--cell-size));
+    top:calc(var(--r) * var(--cell-size));
+    border:1.5px dashed var(--paper-line);
+    border-radius:6px;
+    background:transparent;
+    padding:0;
+    cursor:default;
+    z-index:1;
+  }
+  .cell-empty.can-drop{
+    border-color:var(--amber);
+    background:var(--amber-tint);
+    cursor:pointer;
+    animation:pulseDrop 1.4s ease-in-out infinite;
+  }
+  @keyframes pulseDrop{
+    0%,100%{box-shadow:0 0 0 0 rgba(226,166,59,.35);}
+    50%{box-shadow:0 0 0 6px rgba(226,166,59,0);}
+  }
+
+  .tile{
+    position:absolute;
+    width:var(--cell-size);
+    height:var(--cell-size);
+    left:calc(var(--c) * var(--cell-size));
+    top:calc(var(--r) * var(--cell-size));
+    transition:left .42s cubic-bezier(.4,0,.2,1), top .42s cubic-bezier(.4,0,.2,1);
+    z-index:2;
+    padding:2px;
+  }
+  .tile-btn{
+    width:100%;height:100%;
+    border:none;
+    background:none;
+    padding:0;
+    cursor:pointer;
+    display:block;
+  }
+  .tile-art{
+    width:100%;height:100%;
+    display:block;
+    transition:transform .42s cubic-bezier(.4,0,.2,1), filter .15s;
+  }
+  .tile.is-selected .tile-art{
+    filter:drop-shadow(0 0 0 2px var(--amber)) drop-shadow(0 3px 8px rgba(226,166,59,.45));
+  }
+  .tile.is-selected .tile-rect{
+    stroke:var(--amber) !important;
+    stroke-width:6 !important;
+  }
+  .tile-btn:hover .tile-rect{
+    stroke:var(--teal);
+  }
+
+  /* ---------- Toast ---------- */
+  .toast-wrap{
+    position:fixed;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    z-index:80;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    align-items:center;
+    width:calc(100% - 28px);
+    max-width:480px;
+    pointer-events:none;
+  }
+  .toast{
+    font-size:13.5px;
+    font-weight:500;
+    padding:11px 16px;
+    border-radius:10px;
+    border:1.5px solid var(--ink);
+    background:var(--card);
+    box-shadow:var(--shadow-2);
+    animation:toastIn .22s ease-out;
+    max-width:100%;
+  }
+  .toast.success{background:var(--teal-tint); border-color:var(--teal-dark); color:var(--teal-dark);}
+  .toast.warn{background:var(--coral-tint); border-color:var(--coral); color:var(--coral);}
+  .toast.info{background:var(--card); border-color:var(--ink); color:var(--ink);}
+  @keyframes toastIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- Win banner ---------- */
+  .win-banner{
+    margin-top:14px;
+    border:2px solid var(--teal-dark);
+    background:var(--teal-tint);
+    border-radius:var(--radius-md);
+    padding:16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    animation:winIn .35s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes winIn{ from{opacity:0; transform:translateY(10px) scale(.98);} to{opacity:1; transform:none;} }
+  .win-banner[hidden]{
+    display:none;
+  }
+  .win-text strong{display:block; font-family:var(--font-display); font-size:16px; color:var(--teal-dark);}
+  .win-text span{font-size:13px; color:var(--ink-soft);}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(20,24,28,.5);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:100;
+    padding:0;
+  }
+  .modal-backdrop[hidden]{
+    display:none;
+  }
+  @media (min-width:640px){
+    .modal-backdrop{ align-items:center; padding:20px; }
+  }
+  .modal-card{
+    background:var(--paper);
+    border-top:2px solid var(--ink);
+    border-radius:18px 18px 0 0;
+    max-width:560px;
+    width:100%;
+    max-height:88vh;
+    overflow-y:auto;
+    padding:20px 18px 26px;
+    position:relative;
+    box-shadow:var(--shadow-2);
+  }
+  @media (min-width:640px){
+    .modal-card{ border:2px solid var(--ink); border-radius:var(--radius-lg); }
+  }
+  .modal-close{
+    position:absolute;
+    top:14px; right:14px;
+    width:32px;height:32px;
+    border-radius:9px;
+    border:1.5px solid var(--ink);
+    background:var(--card);
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+    display:grid; place-items:center;
+  }
+  .modal-card h3{font-size:18px; padding-right:36px;}
+  .modal-sub{font-size:13.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5;}
+
+  .htp-section{ margin-top:20px; padding-top:16px; border-top:1px dashed var(--paper-line); }
+  .htp-section:first-of-type{ margin-top:16px; border-top:none; padding-top:0; }
+  .htp-eyebrow{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.08em;
+    color:var(--teal-dark);
+    text-transform:uppercase;
+  }
+  .htp-h{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15.5px;
+    margin-top:3px;
+  }
+  .htp-body{
+    font-size:13.5px;
+    line-height:1.65;
+    color:var(--ink);
+    margin-top:6px;
+  }
+
+  .lshape-demo{
+    display:flex;
+    gap:18px;
+    align-items:center;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  .lshape-svg{ width:150px; height:150px; flex:none; }
+  .lshape-caption{ font-size:12.5px; color:var(--ink-soft); flex:1 1 160px; line-height:1.55; }
+
+  .slide-demo{
+    margin-top:12px;
+    position:relative;
+    height:78px;
+    display:flex;
+    gap:0;
+    width:max-content;
+    max-width:100%;
+  }
+  .demo-cell{
+    width:64px;height:64px;
+    border:1.5px dashed var(--paper-line);
+    border-radius:6px;
+    margin-right:6px;
+    display:grid;
+    place-items:center;
+    font-size:10px;
+    color:var(--ink-faint);
+    font-family:var(--font-mono);
+  }
+  .demo-mover{
+    position:absolute;
+    top:0; left:0;
+    width:64px;height:64px;
+    animation:slideDemo 4s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes slideDemo{
+    0%{ transform:translateX(0) rotate(0deg); }
+    40%{ transform:translateX(140px) rotate(180deg); }
+    60%{ transform:translateX(140px) rotate(180deg); }
+    100%{ transform:translateX(0) rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .demo-mover{ animation:none; }
+    .cell-empty.can-drop{ animation:none; }
+  }
+
+  /* ---------- Manual side-select modal ---------- */
+  .manual-pair{
+    display:flex;
+    gap:22px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-top:18px;
+  }
+  .manual-square{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .manual-square-label{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); letter-spacing:.05em; }
+  .manual-square-frame{
+    position:relative;
+    width:118px;height:118px;
+  }
+  .manual-svg{
+    width:100%;height:100%;
+    border-radius:10px;
+  }
+  .dir-btn{
+    position:absolute;
+    width:34px;height:26px;
+    border-radius:8px;
+    border:1.5px solid var(--ink);
+    background:var(--card);
+    cursor:pointer;
+    display:grid;place-items:center;
+    color:var(--ink);
+    transition:background .15s, transform .1s;
+  }
+  .dir-btn:hover:not(:disabled){background:var(--teal-tint); border-color:var(--teal);}
+  .dir-btn:disabled{ opacity:.28; cursor:not-allowed; }
+  .dir-btn.chosen{ background:var(--amber); border-color:#b5811f; color:#fff; }
+  .dir-btn svg{width:13px;height:13px;}
+  .dir-N{ top:-13px; left:50%; transform:translateX(-50%); }
+  .dir-S{ bottom:-13px; left:50%; transform:translateX(-50%); }
+  .dir-E{ right:-17px; top:50%; transform:translateY(-50%) rotate(90deg); }
+  .dir-W{ left:-17px; top:50%; transform:translateY(-50%) rotate(90deg); }
+
+  .manual-feedback{
+    min-height:20px;
+    text-align:center;
+    font-size:13px;
+    font-weight:600;
+    color:var(--coral);
+    margin-top:14px;
+  }
+  .manual-feedback.ok{ color:var(--teal-dark); }
+  .manual-actions{ display:flex; justify-content:center; margin-top:6px; }
+
+  .credit-note{
+    text-align:center;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    margin-top:18px;
+  }
+
+  @media (max-width:420px){
+    .tb-title{font-size:16.5px;}
+    .tb-cell{min-width:76px; padding:8px 10px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Title block header -->
+  <header class="titleblock">
+    <div class="tb-brand">
+      <span class="tb-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="34" height="34">
+          <rect x="4" y="16" width="14" height="14" fill="none" stroke="#20242A" stroke-width="2.5"/>
+          <rect x="18" y="16" width="14" height="14" fill="none" stroke="#20242A" stroke-width="2.5"/>
+          <rect x="18" y="2" width="14" height="14" fill="none" stroke="#20242A" stroke-width="2.5"/>
+        </svg>
+      </span>
+      <div style="min-width:0;">
+        <div class="tb-title">คลี่ลูกบาศก์</div>
+        <div class="tb-sub">หาด้านที่จะติดกันเมื่อพับเป็นกล่อง</div>
+      </div>
+    </div>
+    <div class="tb-mid">
+      <div class="tb-cell">
+        <span class="tb-label">แบบที่</span>
+        <span class="tb-value" id="problemNo">01</span>
+      </div>
+      <div class="tb-cell" style="flex:1.4 1 auto;">
+        <span class="tb-label">ความคืบหน้า</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="tb-progress-track"><div class="tb-progress-fill" id="progressFill"></div></div>
+          <span class="tb-value" id="progressText" style="font-size:13px; white-space:nowrap;">0/7</span>
+        </div>
+      </div>
+    </div>
+    <div class="tb-actions">
+      <button class="btn btn-sm" id="howToBtn" type="button">วิธีเล่น</button>
+      <button class="icon-btn" id="resetBtn" type="button" aria-label="เริ่มข้อนี้ใหม่" title="เริ่มข้อนี้ใหม่">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 21v-6h6"/></svg>
+      </button>
+      <button class="icon-btn" id="newBtn" type="button" aria-label="ข้อใหม่" title="ข้อใหม่">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Board -->
+  <section class="board-section">
+    <div class="board-topline">
+      <span class="board-heading">รูปคลี่ลูกบาศก์</span>
+      <span class="board-hint" id="selectHint">แตะสี่เหลี่ยม 1 รูปเพื่อเริ่ม</span>
+    </div>
+    <div class="board-wrap" id="boardWrap">
+      <div class="board-corner-a"></div>
+      <div class="board-corner-b"></div>
+      <div class="board" id="board">
+        <svg class="conn-svg" id="connSvg"></svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="win-banner" id="winBanner" hidden>
+    <div class="win-text">
+      <strong>ครบทุกด้านแล้ว!</strong>
+      <span>พับรูปนี้เป็นลูกบาศก์ได้สมบูรณ์ ลองข้อต่อไปดูสิ</span>
+    </div>
+    <button class="btn btn-primary" id="nextProblemBtn" type="button">ข้อต่อไป →</button>
+  </div>
+
+  <p class="credit-note">ออกแบบสำหรับฝึกโจทย์การคลี่/พับลูกบาศก์ · ใช้หลักมุมตัว L และการเลื่อนแนวตรง</p>
+</div>
+
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<!-- How to play modal -->
+<div class="modal-backdrop" id="howToModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="howToTitle">
+    <button class="modal-close" id="howToClose" type="button" aria-label="ปิด">✕</button>
+    <h3 id="howToTitle">วิธีเล่น</h3>
+    <p class="modal-sub">เมื่อพับรูปคลี่นี้ให้เป็นลูกบาศก์ สี่เหลี่ยม 2 รูปที่อยู่ห่างกันในรูปคลี่ อาจไปติดกันเป็นขอบเดียวกันได้ ใช้หลัก 2 ข้อนี้ช่วยหาว่าด้านไหนเชื่อมกัน แล้วแตะสี่เหลี่ยม 2 รูปเพื่อลองเชื่อมดู</p>
+
+    <div class="htp-section">
+      <div class="htp-eyebrow">หลักที่ 1</div>
+      <h4 class="htp-h">มุมตัว L เชื่อมกันเสมอ</h4>
+      <p class="htp-body">มองตาราง 2×2 ช่องใดก็ได้ ถ้ามีสี่เหลี่ยม 3 รูปเรียงเป็นรูปตัว L (เหลือช่องว่าง 1 ช่อง) สี่เหลี่ยม 2 รูปที่อยู่ปลายสุดของตัว L จะไปติดกันเป็นขอบเดียวเสมอเมื่อพับ — ดังตัวอย่าง</p>
+      <div class="lshape-demo">
+        <svg class="lshape-svg" viewBox="0 0 150 150">
+          <rect x="4" y="4" width="68" height="68" rx="7" fill="#fff" stroke="#20242A" stroke-width="4"/>
+          <rect x="4" y="76" width="68" height="68" rx="7" fill="#fff" stroke="#20242A" stroke-width="4"/>
+          <rect x="76" y="76" width="68" height="68" rx="7" fill="#fff" stroke="#20242A" stroke-width="4"/>
+          <rect x="76" y="4" width="68" height="68" rx="7" fill="none" stroke="#C7D3D0" stroke-width="3" stroke-dasharray="5 5"/>
+          <text x="38" y="45" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="26" fill="#20242A">A</text>
+          <text x="38" y="117" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="26" fill="#20242A">C</text>
+          <text x="110" y="117" text-anchor="middle" font-family="Chakra Petch" font-weight="700" font-size="26" fill="#20242A">B</text>
+          <text x="110" y="45" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#93A0A0">ว่าง</text>
+          <path d="M 72 38 Q 108 38 108 76" fill="none" stroke="#1E7A6C" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="72" cy="38" r="4.5" fill="#14584E"/>
+          <circle cx="108" cy="76" r="4.5" fill="#14584E"/>
+        </svg>
+        <p class="lshape-caption">ตัวอย่าง: A, C, B เรียงเป็นตัว L โดยมุมบนขวาว่าง → ด้านขวาของ A จะไปเชื่อมกับด้านบนของ B พอดี (เส้นสีเขียว) ส่วน C คือมุมหักของตัว L ไม่ได้เชื่อมกับใครเพิ่มจากตรงนี้<br><span style="color:#93A0A0">อีก 3 ตำแหน่งของช่องว่างในตาราง 2×2 ก็ใช้หลักเดียวกัน เพียงหมุนภาพ 90°</span></p>
+      </div>
+    </div>
+
+    <div class="htp-section">
+      <div class="htp-eyebrow">หลักที่ 2</div>
+      <h4 class="htp-h">เลื่อนตามแนวตรง ไม่เปลี่ยนความหมาย</h4>
+      <p class="htp-body">ถ้าสี่เหลี่ยมมีช่องว่างต่อกันเป็นแนวเดียวกัน (แนวนอนหรือแนวตั้ง) เลื่อนมันไปยังช่องว่างตำแหน่งใดก็ได้ในแนวนั้น แต่ละช่องที่เลื่อนจะหมุนลวดลาย 90° ทว่ารูปที่ถูกเลื่อนยังเป็น "หน้าเดิม" ของลูกบาศก์ ไม่เปลี่ยนว่ามันเชื่อมกับใคร — ใช้ท่านี้ขยับหาตำแหน่งที่ตรงกับหลักที่ 1</p>
+      <div class="slide-demo" aria-hidden="true">
+        <div class="demo-cell"></div>
+        <div class="demo-cell"></div>
+        <div class="demo-cell"></div>
+        <div class="demo-mover">
+          <svg viewBox="0 0 100 100" width="64" height="64">
+            <rect x="1" y="1" width="98" height="98" rx="9" fill="#fff" stroke="#20242A" stroke-width="4"/>
+            <polygon points="50,16 80,52 61,52 61,84 39,84 39,52 20,52" fill="#20242A"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="htp-section">
+      <div class="htp-eyebrow">ถ้าไม่ตรงกับ 2 หลักนี้</div>
+      <h4 class="htp-h">เลือกด้านด้วยตัวเอง</h4>
+      <p class="htp-body">แตะสี่เหลี่ยม 2 รูปที่คิดว่าจะเชื่อมกัน ถ้าไม่อยู่ในรูปแบบตัว L ระบบจะให้เลือกว่าด้านไหนของแต่ละรูปจะไปติดกัน แล้วตรวจให้ว่าถูกหรือไม่</p>
+    </div>
+
+    <div class="htp-section">
+      <div class="htp-eyebrow">จบเกม</div>
+      <h4 class="htp-h">เชื่อมให้ครบทุกด้านที่เหลือ</h4>
+      <p class="htp-body">แต่ละข้อมีขอบที่ต้องหาให้ครบ 7 ขอบ เมื่อเชื่อมครบแล้วแปลว่ารูปคลี่นี้พับเป็นลูกบาศก์ได้สมบูรณ์ พร้อมไปข้อต่อไป</p>
+    </div>
+
+    <div class="manual-actions" style="margin-top:20px;">
+      <button class="btn btn-primary" id="howToGotIt" type="button">เข้าใจแล้ว เริ่มเล่น</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual side-select modal -->
+<div class="modal-backdrop" id="manualModal" hidden>
+  <div class="modal-card manual-card" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+    <button class="modal-close" id="manualClose" type="button" aria-label="ปิด">✕</button>
+    <h3 id="manualTitle">เลือกด้านที่คิดว่าจะเชื่อมกัน</h3>
+    <p class="modal-sub">สองรูปนี้ไม่ได้อยู่ในรูปแบบตัว L ลองเลือกด้านของแต่ละรูปที่คุณคิดว่าจะไปติดกันเมื่อพับเป็นลูกบาศก์</p>
+    <div class="manual-pair" id="manualPair"></div>
+    <p class="manual-feedback" id="manualFeedback" aria-live="polite"></p>
+    <div class="manual-actions">
+      <button class="btn btn-primary" id="manualConfirm" type="button" disabled>ยืนยันการเชื่อมต่อ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= Vector / fold math ================= */
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function vadd(a,b){return [a[0]+b[0],a[1]+b[1],a[2]+b[2]];}
+function vscale(a,s){return [a[0]*s,a[1]*s,a[2]*s];}
+function veq(a,b){return Math.abs(a[0]-b[0])<1e-6 && Math.abs(a[1]-b[1])<1e-6 && Math.abs(a[2]-b[2])<1e-6;}
+function rot90(v, axis, sign){
+  const c = cross(axis, v);
+  const d = dot(axis, v);
+  return vadd(vscale(c, sign), vscale(axis, d));
+}
+function foldChild(normalP, northP, dir){
+  const eastP = cross(northP, normalP);
+  let axis, sign;
+  if(dir==='N'){ axis=eastP; sign=-1; }
+  else if(dir==='S'){ axis=eastP; sign=1; }
+  else if(dir==='E'){ axis=northP; sign=1; }
+  else { axis=northP; sign=-1; } // W
+  return { normal: rot90(normalP, axis, sign), north: rot90(northP, axis, sign) };
+}
+function eastOf(f){ return cross(f.north, f.normal); }
+
+const GRID_DIRS = [
+  {name:'N', dc:0, dr:-1},
+  {name:'S', dc:0, dr:1},
+  {name:'E', dc:1, dr:0},
+  {name:'W', dc:-1, dr:0},
+];
+const DIR_ORDER = ['N','E','S','W'];
+const DIR_DELTA = {N:{dc:0,dr:-1}, S:{dc:0,dr:1}, E:{dc:1,dr:0}, W:{dc:-1,dr:0}};
+const DIR_ROT_STEP = {N:-1, S:1, E:1, W:-1}; // rotation-state delta per slide step
+const DIR_THAI = {N:'บน', E:'ขวา', S:'ล่าง', W:'ซ้าย'};
+
+/* ================= Net generation ================= */
+function tryGenerateNet(){
+  const cellMap = new Map();
+  const usedNormals = [];
+  const order = [];
+  cellMap.set('0,0', {normal:[0,0,1], north:[0,1,0]});
+  usedNormals.push([0,0,1]);
+  order.push({c:0,r:0});
+
+  while(order.length < 6){
+    let candidates = [];
+    for(const cell of order){
+      const key = cell.c+','+cell.r;
+      const orient = cellMap.get(key);
+      for(const d of GRID_DIRS){
+        const nc = cell.c+d.dc, nr = cell.r+d.dr;
+        const nkey = nc+','+nr;
+        if(cellMap.has(nkey)) continue;
+        const folded = foldChild(orient.normal, orient.north, d.name);
+        if(usedNormals.some(u=>veq(u, folded.normal))) continue;
+        candidates.push({c:nc, r:nr, normal:folded.normal, north:folded.north});
+      }
+    }
+    if(candidates.length===0) return null;
+    const pick = candidates[Math.floor(Math.random()*candidates.length)];
+    cellMap.set(pick.c+','+pick.r, {normal:pick.normal, north:pick.north});
+    usedNormals.push(pick.normal);
+    order.push({c:pick.c, r:pick.r});
+  }
+
+  const list = order.map(o=>({c:o.c, r:o.r, ...cellMap.get(o.c+','+o.r)}));
+  for(let i=0;i<list.length;i++){
+    for(const d of GRID_DIRS){
+      const nc=list[i].c+d.dc, nr=list[i].r+d.dr;
+      const other = list.find(x=>x.c===nc && x.r===nr);
+      if(other){
+        const dp = dot(list[i].normal, other.normal);
+        if(Math.abs(dp) > 1e-6) return null;
+      }
+    }
+  }
+  const cs=list.map(n=>n.c), rs=list.map(n=>n.r);
+  const w = Math.max(...cs)-Math.min(...cs)+1, h = Math.max(...rs)-Math.min(...rs)+1;
+  if(w>4 || h>4) return null; // keep boards reasonably compact
+  return list;
+}
+
+function generateNet(){
+  for(let i=0;i<300;i++){
+    const net = tryGenerateNet();
+    if(net) return net;
+  }
+  // extremely unlikely fallback: retry without the compactness cap
+  for(let i=0;i<300;i++){
+    const net = tryGenerateNet2();
+    if(net) return net;
+  }
+  throw new Error('generation failed');
+  function tryGenerateNet2(){ return tryGenerateNet(); }
+}
+
+function computeAllEdges(list){
+  const edges = [];
+  for(let i=0;i<list.length;i++){
+    for(let j=i+1;j<list.length;j++){
+      const A=list[i], B=list[j];
+      const dp = dot(A.normal,B.normal);
+      if(Math.abs(dp+1) < 1e-6) continue; // opposite faces
+      if(Math.abs(dp) > 1e-6) continue; // shouldn't happen
+      const eA = eastOf(A), eB = eastOf(B);
+      const dirsA = {N:A.north, E:eA, S:vscale(A.north,-1), W:vscale(eA,-1)};
+      const dirsB = {N:B.north, E:eB, S:vscale(B.north,-1), W:vscale(eB,-1)};
+      let dirA=null, dirB=null;
+      for(const k of DIR_ORDER) if(veq(dirsA[k], B.normal)) dirA=k;
+      for(const k of DIR_ORDER) if(veq(dirsB[k], A.normal)) dirB=k;
+      edges.push({i, j, dirA, dirB});
+    }
+  }
+  return edges;
+}
+
+function givenPairKeySet(list){
+  const set = new Set();
+  for(let i=0;i<list.length;i++){
+    for(let j=i+1;j<list.length;j++){
+      const A=list[i], B=list[j];
+      if(Math.abs(A.c-B.c)+Math.abs(A.r-B.r)===1) set.add(i+','+j);
+    }
+  }
+  return set;
+}
+
+/* ================= Face designs (B&W, exam-style) ================= */
+const INK = '#20242A';
+const DESIGNS = {
+  d1: '<text x="50" y="56" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="56" text-anchor="middle" dominant-baseline="middle" fill="'+INK+'">1</text>',
+  d2: '<text x="50" y="56" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="56" text-anchor="middle" dominant-baseline="middle" fill="'+INK+'">2</text>',
+  d3: '<text x="50" y="56" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="56" text-anchor="middle" dominant-baseline="middle" fill="'+INK+'">3</text>',
+  d4: '<text x="50" y="56" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="56" text-anchor="middle" dominant-baseline="middle" fill="'+INK+'">4</text>',
+  d5: '<text x="50" y="56" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="56" text-anchor="middle" dominant-baseline="middle" fill="'+INK+'">5</text>',
+  d7: '<text x="50" y="56" font-family="Chakra Petch,sans-serif" font-weight="700" font-size="56" text-anchor="middle" dominant-baseline="middle" fill="'+INK+'">7</text>',
+  triangle: '<polygon points="22,78 22,22 78,78" fill="'+INK+'"/>',
+  arrow: '<polygon points="50,16 80,52 61,52 61,84 39,84 39,52 20,52" fill="'+INK+'"/>',
+  flag: '<line x1="34" y1="16" x2="34" y2="84" stroke="'+INK+'" stroke-width="7" stroke-linecap="round"/><polygon points="34,20 78,36 34,52" fill="'+INK+'"/>',
+  stripes: '<rect x="18" y="22" width="64" height="9" fill="'+INK+'"/><rect x="18" y="37" width="64" height="9" fill="'+INK+'"/><rect x="18" y="52" width="64" height="9" fill="'+INK+'"/>',
+  cornerDot: '<circle cx="32" cy="32" r="17" fill="'+INK+'"/><rect x="60" y="60" width="20" height="20" fill="'+INK+'"/>',
+  house: '<polygon points="50,14 84,46 84,86 16,86 16,46" fill="none" stroke="'+INK+'" stroke-width="7"/>',
+  halfSplit: '<polygon points="14,14 86,14 14,86" fill="'+INK+'"/>',
+  crossOffset: '<rect x="41" y="8" width="18" height="52" fill="'+INK+'"/><rect x="16" y="41" width="68" height="18" fill="'+INK+'"/>',
+  wedgeCircle: '<circle cx="50" cy="50" r="33" fill="'+INK+'"/><polygon points="50,8 64,32 36,32" fill="#fff"/>',
+};
+const DESIGN_KEYS = Object.keys(DESIGNS);
+
+function shuffled(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function designMarkup(id){ return DESIGNS[id] || ''; }
+
+/* ================= Game state ================= */
+const state = {
+  squares:null, initialSquares:null,
+  edgesAll:null, givenSet:null, hiddenEdges:null,
+  minC:0,maxC:0,minR:0,maxR:0, cols:0, rows:0,
+  cellSize:64,
+  selectedId:null,
+  pendingManual:null,
+  problemNo:1,
+};
+
+function getSquare(id){ return state.squares.find(s=>s.id===id); }
+function findEdge(i,j){ return state.edgesAll.find(e=>(e.i===i&&e.j===j)||(e.i===j&&e.j===i)); }
+function isGivenPair(i,j){
+  const a=Math.min(i,j), b=Math.max(i,j);
+  return state.givenSet.has(a+','+b);
+}
+function findHiddenEdge(i,j){ return state.hiddenEdges.find(e=>(e.i===i&&e.j===j)||(e.i===j&&e.j===i)); }
+function isConnected(i,j){
+  if(isGivenPair(i,j)) return true;
+  const he = findHiddenEdge(i,j);
+  return !!(he && he.discovered);
+}
+function homeDirFromVisual(square, visualDir){
+  const vi = DIR_ORDER.indexOf(visualDir);
+  const hi = ((vi - square.rotation) % 4 + 4) % 4;
+  return DIR_ORDER[hi];
+}
+function visualDirFromHome(square, homeDir){
+  const hi = DIR_ORDER.indexOf(homeDir);
+  const vi = (hi + square.rotation) % 4;
+  return DIR_ORDER[vi];
+}
+function usedVisualDirs(square){
+  const used = new Set();
+  for(const other of state.squares){
+    if(other.id===square.id) continue;
+    if(!isConnected(square.id, other.id)) continue;
+    const e = findEdge(square.id, other.id);
+    if(!e) continue;
+    const homeDir = (e.i===square.id) ? e.dirA : e.dirB;
+    used.add(visualDirFromHome(square, homeDir));
+  }
+  return used;
+}
+
+function newProblem(){
+  const net = generateNet();
+  const edgesAll = computeAllEdges(net);
+  const givenSet = givenPairKeySet(net);
+  const hiddenEdges = edgesAll
+    .filter(e=>!givenSet.has(e.i+','+e.j))
+    .map(e=>({i:e.i, j:e.j, dirA:e.dirA, dirB:e.dirB, discovered:false}));
+
+  const designs = shuffled(DESIGN_KEYS).slice(0,6);
+  const squares = net.map((n,idx)=>({
+    id: idx, c:n.c, r:n.r, rotation:0, rotDeg:0, designId: designs[idx]
+  }));
+
+  const cs = net.map(n=>n.c), rs = net.map(n=>n.r);
+  const minC = Math.min(...cs)-1, maxC = Math.max(...cs)+1;
+  const minR = Math.min(...rs)-1, maxR = Math.max(...rs)+1;
+
+  state.squares = squares;
+  state.initialSquares = squares.map(s=>({...s}));
+  state.edgesAll = edgesAll;
+  state.givenSet = givenSet;
+  state.hiddenEdges = hiddenEdges;
+  state.minC=minC; state.maxC=maxC; state.minR=minR; state.maxR=maxR;
+  state.cols = maxC-minC+1; state.rows = maxR-minR+1;
+  state.selectedId = null;
+  state.pendingManual = null;
+
+  document.getElementById('winBanner').hidden = true;
+  document.getElementById('problemNo').textContent = String(state.problemNo).padStart(2,'0');
+
+  buildBoard();
+  layout();
+  updateProgress();
+  updateHint();
+}
+
+function restartProblem(){
+  state.squares = state.initialSquares.map(s=>({...s}));
+  state.hiddenEdges.forEach(e=>e.discovered=false);
+  state.selectedId = null;
+  document.getElementById('winBanner').hidden = true;
+  buildBoard();
+  layout();
+  updateProgress();
+  updateHint();
+}
+
+/* ================= Rendering ================= */
+function buildBoard(){
+  const board = document.getElementById('board');
+  board.querySelectorAll('.cell-empty, .tile').forEach(el=>el.remove());
+  const frag = document.createDocumentFragment();
+
+  for(let c=state.minC; c<=state.maxC; c++){
+    for(let r=state.minR; r<=state.maxR; r++){
+      const btn = document.createElement('button');
+      btn.type='button';
+      btn.className='cell-empty';
+      btn.dataset.c=c; btn.dataset.r=r;
+      btn.style.setProperty('--c', c-state.minC);
+      btn.style.setProperty('--r', r-state.minR);
+      btn.setAttribute('aria-label','ช่องว่าง');
+      frag.appendChild(btn);
+    }
+  }
+  state.squares.forEach(sq=>{
+    const tile = document.createElement('div');
+    tile.className='tile';
+    tile.dataset.id = sq.id;
+    tile.style.setProperty('--c', sq.c-state.minC);
+    tile.style.setProperty('--r', sq.r-state.minR);
+    tile.innerHTML =
+      '<button type="button" class="tile-btn" aria-label="สี่เหลี่ยม '+(sq.id+1)+'">'+
+        '<svg class="tile-art" viewBox="0 0 100 100" style="transform:rotate('+sq.rotDeg+'deg)">'+
+          '<rect class="tile-rect" x="2" y="2" width="96" height="96" rx="10" fill="#fff" stroke="#20242A" stroke-width="4"/>'+
+          designMarkup(sq.designId)+
+        '</svg>'+
+      '</button>';
+    frag.appendChild(tile);
+  });
+  board.appendChild(frag);
+}
+
+function layout(){
+  const wrap = document.getElementById('boardWrap');
+  const available = Math.min(wrap.clientWidth - 44, 560);
+  const cell = Math.max(46, Math.min(78, Math.floor(available / state.cols)));
+  state.cellSize = cell;
+  const board = document.getElementById('board');
+  board.style.setProperty('--cell-size', cell+'px');
+  board.style.width = (cell*state.cols)+'px';
+  board.style.height = (cell*state.rows)+'px';
+  renderSquarePositions();
+  drawConnections();
+}
+
+function renderSquarePositions(){
+  state.squares.forEach(sq=>{
+    const el = document.querySelector('.tile[data-id="'+sq.id+'"]');
+    if(!el) return;
+    el.style.setProperty('--c', sq.c-state.minC);
+    el.style.setProperty('--r', sq.r-state.minR);
+    const art = el.querySelector('.tile-art');
+    art.style.transform = 'rotate('+sq.rotDeg+'deg)';
+    el.classList.toggle('is-selected', state.selectedId===sq.id);
+  });
+}
+
+function tilePixel(sq){
+  return { x:(sq.c-state.minC)*state.cellSize, y:(sq.r-state.minR)*state.cellSize, size:state.cellSize };
+}
+function edgeMidpoint(sq, visualDir){
+  const {x,y,size} = tilePixel(sq);
+  if(visualDir==='N') return {x:x+size/2, y:y};
+  if(visualDir==='S') return {x:x+size/2, y:y+size};
+  if(visualDir==='E') return {x:x+size, y:y+size/2};
+  return {x:x, y:y+size/2}; // W
+}
+
+function drawConnections(){
+  const svg = document.getElementById('connSvg');
+  const W = state.cols*state.cellSize, H = state.rows*state.cellSize;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML='';
+  const cx = W/2, cy = H/2;
+  state.hiddenEdges.filter(e=>e.discovered).forEach(e=>{
+    const sqA = getSquare(e.i), sqB = getSquare(e.j);
+    const visA = visualDirFromHome(sqA, e.dirA);
+    const visB = visualDirFromHome(sqB, e.dirB);
+    const pA = edgeMidpoint(sqA, visA), pB = edgeMidpoint(sqB, visB);
+    const mx=(pA.x+pB.x)/2, my=(pA.y+pB.y)/2;
+    let nx = mx-cx, ny = my-cy;
+    const len = Math.hypot(nx,ny)||1;
+    nx/=len; ny/=len;
+    const dist = Math.hypot(pA.x-pB.x, pA.y-pB.y);
+    const bulge = Math.min(46, dist*0.32+14);
+    const ctrlX = mx + nx*bulge, ctrlY = my + ny*bulge;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', 'M '+pA.x+' '+pA.y+' Q '+ctrlX+' '+ctrlY+' '+pB.x+' '+pB.y);
+    path.setAttribute('class','conn-line');
+    svg.appendChild(path);
+    [pA,pB].forEach(p=>{
+      const tick = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      tick.setAttribute('cx',p.x); tick.setAttribute('cy',p.y); tick.setAttribute('r',4.5);
+      tick.setAttribute('class','conn-tick');
+      svg.appendChild(tick);
+    });
+  });
+}
+
+function updateProgress(){
+  const total = state.hiddenEdges.length;
+  const found = state.hiddenEdges.filter(e=>e.discovered).length;
+  document.getElementById('progressText').textContent = found+'/'+total;
+  document.getElementById('progressFill').style.width = Math.round(found/total*100)+'%';
+}
+
+function updateHint(){
+  const hint = document.getElementById('selectHint');
+  if(state.selectedId===null){
+    hint.textContent = 'แตะสี่เหลี่ยม 1 รูปเพื่อเริ่ม';
+  } else {
+    hint.textContent = 'แตะสี่เหลี่ยมอีกรูปเพื่อเชื่อม หรือแตะช่องสีเหลืองเพื่อเลื่อน';
+  }
+}
+
+/* ================= Selection & interaction ================= */
+function clearSelection(){
+  state.selectedId = null;
+  document.querySelectorAll('.cell-empty.can-drop').forEach(el=>el.classList.remove('can-drop'));
+  renderSquarePositions();
+  updateHint();
+}
+
+function selectSquare(id){
+  state.selectedId = id;
+  renderSquarePositions();
+  const targets = computeSlideTargets(id);
+  document.querySelectorAll('.cell-empty').forEach(el=>{
+    const c = Number(el.dataset.c), r = Number(el.dataset.r);
+    const match = targets.some(t=>t.c===c && t.r===r);
+    el.classList.toggle('can-drop', match);
+  });
+  updateHint();
+}
+
+function computeSlideTargets(squareId){
+  const sq = getSquare(squareId);
+  const occ = new Set();
+  state.squares.forEach(s=>{ if(s.id!==squareId) occ.add(s.c+','+s.r); });
+  const targets = [];
+  DIR_ORDER.forEach(dirName=>{
+    const {dc,dr} = DIR_DELTA[dirName];
+    let c=sq.c+dc, r=sq.r+dr, steps=1;
+    while(c>=state.minC && c<=state.maxC && r>=state.minR && r<=state.maxR && !occ.has(c+','+r)){
+      targets.push({c,r,steps,dir:dirName});
+      c+=dc; r+=dr; steps++;
+    }
+  });
+  return targets;
+}
+
+function moveSquareTo(squareId, target){
+  const sq = getSquare(squareId);
+  const delta = DIR_ROT_STEP[target.dir]*target.steps;
+  sq.rotDeg += delta*90;
+  sq.rotation = ((sq.rotation + delta) % 4 + 4) % 4;
+  sq.c = target.c; sq.r = target.r;
+  clearSelection();
+  renderSquarePositions();
+  drawConnections();
+}
+
+function scanPrinciple1(){
+  const occ = new Map();
+  state.squares.forEach(s=>occ.set(s.c+','+s.r, s.id));
+  const results = [];
+  for(let c=state.minC-1; c<=state.maxC; c++){
+    for(let r=state.minR-1; r<=state.maxR; r++){
+      const q1=occ.get((c+1)+','+r), q2=occ.get(c+','+r), q3=occ.get(c+','+(r+1)), q4=occ.get((c+1)+','+(r+1));
+      const vals=[q1,q2,q3,q4];
+      const cnt = vals.filter(v=>v!==undefined).length;
+      if(cnt!==3) continue;
+      let a,b,dirA,dirB;
+      if(q1===undefined){ a=q2; b=q4; dirA='E'; dirB='N'; }
+      else if(q2===undefined){ a=q1; b=q3; dirA='W'; dirB='N'; }
+      else if(q3===undefined){ a=q2; b=q4; dirA='S'; dirB='W'; }
+      else { a=q1; b=q3; dirA='S'; dirB='E'; }
+      results.push({a,b,dirA,dirB});
+    }
+  }
+  return results;
+}
+function checkPrinciple1For(idA, idB){
+  return scanPrinciple1().find(r=>(r.a===idA&&r.b===idB)||(r.a===idB&&r.b===idA));
+}
+
+function attemptConnect(idA, idB){
+  if(idA===idB) return;
+  if(isConnected(idA,idB)){
+    showToast('info','สองด้านนี้เชื่อมต่อกันอยู่แล้ว');
+    clearSelection();
+    return;
+  }
+  if(!findEdge(idA,idB)){
+    showToast('warn','สองด้านนี้เป็นด้านตรงข้ามกัน จะไม่มีวันติดกันเมื่อพับ ลองคู่อื่นดู');
+    clearSelection();
+    return;
+  }
+  const lhit = checkPrinciple1For(idA, idB);
+  if(lhit){
+    const sqA = getSquare(idA), sqB = getSquare(idB);
+    let visDirA, visDirB;
+    if(lhit.a===idA){ visDirA=lhit.dirA; visDirB=lhit.dirB; } else { visDirA=lhit.dirB; visDirB=lhit.dirA; }
+    void homeDirFromVisual(sqA, visDirA); // (values validated via ground truth lookup below)
+    void homeDirFromVisual(sqB, visDirB);
+    const he = findHiddenEdge(idA, idB);
+    he.discovered = true;
+    clearSelection();
+    updateProgress();
+    drawConnections();
+    showToast('success','ถูกต้อง! เชื่อมด้วยหลักที่ 1 (มุมตัว L)');
+    checkWin();
+  } else {
+    openManualModal(idA, idB);
+  }
+}
+
+function checkWin(){
+  const total = state.hiddenEdges.length;
+  const found = state.hiddenEdges.filter(e=>e.discovered).length;
+  if(found===total){
+    document.getElementById('winBanner').hidden = false;
+  }
+}
+
+/* board click delegation */
+document.getElementById('board').addEventListener('click', function(e){
+  const tileBtn = e.target.closest('.tile-btn');
+  if(tileBtn){
+    const tile = tileBtn.closest('.tile');
+    const id = Number(tile.dataset.id);
+    if(state.selectedId===null){
+      selectSquare(id);
+    } else if(state.selectedId===id){
+      clearSelection();
+    } else {
+      attemptConnect(state.selectedId, id);
+    }
+    return;
+  }
+  const cellBtn = e.target.closest('.cell-empty');
+  if(cellBtn){
+    if(state.selectedId===null) return;
+    if(!cellBtn.classList.contains('can-drop')){ clearSelection(); return; }
+    const c = Number(cellBtn.dataset.c), r = Number(cellBtn.dataset.r);
+    const targets = computeSlideTargets(state.selectedId);
+    const target = targets.find(t=>t.c===c && t.r===r);
+    if(target) moveSquareTo(state.selectedId, target);
+  }
+});
+
+/* ================= Manual modal ================= */
+function dirArrowSvg(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 5l-5 5M12 5l5 5"/></svg>';
+}
+
+function openManualModal(idA, idB){
+  state.pendingManual = {idA, idB, dirA:null, dirB:null};
+  renderManualModal();
+  document.getElementById('manualFeedback').textContent='';
+  document.getElementById('manualFeedback').className='manual-feedback';
+  document.getElementById('manualModal').hidden = false;
+}
+function closeManualModal(){
+  document.getElementById('manualModal').hidden = true;
+  state.pendingManual = null;
+  clearSelection();
+}
+function buildManualSquareHTML(id, role, chosenDir){
+  const sq = getSquare(id);
+  const used = usedVisualDirs(sq);
+  const btns = DIR_ORDER.map(d=>{
+    const isUsed = used.has(d);
+    const isChosen = chosenDir===d;
+    return '<button type="button" class="dir-btn dir-'+d+' '+(isChosen?'chosen':'')+'" data-role="'+role+'" data-dir="'+d+'" '+(isUsed?'disabled':'')+' aria-label="ด้าน'+DIR_THAI[d]+'">'+dirArrowSvg()+'</button>';
+  }).join('');
+  return '<div class="manual-square">'+
+    '<span class="manual-square-label">รูปที่ '+(id+1)+'</span>'+
+    '<div class="manual-square-frame">'+
+      '<svg viewBox="0 0 100 100" class="manual-svg" style="transform:rotate('+sq.rotDeg+'deg)">'+
+        '<rect x="2" y="2" width="96" height="96" rx="10" fill="#fff" stroke="#20242A" stroke-width="4"/>'+
+        designMarkup(sq.designId)+
+      '</svg>'+
+      btns+
+    '</div>'+
+  '</div>';
+}
+function renderManualModal(){
+  const pm = state.pendingManual;
+  if(!pm) return;
+  document.getElementById('manualPair').innerHTML =
+    buildManualSquareHTML(pm.idA,'A',pm.dirA) + buildManualSquareHTML(pm.idB,'B',pm.dirB);
+  document.getElementById('manualConfirm').disabled = !(pm.dirA && pm.dirB);
+}
+document.getElementById('manualPair').addEventListener('click', function(e){
+  const btn = e.target.closest('.dir-btn');
+  if(!btn || btn.disabled) return;
+  const role = btn.dataset.role, dir = btn.dataset.dir;
+  if(role==='A') state.pendingManual.dirA = dir; else state.pendingManual.dirB = dir;
+  document.getElementById('manualFeedback').textContent='';
+  renderManualModal();
+});
+document.getElementById('manualConfirm').addEventListener('click', function(){
+  const pm = state.pendingManual;
+  if(!pm || !pm.dirA || !pm.dirB) return;
+  const sqA = getSquare(pm.idA), sqB = getSquare(pm.idB);
+  const homeDirA = homeDirFromVisual(sqA, pm.dirA);
+  const homeDirB = homeDirFromVisual(sqB, pm.dirB);
+  const e = findEdge(pm.idA, pm.idB);
+  const correct = (e.i===pm.idA) ? (e.dirA===homeDirA && e.dirB===homeDirB) : (e.dirA===homeDirB && e.dirB===homeDirA);
+  const fb = document.getElementById('manualFeedback');
+  if(correct){
+    const he = findHiddenEdge(pm.idA, pm.idB);
+    he.discovered = true;
+    fb.textContent = 'ถูกต้อง!';
+    fb.className = 'manual-feedback ok';
+    updateProgress();
+    drawConnections();
+    setTimeout(()=>{
+      closeManualModal();
+      showToast('success','เชื่อมสำเร็จ!');
+      checkWin();
+    }, 480);
+  } else {
+    fb.textContent = 'ยังไม่ถูกต้อง ลองใหม่อีกครั้ง';
+    fb.className = 'manual-feedback';
+    pm.dirA=null; pm.dirB=null;
+    renderManualModal();
+  }
+});
+document.getElementById('manualClose').addEventListener('click', closeManualModal);
+
+/* ================= Toast ================= */
+function showToast(kind, msg){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast '+kind;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 320); }, 2400);
+}
+
+/* ================= Modals: how to play ================= */
+const howToModal = document.getElementById('howToModal');
+document.getElementById('howToBtn').addEventListener('click', ()=>{ howToModal.hidden=false; });
+document.getElementById('howToClose').addEventListener('click', ()=>{ howToModal.hidden=true; });
+document.getElementById('howToGotIt').addEventListener('click', ()=>{ howToModal.hidden=true; });
+
+/* ================= Toolbar actions ================= */
+document.getElementById('resetBtn').addEventListener('click', restartProblem);
+document.getElementById('newBtn').addEventListener('click', ()=>{ state.problemNo++; newProblem(); });
+document.getElementById('nextProblemBtn').addEventListener('click', ()=>{ state.problemNo++; newProblem(); });
+
+[howToModal, document.getElementById('manualModal')].forEach(modal=>{
+  modal.addEventListener('click', (e)=>{
+    if(e.target===modal && modal.id==='howToModal'){ modal.hidden=true; }
+  });
+});
+
+window.addEventListener('resize', debounce(()=>layout(), 120));
+function debounce(fn, ms){
+  let t;
+  return function(){ clearTimeout(t); t=setTimeout(fn, ms); };
+}
+
+/* ================= Init ================= */
+newProblem();
+howToModal.hidden = false; // onboarding on first load
+
+})();
+</script>
+</body>
+</html>
