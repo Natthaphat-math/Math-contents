@@ -273,7 +273,7 @@
     <button class="tab" data-mode="or" role="tab" aria-selected="false">หรือ <span class="tab-symbol">(OR, ∨)</span></button>
     <button class="tab" data-mode="not" role="tab" aria-selected="false">นิเสธ <span class="tab-symbol">(NOT, ¬)</span></button>
     <button class="tab" data-mode="cond" role="tab" aria-selected="false">ถ้า...แล้ว... <span class="tab-symbol">(→)</span></button>
-    <button class="tab disabled" role="tab" aria-selected="false" aria-disabled="true">ก็ต่อเมื่อ <span class="tab-symbol">(↔)</span><span class="soon-tag">เร็วๆ นี้</span></button>
+    <button class="tab" data-mode="bicond" role="tab" aria-selected="false">ก็ต่อเมื่อ <span class="tab-symbol">(↔)</span></button>
   </nav>
 
   <main>
@@ -487,10 +487,64 @@
       </table>
     </section>
 
+    <!-- ============ BICONDITIONAL SECTION ============ -->
+    <section class="mode-section" id="section-bicond" data-mode="bicond" hidden>
+      <div class="layout-grid">
+
+        <aside class="panel">
+          <h2 class="panel-title">ตัวเชื่อม “ก็ต่อเมื่อ” <span class="symbol">↔</span></h2>
+
+          <div class="switch-row">
+            <span class="var-name">p</span>
+            <button class="toggle-switch" role="switch" aria-checked="false" data-mode="bicond" data-var="p" aria-label="สวิตช์ p"><span class="thumb"></span></button>
+            <span class="value-badge" data-mode="bicond" data-readout="p">เท็จ (F)</span>
+          </div>
+          <div class="switch-row">
+            <span class="var-name">q</span>
+            <button class="toggle-switch" role="switch" aria-checked="false" data-mode="bicond" data-var="q" aria-label="สวิตช์ q"><span class="thumb"></span></button>
+            <span class="value-badge" data-mode="bicond" data-readout="q">เท็จ (F)</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="result-row">
+            <span class="result-label">p ↔ q =</span>
+            <span class="result-value true" data-mode="bicond" data-readout="result">จริง (T)</span>
+          </div>
+          <p class="bulb-status true" data-mode="bicond" data-readout="bulb">หลอดไฟ: สว่าง</p>
+        </aside>
+
+        <div class="circuit-card">
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 5</span> วงจรผสม: (p ∧ q) ขนาน (¬p ∧ ¬q)</div>
+          <div class="circuit-canvas" id="bicond-canvas"></div>
+          <ul class="legend">
+            <li><span class="dot live"></span> สายไฟมีกระแสไหล = จริง</li>
+            <li><span class="dot"></span> สายไฟไม่มีกระแสไหล = เท็จ</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="explain-card">
+        <h3>หลักการ</h3>
+        <p>วงจรนี้รวมทุกแนวคิดที่เรียนมาไว้ในวงจรเดียว มีสองกิ่งต่อแบบขนานเหมือนตัวเชื่อม “หรือ” กิ่งบนต่อสวิตช์ปกติเปิดสองตัวแบบอนุกรมเหมือนวงจร “และ” แทนค่า p ∧ q ส่วนกิ่งล่างต่อสวิตช์ปกติปิดสองตัวแบบอนุกรมแทนค่า ¬p ∧ ¬q กระแสไฟฟ้าจะไหลถึงหลอดไฟได้ ก็ต่อเมื่อมีกิ่งใดกิ่งหนึ่งนำกระแสได้ตลอดทั้งกิ่ง คือ p กับ q เป็นจริงพร้อมกันทั้งคู่ (กิ่งบน) หรือ p กับ q เป็นเท็จพร้อมกันทั้งคู่ (กิ่งล่าง)</p>
+        <p>นี่คือหลักการเดียวกับตัวเชื่อม “ก็ต่อเมื่อ” (↔) ในวิชาตรรกศาสตร์ ซึ่งพิสูจน์ได้ว่าประพจน์ p ↔ q สมมูลกับ (p ∧ q) ∨ (¬p ∧ ¬q) เสมอ กล่าวคือ p ↔ q จะเป็นจริงก็ต่อเมื่อ p และ q มีค่าความจริงตรงกัน ไม่ว่าจะจริงทั้งคู่หรือเท็จทั้งคู่ก็ตาม แต่ถ้า p และ q มีค่าความจริงต่างกัน ประพจน์ p ↔ q จะเป็นเท็จทันที</p>
+      </div>
+
+      <table class="truth-table" data-mode="bicond">
+        <thead><tr><th>p</th><th>q</th><th>p ↔ q</th></tr></thead>
+        <tbody>
+          <tr data-p="1" data-q="1"><td>จริง</td><td>จริง</td><td>จริง</td></tr>
+          <tr data-p="1" data-q="0"><td>จริง</td><td>เท็จ</td><td>เท็จ</td></tr>
+          <tr data-p="0" data-q="1"><td>เท็จ</td><td>จริง</td><td>เท็จ</td></tr>
+          <tr data-p="0" data-q="0" class="current-row"><td>เท็จ</td><td>เท็จ</td><td>จริง</td></tr>
+        </tbody>
+      </table>
+    </section>
+
   </main>
 
   <footer class="site-footer">
-    <p>หัวข้อถัดไป: ก็ต่อเมื่อ (↔) — เร็วๆ นี้</p>
+    <p>ครบทั้ง 5 ตัวเชื่อมประพจน์: และ · หรือ · นิเสธ · ถ้า...แล้ว... · ก็ต่อเมื่อ</p>
   </footer>
 
 </div>
@@ -504,7 +558,8 @@
     and: { p:false, q:false },
     or:  { p:false, q:false },
     not: { p:false },
-    cond:{ p:false, q:false }
+    cond:{ p:false, q:false },
+    bicond:{ p:false, q:false }
   };
 
   function computeResult(mode, p, q){
@@ -512,6 +567,7 @@
     if(mode === 'or') return p || q;
     if(mode === 'not') return !p;
     if(mode === 'cond') return (!p) || q;
+    if(mode === 'bicond') return (p && q) || (!p && !q);
   }
 
   function truthText(val){
@@ -544,16 +600,18 @@
       '</g>';
   }
 
-  function generateSwitch(modeId, label, xLeft, xRight, y, invert){
+  function generateSwitch(modeId, label, xLeft, xRight, y, invert, idSuffix, displayLabel){
     invert = !!invert;
+    idSuffix = idSuffix ? ('-' + idSuffix) : '';
+    var shown = displayLabel || label;
     var pivotX = xLeft + 6, freeX = xRight - 6;
     var initialAngle = invert ? 0 : -34;
     return '' +
-      '<g class="switch" id="' + modeId + '-switch-' + label + '" data-mode="' + modeId + '" data-label="' + label + '" data-invert="' + invert + '">' +
+      '<g class="switch" id="' + modeId + '-switch-' + label + idSuffix + '" data-mode="' + modeId + '" data-label="' + label + '" data-invert="' + invert + '" data-display="' + shown + '">' +
         '<circle class="terminal" cx="' + xLeft + '" cy="' + y + '" r="4"></circle>' +
         '<circle class="terminal" cx="' + xRight + '" cy="' + y + '" r="4"></circle>' +
         '<line class="lever" data-pivot-x="' + pivotX + '" data-pivot-y="' + y + '" x1="' + pivotX + '" y1="' + y + '" x2="' + freeX + '" y2="' + y + '" transform="rotate(' + initialAngle + ' ' + pivotX + ' ' + y + ')"></line>' +
-        '<text class="switch-label" x="' + ((xLeft+xRight)/2) + '" y="' + (y-16) + '" text-anchor="middle">' + label + '</text>' +
+        '<text class="switch-label" x="' + ((xLeft+xRight)/2) + '" y="' + (y-16) + '" text-anchor="middle">' + shown + '</text>' +
       '</g>';
   }
 
@@ -650,20 +708,56 @@
     return s;
   }
 
+  function buildBicondSvg(){
+    var splitX=150, rejoinX=480, branchLowY=200;
+    var sw1L=190, sw1R=270, sw2L=350, sw2R=430;
+    var s = '<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="วงจรของตัวเชื่อม ก็ต่อเมื่อ">';
+    s += generateBattery(FL, FT, FB, 'g-bicond-common');
+    s += generateBulb('bicond-bulb', FR, FT, FB, 'g-bicond-common');
+
+    s += '<line class="wire g-bicond-common" x1="' + FL + '" y1="' + FT + '" x2="' + splitX + '" y2="' + FT + '"></line>';
+    s += '<circle class="structural junction-dot" cx="' + splitX + '" cy="' + FT + '" r="3.5"></circle>';
+    s += '<line class="wire g-bicond-botB" x1="' + splitX + '" y1="' + FT + '" x2="' + splitX + '" y2="' + branchLowY + '"></line>';
+
+    s += '<line class="wire g-bicond-topA" x1="' + splitX + '" y1="' + FT + '" x2="' + sw1L + '" y2="' + FT + '"></line>';
+    s += generateSwitch('bicond','p',sw1L,sw1R,FT,false,'a','p');
+    s += '<line class="wire g-bicond-topA" x1="' + sw1R + '" y1="' + FT + '" x2="' + sw2L + '" y2="' + FT + '"></line>';
+    s += generateSwitch('bicond','q',sw2L,sw2R,FT,false,'a','q');
+    s += '<line class="wire g-bicond-topA" x1="' + sw2R + '" y1="' + FT + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
+
+    s += '<line class="wire g-bicond-botB" x1="' + splitX + '" y1="' + branchLowY + '" x2="' + sw1L + '" y2="' + branchLowY + '"></line>';
+    s += generateSwitch('bicond','p',sw1L,sw1R,branchLowY,true,'b','¬p');
+    s += '<line class="wire g-bicond-botB" x1="' + sw1R + '" y1="' + branchLowY + '" x2="' + sw2L + '" y2="' + branchLowY + '"></line>';
+    s += generateSwitch('bicond','q',sw2L,sw2R,branchLowY,true,'b','¬q');
+    s += '<line class="wire g-bicond-botB" x1="' + sw2R + '" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + branchLowY + '"></line>';
+
+    s += '<line class="wire g-bicond-botB" x1="' + rejoinX + '" y1="' + branchLowY + '" x2="' + rejoinX + '" y2="' + FT + '"></line>';
+    s += '<circle class="structural junction-dot" cx="' + rejoinX + '" cy="' + FT + '" r="3.5"></circle>';
+    s += '<line class="wire g-bicond-common" x1="' + rejoinX + '" y1="' + FT + '" x2="' + FR + '" y2="' + FT + '"></line>';
+
+    s += '<line class="wire g-bicond-common" x1="' + FR + '" y1="' + FB + '" x2="' + FL + '" y2="' + FB + '"></line>';
+    s += '<text class="component-label" x="' + FL + '" y="' + LY + '">แบตเตอรี่</text>';
+    s += '<text class="component-label" x="' + FR + '" y="' + LY + '">หลอดไฟ</text>';
+    s += '</svg>';
+    return s;
+  }
+
   /* ---------- Rendering / state updates ---------- */
 
   function updateSwitchVisual(mode, varName, on){
-    var g = document.getElementById(mode + '-switch-' + varName);
-    if(!g) return;
-    var invert = g.getAttribute('data-invert') === 'true';
-    var conducting = invert ? !on : on;
-    g.classList.toggle('live', conducting);
-    g.setAttribute('aria-checked', on ? 'true' : 'false');
-    var lever = g.querySelector('.lever');
-    var pivotX = lever.getAttribute('data-pivot-x');
-    var pivotY = lever.getAttribute('data-pivot-y');
-    var angle = invert ? (on ? -34 : 0) : (on ? 0 : -34);
-    lever.setAttribute('transform', 'rotate(' + angle + ' ' + pivotX + ' ' + pivotY + ')');
+    var switches = document.querySelectorAll('.switch[data-mode="' + mode + '"][data-label="' + varName + '"]');
+    for(var i=0;i<switches.length;i++){
+      var g = switches[i];
+      var invert = g.getAttribute('data-invert') === 'true';
+      var conducting = invert ? !on : on;
+      g.classList.toggle('live', conducting);
+      g.setAttribute('aria-checked', on ? 'true' : 'false');
+      var lever = g.querySelector('.lever');
+      var pivotX = lever.getAttribute('data-pivot-x');
+      var pivotY = lever.getAttribute('data-pivot-y');
+      var angle = invert ? (on ? -34 : 0) : (on ? 0 : -34);
+      lever.setAttribute('transform', 'rotate(' + angle + ' ' + pivotX + ' ' + pivotY + ')');
+    }
   }
 
   function updateMode(mode){
@@ -715,6 +809,10 @@
       setLive('.g-cond-common', result);
       setLive('.g-cond-p', !p);
       setLive('.g-cond-q', q);
+    } else if(mode === 'bicond'){
+      setLive('.g-bicond-common', result);
+      setLive('.g-bicond-topA', p && q);
+      setLive('.g-bicond-botB', (!p) && (!q));
     }
 
     var bulbEl = document.getElementById(mode + '-bulb');
@@ -795,7 +893,7 @@
       (function(sw){
         sw.setAttribute('tabindex','0');
         sw.setAttribute('role','switch');
-        sw.setAttribute('aria-label', sw.dataset.label === 'p' ? 'สวิตช์ p' : 'สวิตช์ q');
+        sw.setAttribute('aria-label', 'สวิตช์แทนค่า ' + (sw.dataset.display || sw.dataset.label));
         sw.addEventListener('click', function(){
           toggleVar(sw.dataset.mode, sw.dataset.label);
         });
@@ -814,6 +912,7 @@
   document.getElementById('or-canvas').innerHTML = buildOrSvg();
   document.getElementById('not-canvas').innerHTML = buildNotSvg();
   document.getElementById('cond-canvas').innerHTML = buildCondSvg();
+  document.getElementById('bicond-canvas').innerHTML = buildBicondSvg();
 
   initToggles();
   initTabs();
@@ -823,6 +922,7 @@
   updateMode('or');
   updateMode('not');
   updateMode('cond');
+  updateMode('bicond');
 
 })();
 </script>
