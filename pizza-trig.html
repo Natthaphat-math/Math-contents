@@ -51,6 +51,18 @@
     transition:transform .28s ease;
   }
 
+  /* ---------- preload veil: hides the page until Kanit/Mitr are confirmed loaded, ----------
+     so the layout never reflows from a fallback-font -> webfont swap (Safari does not
+     reliably honor font-display:optional, so we verify readiness in JS instead) */
+  #preload-veil{
+    position:fixed;inset:0;z-index:9999;background:#150b09;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .3s ease;
+  }
+  #preload-veil.hide{opacity:0;pointer-events:none;}
+  #preload-veil span{font-size:60px;display:block;animation:preloadPulse 1s ease-in-out infinite;}
+  @keyframes preloadPulse{0%,100%{transform:scale(1);opacity:.75;}50%{transform:scale(1.15);opacity:1;}}
+
   /* ---------- Portrait banner ---------- */
   #portrait-banner{
     position:fixed;top:0;left:0;right:0;z-index:500;
@@ -233,6 +245,32 @@
 </style>
 </head>
 <body>
+
+<div id="preload-veil"><span>🍕</span></div>
+<script>
+(function(){
+  function reveal(){
+    var veil=document.getElementById('preload-veil');
+    if(!veil) return;
+    veil.classList.add('hide');
+    setTimeout(function(){ veil.remove(); }, 320);
+  }
+  if(window.document && document.fonts && document.fonts.load){
+    var specs=['400 16px Kanit','500 16px Kanit','600 16px Kanit','700 16px Kanit','800 16px Kanit',
+               '300 16px Mitr','400 16px Mitr','500 16px Mitr','600 16px Mitr'];
+    var loads=specs.map(function(s){
+      try{ return document.fonts.load(s).catch(function(){}); }
+      catch(e){ return Promise.resolve(); }
+    });
+    Promise.race([
+      Promise.all(loads),
+      new Promise(function(res){ setTimeout(res,1800); })
+    ]).then(reveal);
+  } else {
+    reveal();
+  }
+})();
+</script>
 
 <div id="portrait-banner">
   <span class="icon">🔄</span>
