@@ -18,6 +18,9 @@
     --teal:#1E7A6C;
     --teal-dark:#14584E;
     --teal-tint:#E4F0ED;
+    --blue:#2E6FBA;
+    --blue-dark:#1F4E86;
+    --blue-tint:#E6EEF9;
     --amber:#E2A63B;
     --amber-tint:#FBF0DA;
     --coral:#D2483A;
@@ -255,6 +258,16 @@
   }
   .conn-tick{
     fill:var(--teal-dark);
+  }
+  .conn-line-given{
+    fill:none;
+    stroke:var(--blue);
+    stroke-width:3;
+    stroke-linecap:round;
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,.6));
+  }
+  .conn-tick-given{
+    fill:var(--blue-dark);
   }
 
   .cell-empty{
@@ -1235,7 +1248,8 @@ function drawConnections(){
   svg.setAttribute('height', H);
   svg.innerHTML='';
   const cx = W/2, cy = H/2;
-  state.hiddenEdges.filter(e=>e.discovered).forEach(e=>{
+
+  function drawArc(e, lineClass, tickClass){
     const sqA = getSquare(e.i), sqB = getSquare(e.j);
     const visA = visualDirFromHome(sqA, e.dirA);
     const visB = visualDirFromHome(sqB, e.dirB);
@@ -1249,14 +1263,27 @@ function drawConnections(){
     const ctrlX = mx + nx*bulge, ctrlY = my + ny*bulge;
     const path = document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('d', 'M '+pA.x+' '+pA.y+' Q '+ctrlX+' '+ctrlY+' '+pB.x+' '+pB.y);
-    path.setAttribute('class','conn-line');
+    path.setAttribute('class', lineClass);
     svg.appendChild(path);
     [pA,pB].forEach(p=>{
       const tick = document.createElementNS('http://www.w3.org/2000/svg','circle');
       tick.setAttribute('cx',p.x); tick.setAttribute('cy',p.y); tick.setAttribute('r',4.5);
-      tick.setAttribute('class','conn-tick');
+      tick.setAttribute('class', tickClass);
       svg.appendChild(tick);
     });
+  }
+
+  /* Given pairs (already joined by the net, not part of the puzzle) always get
+     a blue connecting line — just like a discovered edge — even after a
+     student slides one of the squares away from its partner, so the "already
+     joined" relationship stays visible everywhere on the board. */
+  state.edgesAll.forEach(e=>{
+    if(!isGivenPair(e.i,e.j)) return;
+    drawArc(e, 'conn-line-given', 'conn-tick-given');
+  });
+
+  state.hiddenEdges.filter(e=>e.discovered).forEach(e=>{
+    drawArc(e, 'conn-line', 'conn-tick');
   });
 }
 
