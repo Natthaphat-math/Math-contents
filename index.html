@@ -119,8 +119,8 @@
   /* ---------- MAIN ---------- */
   main{ padding:56px 0 40px; }
   .section-head{
-    display:flex; align-items:baseline; justify-content:space-between;
-    gap:16px; flex-wrap:wrap;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px 24px; flex-wrap:wrap;
     margin-bottom:28px;
     padding-bottom:14px;
     border-bottom:2px solid var(--card-border);
@@ -132,6 +132,38 @@
     font-family:var(--font-mono);
     font-size:13px;
     color:var(--ink-blue-soft);
+    white-space:nowrap;
+  }
+  .controls{
+    display:flex; align-items:center; gap:16px;
+    flex-wrap:wrap;
+  }
+  .filter-group{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .filter-label{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:.06em;
+    color:#9a9488;
+    margin-right:2px;
+  }
+  .filter-btn{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    padding:6px 14px;
+    border-radius:100px;
+    border:1px solid var(--card-border);
+    background:#fff;
+    color:var(--ink-blue-soft);
+    cursor:pointer;
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .filter-btn:hover{ border-color:var(--ink-blue); color:var(--ink-blue); }
+  .filter-btn.active{
+    background:var(--ink-blue);
+    border-color:var(--ink-blue);
+    color:#fff;
   }
 
   .grid{
@@ -257,7 +289,7 @@
         <path d="M3 9C40 2 80 12 110 6C140 0 180 11 217 5" stroke="#F0C33B" stroke-width="3" stroke-linecap="round"/>
       </svg>
       <p>รวมสื่อการเรียนการสอนคณิตศาสตร์แบบอินเทอร์แอกทีฟ โดยครูเอฟ สำหรับใช้ประกอบการเรียนในห้องเรียน หรือฝึกฝนด้วยตนเอง เปิดใช้งานได้ทันทีผ่านเบราว์เซอร์</p>
-      <span class="stat-chip"><b>02</b> สื่อการสอนพร้อมใช้งาน</span>
+      <span class="stat-chip"><b id="hero-count">06</b> สื่อคณิตศาสตร์พร้อมใช้งาน</span>
     </div>
 
     <div class="doodle" aria-hidden="true">
@@ -288,22 +320,29 @@
   <section class="resources">
     <div class="section-head">
       <h2>สื่อการเรียนรู้ทั้งหมด</h2>
-      <span class="count">02 รายการ</span>
+      <div class="controls">
+        <div class="filter-group" role="group" aria-label="ตัวกรองหมวดหมู่">
+          <span class="filter-label">ตัวกรอง</span>
+          <button type="button" class="filter-btn" data-filter="สื่อการสอน" aria-pressed="false">สื่อการสอน</button>
+          <button type="button" class="filter-btn" data-filter="เกม" aria-pressed="false">เกม</button>
+        </div>
+        <span class="count" id="resource-count">06 รายการ</span>
+      </div>
     </div>
 
     <div class="grid">
 
-      <a class="card" href="Math-card-game.html" target="_blank" aria-label="เปิดเกมไพ่คณิตศาสตร์">
+      <a class="card" href="matrix-multiplication-trainer.html" target="_blank" aria-label="เปิดฝึกคูณเมทริกซ์" data-categories="สื่อการสอน">
         <span class="hole"></span>
-        <span class="tag">เกมฝึกทักษะ</span>
-        <h3>เกมไพ่คณิตศาสตร์</h3>
-        <p>ฝึกทักษะการคิดคำนวณผ่านเกมจับคู่และไพ่คณิตศาสตร์ เหมาะสำหรับฝึกความไวในการคำนวณอย่างสนุกสนาน</p>
-        <span class="cta">เปิดเล่น
+        <span class="tag">เมทริกซ์</span>
+        <h3>ฝึกการคูณเมทริกซ์</h3>
+        <p>ฝึกการคูณเมทริกซ์ตามขั้นตอนทีละขั้น</p>
+        <span class="cta">ฝึกฝนกันเลย
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
 
-      <a class="card" href="logic-connectives.html" target="_blank" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์">
+      <a class="card" href="logic-connectives.html" target="_blank" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์" data-categories="สื่อการสอน">
         <span class="hole"></span>
         <span class="tag">ตรรกศาสตร์</span>
         <h3>ตัวเชื่อมประพจน์ตรรกศาสตร์</h3>
@@ -313,7 +352,7 @@
         </span>
       </a>
 
-      <a class="card" href="https://natthaphatmath-expectation-game.netlify.app" target="_blank" aria-label="เปิดเกมค่าคาดหมาย">
+      <a class="card" href="https://natthaphatmath-expectation-game.netlify.app" target="_blank" aria-label="เปิดเกมค่าคาดหมาย" data-categories="เกม">
         <span class="hole"></span>
         <span class="tag">ค่าคาดหมาย</span>
         <h3>เกมค่าคาดหมาย และตัวแปรสุ่ม</h3>
@@ -323,7 +362,7 @@
         </span>
       </a>
 
-      <a class="card" href="Cube-folding.html" target="_blank" aria-label="เปิดโจทย์พับกล่อง">
+      <a class="card" href="Cube-folding.html" target="_blank" aria-label="เปิดโจทย์พับกล่อง" data-categories="สื่อการสอน เกม">
         <span class="hole"></span>
         <span class="tag">TGAT2</span>
         <h3>โจทย์พับกล่อง</h3>
@@ -333,7 +372,7 @@
         </span>
       </a>
       
-      <a class="card" href="pizza-trig.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ">
+      <a class="card" href="pizza-trig.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม">
         <span class="hole"></span>
         <span class="tag">ฟังก์ชันตรีโกณมิติ</span>
         <h3>พิซซ่าตรีโกณมิติ</h3>
@@ -342,13 +381,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-
-      <a class="card" href="matrix-multiplication-trainer.html" target="_blank" aria-label="เปิดฝึกคูณเมทริกซ์">
+      
+      <a class="card" href="Math-card-game.html" target="_blank" aria-label="เปิดเกมไพ่คณิตศาสตร์" data-categories="เกม">
         <span class="hole"></span>
-        <span class="tag">เมทริกซ์</span>
-        <h3>ฝึกการคูณเมทริกซ์</h3>
-        <p>ฝึกการคูณเมทริกซ์ตามขั้นตอนทีละขั้น</p>
-        <span class="cta">ฝึกฝนกันเลย
+        <span class="tag">เกมฝึกทักษะ</span>
+        <h3>เกมไพ่คณิตศาสตร์</h3>
+        <p>ฝึกทักษะการคิดคํานวณผ่านเกมจับคู่และไพ่คณิตศาสตร์ เหมาะสําหรับฝึกความไวในการคํานวณอย่างสนุกสนาน</p>
+        <span class="cta">เปิดเล่น
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
@@ -371,7 +410,47 @@
 </footer>
 
 <script>
-  const cards = document.querySelectorAll('.card:not(.placeholder)');
+  const cards = Array.from(document.querySelectorAll('.card:not(.placeholder)'));
+  const heroCountEl = document.getElementById('hero-count');
+  const resourceCountEl = document.getElementById('resource-count');
+  const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  const activeFilters = new Set();
+
+  function pad(n){ return String(n).padStart(2, '0'); }
+
+  // hero badge always reflects the full library size
+  if (heroCountEl) heroCountEl.textContent = pad(cards.length);
+
+  function applyFilters(forceReveal){
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const categories = (card.dataset.categories || '').split(' ').filter(Boolean);
+      const matches = activeFilters.size === 0 || categories.some(c => activeFilters.has(c));
+      card.style.display = matches ? '' : 'none';
+      if (matches) {
+        visibleCount++;
+        // once the user starts filtering, skip the scroll fade-in so a card
+        // brought back by a filter never gets stuck invisible
+        if (forceReveal) card.classList.add('in-view');
+      }
+    });
+    if (resourceCountEl) resourceCountEl.textContent = pad(visibleCount) + ' รายการ';
+  }
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.filter;
+      const nowActive = !btn.classList.contains('active');
+      btn.classList.toggle('active', nowActive);
+      btn.setAttribute('aria-pressed', String(nowActive));
+      if (nowActive) activeFilters.add(value); else activeFilters.delete(value);
+      applyFilters(true);
+    });
+  });
+
+  applyFilters(false); // initial count only — let the scroll-reveal below handle visibility
+
+  // scroll-reveal entrance for cards
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduceMotion || !('IntersectionObserver' in window)) {
     cards.forEach(c => c.classList.add('in-view'));
