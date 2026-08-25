@@ -113,24 +113,40 @@
     background:linear-gradient(180deg,var(--crust) 0%,#2c1613 100%);
     border-bottom:4px solid var(--crust-deep);
   }
-  #hud-store,#hud-carry{display:flex;align-items:center;gap:7px;}
+  #hud-carry{display:flex;align-items:center;gap:7px;}
   .hud-label{font-family:'Kanit';font-weight:600;font-size:12.5px;color:#e8d3b8;white-space:nowrap;}
-  .store-chip,.carry-chip{
+  .carry-chip{
     min-width:88px;height:38px;padding:0 10px;border-radius:10px;
     font-family:'Kanit';font-weight:600;font-size:13px;white-space:nowrap;
     display:flex;align-items:center;justify-content:center;text-align:center;
     border:2px solid rgba(255,246,230,.25);background:rgba(255,246,230,.08);color:#e8d3b8;
   }
-  .store-chip.cooking{opacity:.5;font-size:11.5px;}
-  .store-chip.ready{
-    background:linear-gradient(180deg,var(--cheese),var(--cheese-deep));color:var(--ink);
-    border-color:var(--dough);cursor:pointer;box-shadow:0 3px 0 #b97e12;
-    animation:chipReady .9s ease infinite;
-  }
-  .store-chip.ready:active{transform:translateY(2px);box-shadow:0 1px 0 #b97e12;}
-  @keyframes chipReady{0%,100%{box-shadow:0 3px 0 #b97e12;}50%{box-shadow:0 3px 0 #b97e12,0 0 0 6px rgba(255,201,60,.35);}}
   .carry-chip.filled{background:rgba(255,201,60,.18);border-color:var(--cheese);color:var(--dough);}
   .carry-chip.empty{border-style:dashed;font-size:12px;opacity:.6;}
+
+  /* ---------- big store pickup buttons, overlapping the store on the map ---------- */
+  .store-btn{
+    position:absolute;border-radius:16px;
+    font-family:'Kanit';font-weight:700;white-space:normal;line-height:1.15;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    padding:4px 12px;z-index:15;
+    border:3px solid rgba(255,246,230,.35);
+    background:rgba(58,31,26,.6);color:#e8d3b8;
+    box-shadow:0 4px 10px rgba(0,0,0,.35);
+  }
+  .store-btn.cooking{font-size:16px;opacity:.75;cursor:default;}
+  .store-btn.ready{
+    font-size:26px;cursor:pointer;
+    background:linear-gradient(180deg,var(--cheese),var(--cheese-deep));color:var(--ink);
+    border-color:var(--dough);
+    box-shadow:0 5px 0 #b97e12, 0 8px 16px rgba(0,0,0,.4);
+    animation:storeBtnReady 1s ease infinite;
+  }
+  .store-btn.ready:active{transform:translateY(3px);box-shadow:0 2px 0 #b97e12;}
+  @keyframes storeBtnReady{
+    0%,100%{box-shadow:0 5px 0 #b97e12,0 8px 16px rgba(0,0,0,.4),0 0 0 0 rgba(255,201,60,.5);}
+    50%{box-shadow:0 5px 0 #b97e12,0 8px 16px rgba(0,0,0,.4),0 0 0 10px rgba(255,201,60,0);}
+  }
   #hud-right{display:flex;align-items:center;gap:14px;color:var(--dough);}
   .stat{text-align:right;}
   .stat .num{font-family:'Kanit';font-weight:800;font-size:23px;color:var(--cheese);line-height:1;}
@@ -250,12 +266,6 @@
     <!-- ===================== GAME SCREEN ===================== -->
     <section id="screen-game" class="screen">
       <div id="hud">
-        <div id="hud-store">
-          <span class="hud-label kanit">🍕 ร้าน</span>
-          <button class="store-chip kanit" id="store-chip-0"></button>
-          <button class="store-chip kanit" id="store-chip-1"></button>
-          <button class="store-chip kanit" id="store-chip-2"></button>
-        </div>
         <div id="hud-carry">
           <span class="hud-label kanit">🛵 ถือ</span>
           <div class="carry-chip kanit" id="carry-chip-0"></div>
@@ -273,6 +283,9 @@
 
       <div id="map-outer">
         <svg id="mapsvg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg>
+        <button class="store-btn kanit" id="store-btn-0"></button>
+        <button class="store-btn kanit" id="store-btn-1"></button>
+        <button class="store-btn kanit" id="store-btn-2"></button>
         <div id="toast"></div>
       </div>
       <div id="delivery-popup">
@@ -356,6 +369,7 @@ TARGETS.forEach(t=>{
   t.doorX=t.cx;
   t.doorY = t.bottom===260 ? 295 : 595;
   t.topY = t.bottom - HEIGHTS[t.type] - ROOF_EXTRA[t.type];
+  t.badgeCY = t.bottom - HEIGHTS[t.type]*0.5; // center the big answer badge over the building body
 });
 const STORE={cx:155,bottom:260,w:290,wallH:150,doorX:155,doorY:295};
 
@@ -619,13 +633,13 @@ function drawStore(){
   layerStore.appendChild(g);
 }
 function placeBadge(t){
-  const anchorY=t.topY-8;
-  const g=make('g',{class:'badge-pill',transform:'translate('+t.cx+','+anchorY+')'});
+  const g=make('g',{class:'badge-pill',transform:'translate('+t.cx+','+t.badgeCY+')'});
   g.style.display='none';
-  g.appendChild(make('polygon',{points:'-8,0 8,0 0,10',fill:'#fff6e6',stroke:'#2a1512','stroke-width':3}));
-  const pill=make('rect',{x:-48,y:-38,width:96,height:36,rx:18,fill:'#fff6e6',stroke:'#2a1512','stroke-width':3.5});
+  const shadow=make('rect',{x:-71,y:-26,width:150,height:60,rx:24,fill:'#000',opacity:'0.3'});
+  g.appendChild(shadow);
+  const pill=make('rect',{x:-75,y:-30,width:150,height:60,rx:24,fill:'#fff6e6',stroke:'#2a1512','stroke-width':5.5});
   g.appendChild(pill);
-  const txt=make('text',{x:0,y:-14,'font-family':'Kanit','font-size':'20','font-weight':'700','text-anchor':'middle',fill:'#2a1512'});
+  const txt=make('text',{x:0,y:11,'font-family':'Kanit','font-size':'34','font-weight':'800','text-anchor':'middle',fill:'#2a1512'});
   g.appendChild(txt);
   layerBadges.appendChild(g);
   badgeGroupEls[t.id]=g; badgeTextEls[t.id]=txt; badgePillEls[t.id]=pill;
@@ -709,16 +723,36 @@ function syncBadges(){
   });
 }
 
-/* ===================== HUD sync ===================== */
-function syncHUD(){
+/* ===================== store buttons (big, overlapping the store sprite) ===================== */
+const STORE_BTN_LAYOUT=[
+  {left:30, top:55,  width:250, height:58},
+  {left:30, top:123, width:250, height:58},
+  {left:30, top:191, width:250, height:58},
+];
+function initStoreButtons(){
+  for(let i=0;i<3;i++){
+    const btn=document.getElementById('store-btn-'+i);
+    const L=STORE_BTN_LAYOUT[i];
+    btn.style.left=(L.left/1280*100)+'%';
+    btn.style.top=(L.top/720*100)+'%';
+    btn.style.width=(L.width/1280*100)+'%';
+    btn.style.height=(L.height/720*100)+'%';
+  }
+}
+initStoreButtons();
+function syncStoreButtons(){
   for(let i=0;i<3;i++){
     const s=ORDER_SLOTS[i];
-    const chip=document.getElementById('store-chip-'+i);
-    chip.classList.remove('cooking','ready');
-    if(!s.active){ chip.textContent='—'; chip.classList.add('cooking'); continue; }
-    if(s.phase==='ready'){ chip.textContent=s.pizza.label; chip.classList.add('ready'); }
-    else { chip.textContent='🍳 กำลังทำ'; chip.classList.add('cooking'); }
+    const btn=document.getElementById('store-btn-'+i);
+    btn.classList.remove('cooking','ready');
+    if(!s.active){ btn.textContent='—'; btn.classList.add('cooking'); continue; }
+    if(s.phase==='ready'){ btn.textContent=s.pizza.label; btn.classList.add('ready'); }
+    else { btn.textContent='🍳 กำลังทำ...'; btn.classList.add('cooking'); }
   }
+}
+
+/* ===================== HUD sync ===================== */
+function syncHUD(){
   for(let i=0;i<3;i++){
     const chip=document.getElementById('carry-chip-'+i);
     const item=player.inventory[i];
@@ -845,7 +879,7 @@ svg.addEventListener('pointerdown', e=>{
   setPlayerTarget(target.x,target.y);
 });
 for(let i=0;i<3;i++){
-  document.getElementById('store-chip-'+i).addEventListener('pointerdown', e=>{
+  document.getElementById('store-btn-'+i).addEventListener('pointerdown', e=>{
     e.stopPropagation();
     if(!state.running||state.paused) return;
     const s=ORDER_SLOTS[i];
@@ -934,6 +968,7 @@ function loop(ts){
     updateMovement(dt);
     tickOrders(dt);
     syncBadges();
+    syncStoreButtons();
     updateProximity();
     syncDeliveryPopup();
     syncHUD();
@@ -963,7 +998,7 @@ function initSession(){
   player.inventory=[]; player.pendingPickup=null; player.atBuildingId=null;
   ORDER_SLOTS.forEach(s=>{ s.active=false; });
   for(let i=0;i<3;i++) pickNewOrder(i);
-  syncBadges(); syncHUD();
+  syncBadges(); syncStoreButtons(); syncHUD();
   document.getElementById('delivery-popup').style.display='none';
 }
 document.getElementById('btn-start').addEventListener('click',()=>{
