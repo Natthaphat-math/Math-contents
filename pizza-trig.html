@@ -6,7 +6,7 @@
 <title>พิซซ่าตรีโกณ — เกมส่งพิซซ่าฝึกค่าตรีโกณมิติ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&family=Mitr:wght@300;400;500;600&display=optional" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --crust:#3a1f1a;
@@ -37,10 +37,14 @@
   .kanit{font-family:'Kanit',system-ui,sans-serif;}
 
   #viewport-wrap{
-    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
     background:radial-gradient(ellipse at 50% 30%, #4a2419 0%, #2a1310 62%, #150b09 100%);
     overflow:hidden;
   }
+  /* content is kept out of the render tree entirely (not just visually hidden) until
+     webfonts are confirmed loaded, so no browser ever makes an early font-display
+     decision on it that could later "wake up" and reflow the page */
+  body.app-ready #viewport-wrap{display:flex;}
   #stage{
     width:1280px;height:800px;position:relative;flex:none;
     transform-origin:center center;
@@ -250,6 +254,7 @@
 <script>
 (function(){
   function reveal(){
+    document.body.classList.add('app-ready');
     var veil=document.getElementById('preload-veil');
     if(!veil) return;
     veil.classList.add('hide');
