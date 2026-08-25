@@ -323,6 +323,7 @@
       <div class="controls">
         <div class="filter-group" role="group" aria-label="ตัวกรองหมวดหมู่">
           <span class="filter-label">ตัวกรอง</span>
+          <button type="button" class="filter-btn active" data-filter="" aria-pressed="true">ทั้งหมด</button>
           <button type="button" class="filter-btn" data-filter="สื่อการสอน" aria-pressed="false">สื่อการสอน</button>
           <button type="button" class="filter-btn" data-filter="เกม" aria-pressed="false">เกม</button>
         </div>
@@ -414,7 +415,7 @@
   const heroCountEl = document.getElementById('hero-count');
   const resourceCountEl = document.getElementById('resource-count');
   const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
-  const activeFilters = new Set();
+  let activeFilter = ''; // '' = ทั้งหมด (show all)
 
   function pad(n){ return String(n).padStart(2, '0'); }
 
@@ -425,7 +426,7 @@
     let visibleCount = 0;
     cards.forEach(card => {
       const categories = (card.dataset.categories || '').split(' ').filter(Boolean);
-      const matches = activeFilters.size === 0 || categories.some(c => activeFilters.has(c));
+      const matches = activeFilter === '' || categories.includes(activeFilter);
       card.style.display = matches ? '' : 'none';
       if (matches) {
         visibleCount++;
@@ -439,11 +440,12 @@
 
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      const value = btn.dataset.filter;
-      const nowActive = !btn.classList.contains('active');
-      btn.classList.toggle('active', nowActive);
-      btn.setAttribute('aria-pressed', String(nowActive));
-      if (nowActive) activeFilters.add(value); else activeFilters.delete(value);
+      activeFilter = btn.dataset.filter;
+      filterButtons.forEach(b => {
+        const isActive = b === btn;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', String(isActive));
+      });
       applyFilters(true);
     });
   });
