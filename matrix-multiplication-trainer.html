@@ -247,6 +247,9 @@
     border:2px dashed var(--accent);
     animation:pulseRing 1.4s ease-in-out infinite;
   }
+  .result-cell.solved.target-cell{
+    animation:pop .4s ease, pulseRing 1.4s ease-in-out infinite;
+  }
   .result-cell .cell-value.small{ font-size:.78em; }
 
   .highlight-band{
@@ -517,10 +520,10 @@
   <header class="hero">
     <span class="eyebrow">คณิตศาสตร์ · พีชคณิตเชิงเส้น</span>
     <h1>ฝึกคูณเมทริกซ์ทีละขั้น</h1>
-    <p class="subtitle">ไฮไลต์แถวจาก A และคอลัมน์จาก B แล้วคำนวณผลคูณกับผลรวมด้วยตัวเอง ทีละช่อง</p>
+    <p class="subtitle">ไฮไลต์แถวจาก A และหลักจาก B แล้วคำนวณผลคูณกับผลรวมด้วยตัวเอง ทีละช่อง</p>
     <div class="meta-row">
       <span class="size-badge" id="sizeBadge">โจทย์ขนาด …</span>
-      <span class="rule-note">คอลัมน์ของ A ต้องเท่ากับแถวของ B เสมอ</span>
+      <span class="rule-note">หลักของ A ต้องเท่ากับแถวของ B เสมอ</span>
     </div>
   </header>
 
@@ -528,7 +531,7 @@
     <section class="workspace-card">
       <div class="sticky-note">
         <span class="swatch swatch-row"></span> แถวจาก A
-        <span class="swatch swatch-col"></span> คอลัมน์จาก B
+        <span class="swatch swatch-col"></span> หลักจาก B
       </div>
 
       <div class="workspace-row">
@@ -559,7 +562,7 @@
 
     <section class="calc-card" id="calcCard">
       <span class="calc-progress" id="calcProgress">ช่องที่ 1 จาก 1</span>
-      <h2 class="calc-title" id="calcTitle">แถวที่ 1 ของ A × คอลัมน์ที่ 1 ของ B</h2>
+      <h2 class="calc-title" id="calcTitle">แถวที่ 1 ของ A × หลักที่ 1 ของ B</h2>
       <p class="calc-hint" id="calcHint">คูณตัวเลขที่จับคู่กันทีละคู่</p>
 
       <div class="term-list" id="termList"></div>
@@ -642,7 +645,11 @@
       else if(!nextBtn.hidden){ nextBtn.click(); }
     });
 
+    let lastWidth = window.innerWidth;
     window.addEventListener('resize', function(){
+      const w = window.innerWidth;
+      if(w === lastWidth) return; // ignore height-only changes (e.g. on-screen keyboard toggling)
+      lastWidth = w;
       fitWorkspace();
       if(!calcCard.hidden && stage){ highlightRowCol(currentI, currentJ); }
       alignOperators();
@@ -655,7 +662,7 @@
   function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
   function buildMatrix(rows,cols){
     return Array.from({length:rows}, function(){
-      return Array.from({length:cols}, function(){ return randInt(1,9); });
+      return Array.from({length:cols}, function(){ return randInt(0,5); });
     });
   }
 
@@ -773,7 +780,7 @@
     correctSum = correctProducts.reduce(function(a,b){ return a+b; }, 0);
 
     calcProgress.textContent = 'ช่องที่ ' + (solvedCount+1) + ' จาก ' + totalCells;
-    calcTitle.textContent = 'แถวที่ ' + (i+1) + ' ของ A × คอลัมน์ที่ ' + (j+1) + ' ของ B';
+    calcTitle.textContent = 'แถวที่ ' + (i+1) + ' ของ A × หลักที่ ' + (j+1) + ' ของ B';
     calcHint.textContent = 'คูณตัวเลขที่จับคู่กันทีละคู่';
 
     termList.innerHTML='';
@@ -821,9 +828,16 @@
 
     curABadgeCells=cellsA; curBBadgeCells=cellsB;
 
-    if(prevTargetCell) prevTargetCell.classList.remove('target-cell');
     const targetCell = gridC.querySelector('.cell[data-row="'+i+'"][data-col="'+j+'"]');
-    if(targetCell){ targetCell.classList.add('target-cell'); prevTargetCell=targetCell; }
+    if(prevTargetCell && prevTargetCell !== targetCell){
+      prevTargetCell.classList.remove('target-cell');
+    }
+    if(targetCell){
+      targetCell.classList.remove('target-cell');
+      void targetCell.offsetWidth; // force a reflow so the border/animation reliably repaints
+      targetCell.classList.add('target-cell');
+      prevTargetCell = targetCell;
+    }
   }
 
   function positionBand(bandEl, cells){
@@ -944,7 +958,7 @@
       valueEl.textContent=correctSum;
       valueEl.classList.remove('placeholder');
       if(String(correctSum).length>=3) valueEl.classList.add('small');
-      cell.classList.remove('unsolved','target-cell');
+      cell.classList.remove('unsolved');
       cell.classList.add('solved');
     }
 
@@ -962,6 +976,7 @@
   }
 
   function showFinish(){
+    if(prevTargetCell){ prevTargetCell.classList.remove('target-cell'); prevTargetCell=null; }
     calcCard.hidden=true;
     finishCard.hidden=false;
     launchConfetti();
