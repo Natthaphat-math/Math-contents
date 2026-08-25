@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MATRIX MERGE — เกมฝึกคูณเมทริกซ์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101B29;
+    --panel:#16263A;
+    --panel-alt:#1E3450;
+    --ink:#EAF2FA;
+    --ink-dim:#7E97B0;
+    --accent:#FFC857;
+    --accent-2:#5FD4D0;
+    --danger:#FF5D5D;
+    --success:#6BCB77;
+    --font-display:'Chakra Petch', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%; background:#0A121C;}
+  body{display:flex; justify-content:center; font-family:var(--font-display);}
+
+  #app{
+    position:relative;
+    width:100%; max-width:460px;
+    min-height:100vh; min-height:100dvh;
+    background:var(--bg);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 0 40px rgba(0,0,0,.5);
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px;
+    background:var(--panel);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    flex-shrink:0;
+  }
+  .brand{display:flex; flex-direction:column; line-height:1.1;}
+  .brand .title{font-weight:700; font-size:19px; letter-spacing:.04em; color:var(--ink); font-style:italic;}
+  .brand .subtitle{font-size:10px; color:var(--ink-dim); letter-spacing:.03em; margin-top:2px;}
+  .scores{display:flex; gap:14px;}
+  .score-box{text-align:right;}
+  .score-box .label{font-size:9px; color:var(--ink-dim); letter-spacing:.08em;}
+  .score-box .value{font-family:var(--font-mono); font-weight:700; font-size:17px; color:var(--accent);}
+  .score-box.best .value{color:var(--accent-2);}
+
+  /* ---------- Top area (problem zone) ---------- */
+  #topArea{
+    position:relative;
+    height:264px;
+    flex-shrink:0;
+    overflow:hidden;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:20px 20px;
+  }
+  .lane{
+    height:88px; width:100%;
+    display:flex; align-items:center; gap:10px;
+    padding:0 12px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    cursor:pointer;
+    position:relative;
+  }
+  .lane:last-child{border-bottom:none;}
+  .lane.targeted{background:rgba(255,200,87,.07); box-shadow:inset 3px 0 0 var(--accent);}
+  .lane.flash-correct{animation:flashCorrect .5s ease;}
+  .lane.flash-wrong{animation:flashWrong .4s ease;}
+  .lane.flash-collide{animation:flashCollide .4s ease;}
+  @keyframes flashCorrect{0%{background:rgba(107,203,119,.4);}100%{background:transparent;}}
+  @keyframes flashWrong{0%{background:rgba(255,93,93,.35);}100%{background:transparent;}}
+  @keyframes flashCollide{0%{background:rgba(255,93,93,.55);}100%{background:transparent;}}
+
+  .bracket-box{position:relative; display:inline-flex; align-items:center; padding:0 11px; flex-shrink:0;}
+  .bracket-left,.bracket-right{position:absolute; top:1px; bottom:1px; width:6px;}
+  .bracket-left{left:0; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); border-left:2px solid var(--ink);}
+  .bracket-right{right:0; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); border-right:2px solid var(--ink);}
+  .grid2{display:grid; grid-template-columns:repeat(2,1fr); gap:3px 12px; font-family:var(--font-mono); font-weight:700; font-size:15px; color:var(--ink); padding:6px 4px;}
+  .grid2 .cell{min-width:22px; text-align:center;}
+
+  .stuck-wrap{display:flex; gap:4px; flex-shrink:0;}
+  .stuck-block{
+    width:32px; height:46px;
+    border:2px dashed var(--danger); border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--danger); font-family:var(--font-mono); font-weight:700; font-size:16px;
+    opacity:.85; flex-shrink:0;
+  }
+
+  /* incoming piece */
+  .incoming{
+    position:absolute; left:0; top:0;
+    display:flex; align-items:center; gap:6px;
+    z-index:5;
+    transition:top .25s ease;
+    filter:drop-shadow(0 0 7px rgba(255,200,87,.55));
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .incoming .op{font-family:var(--font-display); font-weight:700; color:var(--accent); font-size:20px;}
+  .incoming .bracket-box{padding:0 8px;}
+  .incoming .grid2{font-size:14px; padding:5px 4px;}
+
+  /* ---------- Bottom area (answer zone) ---------- */
+  #bottomArea{
+    display:flex; align-items:flex-start; gap:20px;
+    padding:18px 16px 8px;
+    background:var(--panel);
+    flex:1;
+  }
+  #answerBox{flex-shrink:0;}
+  .slot{
+    width:36px; height:32px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-weight:700; font-size:15px; color:var(--ink);
+    border:1.5px dashed rgba(255,255,255,.3); border-radius:4px;
+    cursor:pointer;
+  }
+  .slot.selected{border-color:var(--accent); border-style:solid; box-shadow:0 0 0 3px rgba(255,200,87,.25);}
+  .slot.filled{border-style:solid; border-color:var(--accent-2); background:rgba(95,212,208,.09);}
+
+  #tilesWrap{display:flex; flex-direction:column; gap:9px; flex:1; max-width:200px;}
+  .tile{
+    width:100%; height:44px; border-radius:22px;
+    border:2px solid var(--accent); background:var(--panel-alt); color:var(--ink);
+    font-family:var(--font-mono); font-weight:700; font-size:16px;
+    cursor:pointer;
+  }
+  .tile:active{transform:scale(.95);}
+  .tile.used, .tile:disabled{opacity:.2; pointer-events:none;}
+
+  #hintText{
+    text-align:center; font-size:12px; color:var(--ink-dim);
+    padding:6px 16px 16px; letter-spacing:.02em; flex-shrink:0;
+    background:var(--panel);
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:absolute; inset:0;
+    background:rgba(8,13,20,.94);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; padding:32px; z-index:30;
+  }
+  .overlay.show{display:flex;}
+  .overlay h1{font-size:26px; color:var(--ink); margin:0; font-style:italic; letter-spacing:.03em;}
+  .overlay p.lead{color:var(--ink-dim); font-size:13px; margin:-6px 0 6px;}
+  .rules{list-style:none; padding:0; margin:0; text-align:left; max-width:300px;}
+  .rules li{font-size:13px; color:var(--ink); margin-bottom:9px; padding-left:18px; position:relative; line-height:1.4;}
+  .rules li::before{content:'▸'; position:absolute; left:0; color:var(--accent);}
+  .btn{
+    font-family:var(--font-display); font-weight:700; letter-spacing:.04em;
+    background:var(--accent); color:#17232F; border:none;
+    padding:13px 32px; border-radius:6px; font-size:15px; cursor:pointer; margin-top:6px;
+  }
+  .btn:active{transform:scale(.96);}
+  .final-scores{display:flex; gap:26px; margin:4px 0 4px;}
+  .final-scores .score-box .value{font-size:24px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <span class="title">MATRIX MERGE</span>
+      <span class="subtitle">ฝึกคูณเมทริกซ์ 2×2</span>
+    </div>
+    <div class="scores">
+      <div class="score-box">
+        <div class="label">คะแนน</div>
+        <div class="value" id="scoreVal">0</div>
+      </div>
+      <div class="score-box best">
+        <div class="label">สถิติ</div>
+        <div class="value" id="bestVal">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="topArea">
+    <div class="lane" data-lane="0">
+      <div class="anchor bracket-box">
+        <span class="bracket-left"></span>
+        <div class="grid2">
+          <div class="cell">0</div><div class="cell">0</div>
+          <div class="cell">0</div><div class="cell">0</div>
+        </div>
+        <span class="bracket-right"></span>
+      </div>
+      <div class="stuck-wrap"></div>
+    </div>
+    <div class="lane" data-lane="1">
+      <div class="anchor bracket-box">
+        <span class="bracket-left"></span>
+        <div class="grid2">
+          <div class="cell">0</div><div class="cell">0</div>
+          <div class="cell">0</div><div class="cell">0</div>
+        </div>
+        <span class="bracket-right"></span>
+      </div>
+      <div class="stuck-wrap"></div>
+    </div>
+    <div class="lane" data-lane="2">
+      <div class="anchor bracket-box">
+        <span class="bracket-left"></span>
+        <div class="grid2">
+          <div class="cell">0</div><div class="cell">0</div>
+          <div class="cell">0</div><div class="cell">0</div>
+        </div>
+        <span class="bracket-right"></span>
+      </div>
+      <div class="stuck-wrap"></div>
+    </div>
+  </div>
+
+  <div id="bottomArea">
+    <div id="answerBox" class="bracket-box">
+      <span class="bracket-left"></span>
+      <div class="grid2">
+        <div class="slot" data-slot="0"></div><div class="slot" data-slot="1"></div>
+        <div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div>
+      </div>
+      <span class="bracket-right"></span>
+    </div>
+    <div id="tilesWrap"></div>
+  </div>
+
+  <div id="hintText">แตะ "เริ่มเล่น" เพื่อเริ่มเกม</div>
+
+  <div class="overlay show" id="startOverlay">
+    <h1>MATRIX MERGE</h1>
+    <p class="lead">เกมฝึกคูณเมทริกซ์ 2×2 แนว Tetris แนวนอน</p>
+    <ul class="rules">
+      <li>เมทริกซ์ใหม่จะเลื่อนเข้ามาจากขวา แตะแถวซ้ายที่ต้องการคูณด้วย</li>
+      <li>แตะช่องคำตอบด้านล่างซ้าย แล้วแตะตัวเลขที่คิดว่าอยู่ตำแหน่งนั้น</li>
+      <li>ตอบให้ถูกและทันเวลา ก่อนเมทริกซ์จะชนแถว</li>
+      <li>ตอบผิดจะรีเซ็ตคำตอบและดันเมทริกซ์เข้าใกล้ขึ้น ถ้าชนแถวจะยาวขึ้น เกมจบเมื่อแถวล้นขอบ</li>
+    </ul>
+    <button class="btn" id="startBtn">เริ่มเล่น</button>
+  </div>
+
+  <div class="overlay" id="gameOverOverlay">
+    <h1>จบเกม</h1>
+    <div class="final-scores">
+      <div class="score-box">
+        <div class="label">คะแนน</div>
+        <div class="value" id="finalScoreVal">0</div>
+      </div>
+      <div class="score-box best">
+        <div class="label">สถิติ</div>
+        <div class="value" id="finalBestVal">0</div>
+      </div>
+    </div>
+    <button class="btn" id="retryBtn">เล่นใหม่</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var LANE_COUNT = 3;
+  var BASE_SPEED = 46;
+  var MAX_SPEED = 120;
+  var SPAWN_DELAY = 650;
+  var WRONG_PENALTY_PX = 70;
+  var OVERFLOW_MARGIN = 30;
+  var STORAGE_KEY = 'matrix-merge-best';
+
+  var lanes = [];
+  var incoming = null;
+  var answer = null;
+  var score = 0;
+  var best = 0;
+  var speed = BASE_SPEED;
+  var running = false;
+  var lastTs = null;
+  var rafId = null;
+  var spawnTimeout = null;
+
+  var topArea = document.getElementById('topArea');
+  var laneRows = Array.prototype.slice.call(document.querySelectorAll('.lane'));
+  var scoreEl = document.getElementById('scoreVal');
+  var bestEl = document.getElementById('bestVal');
+  var hintEl = document.getElementById('hintText');
+  var slotsEl = Array.prototype.slice.call(document.querySelectorAll('.slot'));
+  var tilesWrapEl = document.getElementById('tilesWrap');
+  var startOverlay = document.getElementById('startOverlay');
+  var startBtn = document.getElementById('startBtn');
+  var gameOverOverlay = document.getElementById('gameOverOverlay');
+  var finalScoreEl = document.getElementById('finalScoreVal');
+  var finalBestEl = document.getElementById('finalBestVal');
+  var retryBtn = document.getElementById('retryBtn');
+
+  function rand9(){ return Math.floor(Math.random()*9)+1; }
+  function randMatrix(){ return [rand9(),rand9(),rand9(),rand9()]; }
+  function matMul(A,B){
+    return [
+      A[0]*B[0]+A[1]*B[2],
+      A[0]*B[1]+A[1]*B[3],
+      A[2]*B[0]+A[3]*B[2],
+      A[2]*B[1]+A[3]*B[3]
+    ];
+  }
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+
+  async function loadBest(){
+    try{
+      var res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        best = parseInt(res.value,10) || 0;
+        bestEl.textContent = best;
+      }
+    }catch(e){ /* no saved score yet */ }
+  }
+  async function saveBest(){
+    try{ await window.storage.set(STORAGE_KEY, String(best), false); }catch(e){}
+  }
+
+  function setMatrixCells(box, matrix){
+    var cells = box.querySelectorAll('.cell');
+    for(var i=0;i<cells.length;i++){ cells[i].textContent = matrix[i]; }
+  }
+
+  function initLanes(){
+    lanes = laneRows.map(function(rowEl){
+      var anchorEl = rowEl.querySelector('.anchor');
+      var stuckWrapEl = rowEl.querySelector('.stuck-wrap');
+      stuckWrapEl.innerHTML = '';
+      var matrix = randMatrix();
+      setMatrixCells(anchorEl, matrix);
+      return { matrix: matrix, anchorEl: anchorEl, rowEl: rowEl, stuckWrapEl: stuckWrapEl };
+    });
+    laneRows.forEach(function(r){ r.classList.remove('targeted'); });
+  }
+
+  function laneWallX(laneIndex){
+    var lane = lanes[laneIndex];
+    var topRect = topArea.getBoundingClientRect();
+    var refEl = lane.stuckWrapEl.lastElementChild || lane.anchorEl;
+    var r = refEl.getBoundingClientRect();
+    return r.right - topRect.left;
+  }
+
+  function laneCenterY(laneIndex){
+    var topRect = topArea.getBoundingClientRect();
+    var r = lanes[laneIndex].rowEl.getBoundingClientRect();
+    return (r.top - topRect.top) + r.height/2;
+  }
+
+  function highlightLane(idx){
+    laneRows.forEach(function(r,i){ r.classList.toggle('targeted', i===idx); });
+  }
+
+  function flashLane(idx, type){
+    var row = lanes[idx].rowEl;
+    var cls = 'flash-'+type;
+    row.classList.add(cls);
+    setTimeout(function(){ row.classList.remove(cls); }, 500);
+  }
+
+  function spawnIncoming(){
+    if(!running) return;
+    var matrix = randMatrix();
+    var lane = 1;
+    var el = document.createElement('div');
+    el.className = 'incoming';
+    el.innerHTML =
+      '<span class="op">&times;</span>' +
+      '<div class="bracket-box">' +
+        '<span class="bracket-left"></span>' +
+        '<div class="grid2">' +
+          '<div class="cell">'+matrix[0]+'</div><div class="cell">'+matrix[1]+'</div>' +
+          '<div class="cell">'+matrix[2]+'</div><div class="cell">'+matrix[3]+'</div>' +
+        '</div>' +
+        '<span class="bracket-right"></span>' +
+      '</div>';
+    topArea.appendChild(el);
+    var topRect = topArea.getBoundingClientRect();
+    incoming = { matrix: matrix, lane: lane, x: topRect.width, el: el };
+    positionIncoming();
+    highlightLane(lane);
+    buildAnswer(lane);
+    hintEl.textContent = 'แตะแถวที่ต้องการคูณด้วย';
+  }
+
+  function positionIncoming(){
+    if(!incoming) return;
+    incoming.el.style.left = incoming.x + 'px';
+    incoming.el.style.top = (laneCenterY(incoming.lane) - incoming.el.offsetHeight/2) + 'px';
+  }
+
+  function removeIncoming(){
+    if(incoming){ incoming.el.remove(); incoming = null; }
+    laneRows.forEach(function(r){ r.classList.remove('targeted'); });
+  }
+
+  function setLaneTarget(idx){
+    if(!incoming || !running) return;
+    if(incoming.lane === idx) return;
+    incoming.lane = idx;
+    highlightLane(idx);
+    positionIncoming();
+    buildAnswer(idx);
+  }
+
+  function buildAnswer(laneIndex){
+    if(!incoming) return;
+    var anchorMatrix = lanes[laneIndex].matrix;
+    var product = matMul(anchorMatrix, incoming.matrix);
+    var tilesData = product.map(function(val,pos){ return {val:val,pos:pos,used:false}; });
+    answer = { laneIndex: laneIndex, product: product, tiles: shuffle(tilesData), slots:[null,null,null,null], selectedSlot: null };
+    renderAnswer();
+  }
+
+  function resetAnswerUI(){
+    answer = null;
+    slotsEl.forEach(function(s){ s.textContent=''; s.classList.remove('filled','selected'); });
+    tilesWrapEl.innerHTML = '';
+  }
+
+  function renderAnswer(){
+    if(!answer) return;
+    slotsEl.forEach(function(s,i){
+      s.classList.toggle('selected', answer.selectedSlot===i);
+      if(answer.slots[i]!==null){
+        s.textContent = answer.slots[i].val;
+        s.classList.add('filled');
+      } else {
+        s.textContent='';
+        s.classList.remove('filled');
+      }
+    });
+    tilesWrapEl.innerHTML='';
+    answer.tiles.forEach(function(t){
+      var chip = document.createElement('button');
+      chip.type='button';
+      chip.className='tile'+(t.used?' used':'');
+      chip.textContent = t.val;
+      chip.disabled = t.used;
+      chip.addEventListener('click', function(){ onTileTap(t); });
+      tilesWrapEl.appendChild(chip);
+    });
+    hintEl.textContent = 'แตะช่องคำตอบ แล้วแตะตัวเลขที่ตรงตำแหน่ง';
+  }
+
+  function onSlotTap(i){
+    if(!answer) return;
+    if(answer.slots[i]!==null){
+      var placed = answer.tiles.filter(function(t){ return t.used && t.placedIn===i; })[0];
+      if(placed){ placed.used=false; delete placed.placedIn; }
+      answer.slots[i]=null;
+      answer.selectedSlot=i;
+      renderAnswer();
+      return;
+    }
+    answer.selectedSlot = (answer.selectedSlot===i) ? null : i;
+    renderAnswer();
+  }
+
+  function onTileTap(t){
+    if(!answer || t.used) return;
+    var targetSlot = answer.selectedSlot;
+    if(targetSlot===null){
+      targetSlot = answer.slots.indexOf(null);
+      if(targetSlot===-1) return;
+    }
+    if(answer.slots[targetSlot]!==null) return;
+    t.used = true; t.placedIn = targetSlot;
+    answer.slots[targetSlot] = t;
+    answer.selectedSlot = null;
+    renderAnswer();
+    if(answer.slots.every(function(s){ return s!==null; })) checkAnswer();
+  }
+
+  function checkAnswer(){
+    var correct = answer.slots.every(function(t,i){ return t.pos===i; });
+    var laneIndex = answer.laneIndex;
+    if(correct){
+      flashLane(laneIndex,'correct');
+      lanes[laneIndex].matrix = answer.product;
+      setMatrixCells(lanes[laneIndex].anchorEl, answer.product);
+      lanes[laneIndex].stuckWrapEl.innerHTML='';
+      score += 10;
+      scoreEl.textContent = score;
+      if(score>best){ best=score; bestEl.textContent=best; saveBest(); }
+      speed = Math.min(MAX_SPEED, BASE_SPEED + score*0.4);
+      removeIncoming();
+      resetAnswerUI();
+      hintEl.textContent = 'ถูกต้อง! กำลังส่งชุดถัดไป...';
+      spawnTimeout = setTimeout(spawnIncoming, SPAWN_DELAY);
+    } else {
+      flashLane(laneIndex,'wrong');
+      answer.tiles.forEach(function(t){ t.used=false; delete t.placedIn; });
+      answer.tiles = shuffle(answer.tiles);
+      answer.slots=[null,null,null,null];
+      answer.selectedSlot=null;
+      renderAnswer();
+      if(incoming){
+        var wallX = laneWallX(incoming.lane);
+        incoming.x = Math.max(wallX+14, incoming.x-WRONG_PENALTY_PX);
+        positionIncoming();
+      }
+      hintEl.textContent = 'ยังไม่ถูก ลองใหม่! (เมทริกซ์เข้าใกล้ขึ้น)';
+    }
+  }
+
+  function handleCollision(){
+    var laneIndex = incoming.lane;
+    var stuckEl = document.createElement('div');
+    stuckEl.className='stuck-block';
+    stuckEl.innerHTML = '<span>!</span>';
+    lanes[laneIndex].stuckWrapEl.appendChild(stuckEl);
+    flashLane(laneIndex,'collide');
+    removeIncoming();
+    resetAnswerUI();
+    hintEl.textContent = 'ชนแล้ว! แถวยาวขึ้น';
+    var topRect = topArea.getBoundingClientRect();
+    var newWallX = laneWallX(laneIndex);
+    if(newWallX >= topRect.width - OVERFLOW_MARGIN){
+      endGame();
+      return;
+    }
+    spawnTimeout = setTimeout(spawnIncoming, SPAWN_DELAY);
+  }
+
+  function tick(ts){
+    if(!running) return;
+    if(lastTs===null) lastTs=ts;
+    var dt=(ts-lastTs)/1000;
+    lastTs=ts;
+    if(incoming){
+      incoming.x -= speed*dt;
+      var wallX = laneWallX(incoming.lane);
+      if(incoming.x <= wallX){
+        incoming.x = wallX;
+        handleCollision();
+      } else {
+        positionIncoming();
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function endGame(){
+    running=false;
+    if(rafId) cancelAnimationFrame(rafId);
+    if(spawnTimeout) clearTimeout(spawnTimeout);
+    removeIncoming();
+    finalScoreEl.textContent = score;
+    finalBestEl.textContent = best;
+    gameOverOverlay.classList.add('show');
+  }
+
+  function resetGame(){
+    if(rafId) cancelAnimationFrame(rafId);
+    if(spawnTimeout) clearTimeout(spawnTimeout);
+    score=0; scoreEl.textContent=0;
+    speed=BASE_SPEED;
+    gameOverOverlay.classList.remove('show');
+    initLanes();
+    resetAnswerUI();
+    running=true; lastTs=null;
+    spawnIncoming();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  laneRows.forEach(function(row,i){ row.addEventListener('click', function(){ setLaneTarget(i); }); });
+  slotsEl.forEach(function(s,i){ s.addEventListener('click', function(){ onSlotTap(i); }); });
+  startBtn.addEventListener('click', function(){ startOverlay.classList.remove('show'); resetGame(); });
+  retryBtn.addEventListener('click', resetGame);
+  window.addEventListener('resize', function(){ if(incoming) positionIncoming(); });
+
+  initLanes();
+  loadBest();
+})();
+</script>
+</body>
+</html>
