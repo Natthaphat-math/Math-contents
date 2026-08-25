@@ -662,7 +662,7 @@
   function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
   function buildMatrix(rows,cols){
     return Array.from({length:rows}, function(){
-      return Array.from({length:cols}, function(){ return randInt(0,5); });
+      return Array.from({length:cols}, function(){ return randInt(1,5); }); //random from 1 to 5
     });
   }
 
