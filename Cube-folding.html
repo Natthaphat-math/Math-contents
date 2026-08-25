@@ -347,6 +347,57 @@
   @keyframes toastIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 
   /* ---------- Win banner ---------- */
+  /* ---------- Pick-the-cube (MC) section ---------- */
+  .mc-section{
+    margin-top:16px;
+    border:2px solid var(--ink);
+    border-radius:var(--radius-md);
+    background:var(--card);
+    box-shadow:var(--shadow-1);
+    padding:14px;
+  }
+  .mc-instruction{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15px;
+    margin-top:2px;
+  }
+  .mc-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(94px,1fr));
+    gap:10px;
+    margin-top:12px;
+  }
+  .mc-option{
+    border:2px solid var(--ink);
+    border-radius:var(--radius-sm);
+    background:var(--paper);
+    padding:8px 8px 10px;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    transition:transform .12s ease, box-shadow .15s ease, border-color .15s ease, opacity .2s ease, background .15s ease;
+  }
+  .mc-option:hover:not(:disabled){ transform:translateY(-2px); box-shadow:var(--shadow-1); }
+  .mc-option:active:not(:disabled){ transform:scale(.97); }
+  .cube-svg{ width:100%; height:auto; max-width:120px; display:block; }
+  .mc-option.mc-correct{
+    border-color:var(--teal-dark);
+    background:var(--teal-tint);
+    box-shadow:0 0 0 3px rgba(20,88,78,.22);
+  }
+  .mc-option.mc-wrong{
+    border-color:var(--coral);
+    background:var(--coral-tint);
+    opacity:.5;
+  }
+  .mc-option.locked:not(.mc-correct){
+    opacity:.35;
+    cursor:not-allowed;
+    pointer-events:none;
+  }
+  .mc-option:disabled{ cursor:not-allowed; }
+
   .win-banner{
     margin-top:14px;
     border:2px solid var(--teal-dark);
@@ -602,8 +653,17 @@
     </div>
   </section>
 
+  <section class="mc-section" id="mcSection">
+    <div class="board-topline">
+      <span class="board-heading">โจทย์เลือกภาพ</span>
+      <span class="board-hint">แตะ 1 ตัวเลือก</span>
+    </div>
+    <p class="mc-instruction">เลือกรูปที่สอดคล้องกับโจทย์</p>
+    <div class="mc-grid" id="mcGrid"></div>
+  </section>
+
   <div class="win-banner" id="winBanner" hidden>
-    <div class="win-text">
+    <div class="win-text" id="winText">
       <strong>ครบทุกด้านแล้ว!</strong>
       <span>พับรูปนี้เป็นลูกบาศก์ได้สมบูรณ์ ลองข้อต่อไปดูสิ</span>
     </div>
@@ -854,6 +914,145 @@ function shuffled(arr){
 
 function designMarkup(id){ return DESIGNS[id] || ''; }
 
+/* ================= Isometric cube (pick-the-cube MC) ================= */
+/* Fixed screen geometry for a 3-visible-face isometric cube (top / right / front),
+   independent of any particular problem's data. Camera is a proper right-handed
+   orthographic basis (eye at fold-space (1,1,1) looking at the origin) so face
+   textures are genuinely rotated, never mirrored, when projected to 2D. */
+function normalizeVec(v){ const m=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]); return [v[0]/m,v[1]/m,v[2]/m]; }
+const ISO_F = normalizeVec([-1,-1,-1]);
+const ISO_R = normalizeVec(cross(ISO_F, [0,0,1]));
+const ISO_UP = cross(ISO_R, ISO_F);
+/* The three axis-aligned outward normals shown as Top / Right / Front. */
+const ISO_SLOT_NORMAL = { top:[0,0,1], right:[1,0,0], front:[0,1,0] };
+const ISO_FILLS = { top:'#FFFFFF', right:'#E3E6E0', front:'#C7CDC6' };
+
+/* Project a fold-space vector to 2D isometric screen coords via a verified
+   orientation-preserving right-handed camera basis (no mirroring). */
+function isoProject(p){
+  return [ dot(p, ISO_R), -dot(p, ISO_UP) ];
+}
+/* Build the affine SVG matrix that maps a 0..100 design square onto a cube face,
+   given that face's actual (normal, north) fold vectors — so the design lands
+   with the exact position/rotation the real fold produces. */
+function isoFaceMatrix(normal, north){
+  const east = cross(north, normal);
+  function corner(nSign, eSign){
+    return vadd(vadd(vscale(normal,50), vscale(north,50*nSign)), vscale(east,50*eSign));
+  }
+  const A = isoProject(corner(1,-1));
+  const B = isoProject(corner(1,1));
+  const C = isoProject(corner(-1,-1));
+  const a=(B[0]-A[0])/100, b=(B[1]-A[1])/100, c=(C[0]-A[0])/100, d=(C[1]-A[1])/100;
+  return 'matrix('+[a,b,c,d,A[0],A[1]].map(n=>n.toFixed(3)).join(',')+')';
+}
+/* The face outline (background rhombus) is fixed geometry, independent of any
+   face's actual data — computed once from an arbitrary valid (north,east) pair
+   for that normal, then corners are sorted by angle so the polygon always winds
+   correctly regardless of which pair was picked. */
+function isoOutlinePoints(normal){
+  const hint = Math.abs(normal[2])<0.9 ? [0,0,1] : [0,1,0];
+  const north = normalizeVec(vadd(hint, vscale(normal, -dot(hint,normal))));
+  const east = cross(north, normal);
+  function corner(nSign,eSign){ return vadd(vadd(vscale(normal,50), vscale(north,50*nSign)), vscale(east,50*eSign)); }
+  const pts = [corner(1,-1),corner(1,1),corner(-1,1),corner(-1,-1)].map(isoProject);
+  const cx = pts.reduce((s,p)=>s+p[0],0)/4, cy = pts.reduce((s,p)=>s+p[1],0)/4;
+  pts.sort((p,q)=>Math.atan2(p[1]-cy,p[0]-cx)-Math.atan2(q[1]-cy,q[0]-cx));
+  return pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' ');
+}
+function buildCubeSVG(combo){
+  const bySlot = {};
+  combo.forEach(f=>{ bySlot[f.slot]=f; });
+  let svg = '<svg viewBox="-90 -95 180 190" class="cube-svg" aria-hidden="true">';
+  ['top','right','front'].forEach(slot=>{
+    const f = bySlot[slot];
+    if(!f) return;
+    svg += '<polygon points="'+isoOutlinePoints(f.normal)+'" fill="'+ISO_FILLS[slot]+'" stroke="'+INK+'" stroke-width="3" stroke-linejoin="round"/>';
+    svg += '<g transform="'+isoFaceMatrix(f.normal, f.north)+'">'+designMarkup(f.designId)+'</g>';
+  });
+  svg += '</svg>';
+  return svg;
+}
+function normKey(v){ return v.map(x=>Math.round(x)).join(','); }
+/* Build the correct cube (from the actual generated fold) plus 4 plausible-but-wrong decoys. */
+function buildCubeOptions(){
+  const byNormal = {};
+  state.squares.forEach(s=>{ byNormal[normKey(s.normal)] = s; });
+  const correct = ['top','right','front'].map(slot=>{
+    const sq = byNormal[normKey(ISO_SLOT_NORMAL[slot])];
+    return { slot, designId:sq.designId, normal:sq.normal, north:sq.north };
+  });
+  const allDesignIds = state.squares.map(s=>s.designId);
+  function sig(combo){ return combo.map(f=>f.designId+':'+normKey(f.north)).join('|'); }
+  const correctSig = sig(correct);
+
+  function rotatedNorth(normal, north){
+    const steps = 1 + Math.floor(Math.random()*3); // 90 / 180 / 270
+    let n = north;
+    for(let i=0;i<steps;i++) n = rot90(n, normal, 1);
+    return n;
+  }
+  function mutateOnce(){
+    const combo = correct.map(f=>({...f}));
+    const idxs = shuffled([0,1,2]).slice(0, 1+Math.floor(Math.random()*2));
+    idxs.forEach(i=>{
+      const f = combo[i];
+      if(Math.random()<0.5){
+        const others = allDesignIds.filter(d=>d!==f.designId);
+        f.designId = others[Math.floor(Math.random()*others.length)];
+      } else {
+        f.north = rotatedNorth(f.normal, f.north);
+      }
+    });
+    return combo;
+  }
+
+  const seen = new Set([correctSig]);
+  const decoys = [];
+  let guard = 0;
+  while(decoys.length<4 && guard<300){
+    guard++;
+    const d = mutateOnce();
+    const s = sig(d);
+    if(seen.has(s)) continue;
+    seen.add(s);
+    decoys.push(d);
+  }
+  while(decoys.length<4){
+    const combo = correct.map(f=>({...f}));
+    combo.forEach(f=>{ f.designId = allDesignIds[Math.floor(Math.random()*allDesignIds.length)]; });
+    const s = sig(combo);
+    if(!seen.has(s)){ seen.add(s); decoys.push(combo); }
+  }
+
+  const options = [{combo:correct, correct:true}, ...decoys.map(d=>({combo:d, correct:false}))];
+  return shuffled(options);
+}
+function renderMcOptions(){
+  const grid = document.getElementById('mcGrid');
+  grid.innerHTML = state.cubeOptions.map((opt,idx)=>
+    '<button type="button" class="mc-option" data-idx="'+idx+'" aria-label="ตัวเลือก '+(idx+1)+'">'+buildCubeSVG(opt.combo)+'</button>'
+  ).join('');
+}
+document.getElementById('mcGrid').addEventListener('click', function(e){
+  const btn = e.target.closest('.mc-option');
+  if(!btn || btn.disabled || state.mcAnswered) return;
+  const idx = Number(btn.dataset.idx);
+  const opt = state.cubeOptions[idx];
+  if(opt.correct){
+    state.mcAnswered = true;
+    document.querySelectorAll('#mcGrid .mc-option').forEach(b=>b.classList.add('locked'));
+    btn.classList.remove('locked');
+    btn.classList.add('mc-correct');
+    showToast('success','ถูกต้อง! นี่คือลูกบาศก์ที่พับได้จากรูปนี้');
+    checkWin();
+  } else {
+    btn.classList.add('mc-wrong');
+    btn.disabled = true;
+    showToast('warn','ยังไม่ถูกต้อง ลองรูปอื่นดู');
+  }
+});
+
 /* ================= Game state ================= */
 const state = {
   squares:null, initialSquares:null,
@@ -863,6 +1062,8 @@ const state = {
   selectedId:null,
   pendingManual:null,
   problemNo:1,
+  cubeOptions:null,
+  mcAnswered:false,
 };
 
 function getSquare(id){ return state.squares.find(s=>s.id===id); }
@@ -910,7 +1111,8 @@ function newProblem(){
 
   const designs = shuffled(DESIGN_KEYS).slice(0,6);
   const squares = net.map((n,idx)=>({
-    id: idx, c:n.c, r:n.r, rotation:0, rotDeg:0, designId: designs[idx]
+    id: idx, c:n.c, r:n.r, rotation:0, rotDeg:0, designId: designs[idx],
+    normal:n.normal, north:n.north
   }));
 
   const cs = net.map(n=>n.c), rs = net.map(n=>n.r);
@@ -926,6 +1128,8 @@ function newProblem(){
   state.cols = maxC-minC+1; state.rows = maxR-minR+1;
   state.selectedId = null;
   state.pendingManual = null;
+  state.mcAnswered = false;
+  state.cubeOptions = buildCubeOptions();
 
   document.getElementById('winBanner').hidden = true;
   document.getElementById('problemNo').textContent = String(state.problemNo).padStart(2,'0');
@@ -934,17 +1138,21 @@ function newProblem(){
   layout();
   updateProgress();
   updateHint();
+  renderMcOptions();
 }
 
 function restartProblem(){
   state.squares = state.initialSquares.map(s=>({...s}));
   state.hiddenEdges.forEach(e=>e.discovered=false);
   state.selectedId = null;
+  state.mcAnswered = false;
+  state.cubeOptions = buildCubeOptions();
   document.getElementById('winBanner').hidden = true;
   buildBoard();
   layout();
   updateProgress();
   updateHint();
+  renderMcOptions();
 }
 
 /* ================= Rendering ================= */
@@ -1173,7 +1381,14 @@ function attemptConnect(idA, idB){
 function checkWin(){
   const total = state.hiddenEdges.length;
   const found = state.hiddenEdges.filter(e=>e.discovered).length;
-  if(found===total){
+  const edgesDone = total>0 && found===total;
+  if(edgesDone || state.mcAnswered){
+    const winText = document.getElementById('winText');
+    if(edgesDone){
+      winText.innerHTML = '<strong>ครบทุกด้านแล้ว!</strong><span>พับรูปนี้เป็นลูกบาศก์ได้สมบูรณ์ ลองข้อต่อไปดูสิ</span>';
+    } else {
+      winText.innerHTML = '<strong>ตอบถูกต้อง!</strong><span>เลือกรูปลูกบาศก์ที่สอดคล้องกับโจทย์ได้ถูกต้อง ไปข้อต่อไปได้เลย</span>';
+    }
     document.getElementById('winBanner').hidden = false;
   }
 }
