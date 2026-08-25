@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>ฝึกคูณเมทริกซ์ทีละขั้น</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Charmonman:wght@400;700&family=JetBrains+Mono:wght@500;600;700&family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF3F6;
+    --paper-card:#FDFEFE;
+    --grid-line:#CFDEE6;
+    --ink:#1F3A5F;
+    --ink-soft:#5B7185;
+    --hi-row:#FFD43B;
+    --hi-col:#4FD8C9;
+    --accent:#FF7A45;
+    --good:#2F9E5B;
+    --bad:#D93B3B;
+    --note-bg:#FFF6D9;
+    --cell-size:56px;
+  }
+
+  @media (max-width:600px){
+    :root{ --cell-size:44px; }
+  }
+  @media (max-width:480px){
+    .page{ padding:24px 10px 48px; }
+    .workspace-card{ padding:20px 12px 22px; }
+    .bracket-wrap{ padding:0 8px; }
+    .matrix-grid{ padding:6px; gap:4px; }
+    .ab-group, .result-group{ gap:10px; }
+    .op{ font-size:1.5rem; }
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{ margin:0; padding:0; overflow-x:hidden; }
+
+  body{
+    font-family:'Sarabun', sans-serif;
+    color:var(--ink);
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size:28px 28px;
+    min-height:100vh;
+  }
+
+  .page{
+    max-width:900px;
+    margin:0 auto;
+    padding:36px 18px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .hero{
+    text-align:center;
+    margin-bottom:28px;
+    animation:fadeUp .6s ease both;
+  }
+
+  .eyebrow{
+    display:inline-block;
+    font-family:'Kanit', sans-serif;
+    font-weight:600;
+    font-size:.8rem;
+    letter-spacing:.08em;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  h1{
+    font-family:'Kanit', sans-serif;
+    font-weight:700;
+    font-size:clamp(1.6rem, 4.5vw, 2.4rem);
+    margin:0 0 10px;
+    color:var(--ink);
+  }
+
+  .subtitle{
+    font-size:1rem;
+    color:var(--ink-soft);
+    max-width:520px;
+    margin:0 auto 12px;
+    line-height:1.6;
+  }
+
+  .meta-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .size-badge{
+    font-family:'JetBrains Mono', monospace;
+    font-size:.85rem;
+    font-weight:600;
+    background:var(--paper-card);
+    border:1px solid var(--grid-line);
+    color:var(--ink);
+    padding:6px 14px;
+    border-radius:999px;
+  }
+
+  .rule-note{
+    font-size:.82rem;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- Workspace card ---------- */
+  .workspace-card{
+    background:var(--paper-card);
+    border-radius:18px 14px 20px 16px;
+    box-shadow:0 12px 30px rgba(31,58,95,.09);
+    padding:26px 20px 30px;
+    transform:rotate(-.4deg);
+    animation:fadeUp .7s ease .05s both;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .sticky-note{
+    align-self:flex-start;
+    font-family:'Charmonman', cursive;
+    font-size:1.05rem;
+    background:var(--note-bg);
+    color:var(--ink);
+    padding:10px 16px;
+    border-radius:3px 14px 14px 14px;
+    box-shadow:0 6px 14px rgba(31,58,95,.12);
+    transform:rotate(-2deg);
+    margin-bottom:22px;
+    line-height:1.7;
+  }
+
+  .swatch{
+    display:inline-block;
+    width:11px; height:11px;
+    border-radius:3px;
+    margin:0 2px -1px 6px;
+  }
+  .swatch-row{ background:var(--hi-row); }
+  .swatch-col{ background:var(--hi-col); }
+
+  .workspace-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:16px;
+    row-gap:20px;
+    width:100%;
+  }
+
+  .ab-group, .result-group{
+    display:flex;
+    align-items:flex-start;
+    flex-wrap:nowrap;
+    gap:16px;
+    flex-shrink:0;
+  }
+
+  .matrix-block{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+
+  .matrix-label{
+    font-family:'Kanit', sans-serif;
+    font-weight:700;
+    font-size:1.1rem;
+    color:var(--ink);
+  }
+
+  .op{
+    font-family:'Kanit', sans-serif;
+    font-weight:600;
+    font-size:1.8rem;
+    color:var(--accent);
+    margin-top:0;
+  }
+
+  .bracket-wrap{
+    position:relative;
+    padding:0 14px;
+  }
+  .bracket-wrap::before,
+  .bracket-wrap::after{
+    content:"";
+    position:absolute;
+    top:-2px; bottom:-2px;
+    width:9px;
+    border:3px solid var(--ink);
+  }
+  .bracket-wrap::before{ left:0; border-right:none; }
+  .bracket-wrap::after{ right:0; border-left:none; }
+
+  .matrix-grid{
+    position:relative;
+    display:grid;
+    grid-template-columns:repeat(var(--cols), var(--cell-size));
+    grid-template-rows:repeat(var(--rows), var(--cell-size));
+    gap:6px;
+    padding:8px;
+  }
+
+  .cell{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+    border:1px solid var(--grid-line);
+    border-radius:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    font-size:clamp(11px, calc(var(--cell-size) * 0.34), 17px);
+    color:var(--ink);
+  }
+
+  .result-cell{
+    background:var(--paper);
+    border-style:dashed;
+  }
+  .result-cell .cell-value.placeholder{
+    color:var(--ink-soft);
+    opacity:.45;
+  }
+  .result-cell.solved{
+    background:#fff;
+    border-style:solid;
+    animation:pop .4s ease;
+  }
+  .result-cell.target-cell{
+    border:2px dashed var(--accent);
+    animation:pulseRing 1.4s ease-in-out infinite;
+  }
+  .result-cell .cell-value.small{ font-size:.78em; }
+
+  .highlight-band{
+    position:absolute;
+    left:0; top:0; width:0; height:0;
+    border-radius:10px;
+    opacity:0;
+    z-index:1;
+    mix-blend-mode:multiply;
+    transition:left .35s ease, top .35s ease, width .35s ease, height .35s ease, opacity .35s ease;
+  }
+  .highlight-band.band-row{ background:var(--hi-row); transform:rotate(-1deg); }
+  .highlight-band.band-col{ background:var(--hi-col); transform:rotate(1deg); }
+  .highlight-band.visible{ opacity:.55; }
+
+  .step-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:17px; height:17px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    font-weight:600;
+    line-height:1;
+  }
+
+  .order-badge{
+    position:absolute;
+    top:-6px; right:-6px;
+    opacity:0;
+    transform:scale(.6);
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:3;
+  }
+  .order-badge.show{ opacity:1; transform:scale(1); }
+
+  .term-badge{ margin-right:2px; flex-shrink:0; }
+
+  /* ---------- Calc card ---------- */
+  .calc-card{
+    background:var(--paper-card);
+    border-radius:16px 20px 14px 18px;
+    box-shadow:0 12px 30px rgba(31,58,95,.09);
+    padding:24px 22px 26px;
+    margin-top:24px;
+    transform:rotate(.3deg);
+    animation:fadeUp .7s ease .1s both;
+  }
+
+  .calc-progress{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:.78rem;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+
+  .calc-title{
+    font-family:'Kanit', sans-serif;
+    font-weight:600;
+    font-size:1.15rem;
+    margin:0 0 6px;
+  }
+
+  .calc-hint{
+    font-size:.9rem;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+
+  .term-list{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+
+  .sum-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    justify-content:center;
+    margin-top:6px;
+  }
+  .sum-row[hidden]{ display:none; }
+  .sum-row.fade-in{ animation:fadeUp .4s ease both; }
+
+  .term-item{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:#fff;
+    border:1px solid var(--grid-line);
+    border-radius:10px;
+    padding:9px 14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:1rem;
+  }
+
+  .a-val, .b-val{
+    display:inline-block;
+    min-width:2.2ch;
+    text-align:center;
+    padding:2px 6px;
+    border-radius:5px;
+    font-weight:700;
+  }
+  .a-val{ background:rgba(255,212,59,.45); }
+  .b-val{ background:rgba(79,216,201,.4); }
+  .op-x, .op-eq{
+    display:inline-block;
+    min-width:1.3ch;
+    text-align:center;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+
+  .term-item.correct{ border-color:var(--good); background:#F1FBF5; }
+  .term-item.shake{ animation:shake .5s; border-color:var(--bad); }
+  .term-item.pop{ animation:pop .35s ease; }
+
+  .sum-item{ flex-wrap:wrap; gap:8px 10px; padding:12px 18px; }
+  .op-plus{ color:var(--ink-soft); font-weight:600; margin:0 2px; }
+
+  .term-item input{
+    width:3.6ch;
+    border:none;
+    border-bottom:2px solid var(--ink);
+    background:transparent;
+    text-align:center;
+    font:inherit;
+    font-size:1.05rem;
+    color:var(--ink);
+    padding:2px 0;
+  }
+  .sum-item input{ width:4.4ch; }
+
+  .term-item input.is-correct{ color:var(--good); border-color:var(--good); }
+  .term-item input.is-wrong{ color:var(--bad); border-color:var(--bad); }
+
+  .calc-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:18px;
+  }
+
+  .calc-feedback{
+    margin:0;
+    font-size:.92rem;
+    font-weight:600;
+    min-height:1.3em;
+  }
+  .calc-feedback.good{ color:var(--good); }
+  .calc-feedback.bad{ color:var(--bad); }
+
+  .calc-buttons{ margin-left:auto; display:flex; gap:10px; }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:'Kanit', sans-serif;
+    font-weight:600;
+    font-size:.98rem;
+    padding:11px 22px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn.primary{
+    background:var(--accent);
+    color:#fff;
+    box-shadow:0 6px 16px rgba(255,122,69,.35);
+  }
+  .btn.primary:hover{ transform:translateY(-2px); box-shadow:0 10px 20px rgba(255,122,69,.4); }
+  .btn.ghost{
+    background:transparent;
+    border:2px solid var(--ink);
+    color:var(--ink);
+    padding:9px 20px;
+  }
+  .btn.ghost:hover{ background:var(--ink); color:#fff; }
+  .btn[hidden]{ display:none; }
+
+  /* ---------- Finish card ---------- */
+  .finish-card{
+    position:relative;
+    overflow:hidden;
+    background:var(--paper-card);
+    border-radius:18px;
+    box-shadow:0 12px 30px rgba(31,58,95,.1);
+    padding:36px 22px;
+    margin-top:24px;
+    text-align:center;
+    animation:fadeUp .5s ease both;
+  }
+  .finish-card[hidden]{ display:none; }
+
+  .finish-title{
+    font-family:'Charmonman', cursive;
+    font-size:2.2rem;
+    color:var(--accent);
+    margin:0 0 6px;
+  }
+  .finish-sub{
+    font-family:'Kanit', sans-serif;
+    font-weight:600;
+    font-size:1.1rem;
+    margin:0 0 6px;
+  }
+  .finish-text{
+    color:var(--ink-soft);
+    margin:0 0 22px;
+    font-size:.95rem;
+  }
+
+  .confetti-holder{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .confetti-piece{
+    position:absolute;
+    top:-10px;
+    width:8px; height:8px;
+    border-radius:2px;
+    animation-name:confettiFall;
+    animation-timing-function:ease-in;
+    animation-fill-mode:forwards;
+  }
+
+  footer{
+    display:flex;
+    justify-content:center;
+    margin-top:30px;
+  }
+
+  /* ---------- Motion ---------- */
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes pop{ 0%{ transform:scale(.7); opacity:.4; } 60%{ transform:scale(1.12); } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes shake{
+    10%,90%{ transform:translateX(-2px); }
+    20%,80%{ transform:translateX(4px); }
+    30%,50%,70%{ transform:translateX(-7px); }
+    40%,60%{ transform:translateX(7px); }
+  }
+  @keyframes pulseRing{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,122,69,.5); }
+    50%{ box-shadow:0 0 0 6px rgba(255,122,69,0); }
+  }
+  @keyframes confettiFall{
+    0%{ transform:translateY(-10px) rotate(0deg); opacity:1; }
+    100%{ transform:translateY(220px) rotate(340deg); opacity:0; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
+
+  :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <span class="eyebrow">คณิตศาสตร์ · พีชคณิตเชิงเส้น</span>
+    <h1>ฝึกคูณเมทริกซ์ทีละขั้น</h1>
+    <p class="subtitle">ไฮไลต์แถวจาก A และคอลัมน์จาก B แล้วคำนวณผลคูณกับผลรวมด้วยตัวเอง ทีละช่อง</p>
+    <div class="meta-row">
+      <span class="size-badge" id="sizeBadge">โจทย์ขนาด …</span>
+      <span class="rule-note">คอลัมน์ของ A ต้องเท่ากับแถวของ B เสมอ</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="workspace-card">
+      <div class="sticky-note">
+        <span class="swatch swatch-row"></span> แถวจาก A
+        <span class="swatch swatch-col"></span> คอลัมน์จาก B
+      </div>
+
+      <div class="workspace-row">
+        <div class="ab-group">
+          <div class="matrix-block">
+            <span class="matrix-label">A</span>
+            <div class="bracket-wrap"><div class="matrix-grid" id="gridA" aria-label="เมทริกซ์ A"></div></div>
+          </div>
+
+          <span class="op">×</span>
+
+          <div class="matrix-block">
+            <span class="matrix-label">B</span>
+            <div class="bracket-wrap"><div class="matrix-grid" id="gridB" aria-label="เมทริกซ์ B"></div></div>
+          </div>
+        </div>
+
+        <div class="result-group">
+          <span class="op">=</span>
+
+          <div class="matrix-block">
+            <span class="matrix-label">AB</span>
+            <div class="bracket-wrap"><div class="matrix-grid" id="gridC" aria-label="ผลคูณ AB"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="calc-card" id="calcCard">
+      <span class="calc-progress" id="calcProgress">ช่องที่ 1 จาก 1</span>
+      <h2 class="calc-title" id="calcTitle">แถวที่ 1 ของ A × คอลัมน์ที่ 1 ของ B</h2>
+      <p class="calc-hint" id="calcHint">คูณตัวเลขที่จับคู่กันทีละคู่</p>
+
+      <div class="term-list" id="termList"></div>
+      <div class="sum-row" id="sumRow" hidden></div>
+
+      <div class="calc-footer">
+        <p class="calc-feedback" id="calcFeedback" aria-live="polite"></p>
+        <div class="calc-buttons">
+          <button type="button" class="btn primary" id="checkBtn">ตรวจคำตอบ</button>
+          <button type="button" class="btn primary" id="nextBtn" hidden>ขั้นต่อไป →</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="finish-card" id="finishCard" hidden>
+      <div class="confetti-holder" id="confettiHolder" aria-hidden="true"></div>
+      <p class="finish-title">เก่งมาก!</p>
+      <p class="finish-sub">คุณคูณเมทริกซ์ครบทุกช่องแล้ว 🎉</p>
+      <p class="finish-text">อยากฝึกต่อไหม ลองโจทย์ใหม่ได้เลย</p>
+      <button type="button" class="btn primary" id="newProblemBtn">โจทย์ใหม่</button>
+    </section>
+  </main>
+
+  <footer>
+    <button type="button" class="btn ghost" id="regenBtn">สุ่มโจทย์ใหม่</button>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------- State ----------
+  let A=[], B=[], m=0, n=0, p=0;
+  let currentI=0, currentJ=0, stage='products';
+  let correctProducts=[], correctSum=0;
+  let solvedCount=0, totalCells=0;
+  let prevTargetCell=null;
+  let curABadgeCells=[], curBBadgeCells=[];
+
+  // ---------- DOM refs ----------
+  let gridA, gridB, gridC, sizeBadge;
+  let calcCard, calcProgress, calcTitle, calcHint, termList, sumRow;
+  let checkBtn, nextBtn, calcFeedback;
+  let finishCard, confettiHolder, newProblemBtn, regenBtn;
+
+  function init(){
+    gridA=document.getElementById('gridA');
+    gridB=document.getElementById('gridB');
+    gridC=document.getElementById('gridC');
+    sizeBadge=document.getElementById('sizeBadge');
+
+    calcCard=document.getElementById('calcCard');
+    calcProgress=document.getElementById('calcProgress');
+    calcTitle=document.getElementById('calcTitle');
+    calcHint=document.getElementById('calcHint');
+    termList=document.getElementById('termList');
+    sumRow=document.getElementById('sumRow');
+
+    checkBtn=document.getElementById('checkBtn');
+    nextBtn=document.getElementById('nextBtn');
+    calcFeedback=document.getElementById('calcFeedback');
+
+    finishCard=document.getElementById('finishCard');
+    confettiHolder=document.getElementById('confettiHolder');
+    newProblemBtn=document.getElementById('newProblemBtn');
+    regenBtn=document.getElementById('regenBtn');
+
+    checkBtn.addEventListener('click', onCheck);
+    nextBtn.addEventListener('click', goNext);
+    newProblemBtn.addEventListener('click', generateProblem);
+    regenBtn.addEventListener('click', generateProblem);
+
+    document.addEventListener('keydown', function(e){
+      if(e.key !== 'Enter') return;
+      if(document.activeElement.tagName !== 'INPUT') return;
+      e.preventDefault();
+      if(!checkBtn.hidden){ checkBtn.click(); }
+      else if(!nextBtn.hidden){ nextBtn.click(); }
+    });
+
+    window.addEventListener('resize', function(){
+      fitWorkspace();
+      if(!calcCard.hidden && stage){ highlightRowCol(currentI, currentJ); }
+      alignOperators();
+    });
+
+    generateProblem();
+  }
+
+  // ---------- Helpers ----------
+  function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+  function buildMatrix(rows,cols){
+    return Array.from({length:rows}, function(){
+      return Array.from({length:cols}, function(){ return randInt(1,9); });
+    });
+  }
+
+  // ---------- Problem generation ----------
+  function generateProblem(){
+    m=randInt(2,3); n=randInt(2,3); p=randInt(2,3);
+    A=buildMatrix(m,n);
+    B=buildMatrix(n,p);
+    totalCells=m*p; solvedCount=0;
+    prevTargetCell=null; curABadgeCells=[]; curBBadgeCells=[];
+
+    sizeBadge.textContent = 'โจทย์ขนาด ' + m + '×' + n + ' · ' + n + '×' + p;
+
+    renderAB(gridA, A, m, n, 'row');
+    renderAB(gridB, B, n, p, 'col');
+    renderC(gridC, m, p);
+
+    finishCard.hidden=true;
+    calcCard.hidden=false;
+
+    requestAnimationFrame(function(){
+      fitWorkspace();
+      startStep(0,0);
+      alignOperators();
+    });
+  }
+
+  function fitWorkspace(){
+    if(!n || !p) return;
+    const rowEl = document.querySelector('.workspace-row');
+    const abGroup = document.querySelector('.ab-group');
+    const resultGroup = document.querySelector('.result-group');
+    if(!rowEl || !abGroup || !resultGroup) return;
+
+    const maxCs = 56;
+    document.documentElement.style.setProperty('--cell-size', maxCs+'px');
+
+    // measure natural width at a known cell size to derive the fixed
+    // (non-cell) overhead of each group — gaps, padding, brackets, the
+    // operator glyph — since only the cell tracks scale with --cell-size.
+    const abWidthAtMax = abGroup.scrollWidth;
+    const resultWidthAtMax = resultGroup.scrollWidth;
+    const abUnits = n + p;
+    const resultUnits = p;
+    const abFixed = abWidthAtMax - maxCs*abUnits;
+    const resultFixed = resultWidthAtMax - maxCs*resultUnits;
+
+    const available = rowEl.clientWidth - 4;
+
+    const csForAB = (available - abFixed) / abUnits;
+    const csForResult = (available - resultFixed) / resultUnits;
+
+    let cs = Math.floor(Math.min(maxCs, csForAB, csForResult));
+    cs = Math.max(cs, 24);
+
+    document.documentElement.style.setProperty('--cell-size', cs+'px');
+  }
+
+  function centerOpIn(groupEl, gridEls){
+    if(!groupEl) return;
+    const op = groupEl.querySelector('.op');
+    if(!op) return;
+    const groupRect = groupEl.getBoundingClientRect();
+    let minTop=Infinity, maxBottom=-Infinity;
+    gridEls.forEach(function(g){
+      const r = g.getBoundingClientRect();
+      const relTop = r.top - groupRect.top;
+      const relBottom = relTop + r.height;
+      if(relTop < minTop) minTop = relTop;
+      if(relBottom > maxBottom) maxBottom = relBottom;
+    });
+    if(minTop===Infinity) return;
+    const centerY = (minTop + maxBottom) / 2;
+    op.style.marginTop = Math.max(0, centerY - op.offsetHeight/2) + 'px';
+  }
+
+  function alignOperators(){
+    centerOpIn(document.querySelector('.ab-group'), [gridA, gridB]);
+    centerOpIn(document.querySelector('.result-group'), [gridC]);
+  }
+
+  function renderAB(gridEl, matrix, rows, cols, bandType){
+    gridEl.style.setProperty('--cols', cols);
+    gridEl.style.setProperty('--rows', rows);
+    let html = '<div class="highlight-band band-' + bandType + '"></div>';
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        html += '<div class="cell" data-row="'+r+'" data-col="'+c+'">'
+              + '<span class="step-badge order-badge"></span>'
+              + '<span class="cell-value">'+matrix[r][c]+'</span></div>';
+      }
+    }
+    gridEl.innerHTML = html;
+  }
+
+  function renderC(gridEl, rows, cols){
+    gridEl.style.setProperty('--cols', cols);
+    gridEl.style.setProperty('--rows', rows);
+    let html='';
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        html += '<div class="cell result-cell unsolved" data-row="'+r+'" data-col="'+c+'">'
+              + '<span class="cell-value placeholder">?</span></div>';
+      }
+    }
+    gridEl.innerHTML = html;
+  }
+
+  // ---------- Step control ----------
+  function startStep(i,j){
+    currentI=i; currentJ=j; stage='products';
+
+    correctProducts=[];
+    for(let k=0;k<n;k++){ correctProducts.push(A[i][k]*B[k][j]); }
+    correctSum = correctProducts.reduce(function(a,b){ return a+b; }, 0);
+
+    calcProgress.textContent = 'ช่องที่ ' + (solvedCount+1) + ' จาก ' + totalCells;
+    calcTitle.textContent = 'แถวที่ ' + (i+1) + ' ของ A × คอลัมน์ที่ ' + (j+1) + ' ของ B';
+    calcHint.textContent = 'คูณตัวเลขที่จับคู่กันทีละคู่';
+
+    termList.innerHTML='';
+    for(let k=0;k<n;k++){
+      const div=document.createElement('div');
+      div.className='term-item';
+      div.innerHTML = '<span class="step-badge term-badge">'+(k+1)+'</span>'
+        + '<span class="a-val">'+A[i][k]+'</span>'
+        + '<span class="op-x">×</span>'
+        + '<span class="b-val">'+B[k][j]+'</span>'
+        + '<span class="op-eq">=</span>'
+        + '<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" data-k="'+k+'" aria-label="ผลคูณลำดับที่ '+(k+1)+'">';
+      termList.appendChild(div);
+    }
+
+    sumRow.hidden=true;
+    sumRow.innerHTML='';
+    checkBtn.hidden=false;
+    nextBtn.hidden=true;
+    setFeedback('','');
+
+    highlightRowCol(i,j);
+
+    const firstInput = termList.querySelector('input');
+    if(firstInput) firstInput.focus();
+  }
+
+  function highlightRowCol(i,j){
+    const bandA = gridA.querySelector('.highlight-band');
+    const bandB = gridB.querySelector('.highlight-band');
+
+    clearBadges(curABadgeCells);
+    clearBadges(curBBadgeCells);
+
+    const cellsA = Array.from(gridA.querySelectorAll('.cell[data-row="'+i+'"]'))
+      .sort(function(a,b){ return (+a.dataset.col)-(+b.dataset.col); });
+    const cellsB = Array.from(gridB.querySelectorAll('.cell[data-col="'+j+'"]'))
+      .sort(function(a,b){ return (+a.dataset.row)-(+b.dataset.row); });
+
+    positionBand(bandA, cellsA);
+    positionBand(bandB, cellsB);
+
+    setBadges(cellsA, function(cell){ return +cell.dataset.col; });
+    setBadges(cellsB, function(cell){ return +cell.dataset.row; });
+
+    curABadgeCells=cellsA; curBBadgeCells=cellsB;
+
+    if(prevTargetCell) prevTargetCell.classList.remove('target-cell');
+    const targetCell = gridC.querySelector('.cell[data-row="'+i+'"][data-col="'+j+'"]');
+    if(targetCell){ targetCell.classList.add('target-cell'); prevTargetCell=targetCell; }
+  }
+
+  function positionBand(bandEl, cells){
+    if(!bandEl || !cells.length) return;
+    const pad=6;
+    let left=Infinity, top=Infinity, right=-Infinity, bottom=-Infinity;
+    cells.forEach(function(c){
+      left=Math.min(left, c.offsetLeft);
+      top=Math.min(top, c.offsetTop);
+      right=Math.max(right, c.offsetLeft+c.offsetWidth);
+      bottom=Math.max(bottom, c.offsetTop+c.offsetHeight);
+    });
+    bandEl.style.left=(left-pad)+'px';
+    bandEl.style.top=(top-pad)+'px';
+    bandEl.style.width=(right-left+pad*2)+'px';
+    bandEl.style.height=(bottom-top+pad*2)+'px';
+    bandEl.classList.add('visible');
+  }
+
+  function setBadges(cells, idxFn){
+    cells.forEach(function(cell){
+      const badge=cell.querySelector('.order-badge');
+      if(!badge) return;
+      badge.textContent = idxFn(cell)+1;
+      badge.classList.add('show');
+    });
+  }
+  function clearBadges(cells){
+    cells.forEach(function(cell){
+      const badge=cell.querySelector('.order-badge');
+      if(!badge) return;
+      badge.classList.remove('show');
+      badge.textContent='';
+    });
+  }
+
+  // ---------- Checking ----------
+  function onCheck(){
+    if(stage==='products'){
+      const inputs = Array.from(termList.querySelectorAll('input:not(:disabled)'));
+      if(!inputs.length) return;
+      let anyWrong=false;
+      inputs.forEach(function(inp){
+        const k = +inp.dataset.k;
+        const val = parseInt(inp.value,10);
+        if(val === correctProducts[k]){ markCorrect(inp); }
+        else { markWrong(inp); anyWrong=true; }
+      });
+      const remaining = termList.querySelectorAll('input:not(:disabled)').length;
+      if(remaining===0){
+        revealSum();
+      } else if(anyWrong){
+        setFeedback('ยังไม่ถูกทุกช่อง ลองใหม่อีกครั้งนะ','bad');
+      }
+    } else if(stage==='sum'){
+      const sumInput = document.getElementById('sumInput');
+      if(!sumInput) return;
+      const val = parseInt(sumInput.value,10);
+      if(val === correctSum){
+        markCorrect(sumInput);
+        setFeedback('ถูกต้อง! เก่งมาก 🎉','good');
+        completeCell();
+      } else {
+        markWrong(sumInput);
+        setFeedback('ยังไม่ถูก ลองคำนวณผลบวกอีกครั้ง','bad');
+      }
+    }
+  }
+
+  function revealSum(){
+    stage='sum';
+    calcHint.textContent='นำผลคูณทั้งหมดมาบวกกัน';
+    const parts = correctProducts.map(function(val,k){
+      return '<span class="step-badge term-badge">'+(k+1)+'</span><span>'+val+'</span>';
+    }).join('<span class="op-plus">+</span>');
+    sumRow.innerHTML = '<div class="term-item sum-item">'+parts
+      +'<span class="op-plus">=</span>'
+      +'<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="sumInput" aria-label="ผลรวมทั้งหมด"></div>';
+    sumRow.hidden=false;
+    sumRow.classList.remove('fade-in'); void sumRow.offsetWidth; sumRow.classList.add('fade-in');
+    setFeedback('','');
+    const sumInput=document.getElementById('sumInput');
+    if(sumInput) sumInput.focus();
+  }
+
+  function markCorrect(input){
+    input.disabled=true;
+    input.classList.add('is-correct');
+    const item=input.closest('.term-item');
+    if(item){
+      item.classList.add('correct');
+      item.classList.remove('pop'); void item.offsetWidth; item.classList.add('pop');
+    }
+  }
+
+  function markWrong(input){
+    const item=input.closest('.term-item');
+    if(item){
+      item.classList.remove('shake'); void item.offsetWidth; item.classList.add('shake');
+    }
+    input.classList.add('is-wrong');
+    setTimeout(function(){
+      if(item) item.classList.remove('shake');
+      input.classList.remove('is-wrong');
+    },500);
+    input.select();
+  }
+
+  function setFeedback(text, kind){
+    calcFeedback.textContent=text;
+    calcFeedback.className='calc-feedback' + (kind ? ' '+kind : '');
+  }
+
+  function completeCell(){
+    const cell = gridC.querySelector('.cell[data-row="'+currentI+'"][data-col="'+currentJ+'"]');
+    if(cell){
+      const valueEl=cell.querySelector('.cell-value');
+      valueEl.textContent=correctSum;
+      valueEl.classList.remove('placeholder');
+      if(String(correctSum).length>=3) valueEl.classList.add('small');
+      cell.classList.remove('unsolved','target-cell');
+      cell.classList.add('solved');
+    }
+
+    solvedCount++;
+    checkBtn.hidden=true;
+    nextBtn.hidden=false;
+    nextBtn.textContent = solvedCount>=totalCells ? 'ดูผลลัพธ์ 🎉' : 'ขั้นต่อไป →';
+  }
+
+  function goNext(){
+    let ni=currentI, nj=currentJ+1;
+    if(nj>=p){ nj=0; ni++; }
+    if(ni>=m){ showFinish(); return; }
+    startStep(ni,nj);
+  }
+
+  function showFinish(){
+    calcCard.hidden=true;
+    finishCard.hidden=false;
+    launchConfetti();
+    finishCard.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function launchConfetti(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors=['#FFD43B','#4FD8C9','#FF7A45','#2F9E5B'];
+    confettiHolder.innerHTML='';
+    for(let i=0;i<16;i++){
+      const s=document.createElement('span');
+      s.className='confetti-piece';
+      s.style.left=(Math.random()*100)+'%';
+      s.style.background=colors[i%colors.length];
+      s.style.animationDelay=(Math.random()*0.4)+'s';
+      s.style.animationDuration=(1.1+Math.random()*0.6)+'s';
+      confettiHolder.appendChild(s);
+    }
+    setTimeout(function(){ confettiHolder.innerHTML=''; },2200);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ห้องเรียนกราฟ — สื่อการเรียนรู้กราฟเชิงโต้ตอบ</title>
+<meta name="description" content="สื่อการเรียนรู้เชิงโต้ตอบ ปรับค่าตัวแปรแล้วดูว่ากราฟเปลี่ยนไปอย่างไร">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Itim&family=JetBrains+Mono:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board: #1c3b2e;
+    --board-deep: #12271f;
+    --board-panel: #214535;
+    --chalk-white: #f6f2e6;
+    --chalk-yellow: #f0c65e;
+    --chalk-blue: #8ec6e6;
+    --chalk-coral: #ec9686;
+    --chalk-mint: #8fe3c2;
+    --ink-soft: rgba(246,242,230,0.68);
+    --ink-faint: rgba(246,242,230,0.42);
+    --line-faint: rgba(246,242,230,0.14);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 10px;
+    --dur: 0.28s;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 1200px 700px at 50% -10%, var(--board-panel) 0%, var(--board) 45%, var(--board-deep) 100%);
+    color:var(--chalk-white);
+    font-family:'Sarabun', sans-serif;
+    line-height:1.5;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    opacity:0.05;
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  h1,h2,h3{margin:0; font-family:'Itim', cursive; font-weight:400;}
+
+  button{font-family:inherit; cursor:pointer;}
+
+  :focus-visible{
+    outline:2.5px solid var(--chalk-yellow);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+
+  .app{position:relative; z-index:1;}
+
+  .page{
+    display:none;
+    max-width:1100px;
+    margin:0 auto;
+    padding: 28px clamp(16px,4vw,56px) 90px;
+  }
+  .page.active{
+    display:block;
+    animation: pageIn 0.45s ease both;
+  }
+  @keyframes pageIn{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- Home page ---------- */
+  .home-header{
+    text-align:center;
+    max-width:680px;
+    margin:16px auto 0;
+    padding-top:24px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.8rem;
+    letter-spacing:0.18em;
+    color:var(--chalk-yellow);
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .home-header h1{
+    font-size:clamp(2.2rem, 6vw, 3.4rem);
+    color:var(--chalk-white);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.18), 0 0 22px rgba(246,242,230,0.08);
+    margin-bottom:14px;
+  }
+  .home-header p{
+    color:var(--ink-soft);
+    font-size:1.05rem;
+    line-height:1.8;
+  }
+
+  .cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));
+    gap:22px;
+    margin-top:48px;
+  }
+
+  .card{
+    position:relative;
+    text-align:left;
+    background:linear-gradient(180deg, rgba(246,242,230,0.055), rgba(246,242,230,0.02));
+    border:1.75px dashed rgba(246,242,230,0.28);
+    border-radius:var(--radius-lg);
+    padding:26px 22px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    color:inherit;
+    transform:rotate(var(--tilt, 0deg));
+    transition:transform var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease, background var(--dur) ease;
+  }
+  .cards-grid .card:nth-child(3n){ --tilt:-1.1deg; }
+  .cards-grid .card:nth-child(3n+1){ --tilt:0.9deg; }
+  .cards-grid .card:nth-child(3n+2){ --tilt:-0.5deg; }
+
+  .card:hover, .card:focus-visible{
+    transform:translateY(-6px) rotate(0deg);
+    border-color:var(--accent);
+    border-style:solid;
+    background:linear-gradient(180deg, rgba(246,242,230,0.09), rgba(246,242,230,0.03));
+    box-shadow:0 18px 34px -16px rgba(0,0,0,0.55);
+  }
+
+  .card-icon{
+    width:56px; height:56px;
+    color:var(--accent);
+  }
+  .card-icon svg{width:100%; height:100%; display:block;}
+
+  .card h2{
+    font-size:1.3rem;
+    color:var(--chalk-white);
+    line-height:1.35;
+  }
+  .card p{
+    margin:0;
+    font-size:0.92rem;
+    color:var(--ink-soft);
+    line-height:1.65;
+  }
+
+  .badge-soon{
+    position:absolute;
+    top:16px; right:16px;
+    font-family:'Sarabun', sans-serif;
+    font-size:0.72rem;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius:999px;
+    background:rgba(236,150,134,0.16);
+    border:1px solid rgba(236,150,134,0.55);
+    color:var(--chalk-coral);
+    white-space:nowrap;
+  }
+
+  .chalk-tray{
+    margin-top:56px;
+    height:52px;
+    border-radius:14px;
+    background:linear-gradient(180deg, #5a3a28, #3f2718);
+    box-shadow:inset 0 3px 6px rgba(0,0,0,0.35), 0 10px 24px -12px rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 20px;
+  }
+  .chalk-piece{
+    width:30px; height:11px;
+    border-radius:5px;
+    box-shadow:0 2px 3px rgba(0,0,0,0.35);
+    flex-shrink:0;
+  }
+  .chalk-eraser{
+    width:44px; height:16px;
+    border-radius:4px;
+    background:linear-gradient(180deg,#cfc6ae,#a79d86);
+    box-shadow:0 2px 3px rgba(0,0,0,0.35);
+    margin-left:auto;
+    flex-shrink:0;
+  }
+
+  /* ---------- Topic pages ---------- */
+  .back-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:none;
+    border:1.5px dashed rgba(246,242,230,0.4);
+    color:var(--chalk-white);
+    font-size:0.92rem;
+    font-weight:600;
+    padding:8px 18px;
+    border-radius:999px;
+    transition:background var(--dur) ease, border-color var(--dur) ease;
+  }
+  .back-btn:hover{
+    background:rgba(246,242,230,0.09);
+    border-color:rgba(246,242,230,0.7);
+    border-style:solid;
+  }
+
+  .topic-header{
+    margin-top:26px;
+  }
+  .topic-header h1{
+    font-size:clamp(1.9rem, 4.5vw, 2.6rem);
+    margin-top:16px;
+    color:var(--chalk-white);
+  }
+  .topic-header p{
+    margin-top:8px;
+    color:var(--ink-soft);
+    font-size:1rem;
+    max-width:60ch;
+  }
+
+  .graph-section{
+    margin-top:52px;
+    padding-top:36px;
+    border-top:1.5px dashed var(--line-faint);
+  }
+  .graph-section:first-of-type{
+    border-top:none;
+  }
+
+  .section-head{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:16px;
+    margin-bottom:24px;
+  }
+  .section-head h2{
+    font-size:1.55rem;
+    color:var(--chalk-white);
+  }
+  .equation{
+    font-family:'JetBrains Mono', monospace;
+    font-size:1.25rem;
+    font-weight:500;
+    color:var(--ink-soft);
+    background:rgba(0,0,0,0.18);
+    padding:5px 14px;
+    border-radius:10px;
+    border:1px solid var(--line-faint);
+  }
+  .v{font-style:italic; font-weight:700; padding:0 1px;}
+  .v-m, .v-A, .v-a{color:var(--chalk-yellow);}
+  .v-c, .v-C, .v-k{color:var(--chalk-blue);}
+  .v-B{color:var(--chalk-coral);}
+  .v-h{color:var(--chalk-mint);}
+
+  .graph-layout{
+    display:grid;
+    grid-template-columns:minmax(280px, 1fr) minmax(270px, 360px);
+    gap:26px;
+    align-items:start;
+  }
+  @media (max-width:860px){
+    .graph-layout{grid-template-columns:1fr;}
+  }
+
+  .graph-panel{
+    background:var(--board-deep);
+    border:1px solid rgba(246,242,230,0.09);
+    border-radius:var(--radius-lg);
+    padding:14px;
+    box-shadow:inset 0 0 46px rgba(0,0,0,0.4);
+  }
+  .graph-panel svg{
+    width:100%;
+    height:auto;
+    aspect-ratio:1/1;
+    display:block;
+  }
+
+  .grid-line{stroke:var(--chalk-white); stroke-opacity:0.07; stroke-width:1;}
+  .grid-line-bold{stroke-opacity:0.16;}
+  .axis-line{stroke:var(--chalk-white); stroke-opacity:0.85; stroke-width:2.25; stroke-linecap:round;}
+  .axis-num{font-family:'JetBrains Mono', monospace; font-size:11px; fill:var(--chalk-white); fill-opacity:0.5;}
+  .plot-line{
+    fill:none;
+    stroke:var(--chalk-white);
+    stroke-width:4;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    filter:drop-shadow(0 0 7px rgba(246,242,230,0.55));
+  }
+  .dot{stroke:var(--board-deep); stroke-width:2;}
+  .dot-y{fill:var(--chalk-blue);}
+  .dot-x{fill:var(--chalk-yellow);}
+  .dot-vertex{fill:var(--chalk-mint);}
+
+  .controls-panel{
+    background:var(--board-panel);
+    border:1px solid rgba(246,242,230,0.09);
+    border-radius:var(--radius-lg);
+    padding:22px 22px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+
+  .control-row{display:flex; flex-direction:column; gap:6px;}
+  .control-row-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .control-label{
+    font-family:'JetBrains Mono', monospace;
+    font-style:italic;
+    font-weight:700;
+    font-size:1.05rem;
+  }
+  .label-m, .label-A, .label-a{color:var(--chalk-yellow);}
+  .label-c, .label-C, .label-k{color:var(--chalk-blue);}
+  .label-B{color:var(--chalk-coral);}
+  .label-h{color:var(--chalk-mint);}
+
+  .value-chip{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:0.95rem;
+    padding:2px 12px;
+    border-radius:999px;
+    border:1px solid var(--chip-color);
+    background:rgba(246,242,230,0.08);
+    background:color-mix(in srgb, var(--chip-color) 16%, transparent);
+    color:var(--chip-color);
+    min-width:52px;
+    text-align:center;
+  }
+
+  input[type="range"]{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:26px;
+    background:transparent;
+    margin:0;
+  }
+  input[type="range"]::-webkit-slider-runnable-track{
+    height:6px;
+    border-radius:4px;
+    background:rgba(246,242,230,0.18);
+  }
+  input[type="range"]::-moz-range-track{
+    height:6px;
+    border-radius:4px;
+    background:rgba(246,242,230,0.18);
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:22px; height:22px;
+    margin-top:-8px;
+    border-radius:50%;
+    background:var(--thumb-color);
+    border:3px solid var(--chalk-white);
+    box-shadow:0 0 10px var(--thumb-color);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:22px; height:22px;
+    border:3px solid var(--chalk-white);
+    border-radius:50%;
+    background:var(--thumb-color);
+    box-shadow:0 0 10px var(--thumb-color);
+    cursor:pointer;
+  }
+
+  .range-minmax{
+    display:flex;
+    justify-content:space-between;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--ink-faint);
+    margin-top:-4px;
+  }
+
+  .reset-btn{
+    align-self:flex-end;
+    background:none;
+    border:1px dashed rgba(246,242,230,0.4);
+    color:var(--ink-soft);
+    font-size:0.82rem;
+    padding:5px 14px;
+    border-radius:999px;
+    transition:background var(--dur) ease, color var(--dur) ease, border-color var(--dur) ease;
+  }
+  .reset-btn:hover{
+    background:rgba(246,242,230,0.1);
+    color:var(--chalk-white);
+    border-color:rgba(246,242,230,0.7);
+  }
+
+  .info-panel{
+    border-top:1.5px dashed var(--line-faint);
+    padding-top:16px;
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+  }
+  .info-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+    font-size:0.92rem;
+  }
+  .info-label{color:var(--ink-soft);}
+  .info-value{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    color:var(--chalk-white);
+    text-align:right;
+  }
+
+  .info-note{
+    display:none;
+    align-items:flex-start;
+    gap:8px;
+    font-size:0.86rem;
+    line-height:1.6;
+    color:var(--chalk-coral);
+    background:rgba(236,150,134,0.1);
+    border:1px dashed rgba(236,150,134,0.5);
+    border-radius:var(--radius-sm);
+    padding:10px 12px;
+  }
+  .info-note.show{display:flex;}
+
+  .teaser-note{
+    margin-top:52px;
+    padding:18px 20px;
+    border:1.5px dashed var(--line-faint);
+    border-radius:var(--radius-md);
+    display:flex;
+    align-items:center;
+    gap:14px;
+    color:var(--ink-soft);
+    font-size:0.92rem;
+  }
+  .teaser-note strong{color:var(--chalk-white); font-weight:600;}
+
+  /* ---------- Coming soon pages ---------- */
+  .soon-wrap{
+    margin-top:70px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+  }
+  .soon-icon{
+    width:88px; height:88px;
+    color:var(--accent, var(--chalk-yellow));
+    opacity:0.9;
+  }
+  .soon-wrap .soon-title{
+    font-size:clamp(2rem, 6vw, 2.8rem);
+    color:var(--chalk-white);
+  }
+  .soon-wrap p{
+    color:var(--ink-soft);
+    max-width:46ch;
+    font-size:0.98rem;
+    line-height:1.7;
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============ HOME PAGE ============ -->
+  <section class="page active" id="page-home">
+    <div class="home-header">
+      <div class="eyebrow">คณิตศาสตร์ • กราฟและฟังก์ชัน</div>
+      <h1>ห้องเรียนกราฟ</h1>
+      <p>เลือกหัวข้อที่อยากสำรวจ แล้วลองปรับค่าตัวแปรดูว่ากราฟเปลี่ยนรูปร่างไปอย่างไร</p>
+    </div>
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="chalk-tray" aria-hidden="true">
+      <div class="chalk-piece" style="background:var(--chalk-white)"></div>
+      <div class="chalk-piece" style="background:var(--chalk-yellow)"></div>
+      <div class="chalk-piece" style="background:var(--chalk-blue)"></div>
+      <div class="chalk-piece" style="background:var(--chalk-coral)"></div>
+      <div class="chalk-piece" style="background:var(--chalk-mint)"></div>
+      <div class="chalk-eraser"></div>
+    </div>
+  </section>
+
+  <!-- ============ GENERAL GRAPHS PAGE ============ -->
+  <section class="page" id="page-general">
+    <button class="back-btn" data-nav="page-home">← กลับ</button>
+    <div class="topic-header">
+      <h1>กราฟทั่วไป</h1>
+      <p>กราฟเส้นตรง พาราโบลา ฟังก์ชันกำลังสาม</p>
+    </div>
+
+    <!-- Standard form -->
+    <div class="graph-section" id="section-standard">
+      <div class="section-head">
+        <h2>สมการเส้นตรงรูปมาตรฐาน</h2>
+        <div class="equation">y = <span class="v v-m">m</span>x + <span class="v v-c">c</span></div>
+      </div>
+      <div class="graph-layout">
+        <div class="graph-panel">
+          <svg id="graph-standard" viewBox="0 0 480 480" role="img" aria-label="กราฟเส้นตรงรูปมาตรฐาน"></svg>
+        </div>
+        <div class="controls-panel">
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-m">m</span>
+              <span class="value-chip" id="value-m" style="--chip-color:var(--chalk-yellow)">1</span>
+            </div>
+            <input type="range" id="slider-m" class="slider-yellow" min="-5" max="5" step="0.1" value="1" style="--thumb-color:var(--chalk-yellow)" aria-label="ค่า m">
+            <div class="range-minmax"><span>-5</span><span>5</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-c">c</span>
+              <span class="value-chip" id="value-c" style="--chip-color:var(--chalk-blue)">0</span>
+            </div>
+            <input type="range" id="slider-c" class="slider-blue" min="-10" max="10" step="0.5" value="0" style="--thumb-color:var(--chalk-blue)" aria-label="ค่า c">
+            <div class="range-minmax"><span>-10</span><span>10</span></div>
+          </div>
+          <button class="reset-btn" data-reset="standard">↺ ค่าเริ่มต้น</button>
+          <div class="info-panel">
+            <div class="info-row"><span class="info-label">ความชัน คือ m =</span><span class="info-value" id="info-slope-standard">1</span></div>
+            <div class="info-row"><span class="info-label">ระยะตัดแกน Y คือ c =</span><span class="info-value" id="info-c-standard">0</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน X คือ</span><span class="info-value" id="info-xint-standard">(0, 0)</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน Y คือ</span><span class="info-value" id="info-yint-standard">(0, 0)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- General form -->
+    <div class="graph-section" id="section-general">
+      <div class="section-head">
+        <h2>สมการเส้นตรงรูปทั่วไป</h2>
+        <div class="equation"><span class="v v-A">A</span>x + <span class="v v-B">B</span>y + <span class="v v-C">C</span> = 0</div>
+      </div>
+      <div class="graph-layout">
+        <div class="graph-panel">
+          <svg id="graph-general" viewBox="0 0 480 480" role="img" aria-label="กราฟเส้นตรงรูปทั่วไป"></svg>
+        </div>
+        <div class="controls-panel">
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-A">A</span>
+              <span class="value-chip" id="value-A" style="--chip-color:var(--chalk-yellow)">1</span>
+            </div>
+            <input type="range" id="slider-A" min="-5" max="5" step="0.5" value="1" style="--thumb-color:var(--chalk-yellow)" aria-label="ค่า A">
+            <div class="range-minmax"><span>-5</span><span>5</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-B">B</span>
+              <span class="value-chip" id="value-B" style="--chip-color:var(--chalk-coral)">-1</span>
+            </div>
+            <input type="range" id="slider-B" min="-5" max="5" step="0.5" value="-1" style="--thumb-color:var(--chalk-coral)" aria-label="ค่า B">
+            <div class="range-minmax"><span>-5</span><span>5</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-C">C</span>
+              <span class="value-chip" id="value-C" style="--chip-color:var(--chalk-blue)">0</span>
+            </div>
+            <input type="range" id="slider-C" min="-10" max="10" step="0.5" value="0" style="--thumb-color:var(--chalk-blue)" aria-label="ค่า C">
+            <div class="range-minmax"><span>-10</span><span>10</span></div>
+          </div>
+          <button class="reset-btn" data-reset="general">↺ ค่าเริ่มต้น</button>
+          <div class="info-panel">
+            <div class="info-row"><span class="info-label">ความชัน =</span><span class="info-value" id="info-slope-general">1</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน X คือ</span><span class="info-value" id="info-xint-general">(0, 0)</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน Y คือ</span><span class="info-value" id="info-yint-general">(0, 0)</span></div>
+            <div class="info-note" id="info-note-general"><span aria-hidden="true">⚠</span><span class="info-note-text"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parabola: standard form -->
+    <div class="graph-section" id="section-parabola-standard">
+      <div class="section-head">
+        <h2>สมการพาราโบลารูปมาตรฐาน</h2>
+        <div class="equation">y = <span class="v v-a">a</span>(x − <span class="v v-h">h</span>)² + <span class="v v-k">k</span></div>
+      </div>
+      <div class="graph-layout">
+        <div class="graph-panel">
+          <svg id="graph-parabola-standard" viewBox="0 0 480 480" role="img" aria-label="กราฟพาราโบลารูปมาตรฐาน"></svg>
+        </div>
+        <div class="controls-panel">
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-a">a</span>
+              <span class="value-chip" id="value-a-parab" style="--chip-color:var(--chalk-yellow)">1</span>
+            </div>
+            <input type="range" id="slider-a-parab" min="-3" max="3" step="0.1" value="1" style="--thumb-color:var(--chalk-yellow)" aria-label="ค่า a">
+            <div class="range-minmax"><span>-3</span><span>3</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-h">h</span>
+              <span class="value-chip" id="value-h-parab" style="--chip-color:var(--chalk-mint)">0</span>
+            </div>
+            <input type="range" id="slider-h-parab" min="-8" max="8" step="0.5" value="0" style="--thumb-color:var(--chalk-mint)" aria-label="ค่า h">
+            <div class="range-minmax"><span>-8</span><span>8</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-k">k</span>
+              <span class="value-chip" id="value-k-parab" style="--chip-color:var(--chalk-blue)">0</span>
+            </div>
+            <input type="range" id="slider-k-parab" min="-10" max="10" step="0.5" value="0" style="--thumb-color:var(--chalk-blue)" aria-label="ค่า k">
+            <div class="range-minmax"><span>-10</span><span>10</span></div>
+          </div>
+          <button class="reset-btn" data-reset="parabola-standard">↺ ค่าเริ่มต้น</button>
+          <div class="info-panel">
+            <div class="info-row"><span class="info-label">จุดยอด คือ</span><span class="info-value" id="info-vertex-parab">(0, 0)</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน X คือ</span><span class="info-value" id="info-xint-parab">(0, 0)</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน Y คือ</span><span class="info-value" id="info-yint-parab">(0, 0)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parabola: general form -->
+    <div class="graph-section" id="section-parabola-general">
+      <div class="section-head">
+        <h2>สมการพาราโบลารูปทั่วไป</h2>
+        <div class="equation"><span class="v v-A">A</span>x² + <span class="v v-B">B</span>x + <span class="v v-C">C</span></div>
+      </div>
+      <div class="graph-layout">
+        <div class="graph-panel">
+          <svg id="graph-parabola-general" viewBox="0 0 480 480" role="img" aria-label="กราฟพาราโบลารูปทั่วไป"></svg>
+        </div>
+        <div class="controls-panel">
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-A">A</span>
+              <span class="value-chip" id="value-A-parabgen" style="--chip-color:var(--chalk-yellow)">1</span>
+            </div>
+            <input type="range" id="slider-A-parabgen" min="-3" max="3" step="0.1" value="1" style="--thumb-color:var(--chalk-yellow)" aria-label="ค่า A">
+            <div class="range-minmax"><span>-3</span><span>3</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-B">B</span>
+              <span class="value-chip" id="value-B-parabgen" style="--chip-color:var(--chalk-coral)">0</span>
+            </div>
+            <input type="range" id="slider-B-parabgen" min="-10" max="10" step="0.5" value="0" style="--thumb-color:var(--chalk-coral)" aria-label="ค่า B">
+            <div class="range-minmax"><span>-10</span><span>10</span></div>
+          </div>
+          <div class="control-row">
+            <div class="control-row-head">
+              <span class="control-label label-C">C</span>
+              <span class="value-chip" id="value-C-parabgen" style="--chip-color:var(--chalk-blue)">0</span>
+            </div>
+            <input type="range" id="slider-C-parabgen" min="-10" max="10" step="0.5" value="0" style="--thumb-color:var(--chalk-blue)" aria-label="ค่า C">
+            <div class="range-minmax"><span>-10</span><span>10</span></div>
+          </div>
+          <button class="reset-btn" data-reset="parabola-general">↺ ค่าเริ่มต้น</button>
+          <div class="info-panel">
+            <div class="info-row"><span class="info-label">จุดยอด คือ</span><span class="info-value" id="info-vertex-parabgen">(0, 0)</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน X คือ</span><span class="info-value" id="info-xint-parabgen">(0, 0)</span></div>
+            <div class="info-row"><span class="info-label">จุดตัดแกน Y คือ</span><span class="info-value" id="info-yint-parabgen">(0, 0)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="teaser-note">
+      <span>🖍</span>
+      <span><strong>เร็ว ๆ นี้ในหัวข้อนี้:</strong> ฟังก์ชันกำลังสาม</span>
+    </div>
+  </section>
+
+  <!-- Coming-soon pages get generated here by JS -->
+  <div id="soon-pages"></div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var NS = 'http://www.w3.org/2000/svg';
+
+  /* ---------------- Icons (chalk-sketch style, viewBox 0 0 64 64) ---------------- */
+  var ICONS = {
+    general: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 46 C 18 46 24 30 30 20 C 36 10 42 6 50 6"/><path d="M8 12 L54 52"/></svg>',
+    conic: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M32 6 L13 54 M32 6 L51 54"/><ellipse cx="32" cy="40" rx="19" ry="7"/></svg>',
+    explog: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="58" x2="58" y2="6" stroke-dasharray="1 7"/><path d="M8 50 C 20 50 28 34 34 22 C 38 14 44 8 56 6"/><path d="M6 56 C 8 44 14 38 22 34 C 34 28 42 20 54 8"/></svg>',
+    trig: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="30" r="17"/><line x1="24" y1="30" x2="36" y2="15"/><path d="M42 44 C 46 34 50 54 54 44 C 58 34 60 46 62 42"/></svg>',
+    complex: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="34" x2="58" y2="34"/><line x1="30" y1="6" x2="30" y2="58"/><line x1="30" y1="34" x2="48" y2="14"/><circle cx="48" cy="14" r="3" fill="currentColor" stroke="none"/><path d="M40 34 A 10 10 0 0 0 36 26"/></svg>',
+    hourglass: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8 H50 M14 56 H50 M14 8 C14 26 32 26 32 32 C32 38 14 38 14 56 M50 8 C50 26 32 26 32 32 C32 38 50 38 50 56"/></svg>'
+  };
+
+  /* ---------------- Home page card data ---------------- */
+  var CARDS = [
+    { id:'page-general', title:'กราฟทั่วไป', desc:'กราฟเส้นตรง พาราโบลา ฟังก์ชันกำลังสาม', ready:true, accent:'var(--chalk-yellow)', icon:ICONS.general },
+    { id:'page-conic', title:'ภาคตัดกรวย', desc:'พาราโบลา วงกลม วงรี ไฮเพอร์โบลา', ready:false, accent:'var(--chalk-blue)', icon:ICONS.conic },
+    { id:'page-explog', title:'ฟังก์ชันเอกซ์โพเนนเชียล และฟังก์ชันลอการิทึม', desc:'การเติบโต การสลายตัว และฟังก์ชันผกผันของกันและกัน', ready:false, accent:'var(--chalk-coral)', icon:ICONS.explog },
+    { id:'page-trig', title:'ฟังก์ชันตรีโกณมิติ', desc:'วงกลมหนึ่งหน่วย และกราฟของฟังก์ชันตรีโกณมิติ เช่น sin cos tan', ready:false, accent:'var(--chalk-yellow)', icon:ICONS.trig },
+    { id:'page-complex', title:'จำนวนเชิงซ้อน', desc:'กราฟของจำนวนเชิงซ้อนแบบทั่วไป และในสถานการณ์ต่าง ๆ', ready:false, accent:'var(--chalk-blue)', icon:ICONS.complex }
+  ];
+
+  function renderCards(){
+    var grid = document.getElementById('cards-grid');
+    var html = '';
+    CARDS.forEach(function(c){
+      html += '<button type="button" class="card" data-nav="'+c.id+'" style="--accent:'+c.accent+'">'
+        + (c.ready ? '' : '<span class="badge-soon">เร็ว ๆ นี้</span>')
+        + '<span class="card-icon">'+c.icon+'</span>'
+        + '<h2>'+c.title+'</h2>'
+        + '<p>'+c.desc+'</p>'
+        + '</button>';
+    });
+    grid.innerHTML = html;
+  }
+
+  function renderSoonPages(){
+    var wrap = document.getElementById('soon-pages');
+    var html = '';
+    CARDS.filter(function(c){ return !c.ready; }).forEach(function(c){
+      html += '<section class="page" id="'+c.id+'">'
+        + '<button class="back-btn" data-nav="page-home">← กลับ</button>'
+        + '<div class="topic-header"><h1>'+c.title+'</h1><p>'+c.desc+'</p></div>'
+        + '<div class="soon-wrap" style="--accent:'+c.accent+'">'
+        + '<span class="soon-icon">'+ICONS.hourglass+'</span>'
+        + '<h2 class="soon-title">เร็ว ๆ นี้</h2>'
+        + '<p>หัวข้อนี้กำลังอยู่ระหว่างการพัฒนา แวะกลับมาดูใหม่เร็ว ๆ นี้นะ</p>'
+        + '</div>'
+        + '</section>';
+    });
+    wrap.innerHTML = html;
+  }
+
+  /* ---------------- Navigation ---------------- */
+  function showPage(id){
+    var pages = document.querySelectorAll('.page');
+    var found = false;
+    pages.forEach(function(p){
+      if (p.id === id){ p.classList.add('active'); found = true; }
+      else { p.classList.remove('active'); }
+    });
+    if (!found){
+      document.getElementById('page-home').classList.add('active');
+    }
+    window.scrollTo({ top:0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+  }
+
+  function initNav(){
+    document.addEventListener('click', function(e){
+      var el = e.target.closest('[data-nav]');
+      if (!el) return;
+      var id = el.getAttribute('data-nav');
+      if (location.hash.slice(1) === id){
+        showPage(id);
+      } else {
+        location.hash = id;
+      }
+    });
+    window.addEventListener('hashchange', function(){
+      showPage(location.hash.slice(1) || 'page-home');
+    });
+    showPage(location.hash.slice(1) || 'page-home');
+  }
+
+  /* ---------------- Math helpers ---------------- */
+  function fmtNum(n){
+    if (!isFinite(n)) return '-';
+    var r = Math.round(n * 100) / 100;
+    if (Object.is(r, -0)) r = 0;
+    var s = r.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+    if (s === '' || s === '-') s = '0';
+    return s;
+  }
+
+  function clipLineToBox(A, B, C, box){
+    // NOTE (read before touching this function):
+    // This must return the line's two box-intersection points in a way that
+    // varies CONTINUOUSLY as A,B,C change smoothly (e.g. a slider being
+    // dragged). The animator tracks p1/p2 by array position and eases each
+    // one toward its new target every frame (see createLineAnimator) --
+    // per the earlier request, the graph should rotate/move smoothly, it
+    // must NEVER "reappear"/redraw and must NEVER visually flip.
+    //
+    // An earlier version picked candidate points per-edge (x=xmin/xmax,
+    // y=ymin/ymax) and then just took "the two farthest apart" in whatever
+    // order they happened to be pushed. That ordering is NOT continuous:
+    // right around slopes where the line passes exactly through a box
+    // corner, which edge "wins" can flip, so index 0 and index 1 can swap
+    // which physical corner they refer to between two very close parameter
+    // values (e.g. m = -1.1 vs m = -1.0). The animator then saw both
+    // endpoints jump to the opposite corner and the line appeared to flip
+    // across itself -- a real bug a student would notice and be confused
+    // by. DO NOT reintroduce that approach.
+    //
+    // Fix: parametrize the line as p0 + t*d, where p0 (foot of the
+    // perpendicular from the origin) and d (a direction vector along the
+    // line) are both continuous functions of A,B,C. Clip that continuous
+    // parametrization against the box using min/max (Liang-Barsky style).
+    // tMin/tMax are continuous in A,B,C (min/max of continuous functions
+    // is continuous, even where the active constraint switches), so p1
+    // (=tMin) and p2 (=tMax) never swap identity. Verified with a
+    // continuity sweep test across the full slider range before shipping.
+    var eps = 1e-9;
+    var denom = A*A + B*B;
+    if (denom < eps) return null; // A=B=0: degenerate, handled by the caller
+
+    var p0x = -A*C/denom;
+    var p0y = -B*C/denom;
+    var dx = B, dy = -A;
+
+    var tMin = -Infinity, tMax = Infinity;
+
+    if (Math.abs(dx) < eps){
+      if (p0x < box.xmin - 1e-6 || p0x > box.xmax + 1e-6) return null;
+    } else {
+      var tx1 = (box.xmin - p0x) / dx;
+      var tx2 = (box.xmax - p0x) / dx;
+      tMin = Math.max(tMin, Math.min(tx1, tx2));
+      tMax = Math.min(tMax, Math.max(tx1, tx2));
+    }
+
+    if (Math.abs(dy) < eps){
+      if (p0y < box.ymin - 1e-6 || p0y > box.ymax + 1e-6) return null;
+    } else {
+      var ty1 = (box.ymin - p0y) / dy;
+      var ty2 = (box.ymax - p0y) / dy;
+      tMin = Math.max(tMin, Math.min(ty1, ty2));
+      tMax = Math.min(tMax, Math.max(ty1, ty2));
+    }
+
+    if (tMin > tMax + 1e-9) return null;
+
+    return [
+      { x: p0x + tMin*dx, y: p0y + tMin*dy },
+      { x: p0x + tMax*dx, y: p0y + tMax*dy }
+    ];
+  }
+
+  function computeGeneralInfo(A, B, C){
+    var eps = 1e-9;
+    var A0 = Math.abs(A) < eps, B0 = Math.abs(B) < eps;
+    if (A0 && B0){
+      return {
+        degenerate:true,
+        message: Math.abs(C) < eps
+          ? 'A และ B เป็นศูนย์ทั้งคู่ และ C = 0 สมการนี้เป็นจริงทุกจุดในระนาบ จึงไม่ใช่กราฟเส้นตรง'
+          : 'A และ B เป็นศูนย์ทั้งคู่ แต่ C ไม่เท่ากับศูนย์ สมการนี้ไม่มีคำตอบ จึงไม่มีกราฟ'
+      };
+    }
+    var slopeText, xIntText, yIntText;
+    if (!B0){
+      slopeText = fmtNum(-A/B);
+    } else {
+      slopeText = 'ไม่นิยาม (เส้นตรงแนวดิ่ง)';
+    }
+    if (!B0){
+      yIntText = '(0, ' + fmtNum(-C/B) + ')';
+    } else {
+      var xv = -C/A;
+      yIntText = (Math.abs(xv) < 1e-6) ? 'เส้นทับแกน Y (ทุกจุดบนแกน Y)' : 'ไม่มี (เส้นขนานกับแกน Y)';
+    }
+    if (!A0){
+      xIntText = '(' + fmtNum(-C/A) + ', 0)';
+    } else {
+      var yh = -C/B;
+      xIntText = (Math.abs(yh) < 1e-6) ? 'เส้นทับแกน X (ทุกจุดบนแกน X)' : 'ไม่มี (เส้นขนานกับแกน X)';
+    }
+    return { degenerate:false, slopeText:slopeText, xIntText:xIntText, yIntText:yIntText };
+  }
+
+  /* ---------------- Graph rendering ---------------- */
+  var MATH_RANGE = 10;
+  var SVG_SIZE = 480;
+  var MARGIN = 28;
+  var SCALE = (SVG_SIZE - 2*MARGIN) / (2*MATH_RANGE);
+
+  function toPx(x, y){
+    return [ MARGIN + (x + MATH_RANGE) * SCALE, SVG_SIZE - MARGIN - (y + MATH_RANGE) * SCALE ];
+  }
+
+  function el(tag, attrs){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs){ e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+
+  function buildAxes(svg, prefix, mode){
+    // mode: 'line' (default) appends a single line path + 2 intercept dots
+    //       (dot-y, dot-x), as used by the two straight-line graphs.
+    //       'parabola' appends a curve path + vertex dot + y-intercept dot
+    //       + 2 x-intercept dots (dot-x1/dot-x2, since a parabola can cross
+    //       the X axis 0, 1, or 2 times).
+    mode = mode || 'line';
+    svg.innerHTML = '';
+    var defs = el('defs', {});
+    var marker = el('marker', { id: prefix+'-arrow', viewBox:'0 0 10 10', refX:'8', refY:'5', markerWidth:'6', markerHeight:'6', orient:'auto-start-reverse' });
+    var arrowPath = el('path', { d:'M0,0 L10,5 L0,10 Z', fill:'var(--chalk-white)' });
+    marker.appendChild(arrowPath);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    var gridGroup = el('g', { class:'grid-lines' });
+    for (var i = -MATH_RANGE; i <= MATH_RANGE; i++){
+      if (i === 0) continue;
+      var bold = (i % 5 === 0);
+      var p1 = toPx(i, -MATH_RANGE), p2 = toPx(i, MATH_RANGE);
+      gridGroup.appendChild(el('line', { x1:p1[0], y1:p1[1], x2:p2[0], y2:p2[1], class: bold ? 'grid-line grid-line-bold' : 'grid-line' }));
+      var h1 = toPx(-MATH_RANGE, i), h2 = toPx(MATH_RANGE, i);
+      gridGroup.appendChild(el('line', { x1:h1[0], y1:h1[1], x2:h2[0], y2:h2[1], class: bold ? 'grid-line grid-line-bold' : 'grid-line' }));
+    }
+    svg.appendChild(gridGroup);
+
+    var axesGroup = el('g', { class:'axes' });
+    var ax1 = toPx(-MATH_RANGE, 0), ax2 = toPx(MATH_RANGE, 0);
+    axesGroup.appendChild(el('line', { x1:ax1[0], y1:ax1[1], x2:ax2[0], y2:ax2[1], class:'axis-line', 'marker-end':'url(#'+prefix+'-arrow)', 'marker-start':'url(#'+prefix+'-arrow)' }));
+    var ay1 = toPx(0, -MATH_RANGE), ay2 = toPx(0, MATH_RANGE);
+    axesGroup.appendChild(el('line', { x1:ay1[0], y1:ay1[1], x2:ay2[0], y2:ay2[1], class:'axis-line', 'marker-end':'url(#'+prefix+'-arrow)', 'marker-start':'url(#'+prefix+'-arrow)' }));
+    svg.appendChild(axesGroup);
+
+    var labelGroup = el('g', { class:'axis-labels' });
+    for (var n = -MATH_RANGE; n <= MATH_RANGE; n += 2){
+      if (n === 0) continue;
+      var lx = toPx(n, 0);
+      var tx = el('text', { x:lx[0], y:lx[1]+15, class:'axis-num', 'text-anchor':'middle' });
+      tx.textContent = n;
+      labelGroup.appendChild(tx);
+      var ly = toPx(0, n);
+      var ty = el('text', { x:ly[0]-8, y:ly[1]+4, class:'axis-num', 'text-anchor':'end' });
+      ty.textContent = n;
+      labelGroup.appendChild(ty);
+    }
+    var o = toPx(0,0);
+    var to = el('text', { x:o[0]-10, y:o[1]+16, class:'axis-num', 'text-anchor':'end' });
+    to.textContent = '0';
+    labelGroup.appendChild(to);
+    svg.appendChild(labelGroup);
+
+    if (mode === 'parabola'){
+      svg.appendChild(el('path', { class:'plot-line', id: prefix+'-curve' }));
+      svg.appendChild(el('circle', { r:'6', class:'dot dot-y', id: prefix+'-dot-y', style:'opacity:0' }));
+      svg.appendChild(el('circle', { r:'6', class:'dot dot-x', id: prefix+'-dot-x1', style:'opacity:0' }));
+      svg.appendChild(el('circle', { r:'6', class:'dot dot-x', id: prefix+'-dot-x2', style:'opacity:0' }));
+      svg.appendChild(el('circle', { r:'7', class:'dot dot-vertex', id: prefix+'-dot-vertex', style:'opacity:0' }));
+    } else {
+      svg.appendChild(el('path', { class:'plot-line', id: prefix+'-line' }));
+      svg.appendChild(el('circle', { r:'6', class:'dot dot-y', id: prefix+'-dot-y', style:'opacity:0' }));
+      svg.appendChild(el('circle', { r:'6', class:'dot dot-x', id: prefix+'-dot-x', style:'opacity:0' }));
+    }
+  }
+
+  function chalkDrawOnce(pathEl){
+    var d = pathEl.getAttribute('d');
+    if (!d || prefersReducedMotion){ return; }
+    try{
+      var len = pathEl.getTotalLength();
+      pathEl.style.transition = 'none';
+      pathEl.style.strokeDasharray = len;
+      pathEl.style.strokeDashoffset = len;
+      pathEl.getBoundingClientRect();
+      pathEl.style.transition = 'stroke-dashoffset 0.5s ease-out';
+      requestAnimationFrame(function(){ pathEl.style.strokeDashoffset = '0'; });
+    } catch(err){ /* ignore */ }
+  }
+
+  function computeTarget(A, B, C){
+    var box = { xmin:-MATH_RANGE, xmax:MATH_RANGE, ymin:-MATH_RANGE, ymax:MATH_RANGE };
+    var clipped = clipLineToBox(A, B, C, box);
+    var target = {
+      p1:null, p2:null, lineOpacity:0,
+      dotY:{x:0,y:0}, dotYOpacity:0,
+      dotX:{x:0,y:0}, dotXOpacity:0
+    };
+    if (clipped){
+      var px1 = toPx(clipped[0].x, clipped[0].y);
+      var px2 = toPx(clipped[1].x, clipped[1].y);
+      target.p1 = { x:px1[0], y:px1[1] };
+      target.p2 = { x:px2[0], y:px2[1] };
+      target.lineOpacity = 1;
+    }
+    if (Math.abs(B) > 1e-9){
+      var dy = toPx(0, -C/B);
+      target.dotY = { x:dy[0], y:dy[1] };
+      target.dotYOpacity = 1;
+    }
+    if (Math.abs(A) > 1e-9){
+      var dx = toPx(-C/A, 0);
+      target.dotX = { x:dx[0], y:dx[1] };
+      target.dotXOpacity = 1;
+    }
+    return target;
+  }
+
+  var EMPTY_TARGET = { p1:null, p2:null, lineOpacity:0, dotY:{x:0,y:0}, dotYOpacity:0, dotX:{x:0,y:0}, dotXOpacity:0 };
+
+  /*
+   * A "chase" animator: instead of replaying a draw-in animation every time a
+   * slider moves, each update just sets a new target and the line/dots glide
+   * (rotate/translate) smoothly toward it every frame. Feels like a hand
+   * sliding the chalk continuously rather than the graph reappearing.
+   *
+   * IMPORTANT: this animator trusts that clipLineToBox() gives it a
+   * continuous target (p1/p2 never swap which physical point they are
+   * between calls). If the line ever appears to flip/rotate the wrong way
+   * for a small slider change, the bug is almost certainly in
+   * clipLineToBox's point ordering, not here -- see the long comment on
+   * that function before changing either piece.
+   */
+  function createLineAnimator(prefix){
+    var linePath = document.getElementById(prefix+'-line');
+    var dotY = document.getElementById(prefix+'-dot-y');
+    var dotX = document.getElementById(prefix+'-dot-x');
+
+    var cur = {
+      p1:null, p2:null, lineOpacity:0,
+      dotY:{x:0,y:0}, dotYOpacity:0,
+      dotX:{x:0,y:0}, dotXOpacity:0
+    };
+    var target = EMPTY_TARGET;
+    var rafId = null;
+    var lastTime = null;
+    var TAU = 90; // ms time-constant: smaller = snappier, larger = more languid
+
+    function paint(){
+      if (cur.p1 && cur.p2){
+        linePath.setAttribute('d', 'M '+cur.p1.x+' '+cur.p1.y+' L '+cur.p2.x+' '+cur.p2.y);
+      }
+      linePath.style.opacity = cur.lineOpacity;
+      dotY.setAttribute('cx', cur.dotY.x); dotY.setAttribute('cy', cur.dotY.y);
+      dotY.style.opacity = cur.dotYOpacity;
+      dotX.setAttribute('cx', cur.dotX.x); dotX.setAttribute('cy', cur.dotX.y);
+      dotX.style.opacity = cur.dotXOpacity;
+    }
+
+    function step(now){
+      var dt = lastTime ? (now - lastTime) : 16.7;
+      lastTime = now;
+      if (prefersReducedMotion){ dt = 1000; } // effectively snap in one frame
+      var f = 1 - Math.exp(-dt / TAU);
+      var settled = true;
+
+      if (target.p1 && target.p2){
+        if (!cur.p1 || !cur.p2){
+          cur.p1 = { x:target.p1.x, y:target.p1.y };
+          cur.p2 = { x:target.p2.x, y:target.p2.y };
+        } else {
+          cur.p1.x += (target.p1.x - cur.p1.x) * f;
+          cur.p1.y += (target.p1.y - cur.p1.y) * f;
+          cur.p2.x += (target.p2.x - cur.p2.x) * f;
+          cur.p2.y += (target.p2.y - cur.p2.y) * f;
+          if (Math.abs(cur.p1.x-target.p1.x) > 0.4 || Math.abs(cur.p1.y-target.p1.y) > 0.4 ||
+              Math.abs(cur.p2.x-target.p2.x) > 0.4 || Math.abs(cur.p2.y-target.p2.y) > 0.4){
+            settled = false;
+          } else {
+            cur.p1.x = target.p1.x; cur.p1.y = target.p1.y;
+            cur.p2.x = target.p2.x; cur.p2.y = target.p2.y;
+          }
+        }
+      }
+
+      cur.lineOpacity += (target.lineOpacity - cur.lineOpacity) * f;
+      if (Math.abs(cur.lineOpacity - target.lineOpacity) > 0.01) settled = false; else cur.lineOpacity = target.lineOpacity;
+
+      cur.dotYOpacity += (target.dotYOpacity - cur.dotYOpacity) * f;
+      if (Math.abs(cur.dotYOpacity - target.dotYOpacity) > 0.01) settled = false; else cur.dotYOpacity = target.dotYOpacity;
+
+      cur.dotXOpacity += (target.dotXOpacity - cur.dotXOpacity) * f;
+      if (Math.abs(cur.dotXOpacity - target.dotXOpacity) > 0.01) settled = false; else cur.dotXOpacity = target.dotXOpacity;
+
+      // Dot positions: chase only while visible-ish, otherwise snap so a dot
+      // never sweeps across the board while it's invisible.
+      if (cur.dotYOpacity > 0.02){
+        cur.dotY.x += (target.dotY.x - cur.dotY.x) * f;
+        cur.dotY.y += (target.dotY.y - cur.dotY.y) * f;
+        if (Math.abs(cur.dotY.x-target.dotY.x) > 0.4 || Math.abs(cur.dotY.y-target.dotY.y) > 0.4) settled = false;
+      } else {
+        cur.dotY.x = target.dotY.x; cur.dotY.y = target.dotY.y;
+      }
+      if (cur.dotXOpacity > 0.02){
+        cur.dotX.x += (target.dotX.x - cur.dotX.x) * f;
+        cur.dotX.y += (target.dotX.y - cur.dotX.y) * f;
+        if (Math.abs(cur.dotX.x-target.dotX.x) > 0.4 || Math.abs(cur.dotX.y-target.dotX.y) > 0.4) settled = false;
+      } else {
+        cur.dotX.x = target.dotX.x; cur.dotX.y = target.dotX.y;
+      }
+
+      paint();
+
+      if (!settled && !prefersReducedMotion){
+        rafId = requestAnimationFrame(step);
+      } else {
+        rafId = null;
+        lastTime = null;
+      }
+    }
+
+    return {
+      setTarget: function(t){
+        target = t;
+        if (!rafId){
+          lastTime = null;
+          rafId = requestAnimationFrame(step);
+        }
+      },
+      setImmediate: function(t){
+        target = t;
+        cur.p1 = t.p1 ? { x:t.p1.x, y:t.p1.y } : null;
+        cur.p2 = t.p2 ? { x:t.p2.x, y:t.p2.y } : null;
+        cur.lineOpacity = t.lineOpacity;
+        cur.dotY = { x:t.dotY.x, y:t.dotY.y }; cur.dotYOpacity = t.dotYOpacity;
+        cur.dotX = { x:t.dotX.x, y:t.dotX.y }; cur.dotXOpacity = t.dotXOpacity;
+        paint();
+      },
+      chalkDrawOnce: function(){ chalkDrawOnce(linePath); }
+    };
+  }
+
+  var animators = {};
+
+  /* ---------------- Parabola (standard form): math + rendering ----------------
+   * y = a(x-h)^2 + k
+   *
+   * Unlike the straight-line case, the curve is drawn from a fixed grid of
+   * sample x-positions (see PARABOLA_SAMPLE_X below) that never changes.
+   * Each sample index always corresponds to the same x, for every value of
+   * a/h/k -- only its Y value changes. That sidesteps the whole class of
+   * bug fixed earlier in clipLineToBox (endpoints swapping identity and the
+   * curve appearing to flip): there is no "which point is which" ambiguity
+   * here, so tweening each sample's Y toward its new target is guaranteed
+   * continuous, i.e. the curve reshapes/slides smoothly and never flips or
+   * pops. Keep this fixed-index sampling if this code is ever extended.
+   */
+  function computeParabolaInfo(a, h, k){
+    var eps = 1e-9;
+    var yIntText = '(0, ' + fmtNum(a*h*h + k) + ')';
+    var vertexText, xIntText;
+
+    if (Math.abs(a) < eps){
+      vertexText = 'ไม่มี (a = 0 ไม่ใช่พาราโบลา กลายเป็นเส้นตรง y = k)';
+      xIntText = (Math.abs(k) < eps)
+        ? 'ทุกจุดบนแกน X (เส้นทับแกน X)'
+        : 'ไม่มี (เส้นขนานกับแกน X)';
+    } else {
+      vertexText = '(' + fmtNum(h) + ', ' + fmtNum(k) + ')';
+      var D = -k/a;
+      if (D > eps){
+        var r = Math.sqrt(D);
+        var lo = Math.min(h-r, h+r), hi = Math.max(h-r, h+r);
+        xIntText = '(' + fmtNum(lo) + ', 0) และ (' + fmtNum(hi) + ', 0)';
+      } else if (Math.abs(D) <= eps){
+        xIntText = '(' + fmtNum(h) + ', 0) (จุดสัมผัสแกน X)';
+      } else {
+        xIntText = 'ไม่มี (กราฟไม่ตัดแกน X)';
+      }
+    }
+    return { vertexText:vertexText, xIntText:xIntText, yIntText:yIntText };
+  }
+
+  var PARABOLA_SAMPLES = 140;
+  var PARABOLA_SAMPLE_X = [];
+  var PARABOLA_SAMPLE_PX_X = [];
+  (function(){
+    for (var i = 0; i <= PARABOLA_SAMPLES; i++){
+      var x = -MATH_RANGE + (2*MATH_RANGE) * i / PARABOLA_SAMPLES;
+      PARABOLA_SAMPLE_X.push(x);
+      PARABOLA_SAMPLE_PX_X.push(toPx(x, 0)[0]);
+    }
+  })();
+
+  function toPxY(y){
+    return SVG_SIZE - MARGIN - (y + MATH_RANGE) * SCALE;
+  }
+
+  function computeParabolaTarget(a, h, k){
+    var eps = 1e-9;
+    var target = {
+      curveY: new Array(PARABOLA_SAMPLE_X.length),
+      vertex:{x:0,y:0}, vertexOpacity:0,
+      dotY:{x:0,y:0}, dotYOpacity:1,
+      dotX1:{x:0,y:0}, dotX1Opacity:0,
+      dotX2:{x:0,y:0}, dotX2Opacity:0
+    };
+
+    for (var i = 0; i < PARABOLA_SAMPLE_X.length; i++){
+      var x = PARABOLA_SAMPLE_X[i];
+      var y = a*(x-h)*(x-h) + k;
+      target.curveY[i] = toPxY(y);
+    }
+
+    var vpx = toPx(h, k);
+    target.vertex = { x:vpx[0], y:vpx[1] };
+    target.vertexOpacity = (Math.abs(a) > eps) ? 1 : 0;
+
+    var dy = toPx(0, a*h*h + k);
+    target.dotY = { x:dy[0], y:dy[1] };
+    target.dotYOpacity = 1;
+
+    if (Math.abs(a) > eps){
+      var D = -k/a;
+      if (D > eps){
+        var r = Math.sqrt(D);
+        var pA = toPx(h-r, 0), pB = toPx(h+r, 0);
+        target.dotX1 = { x:pA[0], y:pA[1] }; target.dotX1Opacity = 1;
+        target.dotX2 = { x:pB[0], y:pB[1] }; target.dotX2Opacity = 1;
+      } else {
+        // D <= 0: at most one real root, parked continuously at (h,0) --
+        // this is exactly the limit the two roots converge to as D -> 0,
+        // so there is no jump when opacity fades out right after.
+        var pH = toPx(h, 0);
+        target.dotX1 = { x:pH[0], y:pH[1] }; target.dotX1Opacity = (Math.abs(D) <= eps) ? 1 : 0;
+        target.dotX2 = { x:pH[0], y:pH[1] }; target.dotX2Opacity = 0;
+      }
+    } else {
+      var pO = toPx(h, 0);
+      target.dotX1 = { x:pO[0], y:pO[1] }; target.dotX1Opacity = 0;
+      target.dotX2 = { x:pO[0], y:pO[1] }; target.dotX2Opacity = 0;
+    }
+
+    return target;
+  }
+
+  function createParabolaAnimator(prefix){
+    var curvePath = document.getElementById(prefix+'-curve');
+    var dotVertex = document.getElementById(prefix+'-dot-vertex');
+    var dotY = document.getElementById(prefix+'-dot-y');
+    var dotX1 = document.getElementById(prefix+'-dot-x1');
+    var dotX2 = document.getElementById(prefix+'-dot-x2');
+    var N = PARABOLA_SAMPLE_X.length;
+
+    var cur = {
+      curveY: null,
+      vertex:{x:0,y:0}, vertexOpacity:0,
+      dotY:{x:0,y:0}, dotYOpacity:0,
+      dotX1:{x:0,y:0}, dotX1Opacity:0,
+      dotX2:{x:0,y:0}, dotX2Opacity:0
+    };
+    var target = null;
+    var rafId = null;
+    var lastTime = null;
+    var TAU = 90;
+
+    function paintPoint(circleEl, p, opacity){
+      circleEl.setAttribute('cx', p.x); circleEl.setAttribute('cy', p.y);
+      circleEl.style.opacity = opacity;
+    }
+
+    function paint(){
+      if (cur.curveY){
+        var d = 'M ' + PARABOLA_SAMPLE_PX_X[0] + ' ' + cur.curveY[0];
+        for (var i = 1; i < N; i++){
+          d += ' L ' + PARABOLA_SAMPLE_PX_X[i] + ' ' + cur.curveY[i];
+        }
+        curvePath.setAttribute('d', d);
+      }
+      paintPoint(dotVertex, cur.vertex, cur.vertexOpacity);
+      paintPoint(dotY, cur.dotY, cur.dotYOpacity);
+      paintPoint(dotX1, cur.dotX1, cur.dotX1Opacity);
+      paintPoint(dotX2, cur.dotX2, cur.dotX2Opacity);
+    }
+
+    function chasePoint(curP, targetP, curOp, targetOp, f){
+      // Returns [settled, newOpacity]; mutates curP in place while visible,
+      // snaps it while invisible (same "never sweep while hidden" rule as
+      // the line animator's dots).
+      var settled = true;
+      var newOp = curOp + (targetOp - curOp) * f;
+      if (Math.abs(newOp - targetOp) <= 0.01) newOp = targetOp; else settled = false;
+      if (newOp > 0.02){
+        curP.x += (targetP.x - curP.x) * f;
+        curP.y += (targetP.y - curP.y) * f;
+        if (Math.abs(curP.x-targetP.x) > 0.4 || Math.abs(curP.y-targetP.y) > 0.4) settled = false;
+      } else {
+        curP.x = targetP.x; curP.y = targetP.y;
+      }
+      return [settled, newOp];
+    }
+
+    function step(now){
+      var dt = lastTime ? (now - lastTime) : 16.7;
+      lastTime = now;
+      if (prefersReducedMotion){ dt = 1000; }
+      var f = 1 - Math.exp(-dt / TAU);
+      var settled = true;
+
+      if (!cur.curveY){
+        cur.curveY = target.curveY.slice();
+      } else {
+        for (var i = 0; i < N; i++){
+          cur.curveY[i] += (target.curveY[i] - cur.curveY[i]) * f;
+          if (Math.abs(cur.curveY[i] - target.curveY[i]) > 0.4) settled = false;
+        }
+      }
+
+      var r1 = chasePoint(cur.vertex, target.vertex, cur.vertexOpacity, target.vertexOpacity, f);
+      cur.vertexOpacity = r1[1]; if (!r1[0]) settled = false;
+      var r2 = chasePoint(cur.dotY, target.dotY, cur.dotYOpacity, target.dotYOpacity, f);
+      cur.dotYOpacity = r2[1]; if (!r2[0]) settled = false;
+      var r3 = chasePoint(cur.dotX1, target.dotX1, cur.dotX1Opacity, target.dotX1Opacity, f);
+      cur.dotX1Opacity = r3[1]; if (!r3[0]) settled = false;
+      var r4 = chasePoint(cur.dotX2, target.dotX2, cur.dotX2Opacity, target.dotX2Opacity, f);
+      cur.dotX2Opacity = r4[1]; if (!r4[0]) settled = false;
+
+      paint();
+
+      if (!settled && !prefersReducedMotion){
+        rafId = requestAnimationFrame(step);
+      } else {
+        rafId = null;
+        lastTime = null;
+      }
+    }
+
+    return {
+      setTarget: function(t){
+        target = t;
+        if (!rafId){
+          lastTime = null;
+          rafId = requestAnimationFrame(step);
+        }
+      },
+      setImmediate: function(t){
+        target = t;
+        cur.curveY = t.curveY.slice();
+        cur.vertex = { x:t.vertex.x, y:t.vertex.y }; cur.vertexOpacity = t.vertexOpacity;
+        cur.dotY = { x:t.dotY.x, y:t.dotY.y }; cur.dotYOpacity = t.dotYOpacity;
+        cur.dotX1 = { x:t.dotX1.x, y:t.dotX1.y }; cur.dotX1Opacity = t.dotX1Opacity;
+        cur.dotX2 = { x:t.dotX2.x, y:t.dotX2.y }; cur.dotX2Opacity = t.dotX2Opacity;
+        paint();
+      },
+      chalkDrawOnce: function(){ chalkDrawOnce(curvePath); }
+    };
+  }
+
+  /* ---------------- Parabola (general form): y = Ax^2 + Bx + C, A != 0 ---------------
+   * Reuses the same fixed-sample-index curve representation and the same
+   * createParabolaAnimator as the standard form above (same continuity
+   * guarantee -- see the long comment near computeParabolaInfo).
+   *
+   * One extra thing to note here (not present in the standard form): the
+   * vertex is DERIVED (h = -B/(2A)), not an independent slider value. As A
+   * approaches 0 with B held fixed and nonzero, h = -B/(2A) genuinely grows
+   * without bound -- that is correct, real math (the parabola gets very
+   * flat and its vertex really does run off toward infinity), not a bug.
+   * It stays continuous the whole way (no flip), it just moves fast/far
+   * right near A = 0. Don't "fix" this by clamping h -- that would make the
+   * graph mathematically wrong. The A = 0 case itself is handled explicitly
+   * below (degenerates to the line y = Bx + C) so no division by zero ever
+   * actually happens.
+   */
+  function computeGeneralParabolaInfo(A, B, C){
+    var eps = 1e-9;
+    var yIntText = '(0, ' + fmtNum(C) + ')';
+    var vertexText, xIntText;
+
+    if (Math.abs(A) < eps){
+      vertexText = 'ไม่มี (A = 0 ไม่ใช่พาราโบลา กลายเป็นเส้นตรง y = Bx + C)';
+      if (Math.abs(B) > eps){
+        xIntText = '(' + fmtNum(-C/B) + ', 0)';
+      } else if (Math.abs(C) < eps){
+        xIntText = 'ทุกจุดบนแกน X (เส้นทับแกน X)';
+      } else {
+        xIntText = 'ไม่มี (เส้นขนานกับแกน X)';
+      }
+    } else {
+      var h = -B/(2*A);
+      var k = A*h*h + B*h + C;
+      vertexText = '(' + fmtNum(h) + ', ' + fmtNum(k) + ')';
+      var D = B*B - 4*A*C;
+      if (D > eps){
+        var r = Math.sqrt(D);
+        var x1 = (-B-r)/(2*A), x2 = (-B+r)/(2*A);
+        var lo = Math.min(x1,x2), hi = Math.max(x1,x2);
+        xIntText = '(' + fmtNum(lo) + ', 0) และ (' + fmtNum(hi) + ', 0)';
+      } else if (Math.abs(D) <= eps){
+        xIntText = '(' + fmtNum(h) + ', 0) (จุดสัมผัสแกน X)';
+      } else {
+        xIntText = 'ไม่มี (กราฟไม่ตัดแกน X)';
+      }
+    }
+    return { vertexText:vertexText, xIntText:xIntText, yIntText:yIntText };
+  }
+
+  function computeGeneralParabolaTarget(A, B, C){
+    var eps = 1e-9;
+    var target = {
+      curveY: new Array(PARABOLA_SAMPLE_X.length),
+      vertex:{x:0,y:0}, vertexOpacity:0,
+      dotY:{x:0,y:0}, dotYOpacity:1,
+      dotX1:{x:0,y:0}, dotX1Opacity:0,
+      dotX2:{x:0,y:0}, dotX2Opacity:0
+    };
+
+    for (var i = 0; i < PARABOLA_SAMPLE_X.length; i++){
+      var x = PARABOLA_SAMPLE_X[i];
+      target.curveY[i] = toPxY(A*x*x + B*x + C);
+    }
+
+    var dy = toPx(0, C);
+    target.dotY = { x:dy[0], y:dy[1] };
+    target.dotYOpacity = 1;
+
+    if (Math.abs(A) > eps){
+      var h = -B/(2*A);
+      var k = A*h*h + B*h + C;
+      var vpx = toPx(h, k);
+      target.vertex = { x:vpx[0], y:vpx[1] };
+      target.vertexOpacity = 1;
+
+      var D = B*B - 4*A*C;
+      if (D > eps){
+        var r = Math.sqrt(D);
+        var x1 = (-B-r)/(2*A), x2 = (-B+r)/(2*A);
+        var lo = Math.min(x1,x2), hi = Math.max(x1,x2);
+        var pA = toPx(lo, 0), pB = toPx(hi, 0);
+        target.dotX1 = { x:pA[0], y:pA[1] }; target.dotX1Opacity = 1;
+        target.dotX2 = { x:pB[0], y:pB[1] }; target.dotX2Opacity = 1;
+      } else {
+        var pH = toPx(h, 0);
+        target.dotX1 = { x:pH[0], y:pH[1] }; target.dotX1Opacity = (Math.abs(D) <= eps) ? 1 : 0;
+        target.dotX2 = { x:pH[0], y:pH[1] }; target.dotX2Opacity = 0;
+      }
+    } else {
+      var pO = toPx(0, 0);
+      target.vertex = { x:pO[0], y:pO[1] };
+      target.vertexOpacity = 0;
+
+      if (Math.abs(B) > eps){
+        var pR = toPx(-C/B, 0);
+        target.dotX1 = { x:pR[0], y:pR[1] }; target.dotX1Opacity = 1;
+        target.dotX2 = { x:pR[0], y:pR[1] }; target.dotX2Opacity = 0;
+      } else {
+        target.dotX1 = { x:pO[0], y:pO[1] }; target.dotX1Opacity = 0;
+        target.dotX2 = { x:pO[0], y:pO[1] }; target.dotX2Opacity = 0;
+      }
+    }
+
+    return target;
+  }
+
+
+  function initStandardForm(){
+    var sliderM = document.getElementById('slider-m');
+    var sliderC = document.getElementById('slider-c');
+    var valueM = document.getElementById('value-m');
+    var valueC = document.getElementById('value-c');
+    var infoSlope = document.getElementById('info-slope-standard');
+    var infoC = document.getElementById('info-c-standard');
+    var infoXInt = document.getElementById('info-xint-standard');
+    var infoYInt = document.getElementById('info-yint-standard');
+
+    buildAxes(document.getElementById('graph-standard'), 'standard');
+    animators.standard = createLineAnimator('standard');
+
+    function update(isInitial){
+      var m = parseFloat(sliderM.value);
+      var c = parseFloat(sliderC.value);
+      valueM.textContent = fmtNum(m);
+      valueC.textContent = fmtNum(c);
+      infoSlope.textContent = fmtNum(m);
+      infoC.textContent = fmtNum(c);
+
+      var xIntText;
+      if (Math.abs(m) > 1e-9){
+        xIntText = '(' + fmtNum(-c/m) + ', 0)';
+      } else if (Math.abs(c) < 1e-9){
+        xIntText = 'ทุกจุดบนแกน X (เส้นทับแกน X)';
+      } else {
+        xIntText = 'ไม่มี (เส้นขนานกับแกน X)';
+      }
+      infoXInt.textContent = xIntText;
+      infoYInt.textContent = '(0, ' + fmtNum(c) + ')';
+
+      var target = computeTarget(m, -1, c);
+      if (isInitial){
+        animators.standard.setImmediate(target);
+        animators.standard.chalkDrawOnce();
+      } else {
+        animators.standard.setTarget(target);
+      }
+    }
+
+    sliderM.addEventListener('input', function(){ update(false); });
+    sliderC.addEventListener('input', function(){ update(false); });
+    document.querySelector('[data-reset="standard"]').addEventListener('click', function(){
+      sliderM.value = 1;
+      sliderC.value = 0;
+      update(false);
+    });
+
+    update(true);
+  }
+
+  /* ---------------- Wire up: general form ---------------- */
+  function initGeneralForm(){
+    var sliderA = document.getElementById('slider-A');
+    var sliderB = document.getElementById('slider-B');
+    var sliderC2 = document.getElementById('slider-C');
+    var valueA = document.getElementById('value-A');
+    var valueB = document.getElementById('value-B');
+    var valueC2 = document.getElementById('value-C');
+    var infoSlope = document.getElementById('info-slope-general');
+    var infoXInt = document.getElementById('info-xint-general');
+    var infoYInt = document.getElementById('info-yint-general');
+    var infoNote = document.getElementById('info-note-general');
+    var infoNoteText = infoNote.querySelector('.info-note-text');
+
+    buildAxes(document.getElementById('graph-general'), 'general');
+    animators.general = createLineAnimator('general');
+
+    function update(isInitial){
+      var A = parseFloat(sliderA.value);
+      var B = parseFloat(sliderB.value);
+      var C = parseFloat(sliderC2.value);
+      valueA.textContent = fmtNum(A);
+      valueB.textContent = fmtNum(B);
+      valueC2.textContent = fmtNum(C);
+
+      var info = computeGeneralInfo(A, B, C);
+      var target;
+      if (info.degenerate){
+        infoSlope.textContent = '-';
+        infoXInt.textContent = '-';
+        infoYInt.textContent = '-';
+        infoNoteText.textContent = info.message;
+        infoNote.classList.add('show');
+        target = EMPTY_TARGET;
+      } else {
+        infoSlope.textContent = info.slopeText;
+        infoXInt.textContent = info.xIntText;
+        infoYInt.textContent = info.yIntText;
+        infoNote.classList.remove('show');
+        target = computeTarget(A, B, C);
+      }
+
+      if (isInitial){
+        animators.general.setImmediate(target);
+        if (!info.degenerate) animators.general.chalkDrawOnce();
+      } else {
+        animators.general.setTarget(target);
+      }
+    }
+
+    sliderA.addEventListener('input', function(){ update(false); });
+    sliderB.addEventListener('input', function(){ update(false); });
+    sliderC2.addEventListener('input', function(){ update(false); });
+    document.querySelector('[data-reset="general"]').addEventListener('click', function(){
+      sliderA.value = 1;
+      sliderB.value = -1;
+      sliderC2.value = 0;
+      update(false);
+    });
+
+    update(true);
+  }
+
+  /* ---------------- Wire up: parabola standard form ---------------- */
+  function initParabolaStandardForm(){
+    var sliderA = document.getElementById('slider-a-parab');
+    var sliderH = document.getElementById('slider-h-parab');
+    var sliderK = document.getElementById('slider-k-parab');
+    var valueA = document.getElementById('value-a-parab');
+    var valueH = document.getElementById('value-h-parab');
+    var valueK = document.getElementById('value-k-parab');
+    var infoVertex = document.getElementById('info-vertex-parab');
+    var infoXInt = document.getElementById('info-xint-parab');
+    var infoYInt = document.getElementById('info-yint-parab');
+
+    buildAxes(document.getElementById('graph-parabola-standard'), 'parabola-standard', 'parabola');
+    animators['parabola-standard'] = createParabolaAnimator('parabola-standard');
+
+    function update(isInitial){
+      var a = parseFloat(sliderA.value);
+      var h = parseFloat(sliderH.value);
+      var k = parseFloat(sliderK.value);
+      valueA.textContent = fmtNum(a);
+      valueH.textContent = fmtNum(h);
+      valueK.textContent = fmtNum(k);
+
+      var info = computeParabolaInfo(a, h, k);
+      infoVertex.textContent = info.vertexText;
+      infoXInt.textContent = info.xIntText;
+      infoYInt.textContent = info.yIntText;
+
+      var target = computeParabolaTarget(a, h, k);
+      if (isInitial){
+        animators['parabola-standard'].setImmediate(target);
+        animators['parabola-standard'].chalkDrawOnce();
+      } else {
+        animators['parabola-standard'].setTarget(target);
+      }
+    }
+
+    sliderA.addEventListener('input', function(){ update(false); });
+    sliderH.addEventListener('input', function(){ update(false); });
+    sliderK.addEventListener('input', function(){ update(false); });
+    document.querySelector('[data-reset="parabola-standard"]').addEventListener('click', function(){
+      sliderA.value = 1;
+      sliderH.value = 0;
+      sliderK.value = 0;
+      update(false);
+    });
+
+    update(true);
+  }
+
+  /* ---------------- Wire up: parabola general form ---------------- */
+  function initParabolaGeneralForm(){
+    var sliderA = document.getElementById('slider-A-parabgen');
+    var sliderB = document.getElementById('slider-B-parabgen');
+    var sliderC = document.getElementById('slider-C-parabgen');
+    var valueA = document.getElementById('value-A-parabgen');
+    var valueB = document.getElementById('value-B-parabgen');
+    var valueC = document.getElementById('value-C-parabgen');
+    var infoVertex = document.getElementById('info-vertex-parabgen');
+    var infoXInt = document.getElementById('info-xint-parabgen');
+    var infoYInt = document.getElementById('info-yint-parabgen');
+
+    buildAxes(document.getElementById('graph-parabola-general'), 'parabola-general', 'parabola');
+    animators['parabola-general'] = createParabolaAnimator('parabola-general');
+
+    function update(isInitial){
+      var A = parseFloat(sliderA.value);
+      var B = parseFloat(sliderB.value);
+      var C = parseFloat(sliderC.value);
+      valueA.textContent = fmtNum(A);
+      valueB.textContent = fmtNum(B);
+      valueC.textContent = fmtNum(C);
+
+      var info = computeGeneralParabolaInfo(A, B, C);
+      infoVertex.textContent = info.vertexText;
+      infoXInt.textContent = info.xIntText;
+      infoYInt.textContent = info.yIntText;
+
+      var target = computeGeneralParabolaTarget(A, B, C);
+      if (isInitial){
+        animators['parabola-general'].setImmediate(target);
+        animators['parabola-general'].chalkDrawOnce();
+      } else {
+        animators['parabola-general'].setTarget(target);
+      }
+    }
+
+    sliderA.addEventListener('input', function(){ update(false); });
+    sliderB.addEventListener('input', function(){ update(false); });
+    sliderC.addEventListener('input', function(){ update(false); });
+    document.querySelector('[data-reset="parabola-general"]').addEventListener('click', function(){
+      sliderA.value = 1;
+      sliderB.value = 0;
+      sliderC.value = 0;
+      update(false);
+    });
+
+    update(true);
+  }
+
+  /* ---------------- Init ---------------- */
+  renderCards();
+  renderSoonPages();
+  initNav();
+  initStandardForm();
+  initGeneralForm();
+  initParabolaStandardForm();
+  initParabolaGeneralForm();
+
+})();
+</script>
+</body>
+</html>
