@@ -110,6 +110,13 @@
 
   .doodle{ flex:0 1 340px; width:100%; max-width:340px; }
 
+  .venn-box{ flex:0 1 300px; width:100%; max-width:300px; }
+  .venn-box svg{ display:block; width:100%; height:auto; }
+  .venn-box circle{ transition: fill-opacity .35s ease, stroke-opacity .35s ease; }
+  .venn-box circle.venn-active{ fill-opacity:0.88; stroke-opacity:1; }
+  .venn-box circle.venn-dim{ fill-opacity:0.05; stroke-opacity:0.28; }
+  .venn-box text{ transition: opacity .3s ease; }
+
   .torn-edge{
     position:absolute; left:0; right:0; bottom:-2px; height:34px; z-index:3;
     background:var(--paper);
@@ -318,6 +325,7 @@
     .hero{ padding:56px 0 84px; }
     .hero-inner{ text-align:left; }
     .doodle{ display:none; }
+    .venn-box{ display:none; }
     main{ padding:44px 0 24px; }
     .search-box{ flex:1 1 100%; }
   }
@@ -343,7 +351,8 @@
       <span class="stat-chip"><b id="hero-count">06</b> สื่อคณิตศาสตร์พร้อมใช้งาน</span>
     </div>
 
-    <div class="doodle" aria-hidden="true">
+    <!-- graph decoration: kept in the DOM for future reuse, hidden for now -->
+    <div class="doodle" aria-hidden="true" hidden>
       <svg viewBox="0 0 400 360" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- axes -->
         <line x1="55" y1="30" x2="55" y2="300" stroke="#F7F5EE" stroke-opacity="0.55" stroke-width="1.6"/>
@@ -361,6 +370,17 @@
         <text x="300" y="60" font-family="IBM Plex Mono, monospace" font-size="24" fill="#F0C33B" fill-opacity="0.65" transform="rotate(6 300 60)">∑</text>
         <text x="335" y="200" font-family="IBM Plex Mono, monospace" font-size="22" fill="#F7F5EE" fill-opacity="0.5" transform="rotate(-4 335 200)">∞</text>
         <text x="70" y="320" font-family="IBM Plex Mono, monospace" font-size="20" fill="#F7F5EE" fill-opacity="0.45" transform="rotate(5 70 320)">√x</text>
+      </svg>
+    </div>
+
+    <!-- venn diagram gimmick: reacts silently to the category filter -->
+    <div class="venn-box" aria-hidden="true">
+      <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="10" width="280" height="180" rx="14" fill="none" stroke="#F7F5EE" stroke-opacity="0.28" stroke-width="1.6" stroke-dasharray="5 6"/>
+        <circle id="venn-left" cx="115" cy="100" r="62" fill="#F0C33B" fill-opacity="0.55" stroke="#F0C33B" stroke-opacity="0.9" stroke-width="1.5" style="mix-blend-mode:screen;"/>
+        <circle id="venn-right" cx="185" cy="100" r="62" fill="#D9503F" fill-opacity="0.55" stroke="#D9503F" stroke-opacity="0.9" stroke-width="1.5" style="mix-blend-mode:screen;"/>
+        <text id="venn-left-num" x="115" y="112" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="34" text-anchor="middle" fill="#F7F5EE" stroke="#132922" stroke-width="3" paint-order="stroke" opacity="0"></text>
+        <text id="venn-right-num" x="185" y="112" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="34" text-anchor="middle" fill="#F7F5EE" stroke="#132922" stroke-width="3" paint-order="stroke" opacity="0"></text>
       </svg>
     </div>
   </div>
@@ -480,6 +500,10 @@
   const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
   const searchInput = document.getElementById('search-input');
   const searchClearBtn = document.getElementById('search-clear');
+  const vennLeft = document.getElementById('venn-left');
+  const vennRight = document.getElementById('venn-right');
+  const vennLeftNum = document.getElementById('venn-left-num');
+  const vennRightNum = document.getElementById('venn-right-num');
   let activeFilter = ''; // '' = ทั้งหมด (show all)
 
   function pad(n){ return String(n).padStart(2, '0'); }
@@ -495,6 +519,29 @@
     const tag = card.querySelector('.tag')?.textContent || '';
     cardSearchText.set(card, (title + ' ' + desc + ' ' + tag).toLowerCase());
   });
+
+  // silent gimmick: reflects the active category filter as a 2-set venn diagram.
+  // "ทั้งหมด" shows both circles with no numbers; a category filter highlights
+  // its circle and reveals the count, dimming the other — no labels, ever.
+  function updateVenn(filter, count){
+    if (!vennLeft || !vennRight) return;
+    if (filter === 'สื่อการสอน') {
+      vennLeft.classList.add('venn-active'); vennLeft.classList.remove('venn-dim');
+      vennRight.classList.add('venn-dim'); vennRight.classList.remove('venn-active');
+      if (vennLeftNum) { vennLeftNum.textContent = count; vennLeftNum.style.opacity = '1'; }
+      if (vennRightNum) { vennRightNum.textContent = ''; vennRightNum.style.opacity = '0'; }
+    } else if (filter === 'เกม') {
+      vennRight.classList.add('venn-active'); vennRight.classList.remove('venn-dim');
+      vennLeft.classList.add('venn-dim'); vennLeft.classList.remove('venn-active');
+      if (vennRightNum) { vennRightNum.textContent = count; vennRightNum.style.opacity = '1'; }
+      if (vennLeftNum) { vennLeftNum.textContent = ''; vennLeftNum.style.opacity = '0'; }
+    } else {
+      vennLeft.classList.remove('venn-active', 'venn-dim');
+      vennRight.classList.remove('venn-active', 'venn-dim');
+      if (vennLeftNum) { vennLeftNum.textContent = ''; vennLeftNum.style.opacity = '0'; }
+      if (vennRightNum) { vennRightNum.textContent = ''; vennRightNum.style.opacity = '0'; }
+    }
+  }
 
   function applyFilters(forceReveal){
     const query = (searchInput?.value || '').trim().toLowerCase();
@@ -518,6 +565,7 @@
     if (placeholderCard) placeholderCard.style.display = isFiltering ? 'none' : '';
     if (emptyStateEl) emptyStateEl.hidden = !(isFiltering && visibleCount === 0);
     if (resourceCountEl) resourceCountEl.textContent = pad(visibleCount) + ' รายการ';
+    updateVenn(activeFilter, visibleCount);
   }
 
   filterButtons.forEach(btn => {
