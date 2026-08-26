@@ -800,7 +800,6 @@ const GRID_DIRS = [
 ];
 const DIR_ORDER = ['N','E','S','W'];
 const DIR_DELTA = {N:{dc:0,dr:-1}, S:{dc:0,dr:1}, E:{dc:1,dr:0}, W:{dc:-1,dr:0}};
-const DIR_ROT_STEP = {N:-1, S:1, E:1, W:-1}; // rotation-state delta per slide step
 const DIR_THAI = {N:'บน', E:'ขวา', S:'ล่าง', W:'ซ้าย'};
 
 /* ================= Net generation ================= */
@@ -1339,9 +1338,43 @@ function computeSlideTargets(squareId){
   return targets;
 }
 
+/* Rotation direction per slide step depends on the compass direction AND on
+   which OTHER, currently-occupied squares form the actual L-shaped pivot
+   corner for that step — not on absolute grid position. For an E/W step, the
+   pivot is whichever of the "north" or "south" neighbor pair (of both the
+   departure and arrival cell) is actually occupied by another square; for an
+   N/S step it's the "west" or "east" neighbor pair. This matches physically:
+   the square is pivoting around the corner shared with its real neighbor,
+   the same corner scanPrinciple1 uses to detect an L-shape connection. */
+function isOccupied(c, r, excludeId){
+  return state.squares.some(s => s.id!==excludeId && s.c===c && s.r===r);
+}
+function rotStepFor(sq, fromC, fromR, dir){
+  const toC = fromC + DIR_DELTA[dir].dc, toR = fromR + DIR_DELTA[dir].dr;
+  if(dir==='E' || dir==='W'){
+    const northValid = isOccupied(fromC, fromR-1, sq.id) && isOccupied(toC, toR-1, sq.id);
+    const southValid = isOccupied(fromC, fromR+1, sq.id) && isOccupied(toC, toR+1, sq.id);
+    // If only one side has a real neighbor pair, pivot around that corner.
+    // If neither (open space) or both (rare dense case), default to north.
+    const usesNorth = southValid && !northValid ? false : true;
+    if(dir==='E') return usesNorth ? -1 : 1;   // CW=+1, CCW=-1
+    return usesNorth ? 1 : -1;
+  } else {
+    const westValid = isOccupied(fromC-1, fromR, sq.id) && isOccupied(toC-1, toR, sq.id);
+    const eastValid = isOccupied(fromC+1, fromR, sq.id) && isOccupied(toC+1, toR, sq.id);
+    const usesWest = eastValid && !westValid ? false : true;
+    if(dir==='N') return usesWest ? -1 : 1;
+    return usesWest ? 1 : -1;
+  }
+}
 function moveSquareTo(squareId, target){
   const sq = getSquare(squareId);
-  const delta = DIR_ROT_STEP[target.dir]*target.steps;
+  const {dc,dr} = DIR_DELTA[target.dir];
+  let c = sq.c, r = sq.r, delta = 0;
+  for(let i=0;i<target.steps;i++){
+    delta += rotStepFor(sq, c, r, target.dir);
+    c += dc; r += dr;
+  }
   sq.rotDeg += delta*90;
   sq.rotation = ((sq.rotation + delta) % 4 + 4) % 4;
   sq.c = target.c; sq.r = target.r;
