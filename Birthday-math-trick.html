@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12102A">
+<title>ทายใจวันเกิด · เกมเลขมหัศจรรย์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12102A;
+    --ink-2:#1C1A44;
+    --ink-3:#262258;
+    --gold:#F2B705;
+    --gold-soft:#FFDE7A;
+    --cyan:#5EEAD4;
+    --yes:#34D399;
+    --no:#FB7185;
+    --paper:#F5EFE0;
+    --muted:#B7B2E3;
+    --font-display:'Mitr','Noto Sans Thai',sans-serif;
+    --font-body:'Sarabun','Noto Sans Thai',sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+    background:var(--ink);
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  body{
+    background:
+      radial-gradient(circle at 15% 18%, rgba(94,234,212,.16), transparent 42%),
+      radial-gradient(circle at 85% 78%, rgba(242,183,5,.14), transparent 46%),
+      linear-gradient(160deg, #16123a 0%, #120f30 55%, #0a0918 100%);
+    color:var(--paper);
+    font-family:var(--font-body);
+    height:100vh;
+    height:100dvh;
+    width:100%;
+    position:relative;
+  }
+
+  .stars{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+  .star{position:absolute;background:#fff;border-radius:50%;opacity:.5;animation:twinkle 3s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.12;}50%{opacity:.85;}}
+  @media (prefers-reduced-motion:reduce){ .star{animation:none;opacity:.4;} }
+
+  .brandmark{
+    position:fixed; top:16px; left:18px; z-index:5;
+    font-family:var(--font-display); font-weight:600; font-size:13px;
+    letter-spacing:.04em; color:var(--muted); opacity:.75;
+    display:flex; align-items:center; gap:6px;
+  }
+  .brandmark b{color:var(--gold); font-weight:600;}
+
+  #app{position:relative; width:100%; height:100%; z-index:1;}
+
+  .screen{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px; padding:28px 20px;
+    opacity:0; pointer-events:none; transform:translateY(14px);
+    transition:opacity .4s ease, transform .4s ease;
+    text-align:center;
+  }
+  .screen.active{opacity:1; pointer-events:auto; transform:translateY(0);}
+
+  .emblem{font-size:26px; color:var(--gold); text-shadow:0 0 18px rgba(242,183,5,.6); opacity:.9;}
+
+  h1.title{
+    font-family:var(--font-display); font-weight:600;
+    font-size:clamp(20px,5.5vw,28px); margin:0; color:var(--paper);
+  }
+  .eyebrow{
+    font-family:var(--font-body); font-size:13px; letter-spacing:.08em;
+    color:var(--muted); text-transform:none; margin:0;
+  }
+  .instructions{
+    font-family:var(--font-display); font-weight:400;
+    font-size:clamp(16px,4.6vw,20px); line-height:1.7; color:var(--paper);
+    max-width:320px; margin:4px 0 6px;
+  }
+
+  .btn{
+    font-family:var(--font-display); font-weight:600; font-size:17px;
+    padding:14px 38px; border-radius:999px; border:none; cursor:pointer;
+    touch-action:manipulation;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--gold-soft),var(--gold));
+    color:#241a02; box-shadow:0 10px 30px rgba(242,183,5,.35);
+  }
+  .btn-primary:hover{transform:translateY(-2px);}
+  .btn-primary:active{transform:translateY(0);}
+  .btn-ghost{
+    background:transparent; border:2px solid var(--muted); color:var(--paper);
+  }
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+  .btn:focus-visible, [data-choice]:focus-visible{
+    outline:3px solid var(--cyan); outline-offset:3px;
+  }
+
+  /* ---- card screen ---- */
+  #screen-cards{gap:14px;}
+
+  .progress{display:flex; gap:10px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16); transition:background .3s, transform .3s;}
+  .dot.done{background:var(--gold);}
+  .dot.current{background:var(--cyan); transform:scale(1.5);}
+
+  .stage{
+    position:relative; display:flex; align-items:center; justify-content:center;
+    gap:10px; width:100%; max-width:420px;
+  }
+
+  .zone{
+    flex:0 0 auto; width:34px; min-height:180px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    padding:10px 2px; border-radius:16px; cursor:pointer;
+    font-family:var(--font-display); font-weight:600; font-size:12px;
+    writing-mode:vertical-rl; text-orientation:mixed;
+    transition:background .25s ease, transform .15s ease;
+    touch-action:manipulation;
+  }
+  .zone-no{background:rgba(251,113,133,.10); color:var(--no);}
+  .zone-yes{background:rgba(52,211,153,.10); color:var(--yes);}
+  .zone:hover{transform:scale(1.06);}
+  .zone:active{transform:scale(.95);}
+  .zone-arrow{font-size:16px; writing-mode:horizontal-tb;}
+  .zone-text{display:inline-block;}
+  .zone-no .zone-text{transform:rotate(180deg);}
+
+  .card-wrap{position:relative; display:flex; align-items:center; justify-content:center;}
+
+  .card{
+    position:relative;
+    width:clamp(196px,64vw,300px);
+    background:linear-gradient(160deg,var(--ink-3),var(--ink-2));
+    border:2px solid var(--gold);
+    border-radius:22px;
+    padding:16px 14px 18px;
+    box-shadow:0 20px 55px rgba(0,0,0,.55), 0 0 40px rgba(242,183,5,.14);
+    cursor:grab;
+    touch-action:none;
+  }
+  .card.dragging{cursor:grabbing;}
+  .card::after{
+    content:'';
+    position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.10) 50%, transparent 60%);
+    background-size:250% 250%;
+    background-position:-50% -50%;
+    animation:shimmer 5.5s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes shimmer{
+    0%{background-position:-50% -50%;}
+    50%{background-position:150% 150%;}
+    100%{background-position:-50% -50%;}
+  }
+  @media (prefers-reduced-motion:reduce){ .card::after{animation:none;} }
+
+  .card-emblem{
+    text-align:center; font-size:16px; color:var(--gold); opacity:.85; margin-bottom:8px;
+  }
+
+  .grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
+    width:100%; aspect-ratio:1/1;
+  }
+  .cell{
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-weight:700;
+    font-size:clamp(15px,4.6vw,22px);
+    color:var(--cyan);
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(94,234,212,.25);
+    border-radius:8px;
+    text-shadow:0 0 10px rgba(94,234,212,.5);
+  }
+
+  .divider{height:1px; margin:12px 0 8px; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:.55;}
+
+  .question{
+    font-family:var(--font-display); font-weight:500;
+    font-size:clamp(13px,3.8vw,16px); color:var(--paper); margin:0;
+  }
+
+  .stamp{
+    position:absolute; top:16px; padding:5px 12px; border-radius:9px;
+    border:3px solid; font-family:var(--font-display); font-weight:700;
+    font-size:13px; letter-spacing:.04em; opacity:0; pointer-events:none;
+  }
+  .stamp-yes{right:12px; border-color:var(--yes); color:var(--yes); transform:rotate(-10deg);}
+  .stamp-no{left:12px; border-color:var(--no); color:var(--no); transform:rotate(10deg);}
+
+  .hint{
+    display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    width:100%; max-width:380px;
+    font-family:var(--font-body); font-size:13px;
+    touch-action:manipulation;
+  }
+  .hint-no{color:var(--no); cursor:pointer;}
+  .hint-yes{color:var(--yes); cursor:pointer; margin-left:auto;}
+  .hint span:hover{text-decoration:underline;}
+
+  /* ---- pending / reveal ---- */
+  .pending-text{
+    font-family:var(--font-display); font-weight:500;
+    font-size:clamp(20px,6vw,28px); color:var(--paper); margin:0;
+  }
+
+  .reveal-eyebrow{
+    font-family:var(--font-body); font-size:14px; color:var(--muted); margin:0;
+  }
+  .reveal-number{
+    font-family:var(--font-mono); font-weight:800;
+    font-size:clamp(80px,26vw,150px); line-height:1;
+    color:var(--gold-soft);
+    text-shadow:0 0 30px rgba(242,183,5,.6), 0 0 90px rgba(242,183,5,.28);
+  }
+
+  #reveal-success:not([hidden]), #reveal-zero:not([hidden]){
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  .zero-message{
+    font-family:var(--font-display); font-weight:400;
+    font-size:clamp(14px,4vw,17px); line-height:1.7; color:var(--paper);
+    max-width:300px; margin:0;
+  }
+
+  @media (max-height:640px){
+    .screen{gap:12px; padding:18px 20px;}
+    .reveal-number{font-size:clamp(60px,22vw,110px);}
+  }
+</style>
+</head>
+<body>
+
+  <div class="stars" aria-hidden="true"></div>
+  <div class="brandmark" aria-hidden="true">✦ ทายใจ<b>วันเกิด</b></div>
+
+  <main id="app">
+
+    <!-- Screen 1: Intro -->
+    <section class="screen active" id="screen-intro">
+      <div class="emblem">✧ ✦ ✧</div>
+      <p class="eyebrow">เกมเลขมหัศจรรย์</p>
+      <h1 class="title">พลังทายใจ</h1>
+      <p class="instructions">นึกวันเกิด 1 - 31 ไว้ในใจ<br>พร้อมเมื่อไรกดเริ่มเลย</p>
+      <button type="button" class="btn btn-primary" id="btn-start">พร้อม</button>
+    </section>
+
+    <!-- Screen 2: Cards -->
+    <section class="screen" id="screen-cards">
+      <div class="progress" id="progress"></div>
+
+      <div class="stage">
+        <div class="zone zone-no" data-choice="no" tabindex="0" role="button" aria-label="ไม่มีวันเกิดในการ์ดนี้">
+          <span class="zone-arrow">←</span>
+          <span class="zone-text">ไม่มี</span>
+        </div>
+
+        <div class="card-wrap">
+          <div class="card" id="card">
+            <div class="stamp stamp-yes">มี ✓</div>
+            <div class="stamp stamp-no">ไม่มี ✕</div>
+            <div class="card-emblem">✦</div>
+            <div class="grid" id="grid"></div>
+            <div class="divider"></div>
+            <p class="question">มีวันเกิดที่คิดไว้ไหม?</p>
+          </div>
+        </div>
+
+        <div class="zone zone-yes" data-choice="yes" tabindex="0" role="button" aria-label="มีวันเกิดในการ์ดนี้">
+          <span class="zone-text">มี</span>
+          <span class="zone-arrow">→</span>
+        </div>
+      </div>
+
+      <p class="hint">
+        <span class="hint-no" data-choice="no" tabindex="0" role="button">← ไม่มี ปัดไปทางซ้าย</span>
+        <span class="hint-yes" data-choice="yes" tabindex="0" role="button">มี ปัดไปทางขวา →</span>
+      </p>
+    </section>
+
+    <!-- Screen 3: Pending reveal -->
+    <section class="screen" id="screen-pending">
+      <div class="emblem">✧ ✦ ✧</div>
+      <p class="pending-text">วันเกิดนั้นคืออออ……</p>
+      <button type="button" class="btn btn-primary" id="btn-reveal">เปิดดู</button>
+    </section>
+
+    <!-- Screen 4: Reveal -->
+    <section class="screen" id="screen-reveal">
+
+      <div id="reveal-success">
+        <p class="reveal-eyebrow">วันเกิดของคุณคือ</p>
+        <div class="reveal-number" id="reveal-number" aria-live="polite">0</div>
+      </div>
+
+      <div id="reveal-zero" hidden>
+        <div class="emblem">✧ ❓ ✧</div>
+        <p class="reveal-eyebrow">เอ๊ะ เวทมนตร์สะดุดนิดหน่อย</p>
+        <p class="zero-message">ทุกวันที่ 1 - 31 จะซ่อนอยู่ในการ์ดอย่างน้อย 1 ใบเสมอ<br>ลองนึกวันเกิดในใจแล้วตอบตามจริงอีกครั้งนะ</p>
+      </div>
+
+      <button type="button" class="btn btn-ghost" id="btn-again">เล่นอีกครั้ง</button>
+    </section>
+
+  </main>
+
+<script>
+  // ---------- decorative starfield ----------
+  (function initStars(){
+    const starsEl = document.querySelector('.stars');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const count = 70;
+    for(let i=0;i<count;i++){
+      const s = document.createElement('span');
+      s.className = 'star';
+      s.style.left = Math.random()*100 + '%';
+      s.style.top = Math.random()*100 + '%';
+      const size = (Math.random()*2 + 1).toFixed(1);
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      if(!reduceMotion){
+        s.style.animationDelay = (Math.random()*4).toFixed(2) + 's';
+        s.style.animationDuration = (Math.random()*3 + 2).toFixed(2) + 's';
+      }
+      starsEl.appendChild(s);
+    }
+  })();
+
+  // ---------- game state ----------
+  const CARD_BASES = [1,2,4,8,16];
+  let cardIndex = 0;
+  let total = 0;
+  let chosenBases = [];
+  let animating = false;
+
+  const screens = {
+    intro: document.getElementById('screen-intro'),
+    cards: document.getElementById('screen-cards'),
+    pending: document.getElementById('screen-pending'),
+    reveal: document.getElementById('screen-reveal'),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  function numbersForBase(base){
+    const nums = [];
+    for(let n=1;n<=31;n++){ if(n & base) nums.push(n); }
+    return nums;
+  }
+
+  const gridEl = document.getElementById('grid');
+  const progressEl = document.getElementById('progress');
+  const cardEl = document.getElementById('card');
+  const stampYes = document.querySelector('.stamp-yes');
+  const stampNo = document.querySelector('.stamp-no');
+
+  function buildProgress(){
+    progressEl.innerHTML = '';
+    CARD_BASES.forEach(() => {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      progressEl.appendChild(d);
+    });
+    updateProgress();
+  }
+  function updateProgress(){
+    [...progressEl.children].forEach((d,i) => {
+      d.classList.toggle('done', i < cardIndex);
+      d.classList.toggle('current', i === cardIndex);
+    });
+  }
+
+  function renderCard(){
+    const base = CARD_BASES[cardIndex];
+    const nums = numbersForBase(base);
+    gridEl.innerHTML = nums.map(n => `<div class="cell">${n}</div>`).join('');
+    cardEl.style.transition = 'none';
+    cardEl.style.transform = '';
+    cardEl.style.opacity = 1;
+    stampYes.style.opacity = 0;
+    stampNo.style.opacity = 0;
+    updateProgress();
+    // force reflow so next transition applies cleanly
+    void cardEl.offsetWidth;
+  }
+
+  // ---------- drag / swipe ----------
+  let dragging = false, startX = 0, startY = 0, curX = 0, curY = 0;
+  const THRESHOLD = 100;
+
+  function onPointerDown(e){
+    if(animating || cardIndex >= CARD_BASES.length) return;
+    dragging = true;
+    cardEl.classList.add('dragging');
+    cardEl.style.transition = 'none';
+    startX = e.clientX; startY = e.clientY;
+    try{ cardEl.setPointerCapture(e.pointerId); }catch(err){}
+  }
+  function onPointerMove(e){
+    if(!dragging) return;
+    curX = e.clientX - startX;
+    curY = e.clientY - startY;
+    const rot = curX / 18;
+    cardEl.style.transform = `translate(${curX}px, ${curY*0.3}px) rotate(${rot}deg)`;
+    const ratio = Math.max(-1, Math.min(1, curX / THRESHOLD));
+    stampYes.style.opacity = Math.max(0, ratio);
+    stampNo.style.opacity = Math.max(0, -ratio);
+  }
+  function onPointerUp(){
+    if(!dragging) return;
+    dragging = false;
+    cardEl.classList.remove('dragging');
+    if(Math.abs(curX) > THRESHOLD){
+      commit(curX > 0);
+    } else {
+      cardEl.style.transition = 'transform .3s ease';
+      cardEl.style.transform = '';
+      stampYes.style.opacity = 0;
+      stampNo.style.opacity = 0;
+    }
+    curX = 0; curY = 0;
+  }
+  cardEl.addEventListener('pointerdown', onPointerDown);
+  cardEl.addEventListener('pointermove', onPointerMove);
+  cardEl.addEventListener('pointerup', onPointerUp);
+  cardEl.addEventListener('pointercancel', onPointerUp);
+
+  function commit(isYes){
+    if(animating || cardIndex >= CARD_BASES.length) return;
+    animating = true;
+    const dir = isYes ? 1 : -1;
+    cardEl.style.transition = 'transform .38s ease, opacity .38s ease';
+    cardEl.style.transform = `translate(${dir * window.innerWidth}px, ${curY}px) rotate(${dir*26}deg)`;
+    cardEl.style.opacity = 0;
+
+    const base = CARD_BASES[cardIndex];
+    if(isYes){ total += base; chosenBases.push(base); }
+
+    setTimeout(() => {
+      cardIndex++;
+      animating = false;
+      if(cardIndex < CARD_BASES.length){
+        renderCard();
+      } else {
+        showScreen('pending');
+      }
+    }, 380);
+  }
+
+  function handleChoice(choice){
+    if(!screens.cards.classList.contains('active')) return;
+    commit(choice === 'yes');
+  }
+
+  document.querySelectorAll('[data-choice]').forEach(el => {
+    el.addEventListener('click', () => handleChoice(el.dataset.choice));
+    el.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        handleChoice(el.dataset.choice);
+      }
+    });
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if(!screens.cards.classList.contains('active')) return;
+    if(e.key === 'ArrowRight') handleChoice('yes');
+    if(e.key === 'ArrowLeft') handleChoice('no');
+  });
+
+  // ---------- screen buttons ----------
+  document.getElementById('btn-start').addEventListener('click', () => {
+    cardIndex = 0; total = 0; chosenBases = []; animating = false;
+    buildProgress();
+    renderCard();
+    showScreen('cards');
+  });
+
+  document.getElementById('btn-reveal').addEventListener('click', () => {
+    showScreen('reveal');
+    animateReveal();
+  });
+
+  function animateReveal(){
+    const successBlock = document.getElementById('reveal-success');
+    const zeroBlock = document.getElementById('reveal-zero');
+    const againBtn = document.getElementById('btn-again');
+
+    if(total === 0){
+      // Every day 1-31 has at least one bit set, so "ไม่มี" on all 5
+      // cards is never a valid answer — flag it instead of showing 0.
+      successBlock.hidden = true;
+      zeroBlock.hidden = false;
+      againBtn.textContent = 'ลองใหม่อีกครั้ง';
+      return;
+    }
+
+    successBlock.hidden = false;
+    zeroBlock.hidden = true;
+    againBtn.textContent = 'เล่นอีกครั้ง';
+
+    const el = document.getElementById('reveal-number');
+    let cur = 0;
+    const step = Math.max(1, Math.round(total / 18));
+    el.textContent = 0;
+    const iv = setInterval(() => {
+      cur += step;
+      if(cur >= total){ cur = total; clearInterval(iv); }
+      el.textContent = cur;
+    }, 28);
+  }
+
+  document.getElementById('btn-again').addEventListener('click', () => {
+    showScreen('intro');
+  });
+</script>
+</body>
+</html>
