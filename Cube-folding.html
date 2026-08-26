@@ -1322,16 +1322,40 @@ function selectSquare(id){
   updateHint();
 }
 
+/* Checks whether a set of cell positions forms one single orthogonally-
+   connected group (no square left isolated from the rest). */
+function isLayoutConnected(cells){
+  if(cells.length<=1) return true;
+  const set = new Set(cells.map(p=>p.c+','+p.r));
+  const seen = new Set([cells[0].c+','+cells[0].r]);
+  const stack = [cells[0]];
+  while(stack.length){
+    const cur = stack.pop();
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dc,dr])=>{
+      const nc = cur.c+dc, nr = cur.r+dr, key = nc+','+nr;
+      if(set.has(key) && !seen.has(key)){
+        seen.add(key);
+        stack.push({c:nc, r:nr});
+      }
+    });
+  }
+  return seen.size === cells.length;
+}
 function computeSlideTargets(squareId){
   const sq = getSquare(squareId);
   const occ = new Set();
-  state.squares.forEach(s=>{ if(s.id!==squareId) occ.add(s.c+','+s.r); });
+  const otherCells = [];
+  state.squares.forEach(s=>{ if(s.id!==squareId){ occ.add(s.c+','+s.r); otherCells.push({c:s.c,r:s.r}); } });
   const targets = [];
   DIR_ORDER.forEach(dirName=>{
     const {dc,dr} = DIR_DELTA[dirName];
     let c=sq.c+dc, r=sq.r+dr, steps=1;
     while(c>=state.minC && c<=state.maxC && r>=state.minR && r<=state.maxR && !occ.has(c+','+r)){
-      targets.push({c,r,steps,dir:dirName});
+      // A landing spot is only valid if it keeps every square connected to
+      // the rest of the group — sliding must never strand a square.
+      if(isLayoutConnected(otherCells.concat([{c,r}]))){
+        targets.push({c,r,steps,dir:dirName});
+      }
       c+=dc; r+=dr; steps++;
     }
   });
