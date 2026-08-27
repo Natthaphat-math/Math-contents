@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ห้องทดลองพิสูจน์สัจนิรันดร์ · Logic Proof Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0a1410;
+  --bg-panel:#0f1e18;
+  --bg-panel-2:#122820;
+  --bg-raised:#173226;
+  --line:#24402f;
+  --line-soft:#182c22;
+  --trace:#c9a15f;
+  --trace-dim:#5b4b32;
+  --true:#3ed598;
+  --true-glow:rgba(62,213,152,.55);
+  --false:#fb6b5b;
+  --false-glow:rgba(251,107,91,.55);
+  --gold:#f2c14e;
+  --danger:#ff5252;
+  --ink:#eaf2ed;
+  --ink-muted:#8fa89c;
+  --ink-dim:#4f6a5e;
+  --font-display:'Kanit',sans-serif;
+  --font-body:'IBM Plex Sans Thai','Kanit',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(circle at 12% 6%, rgba(62,213,152,.06), transparent 42%),
+    radial-gradient(circle at 88% 92%, rgba(201,161,95,.07), transparent 42%),
+    var(--bg-deep);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:var(--font-body);
+  min-height:100vh;
+  padding-bottom:3rem;
+  position:relative;
+}
+body::before{
+  content:'';
+  position:fixed; inset:0;
+  background-image:radial-gradient(circle, rgba(143,168,156,.08) 1px, transparent 1px);
+  background-size:24px 24px;
+  pointer-events:none;
+  z-index:0;
+}
+.wrap{position:relative; z-index:1; max-width:52rem; margin:0 auto;}
+button{font-family:inherit;}
+
+/* ---------- Masthead ---------- */
+.masthead{padding:1.6rem 1.1rem 1rem;}
+.eyebrow{
+  font-family:var(--font-mono); font-size:.68rem; letter-spacing:.16em;
+  color:var(--trace); text-transform:uppercase;
+  display:flex; align-items:center; gap:.45rem;
+}
+.eyebrow .dot{color:var(--true); font-size:.55rem; animation:blink 2.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
+h1.title{
+  font-family:var(--font-display); font-weight:700; font-size:1.5rem;
+  margin:.35rem 0 0; color:var(--ink); letter-spacing:.01em; line-height:1.3;
+}
+.subtitle{font-size:.86rem; color:var(--ink-muted); margin-top:.5rem; line-height:1.65; max-width:38rem;}
+.subtitle b{color:var(--true); font-weight:600;}
+.progress-chip{
+  margin-top:1rem; display:inline-flex; align-items:center; gap:.4rem;
+  font-family:var(--font-mono); background:var(--bg-panel); border:1px solid var(--line);
+  padding:.4rem .75rem; border-radius:.6rem; font-size:.76rem; color:var(--ink-muted);
+}
+.progress-chip b{color:var(--gold); font-weight:700;}
+.progress-chip .sep{color:var(--line);}
+
+/* ---------- Rules card ---------- */
+.rules-card{margin:0 1.1rem 1rem; background:var(--bg-panel); border:1px solid var(--line); border-radius:.9rem; overflow:hidden;}
+.rules-toggle{
+  width:100%; display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  padding:.8rem 1rem; background:none; border:none; color:var(--ink); cursor:pointer;
+  font-family:var(--font-body); font-weight:600; font-size:.86rem; text-align:left;
+}
+.rules-toggle .chev{transition:transform .25s; color:var(--trace); flex:none;}
+.rules-card.open .chev{transform:rotate(180deg);}
+.rules-body{max-height:0; overflow:hidden; transition:max-height .3s ease; padding:0 1rem;}
+.rules-card.open .rules-body{max-height:640px; padding-bottom:.9rem;}
+.rule-row{display:flex; gap:.7rem; align-items:baseline; padding:.5rem 0; border-top:1px dashed var(--line-soft); font-size:.8rem;}
+.rule-row:first-child{border-top:none;}
+.rule-eq{font-family:var(--font-mono); color:var(--gold); min-width:5.6rem; flex:none; font-weight:600;}
+.rule-desc{color:var(--ink-muted); line-height:1.55;}
+.rule-desc b{color:var(--ink);}
+
+/* ---------- Problem card ---------- */
+.problem-card{margin:0 1.1rem 1.2rem; background:var(--bg-panel); border:1px solid var(--line); border-radius:1rem; padding:1.1rem; position:relative;}
+.problem-meta{display:flex; align-items:center; gap:.55rem; margin-bottom:.5rem; flex-wrap:wrap;}
+.problem-tag{font-family:var(--font-mono); font-size:.68rem; padding:.2rem .55rem; border-radius:1rem; border:1px solid var(--line); color:var(--ink-muted); flex:none;}
+.problem-tag[data-lv="easy"]{border-color:var(--true); color:var(--true);}
+.problem-tag[data-lv="medium"]{border-color:var(--gold); color:var(--gold);}
+.problem-tag[data-lv="hard"]{border-color:var(--false); color:var(--false);}
+.problem-name{font-size:.8rem; color:var(--ink-muted); font-weight:600;}
+.mistake-counter{font-family:var(--font-mono); font-size:.7rem; color:var(--ink-dim); margin-left:auto;}
+.instruction{font-size:.78rem; color:var(--ink-dim); margin-bottom:.8rem; line-height:1.5;}
+.tip-line{font-size:.76rem; color:var(--gold); margin:-.3rem 0 .7rem; line-height:1.5; background:rgba(242,193,78,.06); border:1px dashed var(--trace-dim); padding:.45rem .6rem; border-radius:.5rem;}
+
+/* ---------- Board ---------- */
+.board-scroll{
+  overflow-x:auto; overflow-y:hidden; border-radius:.8rem;
+  background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 45%), var(--bg-panel-2);
+  border:1px solid var(--line); padding:1.15rem .95rem;
+}
+.board-inner{position:relative; min-width:max-content;}
+.formula-row{
+  display:flex; align-items:center; white-space:nowrap; position:relative; z-index:2;
+  font-family:var(--font-mono); font-size:1.28rem; font-weight:500; user-select:none;
+}
+.tok{display:inline-flex; align-items:center; justify-content:center; border-radius:.4rem; color:var(--ink); cursor:default;}
+.tok.bracket{color:var(--trace); opacity:.9; font-weight:700; padding:0 .06rem;}
+.tok.atom{padding:.18rem .38rem;}
+.tok.op{padding:.18rem .5rem;}
+.tok.neg{padding:.18rem .05rem .18rem .3rem;}
+.tok.clickable{cursor:pointer; transition:background .15s, transform .1s;}
+.tok.clickable:hover{background:rgba(242,193,78,.12);}
+.tok.clickable:active{transform:scale(.92);}
+.tok.done{font-weight:700;}
+.tok.done.val-T{color:var(--true);}
+.tok.done.val-F{color:var(--false);}
+.tok.conflict{color:var(--danger) !important; animation:spark .55s ease 3;}
+.tok.hint-pulse{animation:hintpulse 1s ease-in-out 3;}
+@keyframes hintpulse{0%,100%{box-shadow:0 0 0 0 rgba(242,193,78,0); background:transparent;}50%{box-shadow:0 0 0 6px rgba(242,193,78,.16); background:rgba(242,193,78,.14);}}
+
+.tree-layer{position:absolute; left:0; top:0; width:100%; pointer-events:none; z-index:1;}
+.tree-svg{position:absolute; left:0; top:0; overflow:visible; display:block;}
+.node-badge{
+  position:absolute; transform:translate(-50%,-50%);
+  width:2.35rem; height:2.35rem; border-radius:50%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-weight:700; font-size:.95rem;
+  background:var(--bg-raised); border:2px solid var(--line);
+  opacity:0; animation:badgein .35s ease forwards;
+}
+.node-badge .cap{position:absolute; top:-1.05rem; left:50%; transform:translateX(-50%); font-size:.55rem; color:var(--ink-dim); font-family:var(--font-mono); white-space:nowrap;}
+.node-badge.val-T{color:var(--true); border-color:var(--true); box-shadow:0 0 12px var(--true-glow), inset 0 0 8px rgba(62,213,152,.15);}
+.node-badge.val-F{color:var(--false); border-color:var(--false); box-shadow:0 0 12px var(--false-glow), inset 0 0 8px rgba(251,107,91,.15);}
+.node-badge.conflict{animation:badgein .35s ease forwards, spark .55s ease .35s 3; border-color:var(--danger) !important; color:var(--danger) !important; box-shadow:0 0 20px var(--danger) !important;}
+@keyframes badgein{from{opacity:0; transform:translate(-50%,-50%) scale(.35);}to{opacity:1; transform:translate(-50%,-50%) scale(1);}}
+@keyframes spark{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.3);}}
+
+.edge-path{fill:none; stroke:var(--trace-dim); stroke-width:2; opacity:0; animation:edgein .3s ease forwards;}
+.edge-path.conflict-edge{stroke:var(--danger); stroke-width:2.4; stroke-dasharray:5 4; filter:drop-shadow(0 0 4px var(--danger)); animation:edgein .3s ease forwards, dash 1s linear infinite;}
+@keyframes edgein{from{opacity:0;}to{opacity:1;}}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+/* ---------- Picker ---------- */
+.picker{
+  position:fixed; z-index:60; background:var(--bg-raised); border:1px solid var(--trace-dim);
+  border-radius:.85rem; padding:.6rem; display:flex; gap:.55rem; box-shadow:0 14px 34px rgba(0,0,0,.55);
+  animation:popin .15s ease;
+}
+@keyframes popin{from{opacity:0; transform:scale(.9) translateY(4px);}to{opacity:1; transform:scale(1) translateY(0);}}
+.picker button{
+  font-family:var(--font-mono); font-weight:700; font-size:1.15rem;
+  width:3.6rem; height:3.6rem; border-radius:.65rem; border:1.5px solid var(--line);
+  background:var(--bg-panel); color:var(--ink); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.05rem;
+}
+.picker button .th{font-family:var(--font-body); font-size:.58rem; font-weight:400; color:var(--ink-muted);}
+.picker button.t-btn:hover, .picker button.t-btn:active{border-color:var(--true); color:var(--true); background:rgba(62,213,152,.1);}
+.picker button.f-btn:hover, .picker button.f-btn:active{border-color:var(--false); color:var(--false); background:rgba(251,107,91,.1);}
+.picker-backdrop{position:fixed; inset:0; z-index:55;}
+
+/* ---------- Feedback ---------- */
+.feedback{margin-top:.75rem; min-height:0; font-size:.82rem; padding:0; border-radius:.5rem; display:none; align-items:center; gap:.4rem; line-height:1.5;}
+.feedback.show{display:flex; padding:.5rem .75rem; animation:fadein .2s ease;}
+.feedback.ok{background:rgba(62,213,152,.08); color:var(--true); border:1px solid rgba(62,213,152,.3);}
+.feedback.bad{background:rgba(251,107,91,.08); color:var(--false); border:1px solid rgba(251,107,91,.3);}
+.feedback.info{background:rgba(242,193,78,.08); color:var(--gold); border:1px solid rgba(242,193,78,.3);}
+@keyframes fadein{from{opacity:0; transform:translateY(-3px);}to{opacity:1; transform:translateY(0);}}
+
+/* ---------- Controls ---------- */
+.controls{display:flex; gap:.6rem; margin-top:.9rem; flex-wrap:wrap;}
+.btn{
+  font-family:var(--font-body); font-size:.8rem; font-weight:600; padding:.55rem .95rem;
+  border-radius:.6rem; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem;
+  border:1px solid var(--line); background:var(--bg-raised); color:var(--ink);
+  transition:border-color .15s, color .15s, box-shadow .15s;
+}
+.btn:hover{border-color:var(--trace); color:var(--gold);}
+.btn.primary{background:linear-gradient(180deg, #1a3324, #122a1f); border-color:var(--true); color:var(--true);}
+.btn.primary:hover{box-shadow:0 0 16px var(--true-glow);}
+
+/* ---------- Log ---------- */
+.log-card{margin-top:1.1rem; background:#0a1a13; border:1px solid var(--line); border-radius:.75rem; overflow:hidden;}
+.log-head{padding:.55rem .85rem; font-family:var(--font-mono); font-size:.68rem; color:var(--ink-dim); border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center;}
+.log-body{max-height:10.5rem; overflow-y:auto; padding:.6rem .85rem; font-size:.78rem; line-height:1.75; color:var(--ink-muted);}
+.log-body .entry{padding:.2rem 0; border-bottom:1px dashed rgba(143,168,156,.08);}
+.log-body .entry:last-child{border-bottom:none; color:var(--ink);}
+.log-body .idx{color:var(--trace); margin-right:.4rem; font-family:var(--font-mono); font-weight:600;}
+.v-T{color:var(--true); font-weight:700;}
+.v-F{color:var(--false); font-weight:700;}
+.rule-note{color:var(--ink-dim); font-size:.94em;}
+
+/* ---------- Conclusion ---------- */
+.conclusion{margin-top:1.1rem; padding:1.15rem; border-radius:.85rem; display:none; text-align:center;}
+.conclusion.show{display:block; animation:fadein .3s ease;}
+.conclusion.taut{background:linear-gradient(160deg, rgba(62,213,152,.13), rgba(62,213,152,.02)); border:1px solid var(--true);}
+.conclusion.nottaut{background:linear-gradient(160deg, rgba(242,193,78,.13), rgba(242,193,78,.02)); border:1px solid var(--gold);}
+.conclusion .badge{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.1em; padding:.25rem .6rem; border-radius:1rem; display:inline-block; margin-bottom:.55rem; font-weight:700;}
+.conclusion.taut .badge{background:var(--true); color:#04140c;}
+.conclusion.nottaut .badge{background:var(--gold); color:#241a02;}
+.conclusion h3{font-family:var(--font-display); font-size:1.15rem; margin:0 0 .4rem; color:var(--ink);}
+.conclusion p{font-size:.83rem; color:var(--ink-muted); line-height:1.65; margin:0;}
+.counter-table{margin:.85rem auto 0; display:inline-flex; gap:.55rem; font-family:var(--font-mono); font-size:.82rem; flex-wrap:wrap; justify-content:center;}
+.counter-table .cell{background:var(--bg-panel); border:1px solid var(--line); border-radius:.5rem; padding:.4rem .7rem; font-weight:600;}
+
+/* ---------- Summary ---------- */
+.summary{margin:0 1.1rem 1.2rem; background:var(--bg-panel); border:1px solid var(--line); border-radius:1rem; padding:1.8rem 1.2rem; text-align:center;}
+.summary h2{font-family:var(--font-display); font-size:1.5rem; margin:.6rem 0 .3rem; color:var(--ink);}
+.summary p{color:var(--ink-muted); margin-bottom:1.1rem; font-size:.9rem;}
+.summary .score-big{font-family:var(--font-mono); font-size:2.1rem; color:var(--true); font-weight:700;}
+
+footer{text-align:center; padding:1.5rem 1rem .5rem; font-size:.7rem; color:var(--ink-dim); font-family:var(--font-mono);}
+
+@media(min-width:640px){
+  .masthead{padding:2.2rem 2rem 1.2rem;}
+  .rules-card,.problem-card,.summary{margin-left:2rem; margin-right:2rem;}
+  h1.title{font-size:1.9rem;}
+  .formula-row{font-size:1.55rem;}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow"><span class="dot">●</span> LOGIC PROOF LAB · CONTRADICTION METHOD</div>
+    <h1 class="title">ห้องทดลองพิสูจน์สัจนิรันดร์</h1>
+    <p class="subtitle">สมมติให้ประพจน์ทั้งหมดเป็น <b>เท็จ (F)</b> แล้วไล่หาค่าความจริงของประพจน์ย่อยแต่ละส่วน — ถ้าตัวแปรตัวเดียวกันปรากฏสองตำแหน่งแล้วได้ค่า<b>ขัดแย้ง</b>กัน แสดงว่าข้อความนั้นเป็น<b>สัจนิรันดร์ (Tautology)</b></p>
+    <div class="progress-chip">ข้อที่ <b id="probNum">1</b> / <span id="probTotal">8</span> <span class="sep">·</span> ทำถูก <b id="scoreNum">0</b> ข้อ</div>
+  </header>
+
+  <section class="rules-card" id="rulesCard">
+    <button class="rules-toggle" id="rulesToggle">
+      <span>📋 แผ่นสูตร: กฎการบังคับค่าความจริง</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="rules-body">
+      <div class="rule-row"><span class="rule-eq">A → B ≡ F</span><span class="rule-desc">ก็ต่อเมื่อ <b>A จริง (T)</b> และ <b>B เท็จ (F)</b> เท่านั้น — กรณีอื่นเป็นจริงหมด</span></div>
+      <div class="rule-row"><span class="rule-eq">A ∧ B ≡ T</span><span class="rule-desc">ก็ต่อเมื่อ <b>A และ B จริงทั้งคู่</b></span></div>
+      <div class="rule-row"><span class="rule-eq">A ∨ B ≡ F</span><span class="rule-desc">ก็ต่อเมื่อ <b>A และ B เท็จทั้งคู่</b></span></div>
+      <div class="rule-row"><span class="rule-eq">~A</span><span class="rule-desc">มีค่า<b>ตรงข้าม</b>กับ A เสมอ</span></div>
+      <div class="rule-row"><span class="rule-eq">p ... p</span><span class="rule-desc">ตัวแปรเดียวกันที่ปรากฏหลายตำแหน่ง ต้องมีค่าความจริง<b>เท่ากันทุกตำแหน่ง</b> — ถ้าไม่เท่ากัน คือ "ข้อขัดแย้ง" ที่เรากำลังตามหา!</span></div>
+    </div>
+  </section>
+
+  <section class="problem-card" id="problemCard">
+    <div class="problem-meta">
+      <span class="problem-tag" id="probTag">ง่าย</span>
+      <span class="problem-name" id="probName"></span>
+      <span class="mistake-counter" id="mistakeCounter"></span>
+    </div>
+    <p class="instruction">จงพิจารณาว่าข้อความต่อไปนี้เป็นสัจนิรันดร์หรือไม่ — เริ่มจากแตะสัญลักษณ์ในสูตร แล้วเลือกค่าความจริง T หรือ F</p>
+    <div id="tipLine"></div>
+
+    <div class="board-scroll">
+      <div class="board-inner" id="boardInner">
+        <div class="formula-row" id="formulaRow"></div>
+        <div class="tree-layer" id="treeLayer"><svg class="tree-svg" id="treeSvg"></svg></div>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="controls">
+      <button class="btn" id="hintBtn">💡 คำใบ้</button>
+      <button class="btn" id="resetBtn">↺ เริ่มข้อนี้ใหม่</button>
+    </div>
+
+    <div class="log-card">
+      <div class="log-head"><span>บันทึกการให้เหตุผล</span><span id="stepCount">0 ขั้นตอน</span></div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+
+    <div class="conclusion" id="conclusion"></div>
+    <div class="controls" id="nextRow" style="display:none;">
+      <button class="btn primary" id="nextBtn">ข้อถัดไป →</button>
+    </div>
+  </section>
+
+  <section class="summary" id="summary" style="display:none;"></section>
+
+  <footer>ออกแบบเพื่อการฝึกตรรกศาสตร์ · Logic Proof Lab</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   ENGINE — AST, forcing rules, contradiction validation
+   ========================================================= */
+let idCounter = 0;
+function atom(v){ return {id:'n'+(idCounter++), type:'atom', var:v}; }
+function NOT(c){ return {id:'n'+(idCounter++), type:'not', child:c}; }
+function bin(type,l,r){ return {id:'n'+(idCounter++), type, left:l, right:r}; }
+const AND = (l,r)=>bin('and',l,r);
+const OR  = (l,r)=>bin('or',l,r);
+const IMP = (l,r)=>bin('implies',l,r);
+const P = (v)=>atom(v);
+
+function collectNodes(node, arr, parent, depth){
+  node.parent = parent||null;
+  node.depth = depth||0;
+  arr.push(node);
+  if(node.type==='not') collectNodes(node.child, arr, node, node.depth+1);
+  if(node.type==='and'||node.type==='or'||node.type==='implies'){
+    collectNodes(node.left, arr, node, node.depth+1);
+    collectNodes(node.right, arr, node, node.depth+1);
+  }
+  return arr;
+}
+function FLIP(v){ return v==='T' ? 'F' : 'T'; }
+function evalBinary(type,l,r){
+  switch(type){
+    case 'and': return (l==='T'&&r==='T') ? 'T':'F';
+    case 'or':  return (l==='T'||r==='T') ? 'T':'F';
+    case 'implies': return (l==='T'&&r==='F') ? 'F':'T';
+  }
+}
+function forceSlot(type, slot, sVal, lVal, rVal){
+  const combos=[];
+  for(const s of ['T','F']) for(const l of ['T','F']) for(const r of ['T','F']){
+    if(slot!=='s' && sVal!=null && s!==sVal) continue;
+    if(slot!=='l' && lVal!=null && l!==lVal) continue;
+    if(slot!=='r' && rVal!=null && r!==rVal) continue;
+    if(evalBinary(type,l,r)!==s) continue;
+    combos.push({s,l,r});
+  }
+  if(combos.length===0) return null;
+  const vals = new Set(combos.map(c=>c[slot]));
+  return vals.size===1 ? [...vals][0] : null;
+}
+function forceFromParent(node, known){
+  const p = node.parent;
+  if(!p) return null;
+  if(p.type==='not') return known[p.id]!=null ? FLIP(known[p.id]) : null;
+  const slot = (p.left===node) ? 'l' : 'r';
+  return forceSlot(p.type, slot, known[p.id], known[p.left.id], known[p.right.id]);
+}
+// Full validation sweep — catches every contradiction regardless of tap order.
+function validateTree(nodes, known){
+  for(const n of nodes){
+    if(n.type!=='atom') continue;
+    for(const o of nodes){
+      if(o===n || o.type!=='atom' || o.var!==n.var) continue;
+      if(known[n.id]!=null && known[o.id]!=null && known[n.id]!==known[o.id]){
+        return {kind:'atom', a:n, b:o};
+      }
+    }
+  }
+  for(const n of nodes){
+    if(n.type==='not'){
+      const s=known[n.id], c=known[n.child.id];
+      if(s!=null && c!=null && s!==FLIP(c)) return {kind:'not', node:n};
+    } else if(n.type!=='atom'){
+      const s=known[n.id], l=known[n.left.id], r=known[n.right.id];
+      if([s,l,r].filter(v=>v!=null).length>=1){
+        let any=false;
+        for(const S of ['T','F']) for(const L of ['T','F']) for(const R of ['T','F']){
+          if(s!=null&&S!==s) continue;
+          if(l!=null&&L!==l) continue;
+          if(r!=null&&R!==r) continue;
+          if(evalBinary(n.type,L,R)!==S) continue;
+          any=true; break;
+        }
+        if(!any) return {kind:'node', node:n};
+      }
+    }
+  }
+  return null;
+}
+
+/* =========================================================
+   DISPLAY — bracket-aware rendering
+   ========================================================= */
+const OPSYM = {and:'∧', or:'∨', implies:'→'};
+const BRACKETS = [['(',')'], ['[',']'], ['{','}']];
+const isCompound = t => t==='and'||t==='or'||t==='implies';
+
+function computeWrapDepth(node){
+  if(node.type==='atom'){ node._wd=0; return 0; }
+  if(node.type==='not'){ node._wd = computeWrapDepth(node.child); return node._wd; }
+  const dl = computeWrapDepth(node.left) + (isCompound(node.left.type)?1:0);
+  const dr = computeWrapDepth(node.right) + (isCompound(node.right.type)?1:0);
+  node._wd = Math.max(dl,dr);
+  return node._wd;
+}
+function renderFormulaHTML(root){
+  computeWrapDepth(root);
+  function wrapIfCompound(node){
+    if(isCompound(node.type)){
+      const [ob,cb] = BRACKETS[node._wd % BRACKETS.length];
+      return `<span class="tok bracket">${ob}</span>${renderBinaryContent(node)}<span class="tok bracket">${cb}</span>`;
+    } else if(node.type==='not'){
+      return renderNot(node);
+    }
+    return renderAtom(node);
+  }
+  function renderAtom(node){ return `<span class="tok clickable atom" data-id="${node.id}" tabindex="0" role="button">${node.var}</span>`; }
+  function renderNot(node){ return `<span class="tok clickable neg" data-id="${node.id}" tabindex="0" role="button">~</span>${wrapIfCompound(node.child)}`; }
+  function renderBinaryContent(node){
+    return `${wrapIfCompound(node.left)}<span class="tok clickable op" data-id="${node.id}" tabindex="0" role="button">${OPSYM[node.type]}</span>${wrapIfCompound(node.right)}`;
+  }
+  return root.type==='not' ? renderNot(root) : renderBinaryContent(root);
+}
+// plain-text reference used inside Thai explanation sentences
+function refText(node){
+  const t = displayText(node);
+  return isCompound(node.type) ? '('+t+')' : t;
+}
+function displayText(node){
+  if(node.type==='atom') return node.var;
+  if(node.type==='not') return '~'+refText(node.child);
+  return refText(node.left)+' '+OPSYM[node.type]+' '+refText(node.right);
+}
+
+/* =========================================================
+   PROBLEM BANK
+   ========================================================= */
+const PROBLEMS = [
+  { level:'easy',   tag:'ง่าย',     name:'',                         build: ()=> IMP(AND(P('p'),P('q')), P('p')) },
+  { level:'easy',   tag:'ง่าย',     name:'',                         build: ()=> IMP(OR(P('p'),P('q')), P('p')) },
+  { level:'medium', tag:'ปานกลาง', name:'ตัวอย่างหลัก',              build: ()=> IMP(AND(IMP(P('p'),P('q')),P('p')), NOT(P('q'))),
+    tip:'เคล็ดลับ: เริ่มจากแตะสัญลักษณ์ → ตัวนอกสุด (ตัวสุดท้าย) ก่อนเสมอ แล้วเลือก F' },
+  { level:'medium', tag:'ปานกลาง', name:'Modus Ponens',             build: ()=> IMP(AND(IMP(P('p'),P('q')),P('p')), P('q')) },
+  { level:'medium', tag:'ปานกลาง', name:'',                         build: ()=> IMP(AND(IMP(P('p'),P('q')),NOT(P('p'))), P('q')) },
+  { level:'medium', tag:'ปานกลาง', name:'Modus Tollens',            build: ()=> IMP(AND(IMP(P('p'),P('q')),NOT(P('q'))), NOT(P('p'))) },
+  { level:'hard',   tag:'ยาก',     name:'',                         build: ()=> OR(IMP(P('p'),P('q')), IMP(P('q'),P('p'))) },
+  { level:'hard',   tag:'ยาก',     name:'Hypothetical Syllogism',   build: ()=> IMP(AND(IMP(P('p'),P('q')),IMP(P('q'),P('r'))), IMP(P('p'),P('r'))) },
+];
+function buildProblem(builderFn){
+  idCounter = 0;
+  const root = builderFn();
+  const nodes = collectNodes(root, [], null, 0);
+  return {root, nodes};
+}
+
+/* =========================================================
+   EXPLANATIONS
+   ========================================================= */
+const RULE_HINT = {
+  implies_F:'A → B เป็นเท็จ ก็ต่อเมื่อ A จริง และ B เท็จ',
+  implies_T:'A → B เป็นจริง ยกเว้นกรณีเดียวคือ A จริงและ B เท็จ',
+  and_T:'A ∧ B เป็นจริง ก็ต่อเมื่อ A และ B จริงทั้งคู่',
+  and_F:'A ∧ B เป็นเท็จ เมื่ออย่างน้อยฝั่งใดฝั่งหนึ่งเป็นเท็จ',
+  or_F:'A ∨ B เป็นเท็จ ก็ต่อเมื่อ A และ B เท็จทั้งคู่',
+  or_T:'A ∨ B เป็นจริง เมื่ออย่างน้อยฝั่งใดฝั่งหนึ่งเป็นจริง',
+};
+function explainMove(node, val, method, ctx){
+  if(node.parent===null){
+    return `สมมติให้ <b>${displayText(node)}</b> ทั้งข้อความเป็น <b class="v-F">เท็จ (F)</b> เพื่อเริ่มพิสูจน์ด้วยวิธีขัดแย้ง`;
+  }
+  if(method==='identity'){
+    return `${node.var} ตำแหน่งนี้ เป็น<b>ตัวแปรเดียวกัน</b>กับ ${node.var} ที่ทราบค่าแล้วเป็น <b class="v-${val}">${val}</b> จึงต้องมีค่าความจริงเท่ากัน คือ <b class="v-${val}">${val}</b>`;
+  }
+  const p = node.parent;
+  if(p.type==='not'){
+    return `~(${refText(p.child)}) มีค่าเป็น <b class="v-${ctx.parentVal}">${ctx.parentVal}</b> ดังนั้น ${refText(node)} ต้องมีค่าตรงข้าม คือ <b class="v-${val}">${val}</b>`;
+  }
+  let s = `เนื่องจาก ${refText(p)} มีค่าเป็น <b class="v-${ctx.parentVal}">${ctx.parentVal}</b>`;
+  if(ctx.otherVal!=null) s += ` และ ${refText(ctx.otherNode)} มีค่าเป็น <b class="v-${ctx.otherVal}">${ctx.otherVal}</b>`;
+  s += ` จึงสรุปได้ว่า ${refText(node)} ต้องมีค่าเป็น <b class="v-${val}">${val}</b>`;
+  const key = p.type+'_'+ctx.parentVal;
+  if(RULE_HINT[key]) s += ` <span class="rule-note">(${RULE_HINT[key]})</span>`;
+  return s;
+}
+function explainNodeConflict(n){
+  if(n.type==='not'){
+    return `~(${refText(n.child)}) มีค่าเป็น <b class="v-${state.known[n.id]}">${state.known[n.id]}</b> แต่ ${refText(n.child)} มีค่าเป็น <b class="v-${state.known[n.child.id]}">${state.known[n.child.id]}</b> ซึ่งไม่ใช่ค่าตรงข้ามกัน`;
+  }
+  const parts=[];
+  if(state.known[n.id]!=null) parts.push(`${refText(n)} = <b class="v-${state.known[n.id]}">${state.known[n.id]}</b>`);
+  if(state.known[n.left.id]!=null) parts.push(`${refText(n.left)} = <b class="v-${state.known[n.left.id]}">${state.known[n.left.id]}</b>`);
+  if(state.known[n.right.id]!=null) parts.push(`${refText(n.right)} = <b class="v-${state.known[n.right.id]}">${state.known[n.right.id]}</b>`);
+  const key = n.type+'_'+(state.known[n.id]||'');
+  return `ทราบว่า ${parts.join(', ')} — เป็นไปพร้อมกันไม่ได้ตามกฎ ${RULE_HINT[key]||('ของ '+OPSYM[n.type])}`;
+}
+
+/* =========================================================
+   APP STATE & RENDERING
+   ========================================================= */
+let state = null;
+let problemIndex = 0;
+let score = 0;
+let stepN = 0;
+let activePicker = null;
+let resizeTimer = null;
+
+function nodeById(id){ return state.nodes.find(n=>n.id===id); }
+function childrenOf(n){
+  if(n.type==='not') return [n.child];
+  if(isCompound(n.type)) return [n.left, n.right];
+  return [];
+}
+function yFor(depth){ return depth*state.rowGap + 30; }
+
+function startProblem(idx){
+  problemIndex = idx;
+  const pdef = PROBLEMS[idx];
+  const {root, nodes} = buildProblem(pdef.build);
+  state = {root, nodes, known:{}, mistakes:0, solved:false, rowGap:60};
+  stepN = 0;
+
+  document.getElementById('probTag').textContent = pdef.tag;
+  document.getElementById('probTag').setAttribute('data-lv', pdef.level);
+  document.getElementById('probName').textContent = pdef.name || '';
+  document.getElementById('probNum').textContent = idx+1;
+  document.getElementById('mistakeCounter').textContent = '';
+  document.getElementById('tipLine').innerHTML = pdef.tip ? `<div class="tip-line">${pdef.tip}</div>` : '';
+  document.getElementById('conclusion').className = 'conclusion';
+  document.getElementById('conclusion').innerHTML = '';
+  document.getElementById('nextRow').style.display = 'none';
+  document.getElementById('logBody').innerHTML = '';
+  document.getElementById('stepCount').textContent = '0 ขั้นตอน';
+  hideFeedback();
+  renderFormula();
+  clearTree();
+}
+
+function renderFormula(){
+  const row = document.getElementById('formulaRow');
+  row.innerHTML = renderFormulaHTML(state.root);
+  row.querySelectorAll('.tok.clickable').forEach(el=>{
+    el.addEventListener('click', onTokenClick);
+    el.addEventListener('keydown', e=>{
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); onTokenClick(e); }
+    });
+  });
+  requestAnimationFrame(measurePositions);
+}
+
+function measurePositions(){
+  const boardInner = document.getElementById('boardInner');
+  const row = document.getElementById('formulaRow');
+  const rowHeight = row.offsetHeight;
+  state.nodes.forEach(n=>{
+    const el = row.querySelector(`[data-id="${n.id}"]`);
+    if(el) n.x = el.offsetLeft + el.offsetWidth/2;
+  });
+  const maxDepth = Math.max(...state.nodes.map(n=>n.depth));
+  state.treeHeight = (maxDepth+1)*state.rowGap + 26;
+  state.formulaHeight = rowHeight;
+
+  const treeLayer = document.getElementById('treeLayer');
+  treeLayer.style.top = (rowHeight+16)+'px';
+  treeLayer.style.height = state.treeHeight+'px';
+  boardInner.style.height = (rowHeight+16+state.treeHeight)+'px';
+
+  const svg = document.getElementById('treeSvg');
+  svg.setAttribute('width', Math.max(boardInner.scrollWidth, row.scrollWidth));
+  svg.setAttribute('height', state.treeHeight);
+}
+
+function clearTree(){
+  document.getElementById('treeLayer').innerHTML = '<svg class="tree-svg" id="treeSvg"></svg>';
+}
+
+/* ---------- Interaction ---------- */
+function onTokenClick(e){
+  const id = e.currentTarget.getAttribute('data-id');
+  const node = nodeById(id);
+  if(state.solved || state.known[id]!=null) return;
+  showPicker(e.currentTarget, node);
+}
+
+function showPicker(anchorEl, node){
+  closePicker();
+  const rect = anchorEl.getBoundingClientRect();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'picker-backdrop';
+  backdrop.addEventListener('click', closePicker);
+  document.body.appendChild(backdrop);
+
+  const picker = document.createElement('div');
+  picker.className = 'picker';
+  picker.innerHTML = `
+    <button class="t-btn" data-v="T">T<span class="th">จริง</span></button>
+    <button class="f-btn" data-v="F">F<span class="th">เท็จ</span></button>`;
+  document.body.appendChild(picker);
+
+  const pw = picker.offsetWidth, ph = picker.offsetHeight;
+  let left = rect.left + rect.width/2 - pw/2;
+  left = Math.max(8, Math.min(window.innerWidth-pw-8, left));
+  let top = rect.top - ph - 10;
+  if(top < 8) top = rect.bottom + 10;
+  picker.style.left = left+'px';
+  picker.style.top = top+'px';
+
+  picker.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const v = b.getAttribute('data-v');
+      closePicker();
+      handleAttempt(node, v);
+    });
+  });
+  activePicker = {picker, backdrop};
+}
+function closePicker(){
+  if(activePicker){ activePicker.picker.remove(); activePicker.backdrop.remove(); activePicker=null; }
+}
+
+function handleAttempt(node, chosenVal){
+  if(state.solved) return;
+
+  if(node.parent===null){
+    if(chosenVal!=='F'){
+      state.mistakes++; updateMistakeUI();
+      showFeedback('bad', 'ในวิธีขัดแย้ง เราต้อง "สมมติ" ให้ข้อความทั้งหมดเป็นเท็จ (F) ก่อนเสมอ ลองแตะแล้วเลือก F');
+      return;
+    }
+    acceptMove(node, 'F', 'root', {});
+    return;
+  }
+
+  const p = node.parent;
+  const ctx = {};
+  let forced = forceFromParent(node, state.known);
+  let method = 'parent';
+  if(p.type==='not'){
+    ctx.parentVal = state.known[p.id];
+  } else {
+    const otherNode = (p.left===node) ? p.right : p.left;
+    ctx.parentVal = state.known[p.id];
+    ctx.otherNode = otherNode;
+    ctx.otherVal = state.known[otherNode.id];
+  }
+  if(forced==null && node.type==='atom'){
+    const sibling = state.nodes.find(o=>o!==node && o.type==='atom' && o.var===node.var && state.known[o.id]!=null);
+    if(sibling){ forced = state.known[sibling.id]; method = 'identity'; }
+  }
+
+  if(forced==null){
+    showFeedback('info', `ยังสรุปค่าความจริงของ ${refText(node)} ตำแหน่งนี้ไม่ได้ในตอนนี้ ลองหาโหนดอื่นที่แน่ชัดกว่าก่อน`);
+    return;
+  }
+  if(forced!==chosenVal){
+    state.mistakes++; updateMistakeUI();
+    showFeedback('bad', 'ยังไม่ถูกต้อง ลองพิจารณากฎของตัวเชื่อมตรงนี้อีกครั้ง');
+    return;
+  }
+  acceptMove(node, chosenVal, method, ctx);
+}
+
+function acceptMove(node, val, method, ctx){
+  state.known[node.id] = val;
+  markTokenDone(node, val);
+  renderNodeBadge(node, val);
+  appendLog(explainMove(node, val, method, ctx));
+  showFeedback('ok', 'ถูกต้อง! ✓');
+
+  const conflict = validateTree(state.nodes, state.known);
+  if(conflict){ handleContradiction(conflict); return; }
+  if(state.nodes.every(n=>state.known[n.id]!=null)) handleNoContradiction();
+}
+
+function markTokenDone(node, val){
+  const el = document.querySelector(`.tok[data-id="${node.id}"]`);
+  if(el){ el.classList.add('done','val-'+val); el.classList.remove('clickable'); }
+}
+
+function renderNodeBadge(node, val){
+  const layer = document.getElementById('treeLayer');
+  const div = document.createElement('div');
+  div.className = `node-badge val-${val}`;
+  div.id = 'badge-'+node.id;
+  div.style.left = node.x+'px';
+  div.style.top = yFor(node.depth)+'px';
+  const cap = document.createElement('div');
+  cap.className = 'cap';
+  cap.textContent = node.type==='atom' ? node.var : (node.type==='not' ? '~' : OPSYM[node.type]);
+  const valEl = document.createElement('div');
+  valEl.textContent = val;
+  div.appendChild(cap); div.appendChild(valEl);
+  layer.appendChild(div);
+
+  if(node.parent && state.known[node.parent.id]!=null) drawEdge(node.parent, node);
+  childrenOf(node).forEach(k=>{ if(state.known[k.id]!=null) drawEdge(node,k); });
+}
+
+function drawEdge(parent, child, conflict){
+  const svg = document.getElementById('treeSvg');
+  const px=parent.x, py=yFor(parent.depth), cx=child.x, cy=yFor(child.depth);
+  const midY = (py+cy)/2;
+  const d = `M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', d);
+  path.setAttribute('class', 'edge-path'+(conflict?' conflict-edge':''));
+  path.id = 'edge-'+parent.id+'-'+child.id;
+  svg.appendChild(path);
+}
+function drawConflictLink(a,b){
+  const svg = document.getElementById('treeSvg');
+  const ax=a.x, ay=yFor(a.depth), bx=b.x, by=yFor(b.depth);
+  const midX=(ax+bx)/2, dipY=Math.max(ay,by)+50;
+  const d = `M ${ax} ${ay} Q ${midX} ${dipY} ${bx} ${by}`;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', d);
+  path.setAttribute('class', 'edge-path conflict-edge');
+  svg.appendChild(path);
+  if(dipY+20 > state.treeHeight){
+    state.treeHeight = dipY+20;
+    document.getElementById('treeLayer').style.height = state.treeHeight+'px';
+    svg.setAttribute('height', state.treeHeight);
+    document.getElementById('boardInner').style.height = (state.formulaHeight+16+state.treeHeight)+'px';
+  }
+}
+
+function highlightConflictNode(id){
+  const badge = document.getElementById('badge-'+id);
+  if(badge) badge.classList.add('conflict');
+  const tok = document.querySelector(`.tok[data-id="${id}"]`);
+  if(tok) tok.classList.add('conflict');
+}
+
+function handleContradiction(conflict){
+  state.solved = true;
+  let msg;
+  if(conflict.kind==='atom'){
+    highlightConflictNode(conflict.a.id);
+    highlightConflictNode(conflict.b.id);
+    drawConflictLink(conflict.a, conflict.b);
+    msg = `⚡ พบข้อขัดแย้ง! ${conflict.a.var} มีสองตำแหน่งที่ค่าความจริงไม่ตรงกัน: ตำแหน่งหนึ่งเป็น <b class="v-${state.known[conflict.a.id]}">${state.known[conflict.a.id]}</b> อีกตำแหน่งเป็น <b class="v-${state.known[conflict.b.id]}">${state.known[conflict.b.id]}</b> — ตัวแปรเดียวกันมีค่าต่างกันไม่ได้! สรุปว่าข้อความนี้เป็น<b> สัจนิรันดร์</b>`;
+  } else if(conflict.kind==='not'){
+    highlightConflictNode(conflict.node.id);
+    highlightConflictNode(conflict.node.child.id);
+    msg = `⚡ พบข้อขัดแย้ง! ${explainNodeConflict(conflict.node)} สรุปว่าข้อความนี้เป็น<b> สัจนิรันดร์</b>`;
+  } else {
+    const n = conflict.node;
+    highlightConflictNode(n.id); highlightConflictNode(n.left.id); highlightConflictNode(n.right.id);
+    msg = `⚡ พบข้อขัดแย้ง! ${explainNodeConflict(n)} สรุปว่าข้อความนี้เป็น<b> สัจนิรันดร์</b>`;
+  }
+  appendLog(msg);
+  showConclusionTaut();
+  score++; updateScoreUI();
+}
+
+function handleNoContradiction(){
+  state.solved = true;
+  const uniqueVars = {};
+  state.nodes.filter(n=>n.type==='atom').forEach(a=>{ if(!(a.var in uniqueVars)) uniqueVars[a.var]=state.known[a.id]; });
+  const cells = Object.keys(uniqueVars).sort().map(v=>`<span class="cell">${v} = <span class="v-${uniqueVars[v]}">${uniqueVars[v]}</span></span>`).join('');
+  const el = document.getElementById('conclusion');
+  el.className = 'conclusion show nottaut';
+  el.innerHTML = `<span class="badge">NOT A TAUTOLOGY</span><h3>ไม่ใช่สัจนิรันดร์</h3><p>กำหนดค่าความจริงได้ครบทุกตำแหน่งโดยไม่ขัดแย้งกันเลย แสดงว่ามีกรณีที่ทำให้ข้อความทั้งหมดเป็นเท็จได้จริง (พบตัวอย่างค้าน)</p><div class="counter-table">${cells}</div>`;
+  appendLog('✅ กำหนดค่าได้ครบทุกตำแหน่งโดยไม่ขัดแย้ง สรุปว่า<b> ไม่ใช่สัจนิรันดร์</b> (พบตัวอย่างค้าน)');
+  document.getElementById('nextRow').style.display = 'flex';
+  score++; updateScoreUI();
+}
+function showConclusionTaut(){
+  const el = document.getElementById('conclusion');
+  el.className = 'conclusion show taut';
+  el.innerHTML = `<span class="badge">TAUTOLOGY CONFIRMED</span><h3>เป็นสัจนิรันดร์ ✓</h3><p>เมื่อสมมติให้ข้อความเป็นเท็จ จะนำไปสู่ข้อขัดแย้งเสมอ ไม่ว่าจะกำหนดค่าความจริงของตัวแปรอย่างไรก็ไม่มีทางเป็นไปได้ ข้อความนี้จึงเป็นจริงเสมอ</p>`;
+  document.getElementById('nextRow').style.display = 'flex';
+}
+
+/* ---------- Log / feedback / score UI ---------- */
+function appendLog(html){
+  stepN++;
+  const body = document.getElementById('logBody');
+  const div = document.createElement('div');
+  div.className = 'entry';
+  div.innerHTML = `<span class="idx">${stepN}.</span>${html}`;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  document.getElementById('stepCount').textContent = stepN+' ขั้นตอน';
+}
+let feedbackTimer=null;
+function showFeedback(kind, msg){
+  const el = document.getElementById('feedback');
+  el.className = 'feedback show '+kind;
+  el.textContent = msg;
+  clearTimeout(feedbackTimer);
+  feedbackTimer = setTimeout(()=>{ el.className='feedback'; }, 3400);
+}
+function hideFeedback(){ document.getElementById('feedback').className='feedback'; }
+function updateMistakeUI(){
+  document.getElementById('mistakeCounter').textContent = state.mistakes>0 ? `พลาด ${state.mistakes} ครั้ง` : '';
+}
+function updateScoreUI(){ document.getElementById('scoreNum').textContent = score; }
+
+/* ---------- Hint / Reset / Next ---------- */
+document.getElementById('hintBtn').addEventListener('click', ()=>{
+  if(!state || state.solved) return;
+  const candidates = [];
+  state.nodes.forEach(n=>{
+    if(state.known[n.id]!=null) return;
+    if(n.parent===null){ candidates.push(n); return; }
+    let v = forceFromParent(n, state.known);
+    if(v==null && n.type==='atom'){
+      const sib = state.nodes.find(o=>o!==n && o.type==='atom' && o.var===n.var && state.known[o.id]!=null);
+      if(sib) v = state.known[sib.id];
+    }
+    if(v!=null) candidates.push(n);
+  });
+  if(candidates.length===0){ showFeedback('info','ลองตรวจสอบข้อมูลที่มีอยู่แล้วอีกครั้ง'); return; }
+  candidates.forEach(n=>{
+    const el = document.querySelector(`.tok[data-id="${n.id}"]`);
+    if(el){ el.classList.remove('hint-pulse'); void el.offsetWidth; el.classList.add('hint-pulse'); }
+  });
+  showFeedback('info', `ลองแตะตำแหน่งที่กำลังเรืองแสง (มี ${candidates.length} ตำแหน่งที่หาค่าได้แล้วตอนนี้)`);
+});
+document.getElementById('resetBtn').addEventListener('click', ()=> startProblem(problemIndex));
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  if(problemIndex+1 < PROBLEMS.length) startProblem(problemIndex+1);
+  else showSummary();
+});
+document.getElementById('rulesToggle').addEventListener('click', ()=>{
+  document.getElementById('rulesCard').classList.toggle('open');
+});
+
+function showSummary(){
+  document.getElementById('problemCard').style.display = 'none';
+  document.getElementById('rulesCard').style.display = 'none';
+  const el = document.getElementById('summary');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="eyebrow" style="justify-content:center;"><span class="dot">●</span> TEST COMPLETE</div>
+    <h2>ทำแบบฝึกหัดครบแล้ว! 🎉</h2>
+    <p>คุณทำถูกต้อง</p>
+    <div class="score-big">${score} / ${PROBLEMS.length}</div>
+    <div class="controls" style="justify-content:center; margin-top:1.3rem;">
+      <button class="btn primary" id="restartAll">↺ เริ่มทำใหม่ทั้งหมด</button>
+    </div>`;
+  document.getElementById('restartAll').addEventListener('click', ()=>{
+    score = 0; updateScoreUI();
+    document.getElementById('problemCard').style.display = 'block';
+    document.getElementById('rulesCard').style.display = 'block';
+    el.style.display = 'none';
+    startProblem(0);
+  });
+}
+
+/* ---------- Resize ---------- */
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{
+    if(!state) return;
+    measurePositions();
+    document.querySelectorAll('.node-badge').forEach(b=>{
+      const n = nodeById(b.id.replace('badge-',''));
+      if(n){ b.style.left=n.x+'px'; b.style.top=yFor(n.depth)+'px'; }
+    });
+    document.getElementById('treeSvg').innerHTML = '';
+    state.nodes.forEach(n=>{
+      if(n.parent && state.known[n.id]!=null && state.known[n.parent.id]!=null) drawEdge(n.parent, n);
+    });
+  }, 160);
+});
+
+/* ---------- Init ---------- */
+document.getElementById('probTotal').textContent = PROBLEMS.length;
+startProblem(0);
+
+})();
+</script>
+</body>
+</html>
