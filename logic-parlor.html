@@ -251,6 +251,7 @@
     display:flex; flex-direction:column; justify-content:space-between;
     padding:calc(var(--cw)*.08);
     color:var(--ink);
+    overflow:hidden;
     transition:transform .32s cubic-bezier(.2,.8,.3,1), opacity .28s ease, box-shadow .18s ease;
     user-select:none; -webkit-user-select:none;
     cursor:grab;
@@ -277,8 +278,14 @@
   .corner{ font-family:var(--font-mono); font-size:calc(var(--cw)*.155); line-height:1; color:var(--ink-soft); font-weight:700; }
   .corner.br{ align-self:flex-end; transform:rotate(180deg); }
   .card-face{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:calc(var(--cw)*.05); text-align:center; }
-  .symbols{ font-family:var(--font-mono); font-weight:700; font-size:calc(var(--cw)*.26); letter-spacing:.01em; white-space:nowrap; }
-  .card.rare .symbols{ font-size:calc(var(--cw)*.52); font-family:var(--font-display); }
+  .symbols{
+    font-family:var(--font-mono); font-weight:700;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:calc(var(--cw)*.035); width:100%; line-height:1.05;
+  }
+  .symbols .op-line{ font-size:calc(var(--cw)*.215); letter-spacing:0; white-space:nowrap; }
+  .symbols .eq-line{ font-size:calc(var(--cw)*.19); letter-spacing:0; white-space:nowrap; color:var(--ink-soft); }
+  .card.rare .symbols{ font-size:calc(var(--cw)*.5); font-family:var(--font-display); white-space:nowrap; }
   .caption{ font-family:var(--font-body); font-size:calc(var(--cw)*.115); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
 
   /* ============================= MODALS ============================= */
@@ -561,6 +568,24 @@
   };
 
   /* ===================== CARD DOM BUILD ===================== */
+  function buildSymbolBlock(card){
+    var sym = document.createElement('div');
+    sym.className = 'symbols';
+    if (card.type === 'value'){
+      sym.textContent = card.value;
+    } else {
+      var opLine = document.createElement('div');
+      opLine.className = 'op-line';
+      opLine.textContent = card.type === 'neg' ? '~ ▢' : (card.op + ' ' + card.operand);
+      var eqLine = document.createElement('div');
+      eqLine.className = 'eq-line';
+      eqLine.textContent = '≡ ' + card.result;
+      sym.appendChild(opLine);
+      sym.appendChild(eqLine);
+    }
+    return sym;
+  }
+
   function buildCardEl(card, opts){
     var d = document.createElement('div');
     d.className = 'card' + (card.type==='value' ? ' rare' : '') + (opts.faceDown ? ' facedown' : '') + (opts.interactive ? ' interactive' : '');
@@ -576,7 +601,7 @@
     } else {
       var tl = document.createElement('div'); tl.className='corner tl'; tl.textContent=cornerText(card);
       var face = document.createElement('div'); face.className='card-face';
-      var sym = document.createElement('div'); sym.className='symbols'; sym.textContent=symbolText(card);
+      var sym = buildSymbolBlock(card);
       var cap = document.createElement('div'); cap.className='caption'; cap.textContent=card.caption;
       face.appendChild(sym); face.appendChild(cap);
       var br = document.createElement('div'); br.className='corner br'; br.textContent=cornerText(card);
