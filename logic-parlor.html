@@ -129,6 +129,16 @@
   }
   @keyframes dots{ 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
 
+  .pass-btn{
+    display:block; margin: 0 auto 8px; background:linear-gradient(160deg,var(--brass-soft),var(--brass));
+    color:var(--board-deep); border:none; font-weight:700;
+    padding:7px 20px; border-radius:999px; cursor:pointer; font-size:12.5px; letter-spacing:.05em;
+    box-shadow:var(--shadow-card); transition:filter .15s ease, transform .12s ease;
+  }
+  .pass-btn:hover{ filter:brightness(1.06); }
+  .pass-btn:active{ transform:scale(.96); }
+  .pass-btn[hidden]{ display:none; }
+
   .felt{
     position:relative; flex:1; min-height:0;
     border-radius:26px;
@@ -354,6 +364,7 @@
 
     <section class="center-zone">
       <div class="turn-banner" id="turnBanner">Dealing…</div>
+      <button class="pass-btn" id="passBtn" type="button" hidden>Pass Turn</button>
       <div class="felt">
         <div class="pile-wrap">
           <button class="draw-pile" id="drawPile" type="button" aria-label="Draw a card">
@@ -404,7 +415,7 @@
       <li>Your card is read as "table value, your connective, ≡ your result." If that's true, it's a correct play, and the table updates to your result.</li>
       <li>If it's false, the table still updates to your stated result — but you draw two penalty cards.</li>
       <li>T and F cards need no justification: play them anytime to set the table.</li>
-      <li>Don't like your hand? Tap the draw pile to draw a card and pass the turn.</li>
+      <li>Don't like your hand? Tap the draw pile to draw a card. You may then play a card, draw again, or tap Pass Turn to end your turn.</li>
       <li>First to empty their hand wins the duel.</li>
     </ol>
     <div class="modal-actions">
@@ -520,7 +531,7 @@
   var state = {
     playerHand: [], botHand: [], centerValue:'T', lastCard:null,
     turn:'player', busy:false, gameOver:false, winner:null,
-    selectedUid:null, log:[]
+    selectedUid:null, log:[], awaitingPass:false
   };
   var EFFECT_DELAY = 950;
   var playerNodes = new Map();
@@ -534,6 +545,7 @@
     botCount: document.getElementById('botCount'),
     playerCount: document.getElementById('playerCount'),
     turnBanner: document.getElementById('turnBanner'),
+    passBtn: document.getElementById('passBtn'),
     activeValue: document.getElementById('activeValue'),
     centerCardSlot: document.getElementById('centerCardSlot'),
     stageGlow: document.getElementById('stageGlow'),
@@ -768,14 +780,22 @@
   /* ===================== TURN / EFFECTS ===================== */
   function renderTurnBanner(){
     el.turnBanner.classList.remove('bot-thinking');
-    if (state.gameOver){ el.turnBanner.textContent=''; return; }
+    if (state.gameOver){
+      el.turnBanner.textContent='';
+      el.passBtn.hidden = true;
+      el.drawPile.disabled = true;
+      return;
+    }
     if (state.turn==='player'){
-      el.turnBanner.textContent = 'Your turn — drag a card to the felt, or draw';
+      el.turnBanner.textContent = state.awaitingPass
+        ? 'Play a card, or pass your turn'
+        : 'Your turn — drag a card to the felt, or draw';
     } else {
       el.turnBanner.classList.add('bot-thinking');
       el.turnBanner.innerHTML = 'Bot is thinking<span class="dots"></span>';
     }
     el.drawPile.disabled = state.turn!=='player' || state.busy || state.gameOver;
+    el.passBtn.hidden = !(state.awaitingPass && state.turn==='player' && !state.busy && !state.gameOver);
   }
   function renderActiveValue(){
     el.activeValue.textContent = state.centerValue;
@@ -803,6 +823,9 @@
     var idx = -1;
     for (var i=0;i<hand.length;i++){ if (hand[i].uid===card.uid){ idx=i; break; } }
     if (idx===-1){ state.busy=false; return; }
+
+    state.awaitingPass = false;
+    renderTurnBanner();
 
     var currentBool = state.centerValue === 'T';
     var correct = isCorrectPlay(currentBool, card);
@@ -843,12 +866,24 @@
   function performDraw(who){
     if (state.busy || state.gameOver) return;
     state.busy = true;
+    el.drawPile.disabled = true;
     state.selectedUid = null;
     var hand = who==='player' ? state.playerHand : state.botHand;
     hand.push(weightedDraw());
     renderHands();
     updateCounts();
     pushLog(who, null, null, true);
+
+    if (who === 'player'){
+      setTimeout(function(){
+        state.awaitingPass = true;
+        state.busy = false;
+        renderTurnBanner();
+        renderHands();
+      }, 380);
+      return;
+    }
+
     setTimeout(function(){
       state.turn = who==='player' ? 'bot' : 'player';
       state.busy = false;
@@ -932,6 +967,21 @@
     if (state.turn!=='player' || state.busy || state.gameOver) return;
     performDraw('player');
   });
+  el.passBtn.addEventListener('click', function(){
+    if (state.turn!=='player' || state.busy || state.gameOver || !state.awaitingPass) return;
+    state.busy = true;
+    state.awaitingPass = false;
+    state.selectedUid = null;
+    renderTurnBanner();
+    renderHands();
+    setTimeout(function(){
+      state.turn = 'bot';
+      state.busy = false;
+      renderTurnBanner();
+      renderHands();
+      scheduleBotTurn();
+    }, 300);
+  });
 
   /* ===================== WIN / RESTART ===================== */
   function endGame(who){
@@ -981,6 +1031,7 @@
     state.busy = false;
     state.gameOver = false;
     state.winner = null;
+    state.awaitingPass = false;
     state.selectedUid = null;
     state.log = [];
     playerNodes.forEach(function(n){ n.remove(); }); playerNodes.clear();
