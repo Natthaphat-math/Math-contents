@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>ชนเป้า — ห้องทดลองกลยุทธ์ตัวเลข</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Taviraj:wght@500;600;700&family=Sarabun:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --ink:        #16211F;
+    --ink-2:      #1E2C29;
+    --ink-3:      #263B35;
+    --chalk:      #F4EFE1;
+    --chalk-dim:  rgba(244,239,225,0.66);
+    --chalk-faint:rgba(244,239,225,0.14);
+    --chalk-hair: rgba(244,239,225,0.09);
+    --red:        #D5392A;
+    --red-dark:   #AE2C20;
+    --red-glow:   rgba(213,57,42,0.35);
+    --amber:      #E8B23D;
+    --amber-dim:  rgba(232,178,61,0.18);
+    --sage:       #7FB39A;
+    --sage-dim:   rgba(127,179,154,0.16);
+    --sage-text:  #A9D4C0;
+
+    --font-display: 'Taviraj', 'Noto Serif Thai', Georgia, serif;
+    --font-mono:    'Space Mono', 'SFMono-Regular', Consolas, monospace;
+    --font-body:    'Sarabun', 'Noto Sans Thai', system-ui, sans-serif;
+
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
+  }
+
+  /* ============ RESET / BASE ============ */
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--chalk);
+    background:
+      radial-gradient(circle at 1px 1px, rgba(244,239,225,0.055) 1px, transparent 0) 0 0/22px 22px,
+      var(--ink);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:28px 16px 40px;
+  }
+  h1,h2,h3{ margin:0; font-family:var(--font-display); font-weight:600; }
+  p{ margin:0; }
+  button{ font-family:inherit; }
+
+  :focus-visible{
+    outline:2px solid var(--amber);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+
+  .stage{ width:100%; max-width:460px; display:flex; flex-direction:column; align-items:center; gap:18px; }
+
+  /* ============ MASTHEAD ============ */
+  .masthead{ text-align:center; padding:4px 6px 0; }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    letter-spacing:0.06em;
+    color:var(--sage-text);
+    margin-bottom:10px;
+  }
+  .title{ font-size:clamp(30px,7vw,38px); line-height:1.05; letter-spacing:-0.01em; }
+  .tagline{
+    margin-top:10px;
+    font-size:14.5px;
+    line-height:1.5;
+    color:var(--chalk-dim);
+    max-width:34ch;
+    margin-left:auto; margin-right:auto;
+  }
+
+  /* ============ PANEL ============ */
+  .panel{
+    width:100%;
+    background:var(--ink-2);
+    border:1px solid var(--chalk-hair);
+    border-radius:var(--radius-lg);
+    padding:24px 22px 22px;
+    box-shadow:0 30px 60px -25px rgba(0,0,0,0.6), 0 1px 0 rgba(244,239,225,0.04) inset;
+  }
+  .view[hidden]{ display:none; }
+
+  /* ============ SETUP VIEW ============ */
+  .setup-block + .setup-block{ margin-top:22px; }
+  .setup-label{
+    font-size:13px; letter-spacing:0.02em;
+    color:var(--chalk-dim); font-weight:700; margin-bottom:10px; display:block;
+  }
+  .first-player-group{
+    display:flex; gap:10px;
+  }
+  .toggle-pill{
+    flex:1;
+    padding:14px 10px;
+    border-radius:var(--radius-md);
+    border:1px solid var(--chalk-faint);
+    background:transparent;
+    color:var(--chalk-dim);
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    transition:background 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+  }
+  .toggle-pill:hover{ border-color:var(--chalk-dim); color:var(--chalk); }
+  .toggle-pill:active{ transform:scale(0.98); }
+  .toggle-pill[aria-pressed="true"]{
+    background:var(--sage-dim);
+    border-color:var(--sage);
+    color:var(--chalk);
+  }
+  .toggle-pill .sub{ display:block; font-family:var(--font-body); font-size:11.5px; font-weight:400; color:var(--chalk-dim); margin-top:3px; }
+
+  .rules-mini{
+    margin-top:14px;
+    display:flex; flex-direction:column; gap:7px;
+    font-size:13px; color:var(--chalk-dim); line-height:1.5;
+  }
+  .rules-mini li{ list-style:none; display:flex; gap:8px; }
+  .rules-mini li::before{ content:"—"; color:var(--sage-text); flex-shrink:0; }
+
+  .btn-start{
+    margin-top:22px;
+    width:100%;
+    padding:16px;
+    border-radius:var(--radius-md);
+    border:none;
+    background:var(--red);
+    color:var(--chalk);
+    font-family:var(--font-body);
+    font-weight:800;
+    font-size:16px;
+    letter-spacing:0.01em;
+    cursor:pointer;
+    box-shadow:0 12px 24px -10px var(--red-glow);
+    transition:background 150ms ease, transform 120ms ease;
+  }
+  .btn-start:hover{ background:var(--red-dark); }
+  .btn-start:active{ transform:scale(0.985); }
+
+  /* ============ GAME VIEW — top row ============ */
+  .game-topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .score-chip{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--chalk-dim);
+    background:var(--ink-3);
+    border:1px solid var(--chalk-hair);
+    padding:6px 10px;
+    border-radius:999px;
+  }
+  .score-chip b{ color:var(--chalk); font-weight:700; }
+  .icon-btn{
+    width:34px; height:34px;
+    border-radius:999px;
+    border:1px solid var(--chalk-faint);
+    background:transparent;
+    color:var(--chalk-dim);
+    font-size:16px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color 150ms ease, color 150ms ease, transform 300ms ease;
+  }
+  .icon-btn:hover{ color:var(--chalk); border-color:var(--chalk-dim); }
+  .icon-btn:active{ transform:rotate(-40deg); }
+
+  /* ============ GOAL ============ */
+  .goal-block{ text-align:center; }
+  .goal-label{
+    font-family:var(--font-mono);
+    font-size:12.5px; letter-spacing:0.04em;
+    color:var(--amber);
+  }
+  .goal-number{
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:26px;
+    color:var(--amber);
+    margin-top:2px;
+    letter-spacing:0.02em;
+  }
+
+  /* ============ TRACK (signature element) ============ */
+  .track{
+    position:relative;
+    height:46px;
+    margin:14px 4px 6px;
+  }
+  .track__line{
+    position:absolute; left:0; right:0; top:22px; height:2px;
+    background:linear-gradient(90deg, var(--chalk-faint), var(--chalk-faint) 100%);
+    border-radius:2px;
+  }
+  .track__goalcap{
+    position:absolute; right:0; top:10px; width:2px; height:26px;
+    background:var(--amber);
+    border-radius:2px;
+  }
+  .track__marker{
+    position:absolute; top:12px;
+    width:22px; height:22px; margin-left:-11px;
+    transition:left 420ms cubic-bezier(.3,.9,.3,1);
+  }
+  .track__markerDot{
+    display:block; width:100%; height:100%; border-radius:50%;
+    background:var(--red);
+    box-shadow:0 0 0 4px var(--ink-2), 0 0 0 5px var(--chalk-faint), 0 6px 14px -4px var(--red-glow);
+  }
+  .track__tick{
+    position:absolute; top:16px; width:2px; height:14px; margin-left:-1px;
+    background:var(--sage);
+    border-radius:2px;
+    opacity:0;
+    transition:opacity 260ms ease;
+  }
+  .track__tick.is-visible{ opacity:0.85; }
+  .track__tickLabel{
+    position:absolute; top:32px; transform:translateX(-50%);
+    font-family:var(--font-mono); font-size:10px; color:var(--sage-text);
+    opacity:0; transition:opacity 260ms ease; white-space:nowrap;
+  }
+  .track__tickLabel.is-visible{ opacity:1; }
+
+  /* ============ COUNTER ============ */
+  .counter-wrap{ text-align:center; margin:8px 0 4px; }
+  .counter{
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:clamp(64px, 22vw, 98px);
+    line-height:1;
+    color:var(--chalk);
+    font-variant-numeric:tabular-nums;
+  }
+  .digit{ display:inline-block; min-width:0.62em; }
+  @media (prefers-reduced-motion: no-preference){
+    .digit--pop{ animation:digitPop 340ms cubic-bezier(.22,.85,.3,1) both; }
+  }
+  @keyframes digitPop{
+    0%{ transform:translateY(-32%) scale(0.75); opacity:0; }
+    55%{ transform:translateY(5%) scale(1.04); opacity:1; }
+    100%{ transform:translateY(0) scale(1); }
+  }
+
+  .status{
+    text-align:center;
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--chalk-dim);
+    min-height:20px;
+    margin-bottom:18px;
+  }
+  .status.is-you{ color:var(--chalk); }
+  .status.is-bot{ color:var(--sage-text); }
+  .status .dots::after{
+    content:"";
+    display:inline-block;
+    width:1.2em; text-align:left;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .status .dots::after{ animation:dots 1.1s steps(4,end) infinite; content:""; }
+  }
+  @keyframes dots{ 0%{content:"";} 25%{content:".";} 50%{content:"..";} 75%{content:"...";} 100%{content:"";} }
+
+  /* ============ MOVE BUTTONS ============ */
+  .move-row{ display:flex; gap:10px; }
+  .btn-move{
+    flex:1;
+    padding:16px 0;
+    border-radius:var(--radius-md);
+    border:none;
+    background:var(--red);
+    color:var(--chalk);
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:19px;
+    cursor:pointer;
+    position:relative;
+    transition:background 140ms ease, transform 120ms ease, box-shadow 200ms ease, opacity 140ms ease;
+    box-shadow:0 10px 20px -12px var(--red-glow);
+  }
+  .btn-move:hover:not(:disabled){ background:var(--red-dark); }
+  .btn-move:active:not(:disabled){ transform:scale(0.96); }
+  .btn-move:disabled{ opacity:0.32; cursor:not-allowed; box-shadow:none; }
+  .btn-move--hint{ box-shadow:0 0 0 3px var(--amber), 0 10px 22px -10px var(--red-glow); }
+  .hint-note{
+    text-align:center; font-size:12px; color:var(--amber); margin-top:10px; min-height:16px;
+  }
+
+  /* ============ HINT TOGGLE ============ */
+  .hint-row{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-top:18px;
+  }
+  .hint-row label{ font-size:13px; color:var(--chalk-dim); cursor:pointer; user-select:none; }
+  .switch{ position:relative; width:38px; height:22px; flex-shrink:0; }
+  .switch input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .switch__track{
+    position:absolute; inset:0; border-radius:999px;
+    background:var(--ink-3); border:1px solid var(--chalk-faint);
+    transition:background 160ms ease, border-color 160ms ease;
+  }
+  .switch__thumb{
+    position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:var(--chalk-dim);
+    transition:transform 180ms ease, background 160ms ease;
+  }
+  .switch input:checked + .switch__track{ background:var(--sage-dim); border-color:var(--sage); }
+  .switch input:checked + .switch__track .switch__thumb{ transform:translateX(16px); background:var(--sage-text); }
+  .switch input:focus-visible + .switch__track{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  /* ============ DETAILS PANELS ============ */
+  details{
+    margin-top:14px;
+    border-top:1px solid var(--chalk-hair);
+    padding-top:12px;
+  }
+  summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:13.5px; font-weight:700; color:var(--chalk);
+  }
+  summary::-webkit-details-marker{ display:none; }
+  summary::after{
+    content:"+";
+    font-family:var(--font-mono);
+    color:var(--chalk-dim);
+    font-size:16px;
+    transition:transform 200ms ease;
+  }
+  details[open] summary::after{ transform:rotate(45deg); }
+  .details-body{
+    padding-top:12px;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--chalk-dim);
+  }
+  .ladder{
+    display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;
+  }
+  .ladder-chip{
+    font-family:var(--font-mono); font-size:12px; font-weight:700;
+    color:var(--sage-text);
+    background:var(--sage-dim);
+    border:1px solid var(--sage);
+    padding:4px 9px;
+    border-radius:999px;
+  }
+  .edge-note{
+    margin-top:10px; padding:10px 12px;
+    background:var(--amber-dim);
+    border-left:2px solid var(--amber);
+    border-radius:6px;
+    color:var(--chalk);
+    font-size:12.5px;
+  }
+
+  /* ============ HISTORY ============ */
+  .history-list{
+    display:flex; flex-direction:column; gap:6px;
+    max-height:180px; overflow-y:auto;
+    padding-top:2px; padding-right:2px;
+  }
+  .history-empty{ color:var(--chalk-dim); font-size:13px; padding-top:8px; }
+  .history-row{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:12.5px;
+    padding:7px 9px;
+    background:var(--ink-3);
+    border-radius:8px;
+  }
+  .history-who{ font-family:var(--font-body); font-weight:700; font-size:12.5px; width:42px; flex-shrink:0; }
+  .history-move{ color:var(--chalk-dim); flex-shrink:0; }
+  .history-after{ color:var(--chalk); font-weight:700; }
+  .history-tag{
+    margin-left:auto;
+    font-family:var(--font-body); font-weight:700; font-size:11px;
+    padding:2px 8px; border-radius:999px; white-space:nowrap;
+  }
+  .history-tag--safe{ color:var(--sage-text); background:var(--sage-dim); }
+  .history-tag--exposed{ color:var(--amber); background:var(--amber-dim); }
+  .history-tag--win{ color:var(--ink); background:var(--amber); }
+
+  /* ============ RESULT BANNER ============ */
+  .result-banner{
+    margin-top:18px;
+    padding:18px 16px;
+    border-radius:var(--radius-md);
+    text-align:center;
+    background:var(--ink-3);
+    border:1px solid var(--chalk-hair);
+  }
+  .result-title{ font-family:var(--font-display); font-size:21px; font-weight:700; margin-bottom:5px; }
+  .result-title.win{ color:var(--sage-text); }
+  .result-title.lose{ color:var(--amber); }
+  .result-sub{ font-size:13px; color:var(--chalk-dim); margin-bottom:16px; }
+  .result-actions{ display:flex; gap:10px; }
+  .btn-secondary{
+    flex:1; padding:13px 0;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--chalk-faint);
+    background:transparent;
+    color:var(--chalk);
+    font-weight:700; font-size:14px;
+    cursor:pointer;
+    transition:border-color 150ms ease, background 150ms ease, transform 120ms ease;
+  }
+  .btn-secondary:hover{ border-color:var(--chalk-dim); background:var(--chalk-faint); }
+  .btn-secondary:active{ transform:scale(0.98); }
+  .btn-primary{
+    flex:1; padding:13px 0;
+    border-radius:var(--radius-sm);
+    border:none;
+    background:var(--red);
+    color:var(--chalk);
+    font-weight:800; font-size:14px;
+    cursor:pointer;
+    transition:background 150ms ease, transform 120ms ease;
+  }
+  .btn-primary:hover{ background:var(--red-dark); }
+  .btn-primary:active{ transform:scale(0.98); }
+
+  .credits{
+    margin-top:6px;
+    font-size:11.5px;
+    color:var(--chalk-faint);
+    text-align:center;
+    max-width:34ch;
+  }
+
+  @media (max-width:360px){
+    .btn-move{ font-size:17px; padding:14px 0; }
+    .counter{ font-size:clamp(56px,24vw,80px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="masthead">
+    <p class="eyebrow">ห้องทดลองกลยุทธ์ตัวเลข</p>
+    <h1 class="title">ชนเป้า</h1>
+    <p class="tagline">เพิ่มเลขทีละ 1, 2 หรือ 3 ใครทำให้ตัวเลขตรงเป้าหมายพอดีก่อน คนนั้นชนะ</p>
+  </div>
+
+  <main class="panel">
+
+    <!-- ============ SETUP VIEW ============ -->
+    <section id="setupView" class="view">
+      <div class="setup-block">
+        <span class="setup-label">ใครเริ่มก่อน?</span>
+        <div class="first-player-group" role="group" aria-label="Choose who plays first">
+          <button type="button" class="toggle-pill" id="pickStudent" aria-pressed="true">คุณ<span class="sub">เริ่มก่อน</span></button>
+          <button type="button" class="toggle-pill" id="pickBot" aria-pressed="false">บอท<span class="sub">เริ่มก่อน</span></button>
+        </div>
+      </div>
+
+      <div class="setup-block">
+        <span class="setup-label">กติกา</span>
+        <ul class="rules-mini">
+          <li>เริ่มนับจาก 0 และระบบจะสุ่มเป้าหมายให้ทุกครั้ง</li>
+          <li>เมื่อถึงตาคุณ ให้เพิ่มตัวเลขทีละ 1, 2 หรือ 3</li>
+          <li>ใครทำให้ตัวเลขตรงกับเป้าหมายพอดีก่อน คนนั้นเป็นผู้ชนะ</li>
+        </ul>
+      </div>
+
+      <button type="button" class="btn-start" id="startBtn">เริ่มเกม</button>
+    </section>
+
+    <!-- ============ GAME VIEW ============ -->
+    <section id="gameView" class="view" hidden>
+
+      <div class="game-topbar">
+        <span class="score-chip">คุณ <b id="scoreStudent">0</b> · บอท <b id="scoreBot">0</b></span>
+        <button type="button" class="icon-btn" id="newSetupBtn" aria-label="กลับไปตั้งค่า">⟲</button>
+      </div>
+
+      <div class="goal-block">
+        <p class="goal-label">เป้าหมาย</p>
+        <p class="goal-number" id="goalNumber">0</p>
+      </div>
+
+      <div class="track" id="track" aria-hidden="true">
+        <div class="track__line"></div>
+        <div class="track__goalcap"></div>
+        <div class="track__ticks" id="trackTicks"></div>
+        <div class="track__marker" id="trackMarker" style="left:0%"><span class="track__markerDot"></span></div>
+      </div>
+
+      <div class="counter-wrap">
+        <div class="counter" id="counter" aria-live="polite" aria-atomic="true">0</div>
+      </div>
+
+      <p class="status" id="statusText">ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3</p>
+
+      <div class="move-row">
+        <button type="button" class="btn-move" data-amount="1">+1</button>
+        <button type="button" class="btn-move" data-amount="2">+2</button>
+        <button type="button" class="btn-move" data-amount="3">+3</button>
+      </div>
+      <p class="hint-note" id="hintNote"></p>
+
+      <div class="hint-row">
+        <div class="switch">
+          <input type="checkbox" id="hintToggle">
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </div>
+        <label for="hintToggle">แสดงคำใบ้กลยุทธ์</label>
+      </div>
+
+      <details id="strategyDetails">
+        <summary>ทำไมกลยุทธ์นี้ถึงได้ผล</summary>
+        <div class="details-body">
+          <p>ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง</p>
+          <div class="ladder" id="ladderChips"></div>
+          <p class="edge-note" id="edgeNote"></p>
+        </div>
+      </details>
+
+      <details id="historyDetails">
+        <summary>ประวัติการเดิน</summary>
+        <div class="details-body">
+          <div class="history-list" id="historyList">
+            <p class="history-empty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>
+          </div>
+        </div>
+      </details>
+
+      <div class="result-banner" id="resultBanner" hidden>
+        <p class="result-title" id="resultTitle"></p>
+        <p class="result-sub" id="resultSub"></p>
+        <div class="result-actions">
+          <button type="button" class="btn-secondary" id="changeSetupBtn">เปลี่ยนการตั้งค่า</button>
+          <button type="button" class="btn-primary" id="playAgainBtn">เล่นอีกครั้ง</button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <p class="credits">เกมลบเลขคลาสสิกที่ให้ลงมือเล่นจริง — แนวคิดเดียวกับเกมนิม (Nim)</p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ STATE ============ */
+  var state = {
+    screen: 'setup',        // 'setup' | 'game'
+    firstPlayer: 'student', // 'student' | 'bot'
+    goal: 0,
+    current: 0,
+    turn: null,             // 'student' | 'bot'
+    history: [],
+    hint: false,
+    gameOver: false,
+    score: { student: 0, bot: 0 }
+  };
+  var botTimeoutId = null;
+  var firstPaint = true;
+
+  /* ============ DOM REFS ============ */
+  var el = {
+    setupView: document.getElementById('setupView'),
+    gameView: document.getElementById('gameView'),
+    pickStudent: document.getElementById('pickStudent'),
+    pickBot: document.getElementById('pickBot'),
+    startBtn: document.getElementById('startBtn'),
+    newSetupBtn: document.getElementById('newSetupBtn'),
+    scoreStudent: document.getElementById('scoreStudent'),
+    scoreBot: document.getElementById('scoreBot'),
+    goalNumber: document.getElementById('goalNumber'),
+    track: document.getElementById('track'),
+    trackTicks: document.getElementById('trackTicks'),
+    trackMarker: document.getElementById('trackMarker'),
+    counter: document.getElementById('counter'),
+    statusText: document.getElementById('statusText'),
+    moveBtns: Array.prototype.slice.call(document.querySelectorAll('.btn-move')),
+    hintNote: document.getElementById('hintNote'),
+    hintToggle: document.getElementById('hintToggle'),
+    ladderChips: document.getElementById('ladderChips'),
+    edgeNote: document.getElementById('edgeNote'),
+    historyList: document.getElementById('historyList'),
+    resultBanner: document.getElementById('resultBanner'),
+    resultTitle: document.getElementById('resultTitle'),
+    resultSub: document.getElementById('resultSub'),
+    changeSetupBtn: document.getElementById('changeSetupBtn'),
+    playAgainBtn: document.getElementById('playAgainBtn')
+  };
+
+  /* ============ HELPERS ============ */
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function optimalMove(goal, current){
+    var distance = goal - current;
+    var mod = distance % 4;
+    return mod === 0 ? null : mod;
+  }
+
+  function botPickAmount(){
+    var distance = state.goal - state.current;
+    var opt = optimalMove(state.goal, state.current);
+    if (opt !== null) return opt;
+    var maxMove = Math.min(3, distance);
+    return randInt(1, maxMove);
+  }
+
+  function tagForMove(before, after, goal){
+    if (after === goal) return 'win';
+    return ((goal - after) % 4 === 0) ? 'safe' : 'exposed';
+  }
+
+  function safeLadder(goal){
+    var arr = [];
+    var n = goal;
+    while (n >= 0){ arr.push(n); n -= 4; }
+    return arr;
+  }
+
+  /* ============ RENDER: SETUP ============ */
+  function renderSetup(){
+    el.pickStudent.setAttribute('aria-pressed', state.firstPlayer === 'student' ? 'true' : 'false');
+    el.pickBot.setAttribute('aria-pressed', state.firstPlayer === 'bot' ? 'true' : 'false');
+  }
+
+  /* ============ RENDER: COUNTER ============ */
+  function renderCounter(animate){
+    var str = String(state.current);
+    el.counter.innerHTML = '';
+    for (var i = 0; i < str.length; i++){
+      var span = document.createElement('span');
+      span.className = 'digit' + (animate ? ' digit--pop' : '');
+      if (animate) span.style.animationDelay = (i * 40) + 'ms';
+      span.textContent = str[i];
+      el.counter.appendChild(span);
+    }
+  }
+
+  /* ============ RENDER: TRACK ============ */
+  function renderTrack(){
+    var pct = Math.max(0, Math.min(100, (state.current / state.goal) * 100));
+    el.trackMarker.style.left = pct + '%';
+
+    el.trackTicks.innerHTML = '';
+    if (state.hint){
+      var ladder = safeLadder(state.goal);
+      for (var i = 1; i < ladder.length; i++){ // skip the goal itself, already marked
+        var val = ladder[i];
+        var p = (val / state.goal) * 100;
+        var tick = document.createElement('div');
+        tick.className = 'track__tick is-visible';
+        tick.style.left = p + '%';
+        el.trackTicks.appendChild(tick);
+
+        var label = document.createElement('div');
+        label.className = 'track__tickLabel is-visible';
+        label.style.left = p + '%';
+        label.textContent = val;
+        el.trackTicks.appendChild(label);
+      }
+    }
+  }
+
+  /* ============ RENDER: STATUS + BUTTONS ============ */
+  function renderStatus(){
+    el.statusText.classList.remove('is-you', 'is-bot');
+    if (state.gameOver){
+      el.statusText.textContent = '';
+      return;
+    }
+    if (state.turn === 'student'){
+      el.statusText.textContent = 'ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3';
+      el.statusText.classList.add('is-you');
+    } else {
+      el.statusText.innerHTML = 'บอทกำลังคิด<span class="dots"></span>';
+      el.statusText.classList.add('is-bot');
+    }
+  }
+
+  function renderButtons(){
+    var opt = state.hint && state.turn === 'student' && !state.gameOver
+      ? optimalMove(state.goal, state.current) : null;
+
+    el.moveBtns.forEach(function(btn){
+      var amount = parseInt(btn.getAttribute('data-amount'), 10);
+      var wouldExceed = (state.current + amount) > state.goal;
+      var disabled = state.gameOver || state.turn !== 'student' || wouldExceed;
+      btn.disabled = disabled;
+      btn.classList.toggle('btn-move--hint', opt === amount);
+    });
+
+    if (state.hint && state.turn === 'student' && !state.gameOver){
+      el.hintNote.textContent = (opt === null)
+        ? 'ตานี้ไม่มีตัวเลือกที่ปลอดภัยแน่นอน ไม่ว่าเลือกอะไรก็มีทางแก้'
+        : 'ปุ่มที่เรืองแสงจะพาไปยังจุดปลอดภัย';
+    } else {
+      el.hintNote.textContent = '';
+    }
+  }
+
+  /* ============ RENDER: STRATEGY NOTES ============ */
+  function renderStrategyNotes(){
+    var ladder = safeLadder(state.goal);
+    el.ladderChips.innerHTML = '';
+    ladder.forEach(function(n){
+      var chip = document.createElement('span');
+      chip.className = 'ladder-chip';
+      chip.textContent = n;
+      el.ladderChips.appendChild(chip);
+    });
+
+    var firstLabel = state.firstPlayer === 'student' ? 'คุณ' : 'บอท';
+    var secondLabel = state.firstPlayer === 'student' ? 'บอท' : 'คุณ';
+    var firstCanForce = (state.goal % 4) !== 0;
+    var edge;
+    if (firstCanForce){
+      edge = firstLabel + 'เริ่มก่อน และสามารถบังคับให้ชนะได้ถ้าเล่นสมบูรณ์แบบ โดยเริ่มด้วย +' + (state.goal % 4);
+    } else {
+      edge = firstLabel + 'เริ่มก่อน แต่เริ่มจากจุดที่เสียเปรียบ — ' + secondLabel + 'จะได้เปรียบในทางทฤษฎี ถ้าเก็บจุดปลอดภัยได้ครบทุกจุด';
+    }
+    el.edgeNote.textContent = edge;
+  }
+
+  /* ============ RENDER: HISTORY ============ */
+  var tagLabel = { safe: 'ปลอดภัย', exposed: 'เปิดช่อง', win: 'ชนะ' };
+
+  function renderHistory(){
+    if (state.history.length === 0){
+      el.historyList.innerHTML = '<p class="history-empty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>';
+      return;
+    }
+    el.historyList.innerHTML = '';
+    state.history.forEach(function(m){
+      var row = document.createElement('div');
+      row.className = 'history-row';
+
+      var who = document.createElement('span');
+      who.className = 'history-who';
+      who.textContent = m.who === 'student' ? 'คุณ' : 'บอท';
+
+      var move = document.createElement('span');
+      move.className = 'history-move';
+      move.textContent = '+' + m.amount + ' →';
+
+      var after = document.createElement('span');
+      after.className = 'history-after';
+      after.textContent = m.after;
+
+      var tag = document.createElement('span');
+      tag.className = 'history-tag history-tag--' + m.tag;
+      tag.textContent = tagLabel[m.tag];
+
+      row.appendChild(who);
+      row.appendChild(move);
+      row.appendChild(after);
+      row.appendChild(tag);
+      el.historyList.appendChild(row);
+    });
+    el.historyList.scrollTop = el.historyList.scrollHeight;
+  }
+
+  /* ============ RENDER: SCORE ============ */
+  function renderScore(){
+    el.scoreStudent.textContent = state.score.student;
+    el.scoreBot.textContent = state.score.bot;
+  }
+
+  /* ============ RENDER: RESULT ============ */
+  function renderResult(){
+    if (!state.gameOver){
+      el.resultBanner.hidden = true;
+      return;
+    }
+    var lastMove = state.history[state.history.length - 1];
+    var studentWon = lastMove.who === 'student';
+    el.resultTitle.textContent = studentWon ? 'คุณชนะ! 🎉' : 'บอทชนะรอบนี้';
+    el.resultTitle.className = 'result-title ' + (studentWon ? 'win' : 'lose');
+    el.resultSub.textContent = (studentWon ? 'คุณ' : 'บอท') + 'ทำให้ตัวเลขตรงกับ ' + state.goal + ' พอดีเป็นคนแรก';
+    el.resultBanner.hidden = false;
+  }
+
+  /* ============ FULL RENDER ============ */
+  function renderGame(animateCounter){
+    el.goalNumber.textContent = state.goal;
+    renderCounter(animateCounter);
+    renderTrack();
+    renderStatus();
+    renderButtons();
+    renderStrategyNotes();
+    renderHistory();
+    renderScore();
+    renderResult();
+  }
+
+  /* ============ GAME FLOW ============ */
+  function startRound(){
+    if (botTimeoutId){ clearTimeout(botTimeoutId); botTimeoutId = null; }
+    state.goal = randInt(5, 27);
+    state.current = 0;
+    state.history = [];
+    state.turn = state.firstPlayer;
+    state.gameOver = false;
+    state.screen = 'game';
+
+    el.setupView.hidden = true;
+    el.gameView.hidden = false;
+
+    renderGame(!firstPaint);
+    firstPaint = false;
+
+    if (state.turn === 'bot'){
+      scheduleBotMove();
+    }
+  }
+
+  function scheduleBotMove(){
+    renderStatus();
+    renderButtons();
+    botTimeoutId = setTimeout(function(){
+      performMove('bot', botPickAmount());
+    }, 650 + Math.random() * 500);
+  }
+
+  function performMove(who, amount){
+    var before = state.current;
+    state.current += amount;
+    var tag = tagForMove(before, state.current, state.goal);
+    state.history.push({ who: who, amount: amount, before: before, after: state.current, tag: tag });
+
+    if (state.current === state.goal){
+      state.gameOver = true;
+      state.score[who] += 1;
+      renderGame(true);
+      return;
+    }
+
+    state.turn = (who === 'student') ? 'bot' : 'student';
+    renderGame(true);
+
+    if (state.turn === 'bot'){
+      scheduleBotMove();
+    }
+  }
+
+  function backToSetup(){
+    if (botTimeoutId){ clearTimeout(botTimeoutId); botTimeoutId = null; }
+    state.screen = 'setup';
+    el.gameView.hidden = true;
+    el.setupView.hidden = false;
+    renderSetup();
+  }
+
+  /* ============ EVENTS ============ */
+  el.pickStudent.addEventListener('click', function(){
+    state.firstPlayer = 'student';
+    renderSetup();
+  });
+  el.pickBot.addEventListener('click', function(){
+    state.firstPlayer = 'bot';
+    renderSetup();
+  });
+  el.startBtn.addEventListener('click', startRound);
+
+  el.moveBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      if (state.gameOver || state.turn !== 'student') return;
+      var amount = parseInt(btn.getAttribute('data-amount'), 10);
+      if (state.current + amount > state.goal) return;
+      performMove('student', amount);
+    });
+  });
+
+  el.hintToggle.addEventListener('change', function(){
+    state.hint = el.hintToggle.checked;
+    renderTrack();
+    renderButtons();
+  });
+
+  el.newSetupBtn.addEventListener('click', backToSetup);
+  el.changeSetupBtn.addEventListener('click', backToSetup);
+  el.playAgainBtn.addEventListener('click', startRound);
+
+  /* ============ INIT ============ */
+  renderSetup();
+})();
+</script>
+</body>
+</html>
