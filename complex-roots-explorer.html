@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Roots You Can't See — Complex Roots of x² = −1</title>
+<style>
+  :root{
+    --ink: #0a151b;
+    --ink-2: #0d1e26;
+    --panel: #12262f;
+    --panel-2: #0f2029;
+    --brass: #c9a15f;
+    --brass-dim: rgba(201,161,95,0.32);
+    --brass-dimmer: rgba(201,161,95,0.16);
+    --ivory: #f2ede0;
+    --text: #e7edee;
+    --text-dim: #93a6ac;
+    --text-faint: #5f747b;
+    --flare: #ff7a4d;
+    --flare-2: #ffb27a;
+    --font-display: "Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"Noto Serif",Georgia,serif;
+    --font-mono: "SF Mono","JetBrains Mono","Fira Code",ui-monospace,Menlo,Consolas,monospace;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,"Helvetica Neue",Arial,sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(1100px 620px at 14% -6%, rgba(31,182,173,0.10), transparent 60%),
+      radial-gradient(900px 560px at 100% 8%, rgba(90,63,121,0.16), transparent 55%),
+      linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 100%);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    min-height:100vh;
+  }
+
+  .page{ max-width:1180px; margin:0 auto; padding: 28px 24px 64px; }
+
+  /* ---------- header ---------- */
+  .site-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-bottom: 20px; margin-bottom: 8px;
+    border-bottom: 1px solid var(--brass-dimmer);
+  }
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .site-head__mark{
+    font-family: var(--font-display); font-style:italic; font-size:19px;
+    color: var(--brass); letter-spacing:0.02em;
+  }
+
+  /* ---------- hero ---------- */
+  .hero{ padding: 44px 0 30px; }
+  .hero__kicker{
+    font-family: var(--font-mono); font-size:12px; letter-spacing:0.18em;
+    text-transform:uppercase; color: var(--flare-2); margin:0 0 14px;
+  }
+  .hero__title{
+    font-family: var(--font-display); font-weight:600; font-style:normal;
+    font-size: clamp(30px, 5vw, 50px); line-height:1.08; letter-spacing:-0.01em;
+    margin: 0 0 26px; max-width: 15ch; color: var(--ivory);
+  }
+
+  .readout{
+    display:inline-flex; flex-wrap:wrap; gap: 14px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--brass-dim);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 34px rgba(0,0,0,0.35);
+    margin-bottom: 24px;
+  }
+  .readout__row{ display:flex; align-items:baseline; gap:12px; }
+  .readout__row--sub{ opacity:0.72; }
+  .readout__label{
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing:0.16em;
+    color: var(--brass); text-transform:uppercase; white-space:nowrap;
+  }
+  .readout__eq{
+    font-family: var(--font-mono); font-size: 27px; letter-spacing:0.02em;
+    color: var(--flare-2);
+    text-shadow: 0 0 18px rgba(255,122,77,0.45);
+  }
+  .readout__eq--sub{ font-size:18px; color: var(--text); text-shadow:none; }
+  .readout__eq sup{ font-size:0.62em; }
+
+  .hero__sub{
+    font-size: 16.5px; line-height:1.65; color: var(--text-dim);
+    max-width: 62ch; margin:0;
+  }
+  .hero__sub strong{ color: var(--text); font-weight:600; }
+
+  /* ---------- console ---------- */
+  .console{
+    display:grid; grid-template-columns: minmax(0,1.55fr) minmax(268px,400px);
+    gap: 26px; margin-top: 36px;
+  }
+  @media (max-width: 900px){
+    .console{ grid-template-columns: 1fr; }
+  }
+
+  .scope__bezel{
+    position:relative; border-radius:16px; overflow:hidden;
+    background:
+      radial-gradient(120% 140% at 50% 0%, rgba(47,111,168,0.14), transparent 60%),
+      linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--brass-dim);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 24px 60px rgba(0,0,0,0.45);
+    aspect-ratio: 4 / 3.05;
+  }
+  #canvasWrap{ width:100%; height:100%; }
+  #scene{ position:absolute; inset:0; display:block; touch-action:none; }
+  #scene.is-3d{ cursor: grab; }
+  #scene.is-3d.is-dragging{ cursor: grabbing; }
+
+  .scope__status{
+    position:absolute; left:14px; bottom:14px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing:0.08em;
+    text-transform:uppercase; color: var(--text-dim);
+    background: rgba(10,20,25,0.55);
+    border: 1px solid var(--brass-dimmer);
+    padding: 6px 10px; border-radius: 999px;
+    pointer-events:none;
+  }
+  .scope__hint{
+    position:absolute; right:14px; top:14px;
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing:0.04em;
+    color: var(--text-faint);
+    background: rgba(10,20,25,0.5);
+    border: 1px solid var(--brass-dimmer);
+    padding: 6px 10px; border-radius: 999px;
+    pointer-events:none; opacity:0; transition: opacity .4s ease;
+  }
+  .scope__hint.is-visible{ opacity:1; }
+
+  /* ---------- side panel ---------- */
+  .panel{
+    display:flex; flex-direction:column; gap:18px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--brass-dim);
+    border-radius:16px; padding: 20px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .panel__block{ display:flex; flex-direction:column; gap:8px; }
+  .panel__block--row{
+    flex-direction:row; align-items:center; justify-content:space-between;
+    padding-bottom:14px; border-bottom: 1px solid var(--brass-dimmer);
+  }
+  .panel__label{
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color: var(--text-faint);
+  }
+  .panel__stat{ font-family: var(--font-mono); font-size:15px; color:var(--text); }
+  .panel__stat--flare{ color: var(--flare-2); }
+  .panel__caption{
+    font-size:14.5px; line-height:1.6; color: var(--text-dim); margin:0;
+    padding-top: 4px;
+  }
+
+  /* mode switch */
+  .switch{
+    position:relative; display:flex; background: rgba(0,0,0,0.22);
+    border: 1px solid var(--brass-dimmer); border-radius: 10px; padding:4px;
+    gap:4px;
+  }
+  .switch__btn{
+    position:relative; z-index:2; flex:1; border:0; background:transparent;
+    color: var(--text-dim); font-family: var(--font-body); font-size:12.5px;
+    font-weight:600; padding: 10px 8px; border-radius:7px; cursor:pointer;
+    transition: color .25s ease;
+  }
+  .switch__btn em{ display:block; font-style:normal; font-family:var(--font-mono); font-size:10px; letter-spacing:0.1em; opacity:0.7; margin-top:2px; }
+  .switch__btn[aria-pressed="true"]{ color: var(--ink); }
+  .switch__thumb{
+    position:absolute; top:4px; bottom:4px; left:4px;
+    width: calc(50% - 6px);
+    background: linear-gradient(180deg, var(--brass), #a9814a);
+    border-radius:7px; z-index:1;
+    transition: transform .38s cubic-bezier(.65,0,.35,1);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .switch.is-complex .switch__thumb{ transform: translateX(100%); }
+
+  /* auto-rotate dial */
+  .dial{
+    display:flex; align-items:center; gap:9px; cursor:pointer;
+    font-size:13px; color: var(--text-dim); user-select:none;
+  }
+  .dial input{ position:absolute; opacity:0; width:0; height:0; }
+  .dial__track{
+    width:34px; height:19px; border-radius:999px; background: rgba(0,0,0,0.3);
+    border:1px solid var(--brass-dimmer); position:relative; transition: background .2s ease;
+    flex:none;
+  }
+  .dial__thumb{
+    position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%;
+    background: var(--text-faint); transition: transform .2s ease, background .2s ease;
+  }
+  .dial input:checked + .dial__track{ background: rgba(255,122,77,0.22); }
+  .dial input:checked + .dial__track .dial__thumb{ transform: translateX(15px); background: var(--flare); }
+  .dial input:disabled ~ *{ opacity:0.4; }
+  .dial:has(input:disabled){ cursor:default; }
+
+  .ghost-btn{
+    font-family: var(--font-body); font-size:12.5px; font-weight:600;
+    color: var(--text-dim); background:transparent;
+    border:1px solid var(--brass-dimmer); border-radius:8px;
+    padding:8px 12px; cursor:pointer; transition: all .2s ease;
+  }
+  .ghost-btn:hover:not(:disabled){ border-color: var(--brass); color: var(--text); }
+  .ghost-btn:disabled{ opacity:0.35; cursor:default; }
+
+  button:focus-visible, .dial input:focus-visible + .dial__track{
+    outline: 2px solid var(--flare-2); outline-offset: 2px;
+  }
+
+  /* ---------- log ---------- */
+  .log{
+    margin-top: 40px; display:grid; grid-template-columns: repeat(4, 1fr); gap:16px;
+  }
+  @media (max-width: 900px){ .log{ grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 520px){ .log{ grid-template-columns: 1fr; } }
+
+  .log__card{
+    background: rgba(18,38,47,0.5);
+    border: 1px solid var(--brass-dimmer);
+    border-radius: 12px; padding: 18px 16px;
+  }
+  .log__index{
+    font-family: var(--font-mono); font-size:11px; letter-spacing:0.12em;
+    color: var(--flare-2);
+  }
+  .log__card h3{
+    font-family: var(--font-display); font-weight:600; font-size:18px;
+    margin: 8px 0 8px; color: var(--ivory);
+  }
+  .log__card p{ font-size:13.5px; line-height:1.55; color: var(--text-dim); margin:0; }
+
+  /* ---------- footer ---------- */
+  .site-foot{
+    margin-top: 40px; padding-top:20px; border-top:1px solid var(--brass-dimmer);
+  }
+  .site-foot p{ font-size:13px; color: var(--text-faint); max-width:60ch; margin:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="site-head">
+    <span class="eyebrow">A visual field guide</span>
+    <span class="site-head__mark">§ i</span>
+  </header>
+
+  <section class="hero">
+    <p class="hero__kicker">Complex numbers · Chapter 1</p>
+    <h1 class="hero__title">The Roots You Can't See on an Ordinary Graph</h1>
+
+    <div class="readout">
+      <div class="readout__row">
+        <span class="readout__label">Solve</span>
+        <span class="readout__eq">x<sup>2</sup> = −1</span>
+      </div>
+      <div class="readout__row readout__row--sub">
+        <span class="readout__label">Rearranged</span>
+        <span class="readout__eq readout__eq--sub">x<sup>2</sup> + 1 = 0</span>
+      </div>
+    </div>
+
+    <p class="hero__sub">Plot <strong>y = x² + 1</strong> using only real numbers, and it never crosses the x-axis. Tilt the very same chart into the <strong>complex plane</strong>, and two roots surface exactly where the terrain touches sea level.</p>
+  </section>
+
+  <section class="console">
+    <div class="scope" id="canvasWrap">
+      <div class="scope__bezel">
+        <canvas id="scene"></canvas>
+        <div class="scope__status" id="sceneStatus">Real line — curve view</div>
+        <div class="scope__hint" id="sceneHint">drag to look around</div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="panel__block">
+        <span class="panel__label">View</span>
+        <div class="switch" id="modeSwitch" role="group" aria-label="Chart view">
+          <button type="button" class="switch__btn" id="btnReal" aria-pressed="true">Real line <em>2D</em></button>
+          <button type="button" class="switch__btn" id="btnComplex" aria-pressed="false">Complex plane <em>3D</em></button>
+          <span class="switch__thumb" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <div class="panel__block panel__block--row">
+        <label class="dial" for="autoRotate">
+          <input type="checkbox" id="autoRotate" disabled>
+          <span class="dial__track"><span class="dial__thumb"></span></span>
+          Auto-rotate
+        </label>
+        <button type="button" class="ghost-btn" id="resetView" disabled>Reset view</button>
+      </div>
+
+      <div class="panel__block panel__block--row">
+        <label class="dial" for="showPlane">
+          <input type="checkbox" id="showPlane" checked disabled>
+          <span class="dial__track"><span class="dial__thumb"></span></span>
+          Cutting plane
+        </label>
+      </div>
+
+      <div class="panel__block">
+        <span class="panel__label" id="statElevLabel">Minimum elevation</span>
+        <span class="panel__stat" id="statElev">1.00 at x = 0</span>
+      </div>
+
+      <div class="panel__block">
+        <span class="panel__label">Roots found</span>
+        <span class="panel__stat panel__stat--flare" id="statRoots">0 — the curve never reaches y = 0</span>
+      </div>
+
+      <p class="panel__caption" id="caption" aria-live="polite">Only real numbers are on the table here. The curve y = x² + 1 sits entirely above the axis, so there's nothing to find.</p>
+    </aside>
+  </section>
+
+  <section class="log">
+    <article class="log__card">
+      <span class="log__index">01</span>
+      <h3>Real line</h3>
+      <p>Plot y = x² + 1 using only real numbers. The curve never dips below 1.</p>
+    </article>
+    <article class="log__card">
+      <span class="log__index">02</span>
+      <h3>No crossing</h3>
+      <p>Since the minimum value is 1, the curve never touches the x-axis — there's no real x with x² + 1 = 0.</p>
+    </article>
+    <article class="log__card">
+      <span class="log__index">03</span>
+      <h3>Open the chart</h3>
+      <p>Let x become a complex number, w = a + bi, and plot the elevation |w² + 1| over the whole plane, not just the line.</p>
+    </article>
+    <article class="log__card">
+      <span class="log__index">04</span>
+      <h3>Sea level</h3>
+      <p>The terrain dips to exactly zero at two points: w = i and w = −i. Those are the complex roots of x² = −1.</p>
+    </article>
+  </section>
+
+  <footer class="site-foot">
+    <p>Switch to the complex plane, then drag inside the chart to look around — every root is a place where |w² + 1| touches zero.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var FONT_MONO = '"SF Mono","JetBrains Mono","Fira Code",ui-monospace,Menlo,Consolas,monospace';
+  var FONT_DISPLAY = '"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"Noto Serif",Georgia,serif';
+
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var wrap = document.getElementById('canvasWrap');
+  var sceneStatusEl = document.getElementById('sceneStatus');
+  var sceneHintEl = document.getElementById('sceneHint');
+
+  var btnReal = document.getElementById('btnReal');
+  var btnComplex = document.getElementById('btnComplex');
+  var modeSwitch = document.getElementById('modeSwitch');
+  var autoRotateInput = document.getElementById('autoRotate');
+  var showPlaneInput = document.getElementById('showPlane');
+  var resetViewBtn = document.getElementById('resetView');
+  var captionEl = document.getElementById('caption');
+  var statElevLabelEl = document.getElementById('statElevLabel');
+  var statElevEl = document.getElementById('statElev');
+  var statRootsEl = document.getElementById('statRoots');
+
+  var REDUCE_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------------- math ----------------
+  var DOMAIN = 1.4;
+  var N = 22;
+  var CAP = 3.3;
+
+  function modulusSq1(a, b){
+    var re = a*a - b*b + 1;
+    var im = 2*a*b;
+    return Math.sqrt(re*re + im*im);
+  }
+
+  function degToRad(d){ return d * Math.PI / 180; }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+  function easeInOutCubic(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+
+  var THETA_3D = degToRad(34);
+  var PHI_3D = degToRad(27);
+  var THETA_MIN = degToRad(-85), THETA_MAX = degToRad(85);
+  var PHI_MIN = degToRad(6), PHI_MAX = degToRad(80);
+
+  // pre-computed grid of surface points
+  var pts = [];
+  for (var i = 0; i <= N; i++){
+    var row = [];
+    var a = -DOMAIN + (2*DOMAIN)*i/N;
+    for (var j = 0; j <= N; j++){
+      var b = -DOMAIN + (2*DOMAIN)*j/N;
+      var hRaw = modulusSq1(a,b);
+      row.push({ a:a, b:b, hDisp: Math.min(hRaw, CAP) });
+    }
+    pts.push(row);
+  }
+
+  var PLANE_H = CAP * 1.08;
+  var planeStrips = [];
+  for (var psi = 0; psi < N; psi++){
+    var pa0 = -DOMAIN + (2*DOMAIN)*psi/N;
+    var pa1v = -DOMAIN + (2*DOMAIN)*(psi+1)/N;
+    planeStrips.push({ a0: pa0, a1: pa1v });
+  }
+
+  // ---------------- state ----------------
+  var state = {
+    mode: '2d',
+    theta: 0, phi: 0,
+    thetaTarget: 0, phiTarget: 0,
+    animFrom: { theta:0, phi:0 },
+    animStart: 0, animDur: REDUCE_MOTION ? 1 : 1500,
+    animating: false,
+    autoRotate: false,
+    showPlane: true,
+    dragging: false,
+    lastX: 0, lastY: 0,
+    scale: 1, originX: 0, originY: 0,
+    hintShown: false,
+    lastW: 0, lastH: 0
+  };
+
+  // ---------------- projection ----------------
+  function projectUnit(a, b, h, theta, phi){
+    var ct = Math.cos(theta), st = Math.sin(theta);
+    var cp = Math.cos(phi), sp = Math.sin(phi);
+    var x1 = a*ct + b*st;
+    var z1 = -a*st + b*ct;
+    var yUp = h*cp - z1*sp;
+    var depth = h*sp + z1*cp;
+    return { px: x1, py: -yUp, depth: depth };
+  }
+
+  function project(a, b, h, theta, phi){
+    var u = projectUnit(a, b, h, theta, phi);
+    return {
+      x: state.originX + state.scale*u.px,
+      y: state.originY + state.scale*u.py,
+      depth: u.depth
+    };
+  }
+
+  function computeFit(){
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    if (!w || !h) return;
+    var as = [-DOMAIN, DOMAIN], bs = [-DOMAIN, DOMAIN], hs = [0, CAP];
+    var thetas = [0, THETA_3D, THETA_MIN, THETA_MAX];
+    var phis = [0, PHI_3D, PHI_MIN, PHI_MAX];
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (var ti=0; ti<thetas.length; ti++){
+      for (var pi=0; pi<phis.length; pi++){
+        var th = thetas[ti], ph = phis[pi];
+        for (var ai=0; ai<as.length; ai++){
+          for (var bi=0; bi<bs.length; bi++){
+            for (var hi=0; hi<hs.length; hi++){
+              var u = projectUnit(as[ai], bs[bi], hs[hi], th, ph);
+              if (u.px < minX) minX = u.px;
+              if (u.px > maxX) maxX = u.px;
+              if (u.py < minY) minY = u.py;
+              if (u.py > maxY) maxY = u.py;
+            }
+          }
+        }
+      }
+    }
+    var bboxW = Math.max(maxX - minX, 1e-4);
+    var bboxH = Math.max(maxY - minY, 1e-4);
+    var availW = w * 0.84, availH = h * 0.80;
+    state.scale = Math.min(availW / bboxW, availH / bboxH);
+    state.originX = w/2 - state.scale*(minX+maxX)/2;
+    state.originY = h/2 - state.scale*(minY+maxY)/2 + h*0.02;
+  }
+
+  // ---------------- color ----------------
+  function colorForHeight(h){
+    var t = clamp(h / CAP, 0, 1);
+    var c1, c2, tt;
+    if (t < 0.5){ c1=[31,182,173]; c2=[47,111,168]; tt=t/0.5; }
+    else { c1=[47,111,168]; c2=[90,63,121]; tt=(t-0.5)/0.5; }
+    var r = Math.round(c1[0]+(c2[0]-c1[0])*tt);
+    var g = Math.round(c1[1]+(c2[1]-c1[1])*tt);
+    var bl = Math.round(c1[2]+(c2[2]-c1[2])*tt);
+    return r+','+g+','+bl;
+  }
+
+  // ---------------- render ----------------
+  function render(){
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    if (!w || !h) return;
+    ctx.clearRect(0, 0, w, h);
+
+    var theta = state.theta, phi = state.phi;
+    var t3 = clamp(phi / PHI_3D, 0, 1);
+
+    // base plane reference grid
+    ctx.save();
+    ctx.lineWidth = 1;
+    var gridLines = 7;
+    for (var i=0; i<=gridLines; i++){
+      var av = -DOMAIN + 2*DOMAIN*i/gridLines;
+      var p1 = project(av, -DOMAIN, 0, theta, phi);
+      var p2 = project(av, DOMAIN, 0, theta, phi);
+      ctx.strokeStyle = 'rgba(201,161,95,' + (0.24*t3) + ')';
+      ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+    }
+    for (var j=0; j<=gridLines; j++){
+      var bv = -DOMAIN + 2*DOMAIN*j/gridLines;
+      var q1 = project(-DOMAIN, bv, 0, theta, phi);
+      var q2 = project(DOMAIN, bv, 0, theta, phi);
+      ctx.strokeStyle = 'rgba(201,161,95,' + (0.24*t3) + ')';
+      ctx.beginPath(); ctx.moveTo(q1.x,q1.y); ctx.lineTo(q2.x,q2.y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // surface quads + cutting plane (merged so depth-sorting interleaves them correctly)
+    var quads = [];
+    for (var qi=0; qi<N; qi++){
+      for (var qj=0; qj<N; qj++){
+        var p00 = pts[qi][qj], p10 = pts[qi+1][qj], p11 = pts[qi+1][qj+1], p01 = pts[qi][qj+1];
+        var c00 = project(p00.a,p00.b,p00.hDisp,theta,phi);
+        var c10 = project(p10.a,p10.b,p10.hDisp,theta,phi);
+        var c11 = project(p11.a,p11.b,p11.hDisp,theta,phi);
+        var c01 = project(p01.a,p01.b,p01.hDisp,theta,phi);
+        var avgH = (p00.hDisp+p10.hDisp+p11.hDisp+p01.hDisp)/4;
+        var avgDepth = (c00.depth+c10.depth+c11.depth+c01.depth)/4;
+        quads.push({ p:[c00,c10,c11,c01], h:avgH, depth:avgDepth, isPlane:false });
+      }
+    }
+
+    var planeAlpha = state.showPlane ? 0.24*t3 : 0;
+    if (planeAlpha > 0.002){
+      for (var psj=0; psj<planeStrips.length; psj++){
+        var strip = planeStrips[psj];
+        var g00 = project(strip.a0, 0, 0, theta, phi);
+        var g10 = project(strip.a1, 0, 0, theta, phi);
+        var g11 = project(strip.a1, 0, PLANE_H, theta, phi);
+        var g01 = project(strip.a0, 0, PLANE_H, theta, phi);
+        var pDepth = (g00.depth+g10.depth+g11.depth+g01.depth)/4;
+        quads.push({ p:[g00,g10,g11,g01], h:0, depth:pDepth, isPlane:true });
+      }
+    }
+
+    quads.sort(function(x,y){ return x.depth - y.depth; });
+
+    var surfAlpha = 0.88*t3;
+    for (var k=0; k<quads.length; k++){
+      var q = quads[k];
+      ctx.beginPath();
+      ctx.moveTo(q.p[0].x, q.p[0].y);
+      ctx.lineTo(q.p[1].x, q.p[1].y);
+      ctx.lineTo(q.p[2].x, q.p[2].y);
+      ctx.lineTo(q.p[3].x, q.p[3].y);
+      ctx.closePath();
+      if (q.isPlane){
+        ctx.fillStyle = 'rgba(242,237,224,' + planeAlpha + ')';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(242,237,224,' + Math.min(0.5, planeAlpha*1.3) + ')';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(' + colorForHeight(q.h) + ',' + surfAlpha + ')';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(6,14,18,' + (0.32*t3) + ')';
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+    }
+
+    if (planeAlpha > 0.002){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(242,237,224,' + Math.min(1, planeAlpha*2.4) + ')';
+      ctx.lineWidth = 1.2;
+      var fe1 = project(-DOMAIN,0,PLANE_H,theta,phi), fe2 = project(DOMAIN,0,PLANE_H,theta,phi);
+      ctx.beginPath(); ctx.moveTo(fe1.x,fe1.y); ctx.lineTo(fe2.x,fe2.y); ctx.stroke();
+      var fe3 = project(-DOMAIN,0,0,theta,phi), fe4 = project(-DOMAIN,0,PLANE_H,theta,phi);
+      ctx.beginPath(); ctx.moveTo(fe3.x,fe3.y); ctx.lineTo(fe4.x,fe4.y); ctx.stroke();
+      var fe5 = project(DOMAIN,0,0,theta,phi), fe6 = project(DOMAIN,0,PLANE_H,theta,phi);
+      ctx.beginPath(); ctx.moveTo(fe5.x,fe5.y); ctx.lineTo(fe6.x,fe6.y); ctx.stroke();
+      ctx.restore();
+    }
+
+    // axes
+    ctx.save();
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = 'rgba(201,161,95,0.92)';
+    var pa1 = project(-DOMAIN,0,0,theta,phi), pa2 = project(DOMAIN,0,0,theta,phi);
+    ctx.beginPath(); ctx.moveTo(pa1.x,pa1.y); ctx.lineTo(pa2.x,pa2.y); ctx.stroke();
+    var pb1 = project(0,-DOMAIN,0,theta,phi), pb2 = project(0,DOMAIN,0,theta,phi);
+    ctx.strokeStyle = 'rgba(201,161,95,' + (0.67*t3) + ')';
+    ctx.beginPath(); ctx.moveTo(pb1.x,pb1.y); ctx.lineTo(pb2.x,pb2.y); ctx.stroke();
+    var ph1 = project(0,0,0,theta,phi), ph2 = project(0,0,CAP*1.08,theta,phi);
+    ctx.strokeStyle = 'rgba(201,161,95,0.92)';
+    ctx.beginPath(); ctx.moveTo(ph1.x,ph1.y); ctx.lineTo(ph2.x,ph2.y); ctx.stroke();
+    ctx.restore();
+
+    // ticks
+    ctx.save();
+    ctx.font = '11px ' + FONT_MONO;
+    ctx.fillStyle = 'rgba(231,237,238,0.55)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    [-1,1].forEach(function(av){
+      var p = project(av,0,0,theta,phi);
+      ctx.fillText(String(av), p.x, p.y+16);
+    });
+    [1,2,3].forEach(function(hv){
+      if (hv > CAP) return;
+      var p = project(0,0,hv,theta,phi);
+      ctx.fillText(String(hv), p.x-18, p.y);
+    });
+    if (t3 > 0.1){
+      ctx.globalAlpha = clamp((t3-0.1)/0.6, 0, 1);
+      [-1,1].forEach(function(bv){
+        var p = project(0,bv,0,theta,phi);
+        ctx.fillText(bv+'i', p.x, p.y+14);
+      });
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    // axis labels
+    ctx.save();
+    ctx.font = '600 13px ' + FONT_MONO;
+    ctx.fillStyle = 'rgba(231,237,238,0.88)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Re', pa2.x+18, pa2.y);
+    ctx.fillText(t3 > 0.5 ? '|w²+1|' : 'y', ph2.x, ph2.y-14);
+    if (t3 > 0.15){
+      ctx.globalAlpha = clamp((t3-0.15)/0.5, 0, 1);
+      ctx.fillText('Im', pb2.x, pb2.y-16);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    // the real-line curve (b = 0 slice) — always the anchor
+    ctx.save();
+    ctx.beginPath();
+    for (var ci=0; ci<=N; ci++){
+      var av2 = -DOMAIN + 2*DOMAIN*ci/N;
+      var hh = Math.min(modulusSq1(av2,0), CAP);
+      var pc = project(av2, 0, hh, theta, phi);
+      if (ci===0) ctx.moveTo(pc.x, pc.y); else ctx.lineTo(pc.x, pc.y);
+    }
+    ctx.strokeStyle = '#f2ede0';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(242,237,224,0.55)';
+    ctx.shadowBlur = 9;
+    ctx.stroke();
+    ctx.restore();
+
+    // root markers
+    if (t3 > 0.02){
+      [1,-1].forEach(function(sign){
+        var p = project(0, sign, 0, theta, phi);
+        ctx.save();
+        ctx.globalAlpha = t3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 7, 0, Math.PI*2);
+        ctx.fillStyle = '#ff7a4d';
+        ctx.shadowColor = '#ff7a4d';
+        ctx.shadowBlur = 18;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#1a0e08';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+        ctx.fillStyle = '#ffe3d1';
+        ctx.font = 'italic 600 16px ' + FONT_DISPLAY;
+        ctx.textAlign = 'center';
+        ctx.fillText(sign > 0 ? 'i' : '−i', p.x, p.y-17);
+        ctx.restore();
+      });
+    }
+  }
+
+  // ---------------- UI sync ----------------
+  function updateUIForMode(){
+    var is3d = state.mode === '3d';
+    btnReal.setAttribute('aria-pressed', String(!is3d));
+    btnComplex.setAttribute('aria-pressed', String(is3d));
+    modeSwitch.classList.toggle('is-complex', is3d);
+    autoRotateInput.disabled = !is3d;
+    showPlaneInput.disabled = !is3d;
+    resetViewBtn.disabled = !is3d;
+    canvas.classList.toggle('is-3d', is3d);
+
+    sceneStatusEl.textContent = is3d ? 'Complex plane — surface view' : 'Real line — curve view';
+    statElevLabelEl.textContent = is3d ? 'Elevation at roots' : 'Minimum elevation';
+    statElevEl.textContent = is3d ? '0.00 at w = ±i' : '1.00 at x = 0';
+    statRootsEl.textContent = is3d ? '2 → x = i, x = −i' : '0 — the curve never reaches y = 0';
+    captionEl.textContent = is3d
+      ? 'x now moves anywhere on the complex plane, w = a + bi. The height shown is |w² + 1| — how far that value sits from zero. It dips all the way down at exactly two points.'
+      : 'Only real numbers are on the table here. The curve y = x² + 1 sits entirely above the axis, so there\'s nothing to find.';
+
+    if (is3d && !state.hintShown){
+      state.hintShown = true;
+      sceneHintEl.classList.add('is-visible');
+      setTimeout(function(){ sceneHintEl.classList.remove('is-visible'); }, 3200);
+    }
+  }
+
+  function setMode(nextMode){
+    if (nextMode === state.mode) return;
+    state.mode = nextMode;
+    state.animFrom = { theta: state.theta, phi: state.phi };
+    if (nextMode === '3d'){
+      state.thetaTarget = THETA_3D;
+      state.phiTarget = PHI_3D;
+    } else {
+      state.thetaTarget = 0;
+      state.phiTarget = 0;
+    }
+    state.animStart = performance.now();
+    state.animating = true;
+    updateUIForMode();
+  }
+
+  btnReal.addEventListener('click', function(){ setMode('2d'); });
+  btnComplex.addEventListener('click', function(){ setMode('3d'); });
+
+  autoRotateInput.addEventListener('change', function(){
+    state.autoRotate = autoRotateInput.checked;
+  });
+
+  showPlaneInput.addEventListener('change', function(){
+    state.showPlane = showPlaneInput.checked;
+  });
+
+  resetViewBtn.addEventListener('click', function(){
+    if (state.mode !== '3d') return;
+    state.animFrom = { theta: state.theta, phi: state.phi };
+    state.thetaTarget = THETA_3D;
+    state.phiTarget = PHI_3D;
+    state.animStart = performance.now();
+    state.animDur = REDUCE_MOTION ? 1 : 700;
+    state.animating = true;
+  });
+
+  // ---------------- drag to rotate ----------------
+  canvas.addEventListener('pointerdown', function(e){
+    if (state.mode !== '3d') return;
+    state.dragging = true;
+    state.lastX = e.clientX; state.lastY = e.clientY;
+    canvas.classList.add('is-dragging');
+    try { canvas.setPointerCapture(e.pointerId); } catch(err){}
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if (!state.dragging) return;
+    var dx = e.clientX - state.lastX, dy = e.clientY - state.lastY;
+    state.lastX = e.clientX; state.lastY = e.clientY;
+    state.theta = clamp(state.theta + dx*0.006, THETA_MIN, THETA_MAX);
+    state.phi = clamp(state.phi - dy*0.006, PHI_MIN, PHI_MAX);
+    state.thetaTarget = state.theta;
+    state.phiTarget = state.phi;
+    state.animating = false;
+  });
+  function endDrag(){ state.dragging = false; canvas.classList.remove('is-dragging'); }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('pointerleave', endDrag);
+
+  // ---------------- resize ----------------
+  function resize(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.round(wrap.clientWidth), h = Math.round(wrap.clientHeight);
+    if (!w || !h) return;
+    if (w === state.lastW && h === state.lastH) return;
+    state.lastW = w; state.lastH = h;
+    canvas.width = Math.round(w*dpr);
+    canvas.height = Math.round(h*dpr);
+    canvas.style.width = w+'px';
+    canvas.style.height = h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    computeFit();
+    render();
+  }
+
+  window.addEventListener('resize', resize);
+  if (window.ResizeObserver){
+    new ResizeObserver(resize).observe(wrap);
+  }
+
+  // ---------------- main loop ----------------
+  function frame(ts){
+    if (state.animating){
+      var elapsed = ts - state.animStart;
+      var tt = clamp(elapsed / state.animDur, 0, 1);
+      var eased = easeInOutCubic(tt);
+      state.theta = lerp(state.animFrom.theta, state.thetaTarget, eased);
+      state.phi = lerp(state.animFrom.phi, state.phiTarget, eased);
+      if (tt >= 1){
+        state.animating = false;
+        state.animDur = REDUCE_MOTION ? 1 : 1500;
+      }
+    } else if (state.autoRotate && state.mode === '3d' && !state.dragging){
+      state.theta += 0.0022;
+      if (state.theta > Math.PI) state.theta -= 2*Math.PI;
+      state.thetaTarget = state.theta;
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  updateUIForMode();
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
