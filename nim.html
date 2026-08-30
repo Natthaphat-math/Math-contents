@@ -267,9 +267,17 @@ button.coin:hover, button.coin:hover ~ .coin, button.coin:focus-visible, button.
 .tray-empty{ font-family:var(--font-mono); font-size:0.8rem; color:#ffffff55; padding:6px 0; }
 
 .confirm-bar{
-  margin-top:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
   background:#0f281f; border:1px solid #164634; border-radius:var(--radius-s);
-  padding:10px 12px; font-size:0.85rem; color:#eafff0;
+  padding:10px 12px; margin-top:14px;
+  font-size:0.85rem; color:#eafff0;
+  overflow:hidden; max-height:0; opacity:0;
+  transition:
+    max-height 500ms cubic-bezier(.22,1,.36,1),
+    opacity 420ms ease 60ms;
+}
+.confirm-bar.open{
+  opacity:1;
 }
 .confirm-bar b{ color:var(--lamp-on-soft); }
 .btn-solid{
@@ -472,6 +480,7 @@ var state = {
   firstPlayer: null,
   currentPlayer: null,   // 'you' | 'bot'
   pending: null,         // {pile, count}
+  pendingJustSet: false, // true for one render cycle right after a fresh coin selection
   moveLog: [],
   winner: null,
   lastMove: null,
@@ -959,7 +968,9 @@ function renderGame(){
 
   if(state.pending){
     var p = state.pending;
-    html += '<div class="confirm-bar">' + t('confirmRemove', p.count, PILE_LABELS[p.pile]) + ' ' +
+    var alreadyOpen = !state.pendingJustSet;
+    html += '<div id="confirmBar" class="confirm-bar' + (alreadyOpen ? ' open' : '') + '"' + (alreadyOpen ? ' style="max-height:none;"' : '') + '>' +
+      t('confirmRemove', p.count, PILE_LABELS[p.pile]) + ' ' +
       '<button class="btn-solid" data-action="confirm-move">' + t('confirmBtn') + '</button>' +
       '<button class="btn-text" data-action="cancel-move">' + t('cancelBtn') + '</button>' +
     '</div>';
@@ -1145,6 +1156,37 @@ function render(){
       b.classList.toggle("active", b.getAttribute("data-lang") === state.lang);
     });
   }
+
+  if(state.pending && state.pendingJustSet){
+    var bar = document.getElementById("confirmBar");
+    if(bar){
+      var borderExtra = 0;
+      if(typeof window !== "undefined" && typeof window.getComputedStyle === "function"){
+        var cs = window.getComputedStyle(bar);
+        borderExtra = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+      }
+      var targetHeight = bar.scrollHeight + borderExtra; // scrollHeight excludes border, but border-box max-height includes it
+      nextFrame(function(){
+        bar.style.maxHeight = targetHeight + "px";
+        bar.classList.add("open");
+        bar.addEventListener("transitionend", function done(e){
+          if(e.propertyName === "max-height"){
+            bar.style.maxHeight = "none";
+            bar.removeEventListener("transitionend", done);
+          }
+        });
+      });
+    }
+  }
+  state.pendingJustSet = false;
+}
+
+function nextFrame(cb){
+  if(typeof requestAnimationFrame === "function"){
+    requestAnimationFrame(function(){ requestAnimationFrame(cb); });
+  } else {
+    setTimeout(cb, 32);
+  }
 }
 
 /* ============================================================
@@ -1176,6 +1218,7 @@ document.addEventListener("click", function(e){
       var pos = parseInt(el.getAttribute("data-pos"), 10);
       var total = state.piles[pileIdx];
       var count = total - pos + 1;
+      if(!state.pending){ state.pendingJustSet = true; }
       state.pending = { pile: pileIdx, count: count };
       render();
       break;
