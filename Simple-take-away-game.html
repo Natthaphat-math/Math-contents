@@ -51,7 +51,7 @@
     flex-direction:column;
     align-items:center;
     justify-content:flex-start;
-    padding:28px 16px 40px;
+    padding:calc(env(safe-area-inset-top, 0px) + 48px) 16px 40px;
   }
   h1,h2,h3{ margin:0; font-family:var(--font-display); font-weight:600; }
   p{ margin:0; }
@@ -102,17 +102,18 @@
     color:var(--chalk-dim); font-weight:700; margin-bottom:10px; display:block;
   }
   .first-player-group{
-    display:flex; gap:10px;
+    display:flex; gap:8px;
   }
   .toggle-pill{
     flex:1;
-    padding:14px 10px;
+    padding:13px 6px;
     border-radius:var(--radius-md);
     border:1px solid var(--chalk-faint);
     background:transparent;
     color:var(--chalk-dim);
     font-weight:700;
-    font-size:15px;
+    font-size:14px;
+    line-height:1.3;
     cursor:pointer;
     transition:background 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
   }
@@ -123,7 +124,17 @@
     border-color:var(--sage);
     color:var(--chalk);
   }
-  .toggle-pill .sub{ display:block; font-family:var(--font-body); font-size:11.5px; font-weight:400; color:var(--chalk-dim); margin-top:3px; }
+  .toggle-pill[data-variant="decide"][aria-pressed="true"]{
+    background:var(--amber-dim);
+    border-color:var(--amber);
+  }
+  .toggle-pill .sub{ display:block; font-family:var(--font-body); font-size:11px; font-weight:400; color:var(--chalk-dim); margin-top:3px; }
+
+  /* ============ FIRST-PICK PROMPT (in-round) ============ */
+  .first-pick{ margin:2px 0 20px; text-align:center; }
+  .first-pick__prompt{ font-size:14.5px; font-weight:700; color:var(--chalk); margin-bottom:12px; line-height:1.5; }
+  .first-pick__actions{ display:flex; gap:10px; }
+  .move-row[hidden], .hint-row[hidden]{ display:none; }
 
   .rules-mini{
     margin-top:14px;
@@ -315,14 +326,15 @@
     position:absolute; inset:0; border-radius:999px;
     background:var(--ink-3); border:1px solid var(--chalk-faint);
     transition:background 160ms ease, border-color 160ms ease;
+    pointer-events:none; /* let taps pass through to the real checkbox underneath */
   }
   .switch__thumb{
     position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
     background:var(--chalk-dim);
     transition:transform 180ms ease, background 160ms ease;
   }
-  .switch input:checked + .switch__track{ background:var(--sage-dim); border-color:var(--sage); }
-  .switch input:checked + .switch__track .switch__thumb{ transform:translateX(16px); background:var(--sage-text); }
+  .switch input:checked + .switch__track{ background:var(--amber); }
+  .switch input:checked + .switch__track .switch__thumb{ transform:translateX(16px); }
   .switch input:focus-visible + .switch__track{ outline:2px solid var(--amber); outline-offset:2px; }
 
   /* ============ DETAILS PANELS ============ */
@@ -470,6 +482,7 @@
         <div class="first-player-group" role="group" aria-label="Choose who plays first">
           <button type="button" class="toggle-pill" id="pickStudent" aria-pressed="true">คุณ<span class="sub">เริ่มก่อน</span></button>
           <button type="button" class="toggle-pill" id="pickBot" aria-pressed="false">บอท<span class="sub">เริ่มก่อน</span></button>
+          <button type="button" class="toggle-pill" id="pickDecide" data-variant="decide" aria-pressed="false">ดูเป้าหมายก่อน<span class="sub">ค่อยเลือก</span></button>
         </div>
       </div>
 
@@ -509,6 +522,14 @@
         <div class="counter" id="counter" aria-live="polite" aria-atomic="true">0</div>
       </div>
 
+      <div class="first-pick" id="firstPickPrompt" hidden>
+        <p class="first-pick__prompt">เห็นเป้าหมายแล้ว ใครจะเริ่มก่อนดี?</p>
+        <div class="first-pick__actions">
+          <button type="button" class="toggle-pill" id="pickFirstStudent">คุณ<span class="sub">เริ่มก่อน</span></button>
+          <button type="button" class="toggle-pill" id="pickFirstBot">บอท<span class="sub">เริ่มก่อน</span></button>
+        </div>
+      </div>
+
       <p class="status" id="statusText">ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3</p>
 
       <div class="move-row">
@@ -523,7 +544,7 @@
           <input type="checkbox" id="hintToggle">
           <span class="switch__track"><span class="switch__thumb"></span></span>
         </div>
-        <label for="hintToggle">แสดงคำใบ้กลยุทธ์</label>
+        <label for="hintToggle" id="hintLabel">แสดงคำใบ้กลยุทธ์</label>
       </div>
 
       <details id="strategyDetails">
@@ -568,10 +589,12 @@
   /* ============ STATE ============ */
   var state = {
     screen: 'setup',        // 'setup' | 'game'
-    firstPlayer: 'student', // 'student' | 'bot'
+    firstPlayer: 'student', // 'student' | 'bot' | 'decide'
     goal: 0,
     current: 0,
-    turn: null,             // 'student' | 'bot'
+    turn: null,             // 'student' | 'bot' | null (while pending)
+    pendingFirstPick: false,// true while waiting for in-round "who goes first" choice
+    roundFirstMover: null,  // who actually went first this round: 'student' | 'bot' | null
     history: [],
     hint: false,
     gameOver: false,
@@ -586,8 +609,14 @@
     gameView: document.getElementById('gameView'),
     pickStudent: document.getElementById('pickStudent'),
     pickBot: document.getElementById('pickBot'),
+    pickDecide: document.getElementById('pickDecide'),
     startBtn: document.getElementById('startBtn'),
     newSetupBtn: document.getElementById('newSetupBtn'),
+    firstPickPrompt: document.getElementById('firstPickPrompt'),
+    pickFirstStudent: document.getElementById('pickFirstStudent'),
+    pickFirstBot: document.getElementById('pickFirstBot'),
+    moveRow: document.querySelector('.move-row'),
+    hintRow: document.querySelector('.hint-row'),
     scoreStudent: document.getElementById('scoreStudent'),
     scoreBot: document.getElementById('scoreBot'),
     goalNumber: document.getElementById('goalNumber'),
@@ -599,6 +628,7 @@
     moveBtns: Array.prototype.slice.call(document.querySelectorAll('.btn-move')),
     hintNote: document.getElementById('hintNote'),
     hintToggle: document.getElementById('hintToggle'),
+    hintLabel: document.getElementById('hintLabel'),
     ladderChips: document.getElementById('ladderChips'),
     edgeNote: document.getElementById('edgeNote'),
     historyList: document.getElementById('historyList'),
@@ -644,6 +674,7 @@
   function renderSetup(){
     el.pickStudent.setAttribute('aria-pressed', state.firstPlayer === 'student' ? 'true' : 'false');
     el.pickBot.setAttribute('aria-pressed', state.firstPlayer === 'bot' ? 'true' : 'false');
+    el.pickDecide.setAttribute('aria-pressed', state.firstPlayer === 'decide' ? 'true' : 'false');
   }
 
   /* ============ RENDER: COUNTER ============ */
@@ -684,9 +715,20 @@
     }
   }
 
-  /* ============ RENDER: STATUS + BUTTONS ============ */
+  /* ============ RENDER: FIRST PICK / STATUS + BUTTONS ============ */
+  function renderFirstPick(){
+    el.firstPickPrompt.hidden = !state.pendingFirstPick;
+    el.statusText.hidden = state.pendingFirstPick;
+    el.moveRow.hidden = state.pendingFirstPick;
+    el.hintRow.hidden = state.pendingFirstPick;
+  }
+
   function renderStatus(){
     el.statusText.classList.remove('is-you', 'is-bot');
+    if (state.pendingFirstPick){
+      el.statusText.textContent = '';
+      return;
+    }
     if (state.gameOver){
       el.statusText.textContent = '';
       return;
@@ -701,18 +743,18 @@
   }
 
   function renderButtons(){
-    var opt = state.hint && state.turn === 'student' && !state.gameOver
+    var opt = state.hint && state.turn === 'student' && !state.gameOver && !state.pendingFirstPick
       ? optimalMove(state.goal, state.current) : null;
 
     el.moveBtns.forEach(function(btn){
       var amount = parseInt(btn.getAttribute('data-amount'), 10);
       var wouldExceed = (state.current + amount) > state.goal;
-      var disabled = state.gameOver || state.turn !== 'student' || wouldExceed;
+      var disabled = state.gameOver || state.pendingFirstPick || state.turn !== 'student' || wouldExceed;
       btn.disabled = disabled;
       btn.classList.toggle('btn-move--hint', opt === amount);
     });
 
-    if (state.hint && state.turn === 'student' && !state.gameOver){
+    if (state.hint && state.turn === 'student' && !state.gameOver && !state.pendingFirstPick){
       el.hintNote.textContent = (opt === null)
         ? 'ตานี้ไม่มีตัวเลือกที่ปลอดภัยแน่นอน ไม่ว่าเลือกอะไรก็มีทางแก้'
         : 'ปุ่มที่เรืองแสงจะพาไปยังจุดปลอดภัย';
@@ -732,8 +774,13 @@
       el.ladderChips.appendChild(chip);
     });
 
-    var firstLabel = state.firstPlayer === 'student' ? 'คุณ' : 'บอท';
-    var secondLabel = state.firstPlayer === 'student' ? 'บอท' : 'คุณ';
+    if (state.pendingFirstPick || !state.roundFirstMover){
+      el.edgeNote.textContent = 'เลือกว่าใครเริ่มก่อน แล้วดูว่าใครได้เปรียบจากตัวเลขด้านบน';
+      return;
+    }
+
+    var firstLabel = state.roundFirstMover === 'student' ? 'คุณ' : 'บอท';
+    var secondLabel = state.roundFirstMover === 'student' ? 'บอท' : 'คุณ';
     var firstCanForce = (state.goal % 4) !== 0;
     var edge;
     if (firstCanForce){
@@ -807,6 +854,7 @@
     el.goalNumber.textContent = state.goal;
     renderCounter(animateCounter);
     renderTrack();
+    renderFirstPick();
     renderStatus();
     renderButtons();
     renderStrategyNotes();
@@ -821,9 +869,18 @@
     state.goal = randInt(5, 27);
     state.current = 0;
     state.history = [];
-    state.turn = state.firstPlayer;
     state.gameOver = false;
     state.screen = 'game';
+    state.roundFirstMover = null;
+
+    if (state.firstPlayer === 'decide'){
+      state.turn = null;
+      state.pendingFirstPick = true;
+    } else {
+      state.turn = state.firstPlayer;
+      state.pendingFirstPick = false;
+      state.roundFirstMover = state.firstPlayer;
+    }
 
     el.setupView.hidden = true;
     el.gameView.hidden = false;
@@ -831,6 +888,16 @@
     renderGame(!firstPaint);
     firstPaint = false;
 
+    if (!state.pendingFirstPick && state.turn === 'bot'){
+      scheduleBotMove();
+    }
+  }
+
+  function resolveFirstPick(who){
+    state.turn = who;
+    state.roundFirstMover = who;
+    state.pendingFirstPick = false;
+    renderGame(false);
     if (state.turn === 'bot'){
       scheduleBotMove();
     }
@@ -882,11 +949,24 @@
     state.firstPlayer = 'bot';
     renderSetup();
   });
+  el.pickDecide.addEventListener('click', function(){
+    state.firstPlayer = 'decide';
+    renderSetup();
+  });
   el.startBtn.addEventListener('click', startRound);
+
+  el.pickFirstStudent.addEventListener('click', function(){
+    if (!state.pendingFirstPick) return;
+    resolveFirstPick('student');
+  });
+  el.pickFirstBot.addEventListener('click', function(){
+    if (!state.pendingFirstPick) return;
+    resolveFirstPick('bot');
+  });
 
   el.moveBtns.forEach(function(btn){
     btn.addEventListener('click', function(){
-      if (state.gameOver || state.turn !== 'student') return;
+      if (state.gameOver || state.pendingFirstPick || state.turn !== 'student') return;
       var amount = parseInt(btn.getAttribute('data-amount'), 10);
       if (state.current + amount > state.goal) return;
       performMove('student', amount);
