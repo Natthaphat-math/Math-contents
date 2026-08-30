@@ -271,6 +271,47 @@
     padding:4px 11px;
     margin:20px 0 14px;
   }
+
+  /* live scaled-down iframe preview: iframe renders at 4x the box size,
+     then is scaled to 25% so it always fills the box responsively without JS */
+  .card-preview{
+    position:relative;
+    width:100%;
+    height:150px;
+    overflow:hidden;
+    border-radius:10px;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size:14px 14px;
+    background-color:#F1EFE6;
+    border:1px solid var(--card-border);
+  }
+  .card-preview iframe{
+    position:absolute; top:0; left:0;
+    width:400%; height:400%;
+    transform:scale(0.25);
+    transform-origin:top left;
+    border:0;
+    background:#fff;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .5s ease;
+  }
+  .card-preview iframe.loaded{ opacity:1; }
+  .preview-badge{
+    position:absolute; right:8px; bottom:8px;
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.05em;
+    color:var(--chalk-white);
+    background:rgba(19,41,34,0.72);
+    padding:3px 9px;
+    border-radius:100px;
+    pointer-events:none;
+  }
+  .card-preview + .tag{ margin-top:16px; }
+
   .card h3{
     font-size:21px; font-weight:600; color:#1a2b2a;
     margin-bottom:10px; line-height:1.35;
@@ -414,6 +455,10 @@
 
       <a class="card" href="matrix-multiplication-trainer.html" target="_blank" aria-label="เปิดฝึกคูณเมทริกซ์" data-categories="สื่อการสอน">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="matrix-multiplication-trainer.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">เมทริกซ์</span>
         <h3>ฝึกการคูณเมทริกซ์</h3>
         <p>ฝึกการคูณเมทริกซ์ตามขั้นตอนทีละขั้น</p>
@@ -424,6 +469,10 @@
 
       <a class="card" href="logic-connectives.html" target="_blank" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์" data-categories="สื่อการสอน">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="logic-connectives.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">ตรรกศาสตร์</span>
         <h3>ตัวเชื่อมประพจน์ตรรกศาสตร์</h3>
         <p>เรียนรู้ตัวเชื่อมประพจน์ และ, หรือ, ไม่ใช่, ถ้า...แล้ว ผ่านสื่อโต้ตอบพร้อมตัวอย่างประกอบความเข้าใจ</p>
@@ -434,6 +483,10 @@
 
       <a class="card" href="logic-parlor-v7-8.html" target="_blank" aria-label="เปิดเกมการ์ดตรรกศาสตร์" data-categories="เกม">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="logic-parlor-v7-8.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">ตรรกศาสตร์</span>
         <h3>เกมการ์ดตรรกศาสตร์</h3>
         <p>ฝึกฝนการใช้ตัวเชื่อมประพจน์ ผ่านเกมการ์ดที่วัดทั้งทักษะและดวงการจั่วการ์ด</p>
@@ -444,6 +497,10 @@
 
       <a class="card" href="https://natthaphatmath-expectation-game.netlify.app" target="_blank" aria-label="เปิดเกมค่าคาดหมาย" data-categories="เกม">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="https://natthaphatmath-expectation-game.netlify.app" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">ค่าคาดหมาย</span>
         <h3>เกมค่าคาดหมาย และตัวแปรสุ่ม</h3>
         <p>เรียนรู้เรื่องค่าคาดหมาย และตัวแปรสุ่ม ผ่านสถานการณ์จำลองที่อาศัยทั้งความรู้และไหวพริบ</p>
@@ -454,6 +511,10 @@
 
       <a class="card" href="Cube-folding.html" target="_blank" aria-label="เปิดโจทย์พับกล่อง" data-categories="สื่อการสอน เกม">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="Cube-folding.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">TGAT2</span>
         <h3>โจทย์พับกล่อง</h3>
         <p>ฝึกทําโจทย์พับกล่อง พร้อมแอพพลิเคชั่นการเชื่อมต่อด้าน และหลักการที่ช่วยเสริมความเข้าใจ</p>
@@ -464,6 +525,10 @@
       
       <a class="card" href="pizza-trig.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="pizza-trig.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">ฟังก์ชันตรีโกณมิติ</span>
         <h3>พิซซ่าตรีโกณมิติ</h3>
         <p>ฝึกการคิดค่าของฟังก์ชันตรีโกณมิติผ่านการเล่นเกมส่งพิซซ่าให้ถูกที่ ถูกเวลา อย่าช้ามากล่ะ เพราะลูกค้ารออยู่</p>
@@ -471,9 +536,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-      
+
       <a class="card" href="Birthday-math-trick.html" target="_blank" aria-label="เปิดทายใจวันเกิด" data-categories="เกม">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="Birthday-math-trick.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">เกมทายใจ</span>
         <h3>ทายใจวันเกิด</h3>
         <p>ครูทายวันเกิดเราได้ไง ใบ้ให้ว่าครูใช้คณิตศาสตร์✨</p>
@@ -481,9 +550,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </span>
       </a>
-      
+
       <a class="card" href="Math-card-game.html" target="_blank" aria-label="เปิดเกมไพ่คณิตศาสตร์" data-categories="เกม">
         <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="Math-card-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
         <span class="tag">เกมฝึกทักษะ</span>
         <h3>เกมไพ่คณิตศาสตร์</h3>
         <p>ฝึกทักษะการคิดคํานวณผ่านเกมจับคู่และไพ่คณิตศาสตร์ เหมาะสําหรับฝึกความไวในการคํานวณอย่างสนุกสนาน</p>
@@ -525,6 +598,7 @@
   const vennLeftNum = document.getElementById('venn-left-num');
   const vennRightNum = document.getElementById('venn-right-num');
   let activeFilter = ''; // '' = ทั้งหมด (show all)
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function pad(n){ return String(n).padStart(2, '0'); }
 
@@ -618,7 +692,6 @@
   applyFilters(false); // initial count only — let the scroll-reveal below handle visibility
 
   // scroll-reveal entrance for cards
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduceMotion || !('IntersectionObserver' in window)) {
     cards.forEach(c => c.classList.add('in-view'));
   } else {
@@ -631,6 +704,32 @@
       });
     }, { threshold: 0.15 });
     cards.forEach(c => io.observe(c));
+  }
+
+  // lazy-load the live preview iframes: only fetch a page once its card is
+  // about to scroll into view, so the initial page load stays light
+  const previewFrames = Array.from(document.querySelectorAll('.card-preview iframe[data-src]'));
+  previewFrames.forEach(frame => {
+    frame.addEventListener('load', () => {
+      if (reduceMotion) { frame.classList.add('loaded'); }
+      else { requestAnimationFrame(() => frame.classList.add('loaded')); }
+    });
+  });
+  if ('IntersectionObserver' in window) {
+    const previewIo = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const frame = entry.target;
+          frame.src = frame.dataset.src;
+          frame.removeAttribute('data-src');
+          previewIo.unobserve(frame);
+        }
+      });
+    }, { threshold: 0.01, rootMargin: '200px 0px' });
+    previewFrames.forEach(frame => previewIo.observe(frame));
+  } else {
+    // no IntersectionObserver support — just load everything up front
+    previewFrames.forEach(frame => { frame.src = frame.dataset.src; frame.removeAttribute('data-src'); });
   }
 </script>
 
