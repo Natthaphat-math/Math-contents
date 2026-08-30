@@ -541,8 +541,7 @@ var STRINGS = {
     captionZero: function(actor){ return actor + (actor==="You" ? " are" : " is") + " about to move into a <b>zero</b> nim-sum position. With perfect play from here, that&rsquo;s a losing spot."; },
     captionNonzero: function(actor, ns){ return actor + (actor==="You" ? " are" : " is") + " about to move with a <b>nonzero</b> nim-sum (" + ns + "). A winning move exists &mdash; one that resets the panel to all zeros."; },
     previewLabel: "PREVIEW",
-    previewCaptionZero: function(count, pile, name){ return "Take " + count + " from Pile " + pile + " and the nim-sum drops to <b>0</b> &mdash; that leaves " + name + " with no safe reply."; },
-    previewCaptionNonzero: function(count, pile, ns, name){ return "Take " + count + " from Pile " + pile + " and the nim-sum becomes <b>" + ns + "</b> (still nonzero) &mdash; " + name + " would still have a path back to zero."; },
+    previewCaption: function(count, pile, ns){ return "Take " + count + " from Pile " + pile + " and the nim-sum becomes <b>" + ns + "</b>."; },
 
     showHint: "Show hint",
     hintFound: function(remove, pile){ return "Hint: take <b>" + remove + "</b> from Pile " + pile + " &mdash; that leaves a nim-sum of 0."; },
@@ -645,8 +644,7 @@ var STRINGS = {
     captionZero: function(actor){ return actor + "กำลังจะเดินเข้าสู่ตำแหน่งที่ nim-sum เป็น <b>0</b> ถ้าเล่นได้สมบูรณ์แบบไปตลอด นี่คือจุดที่เสียเปรียบ"; },
     captionNonzero: function(actor, ns){ return actor + "กำลังจะเดินในตำแหน่งที่ nim-sum ไม่เป็น 0 (เท่ากับ <b>" + ns + "</b>) ยังมีตาเดินที่ทำให้แผงกลับไปเป็นศูนย์ทั้งหมดได้เสมอ"; },
     previewLabel: "ตัวอย่าง",
-    previewCaptionZero: function(count, pile, name){ return "ถ้าหยิบ " + count + " จากกอง " + pile + " nim-sum จะลดลงเหลือ <b>0</b> &mdash; " + name + " จะไม่มีตาเดินที่ปลอดภัยเหลืออยู่เลย"; },
-    previewCaptionNonzero: function(count, pile, ns, name){ return "ถ้าหยิบ " + count + " จากกอง " + pile + " nim-sum จะกลายเป็น <b>" + ns + "</b> (ยังไม่เป็นศูนย์) &mdash; " + name + " ยังมีทางกลับไปทำให้เป็นศูนย์ได้"; },
+    previewCaption: function(count, pile, ns){ return "ถ้าหยิบ " + count + " จากกอง " + pile + " nim-sum จะกลายเป็น <b>" + ns + "</b>"; },
 
     showHint: "แสดงคำใบ้",
     hintFound: function(remove, pile){ return "คำใบ้: หยิบ <b>" + remove + "</b> เหรียญจากกอง " + pile + " &mdash; จะทำให้ nim-sum เหลือ 0"; },
@@ -996,9 +994,7 @@ function renderPanel(){
     if(state.pending){
       var previewNs = nimSum(displayPiles);
       captionClass += " preview";
-      captionText = '<span class="preview-tag">' + t('previewLabel') + '</span> ' + (previewNs === 0
-        ? t('previewCaptionZero', state.pending.count, PILE_LABELS[state.pending.pile], BOT_NAME)
-        : t('previewCaptionNonzero', state.pending.count, PILE_LABELS[state.pending.pile], previewNs, BOT_NAME));
+      captionText = '<span class="preview-tag">' + t('previewLabel') + '</span> ' + t('previewCaption', state.pending.count, PILE_LABELS[state.pending.pile], previewNs);
     } else if(state.botThinking){
       captionText = t('captionThinking', BOT_NAME);
       captionClass += " thinking";
