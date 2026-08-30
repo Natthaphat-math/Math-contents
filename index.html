@@ -24,6 +24,11 @@
     --card-border:#E4DFD2;
     --shadow: 0 14px 34px rgba(19,41,34,0.10);
     --shadow-hover: 0 20px 44px rgba(19,41,34,0.16);
+    --lvl-ps:#E2793D; --lvl-ps-soft:#FBEADC;
+    --lvl-jh:#1E8C8C; --lvl-jh-soft:#DFF3F1;
+    --lvl-sh:#7A52C9; --lvl-sh-soft:#ECE4F8;
+    --lvl-uni:#B23A5A; --lvl-uni-soft:#F8E3E9;
+    --lvl-other:#6B6F76; --lvl-other-soft:#E8E7E3;
     --font-display:'Pridi', 'Noto Serif Thai', serif;
     --font-body:'IBM Plex Sans Thai','Noto Sans Thai', sans-serif;
     --font-mono:'IBM Plex Mono', ui-monospace, monospace;
@@ -155,7 +160,7 @@
     color:#9a9488;
     margin-right:2px;
   }
-  .filter-btn{
+  .filter-btn, .level-btn{
     font-family:var(--font-mono);
     font-size:12.5px;
     padding:6px 14px;
@@ -172,6 +177,24 @@
     border-color:var(--ink-blue);
     color:#fff;
   }
+
+  .level-filter-row{
+    flex-basis:100%;
+    display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap;
+    margin-top:6px;
+  }
+  .level-btn:hover{ border-color:var(--ink-blue); color:var(--ink-blue); }
+  .level-btn.active{ background:var(--ink-blue); border-color:var(--ink-blue); color:#fff; }
+  .level-btn.lvl-ps:hover{ border-color:var(--lvl-ps); color:var(--lvl-ps); }
+  .level-btn.lvl-jh:hover{ border-color:var(--lvl-jh); color:var(--lvl-jh); }
+  .level-btn.lvl-sh:hover{ border-color:var(--lvl-sh); color:var(--lvl-sh); }
+  .level-btn.lvl-uni:hover{ border-color:var(--lvl-uni); color:var(--lvl-uni); }
+  .level-btn.lvl-other:hover{ border-color:var(--lvl-other); color:var(--lvl-other); }
+  .level-btn.lvl-ps.active{ background:var(--lvl-ps); border-color:var(--lvl-ps); color:#fff; }
+  .level-btn.lvl-jh.active{ background:var(--lvl-jh); border-color:var(--lvl-jh); color:#fff; }
+  .level-btn.lvl-sh.active{ background:var(--lvl-sh); border-color:var(--lvl-sh); color:#fff; }
+  .level-btn.lvl-uni.active{ background:var(--lvl-uni); border-color:var(--lvl-uni); color:#fff; }
+  .level-btn.lvl-other.active{ background:var(--lvl-other); border-color:var(--lvl-other); color:#fff; }
 
   .search-box{
     position:relative;
@@ -260,6 +283,10 @@
     background:var(--paper);
     box-shadow: inset 0 1px 3px rgba(19,41,34,0.35);
   }
+  .tag-row{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    margin:20px 0 14px;
+  }
   .tag{
     display:inline-block;
     font-family:var(--font-mono);
@@ -269,8 +296,21 @@
     background:rgba(27,58,107,0.07);
     border-radius:100px;
     padding:4px 11px;
-    margin:20px 0 14px;
   }
+  .level-tag{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:.06em;
+    font-weight:500;
+    border-radius:100px;
+    padding:4px 11px;
+  }
+  .level-tag.lvl-ps{ color:var(--lvl-ps); background:var(--lvl-ps-soft); }
+  .level-tag.lvl-jh{ color:var(--lvl-jh); background:var(--lvl-jh-soft); }
+  .level-tag.lvl-sh{ color:var(--lvl-sh); background:var(--lvl-sh-soft); }
+  .level-tag.lvl-uni{ color:var(--lvl-uni); background:var(--lvl-uni-soft); }
+  .level-tag.lvl-other{ color:var(--lvl-other); background:var(--lvl-other-soft); }
 
   /* live scaled-down iframe preview: iframe renders at 4x the box size,
      then is scaled to 25% so it always fills the box responsively without JS */
@@ -310,7 +350,7 @@
     border-radius:100px;
     pointer-events:none;
   }
-  .card-preview + .tag{ margin-top:16px; }
+  .card-preview + .tag-row{ margin-top:16px; }
 
   .card h3{
     font-size:21px; font-weight:600; color:#1a2b2a;
@@ -442,24 +482,34 @@
           <button type="button" class="search-clear" id="search-clear" aria-label="ล้างคำค้นหา" hidden>&times;</button>
         </div>
         <div class="filter-group" role="group" aria-label="ตัวกรองหมวดหมู่">
-          <span class="filter-label">ตัวกรอง</span>
+          <span class="filter-label">หมวดหมู่</span>
           <button type="button" class="filter-btn active" data-filter="" aria-pressed="true">ทั้งหมด</button>
           <button type="button" class="filter-btn" data-filter="สื่อการสอน" aria-pressed="false">สื่อการสอน</button>
           <button type="button" class="filter-btn" data-filter="เกม" aria-pressed="false">เกม</button>
         </div>
         <span class="count" id="resource-count">06 รายการ</span>
       </div>
+
+      <div class="level-filter-row" role="group" aria-label="ตัวกรองระดับชั้น">
+        <span class="filter-label">ระดับชั้น</span>
+        <button type="button" class="level-btn active" data-level="" aria-pressed="true">ทั้งหมด</button>
+        <button type="button" class="level-btn lvl-ps" data-level="ประถม" aria-pressed="false">ประถม</button>
+        <button type="button" class="level-btn lvl-jh" data-level="ม.ต้น" aria-pressed="false">ม.ต้น</button>
+        <button type="button" class="level-btn lvl-sh" data-level="ม.ปลาย" aria-pressed="false">ม.ปลาย</button>
+        <button type="button" class="level-btn lvl-uni" data-level="มหาลัย" aria-pressed="false">มหาลัย</button>
+        <button type="button" class="level-btn lvl-other" data-level="อื่น ๆ" aria-pressed="false">อื่น ๆ</button>
+      </div>
     </div>
 
     <div class="grid">
 
-      <a class="card" href="matrix-multiplication-trainer.html" target="_blank" aria-label="เปิดฝึกคูณเมทริกซ์" data-categories="สื่อการสอน">
+      <a class="card" href="matrix-multiplication-trainer.html" target="_blank" aria-label="เปิดฝึกคูณเมทริกซ์" data-categories="สื่อการสอน" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="matrix-multiplication-trainer.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">เมทริกซ์</span>
+        <div class="tag-row"><span class="tag">เมทริกซ์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>ฝึกการคูณเมทริกซ์</h3>
         <p>ฝึกการคูณเมทริกซ์ตามขั้นตอนทีละขั้น</p>
         <span class="cta">ฝึกฝนกันเลย
@@ -467,13 +517,13 @@
         </span>
       </a>
 
-      <a class="card" href="logic-connectives.html" target="_blank" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์" data-categories="สื่อการสอน">
+      <a class="card" href="logic-connectives.html" target="_blank" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์" data-categories="สื่อการสอน" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="logic-connectives.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">ตรรกศาสตร์</span>
+        <div class="tag-row"><span class="tag">ตรรกศาสตร์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>ตัวเชื่อมประพจน์ตรรกศาสตร์</h3>
         <p>เรียนรู้ตัวเชื่อมประพจน์ และ, หรือ, ไม่ใช่, ถ้า...แล้ว ผ่านสื่อโต้ตอบพร้อมตัวอย่างประกอบความเข้าใจ</p>
         <span class="cta">เปิดเรียน
@@ -481,13 +531,13 @@
         </span>
       </a>
 
-      <a class="card" href="logic-parlor-v7-8.html" target="_blank" aria-label="เปิดเกมการ์ดตรรกศาสตร์" data-categories="เกม">
+      <a class="card" href="logic-parlor-v7-8.html" target="_blank" aria-label="เปิดเกมการ์ดตรรกศาสตร์" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="logic-parlor-v7-8.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">ตรรกศาสตร์</span>
+        <div class="tag-row"><span class="tag">ตรรกศาสตร์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมการ์ดตรรกศาสตร์</h3>
         <p>ฝึกฝนการใช้ตัวเชื่อมประพจน์ ผ่านเกมการ์ดที่วัดทั้งทักษะและดวงการจั่วการ์ด</p>
         <span class="cta">เปิดเล่น
@@ -495,13 +545,13 @@
         </span>
       </a>
 
-      <a class="card" href="https://natthaphatmath-expectation-game.netlify.app" target="_blank" aria-label="เปิดเกมค่าคาดหมาย" data-categories="เกม">
+      <a class="card" href="https://natthaphatmath-expectation-game.netlify.app" target="_blank" aria-label="เปิดเกมค่าคาดหมาย" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="https://natthaphatmath-expectation-game.netlify.app" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">ค่าคาดหมาย</span>
+        <div class="tag-row"><span class="tag">ค่าคาดหมาย</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมค่าคาดหมาย และตัวแปรสุ่ม</h3>
         <p>เรียนรู้เรื่องค่าคาดหมาย และตัวแปรสุ่ม ผ่านสถานการณ์จำลองที่อาศัยทั้งความรู้และไหวพริบ</p>
         <span class="cta">เปิดเล่น
@@ -509,13 +559,13 @@
         </span>
       </a>
 
-      <a class="card" href="Cube-folding.html" target="_blank" aria-label="เปิดโจทย์พับกล่อง" data-categories="สื่อการสอน เกม">
+      <a class="card" href="Cube-folding.html" target="_blank" aria-label="เปิดโจทย์พับกล่อง" data-categories="สื่อการสอน เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="Cube-folding.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">TGAT2</span>
+        <div class="tag-row"><span class="tag">TGAT2</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>โจทย์พับกล่อง</h3>
         <p>ฝึกทําโจทย์พับกล่อง พร้อมแอพพลิเคชั่นการเชื่อมต่อด้าน และหลักการที่ช่วยเสริมความเข้าใจ</p>
         <span class="cta">ฝึกฝนกันเลย
@@ -523,13 +573,13 @@
         </span>
       </a>
 
-      <a class="card" href="Simple-take-away-game.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม">
+      <a class="card" href="Simple-take-away-game.html" target="_blank" aria-label="เปิดเกมนับเลข" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="Simple-take-away-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">ทฤษฎีเกม</span>
+        <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมนับเลข (Take-away game)</h3>
         <p>ปะทะกับบอทในเกมนับเลขที่โด่งดังมาตั้งแต่สมัยก่อน</p>
         <span class="cta">เปิดเล่น
@@ -537,27 +587,13 @@
         </span>
       </a>
 
-      <a class="card" href="turning-turtles.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม">
-        <span class="hole"></span>
-        <div class="card-preview">
-          <iframe data-src="turning-turtles.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <span class="preview-badge">ตัวอย่าง</span>
-        </div>
-        <span class="tag">ทฤษฎีเกม</span>
-        <h3>เกมกลับเต่า (Turning turtles)</h3>
-        <p>วัดทักษะการตัดสินใจในเกมพลิกเหรียญที่ไม่ซับซ้อน แต่แฝงไปด้วยกลยุทธ์ทางคณิตศาสตร์</p>
-        <span class="cta">เปิดเล่น
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </span>
-      </a>
-
-      <a class="card" href="nim.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม">
+      <a class="card" href="nim.html" target="_blank" aria-label="เปิดเกมนิม" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="nim.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">ทฤษฎีเกม</span>
+        <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมนิม หยิบเหรียญ</h3>
         <p>ฝึกการตัดสินใจ และทําความรู้จักเกมนิมและเบื้องหลังกลยุทธ์ที่โด่งดังในทฤษฎีเกม</p>
         <span class="cta">เปิดเล่น
@@ -565,13 +601,27 @@
         </span>
       </a>
 
-      <a class="card" href="pizza-trig.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม">
+      <a class="card" href="turning-turtles.html" target="_blank" aria-label="เปิดเกมกลับเต่า" data-categories="เกม" data-level="ม.ปลาย">
+        <span class="hole"></span>
+        <div class="card-preview">
+          <iframe data-src="turning-turtles.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <span class="preview-badge">ตัวอย่าง</span>
+        </div>
+        <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
+        <h3>เกมกลับเต่า (Turning turtles)</h3>
+        <p>วัดทักษะการตัดสินใจในเกมพลิกเหรียญที่ไม่ซับซ้อน แต่แฝงไปด้วยกลยุทธ์ทางคณิตศาสตร์</p>
+        <span class="cta">เปิดเล่น
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a class="card" href="pizza-trig.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="pizza-trig.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">ฟังก์ชันตรีโกณมิติ</span>
+        <div class="tag-row"><span class="tag">ฟังก์ชันตรีโกณมิติ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>พิซซ่าตรีโกณมิติ</h3>
         <p>ฝึกการคิดค่าของฟังก์ชันตรีโกณมิติผ่านการเล่นเกมส่งพิซซ่าให้ถูกที่ ถูกเวลา อย่าช้ามากล่ะ เพราะลูกค้ารออยู่</p>
         <span class="cta">เปิดเล่น
@@ -579,13 +629,13 @@
         </span>
       </a>
 
-      <a class="card" href="Birthday-math-trick.html" target="_blank" aria-label="เปิดทายใจวันเกิด" data-categories="เกม">
+      <a class="card" href="Birthday-math-trick.html" target="_blank" aria-label="เปิดทายใจวันเกิด" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="Birthday-math-trick.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">เกมทายใจ</span>
+        <div class="tag-row"><span class="tag">เกมทายใจ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>ทายใจวันเกิด</h3>
         <p>ครูทายวันเกิดเราได้ไง ใบ้ให้ว่าครูใช้คณิตศาสตร์✨</p>
         <span class="cta">เปิดเล่น
@@ -593,13 +643,13 @@
         </span>
       </a>
 
-      <a class="card" href="Math-card-game.html" target="_blank" aria-label="เปิดเกมไพ่คณิตศาสตร์" data-categories="เกม">
+      <a class="card" href="Math-card-game.html" target="_blank" aria-label="เปิดเกมไพ่คณิตศาสตร์" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="Math-card-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
-        <span class="tag">เกมฝึกทักษะ</span>
+        <div class="tag-row"><span class="tag">เกมฝึกทักษะ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมไพ่คณิตศาสตร์</h3>
         <p>ฝึกทักษะการคิดคํานวณผ่านเกมจับคู่และไพ่คณิตศาสตร์ เหมาะสําหรับฝึกความไวในการคํานวณอย่างสนุกสนาน</p>
         <span class="cta">เปิดเล่น
@@ -633,6 +683,7 @@
   const resourceCountEl = document.getElementById('resource-count');
   const emptyStateEl = document.getElementById('empty-state');
   const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  const levelButtons = Array.from(document.querySelectorAll('.level-btn'));
   const searchInput = document.getElementById('search-input');
   const searchClearBtn = document.getElementById('search-clear');
   const vennLeft = document.getElementById('venn-left');
@@ -640,6 +691,7 @@
   const vennLeftNum = document.getElementById('venn-left-num');
   const vennRightNum = document.getElementById('venn-right-num');
   let activeFilter = ''; // '' = ทั้งหมด (show all)
+  let activeLevel = '';  // '' = ทั้งหมด (show all)
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function pad(n){ return String(n).padStart(2, '0'); }
@@ -647,13 +699,14 @@
   // hero badge always reflects the full library size
   if (heroCountEl) heroCountEl.textContent = pad(cards.length);
 
-  // precompute searchable text (title + description + tag) per card
+  // precompute searchable text (title + description + tag + level) per card
   const cardSearchText = new Map();
   cards.forEach(card => {
     const title = card.querySelector('h3')?.textContent || '';
     const desc = card.querySelector('p')?.textContent || '';
     const tag = card.querySelector('.tag')?.textContent || '';
-    cardSearchText.set(card, (title + ' ' + desc + ' ' + tag).toLowerCase());
+    const level = card.querySelector('.level-tag')?.textContent || '';
+    cardSearchText.set(card, (title + ' ' + desc + ' ' + tag + ' ' + level).toLowerCase());
   });
 
   // silent gimmick: reflects the active category filter as a 2-set venn diagram.
@@ -681,13 +734,14 @@
 
   function applyFilters(forceReveal){
     const query = (searchInput?.value || '').trim().toLowerCase();
-    const isFiltering = activeFilter !== '' || query !== '';
+    const isFiltering = activeFilter !== '' || activeLevel !== '' || query !== '';
     let visibleCount = 0;
     cards.forEach(card => {
       const categories = (card.dataset.categories || '').split(' ').filter(Boolean);
       const categoryMatch = activeFilter === '' || categories.includes(activeFilter);
+      const levelMatch = activeLevel === '' || card.dataset.level === activeLevel;
       const searchMatch = query === '' || (cardSearchText.get(card) || '').includes(query);
-      const matches = categoryMatch && searchMatch;
+      const matches = categoryMatch && levelMatch && searchMatch;
       card.style.display = matches ? '' : 'none';
       if (matches) {
         visibleCount++;
@@ -708,6 +762,18 @@
     btn.addEventListener('click', () => {
       activeFilter = btn.dataset.filter;
       filterButtons.forEach(b => {
+        const isActive = b === btn;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', String(isActive));
+      });
+      applyFilters(true);
+    });
+  });
+
+  levelButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeLevel = btn.dataset.level;
+      levelButtons.forEach(b => {
         const isActive = b === btn;
         b.classList.toggle('active', isActive);
         b.setAttribute('aria-pressed', String(isActive));
