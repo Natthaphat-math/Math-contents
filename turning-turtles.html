@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Turning Turtles — a game of hidden binary</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A2%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0c2624;
+    --bg-deeper:#081b19;
+    --bg-panel:#123836;
+    --bg-panel-2:#16403d;
+    --sand:#eee3c9;
+    --sand-dim:#c9bd9f;
+    --moss:#7fb069;
+    --moss-deep:#4f7d45;
+    --amber:#e9a23b;
+    --amber-deep:#a86e1f;
+    --yellow:#ffd447;
+    --yellow-ink:#3a2b03;
+    --teal-accent:#5fb3ac;
+    --slate:#5c7c79;
+    --ink:#08201e;
+    --danger:#d97a6c;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --shadow-deep:0 18px 40px -14px rgba(0,0,0,0.55);
+    --font-display:'Fraunces', Georgia, serif;
+    --font-body:'Work Sans', system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    min-height:100%;
+    font-family:var(--font-body);
+    color:var(--sand);
+    background:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(127,176,105,0.16), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(95,179,172,0.14), transparent 55%),
+      linear-gradient(180deg, var(--bg-deep), var(--bg-deeper) 60%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{ background:var(--amber); color:var(--ink); }
+
+  button{ font-family:inherit; }
+  button:focus-visible, summary:focus-visible, [tabindex]:focus-visible{
+    outline:3px solid var(--amber);
+    outline-offset:2px;
+  }
+
+  .app-shell{
+    max-width:760px;
+    margin:0 auto;
+    padding:20px 16px 64px;
+  }
+
+  /* ---------- header ---------- */
+  .site-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    font-size:34px;
+    line-height:1;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+    transform:translateY(-2px);
+  }
+  .brand h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(24px,5vw,32px);
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  .brand p{
+    margin:2px 0 0;
+    font-size:13px;
+    color:var(--sand-dim);
+    letter-spacing:0.3px;
+  }
+  .header-actions{ display:flex; gap:8px; flex-shrink:0; }
+
+  .icon-btn{
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1px solid rgba(238,227,201,0.25);
+    background:rgba(238,227,201,0.06);
+    color:var(--sand);
+    font-size:17px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .icon-btn:hover{ background:rgba(238,227,201,0.14); transform:translateY(-1px); }
+
+  /* ---------- generic card / buttons ---------- */
+  .card{
+    background:linear-gradient(180deg, var(--bg-panel-2), var(--bg-panel));
+    border:1px solid rgba(238,227,201,0.08);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-deep);
+    padding:22px;
+  }
+  .card + .card{ margin-top:16px; }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--teal-accent);
+    margin:0 0 8px;
+  }
+  .card h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:22px;
+    margin:0 0 10px;
+  }
+  .card p{ color:var(--sand-dim); line-height:1.55; margin:0 0 12px; font-size:15px;}
+  .card p:last-child{ margin-bottom:0; }
+
+  .btn{
+    font-weight:600;
+    font-size:15px;
+    padding:13px 18px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn:active{ transform:translateY(0); }
+  .btn-primary{ background:var(--amber); color:var(--ink); box-shadow:0 8px 18px -8px rgba(233,162,59,0.6); }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-primary:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-moss{ background:var(--moss); color:var(--ink); box-shadow:0 8px 18px -8px rgba(127,176,105,0.55); }
+  .btn-moss:hover{ filter:brightness(1.08); }
+  .btn-ghost{
+    background:transparent;
+    color:var(--sand);
+    border:1px solid rgba(238,227,201,0.3);
+  }
+  .btn-ghost:hover{ background:rgba(238,227,201,0.08); }
+  .btn-block{ width:100%; }
+  .btn-sm{ padding:9px 14px; font-size:13px; }
+
+  .choice-stack{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .choice-btn{
+    text-align:left;
+    background:rgba(238,227,201,0.05);
+    border:1px solid rgba(238,227,201,0.14);
+    border-radius:var(--radius-md);
+    padding:16px 18px;
+    color:var(--sand);
+    cursor:pointer;
+    display:flex; align-items:center; gap:14px;
+    transition:transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .choice-btn:hover{
+    background:rgba(233,162,59,0.1);
+    border-color:rgba(233,162,59,0.45);
+    transform:translateY(-1px);
+  }
+  .choice-emoji{ font-size:24px; flex-shrink:0; }
+  .choice-text strong{ display:block; font-size:15.5px; margin-bottom:2px; }
+  .choice-text span{ font-size:13px; color:var(--sand-dim); }
+
+  /* ---------- rules mini-list ---------- */
+  .rule-steps{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .rule-steps li{
+    display:flex; gap:12px; align-items:flex-start;
+    font-size:14.5px; color:var(--sand-dim); line-height:1.5;
+  }
+  .rule-num{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--ink);
+    background:var(--teal-accent);
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; margin-top:1px; font-weight:700;
+  }
+  .rule-steps b{ color:var(--sand); }
+
+  /* ---------- status bar ---------- */
+  .status-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px;
+    padding:12px 16px;
+    border-radius:var(--radius-md);
+    background:rgba(8,27,25,0.55);
+    border:1px solid rgba(238,227,201,0.1);
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .status-turn{ display:flex; align-items:center; gap:10px; font-size:14.5px; }
+  .status-dot{
+    width:10px; height:10px; border-radius:50%;
+    background:var(--moss);
+    box-shadow:0 0 0 4px rgba(127,176,105,0.2);
+  }
+  .status-dot.bot{ background:var(--amber); box-shadow:0 0 0 4px rgba(233,162,59,0.2); }
+  .status-dot.over{ background:var(--sand-dim); box-shadow:none; }
+  .status-turn strong{ font-family:var(--font-display); font-size:16px; font-weight:600; }
+  .status-move{ font-family:var(--font-mono); font-size:12.5px; color:var(--sand-dim); }
+  .thinking-dots span{ animation:blink 1.4s infinite; opacity:0.2; }
+  .thinking-dots span:nth-child(2){ animation-delay:.2s; }
+  .thinking-dots span:nth-child(3){ animation-delay:.4s; }
+  @keyframes blink{ 0%,100%{opacity:0.2;} 40%{opacity:1;} }
+
+  .helper-text{
+    font-size:13.5px;
+    color:var(--sand-dim);
+    margin:0 0 14px;
+    padding:0 2px;
+    min-height:18px;
+  }
+  .helper-text b{ color:var(--amber); }
+
+  /* ---------- board ---------- */
+  .board-wrap{
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(95,179,172,0.08), transparent 70%),
+      rgba(8,27,25,0.4);
+    border:1px solid rgba(238,227,201,0.08);
+    border-radius:var(--radius-lg);
+    padding:20px 14px 16px;
+    margin-bottom:16px;
+  }
+  .board{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px 8px;
+  }
+  .coin-slot{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    width:64px;
+  }
+  .pos-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--sand-dim);
+    letter-spacing:0.5px;
+  }
+  .coin{
+    position:relative;
+    width:56px; height:56px;
+    border-radius:50%;
+    border:none;
+    cursor:default;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 35% 30%, #6f9d5e, #3f6535 78%);
+    box-shadow:inset 0 -4px 8px rgba(0,0,0,0.35), 0 6px 14px -6px rgba(0,0,0,0.5);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .coin.tails{
+    background:radial-gradient(circle at 35% 30%, #587674, #2c433f 78%);
+  }
+  .coin .emoji{
+    font-size:26px;
+    display:block;
+    transition:transform .3s ease, filter .3s ease;
+    filter:drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  }
+  .coin.tails .emoji{
+    transform:rotate(165deg);
+    filter:grayscale(0.55) brightness(0.82) drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+  }
+  .coin .state-badge{
+    position:absolute;
+    bottom:-4px; right:-4px;
+    width:19px; height:19px;
+    border-radius:50%;
+    font-family:var(--font-mono);
+    font-size:10px;
+    font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-deeper);
+    border:1.5px solid var(--sand-dim);
+    color:var(--sand);
+  }
+  .coin.heads .state-badge{ border-color:var(--moss); color:var(--moss); }
+  .coin.tails .state-badge{ border-color:var(--slate); color:var(--slate); }
+
+  .coin.can-primary{ cursor:pointer; }
+  .coin.can-primary:hover{ transform:translateY(-3px); }
+  .coin.can-primary::before{
+    content:'';
+    position:absolute; inset:-5px;
+    border-radius:50%;
+    border:2px dashed rgba(233,162,59,0.55);
+    animation:pulse-ring 1.8s ease-in-out infinite;
+  }
+  .coin.can-secondary{ cursor:pointer; }
+  .coin.can-secondary:hover{ transform:translateY(-3px); }
+  .coin.can-secondary::before{
+    content:'';
+    position:absolute; inset:-5px;
+    border-radius:50%;
+    border:2px dashed rgba(95,179,172,0.6);
+  }
+  .coin.sel-primary{
+    transform:scale(1.08);
+    box-shadow:0 0 0 4px var(--amber), 0 8px 18px -6px rgba(0,0,0,0.6);
+  }
+  .coin.sel-secondary{
+    transform:scale(1.08);
+    box-shadow:0 0 0 4px var(--teal-accent), 0 8px 18px -6px rgba(0,0,0,0.6);
+  }
+  .coin.locked{ opacity:0.55; }
+  .coin.just-flipped{ animation:flip-pulse .5s ease; }
+  @keyframes flip-pulse{
+    0%{ transform:scale(1); filter:brightness(1); }
+    40%{ transform:scale(1.22); filter:brightness(1.5); }
+    100%{ transform:scale(1); filter:brightness(1); }
+  }
+  @keyframes pulse-ring{
+    0%,100%{ opacity:0.5; }
+    50%{ opacity:1; }
+  }
+
+  .selection-legend{
+    display:flex; gap:16px; flex-wrap:wrap;
+    font-size:12.5px; color:var(--sand-dim);
+    margin-top:14px;
+    justify-content:center;
+  }
+  .legend-swatch{
+    display:inline-block; width:10px; height:10px; border-radius:50%;
+    margin-right:6px; vertical-align:middle;
+  }
+
+  .move-controls{
+    display:flex; gap:10px; justify-content:center; margin-top:14px;
+  }
+
+  /* ---------- ledger ---------- */
+  details.panel{
+    background:rgba(8,27,25,0.5);
+    border:1px solid rgba(238,227,201,0.1);
+    border-radius:var(--radius-md);
+    margin-bottom:12px;
+    overflow:hidden;
+  }
+  details.panel summary{
+    list-style:none;
+    cursor:pointer;
+    padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16px;
+  }
+  details.panel summary::-webkit-details-marker{ display:none; }
+  details.panel summary::after{
+    content:'▸';
+    font-family:var(--font-body);
+    color:var(--sand-dim);
+    transition:transform .2s ease;
+    font-size:13px;
+  }
+  details.panel[open] summary::after{ transform:rotate(90deg); }
+  .panel-body{ padding:0 16px 18px; }
+  .panel-sub{ font-size:12.5px; color:var(--sand-dim); margin:-6px 0 14px; }
+
+  .ledger-scroll{ overflow-x:auto; }
+  table.ledger{
+    border-collapse:collapse;
+    width:100%;
+    min-width:280px;
+    font-family:var(--font-mono);
+    font-size:14px;
+  }
+  table.ledger th, table.ledger td{
+    padding:7px 10px;
+    text-align:center;
+    border-bottom:1px solid rgba(238,227,201,0.08);
+  }
+  table.ledger th{
+    color:var(--sand-dim);
+    font-weight:600;
+    font-size:11.5px;
+    letter-spacing:1px;
+  }
+  table.ledger td.pos-cell{ color:var(--sand-dim); text-align:left; }
+  table.ledger tr.xor-row td{
+    border-top:2px solid rgba(238,227,201,0.3);
+    border-bottom:none;
+    font-weight:700;
+    padding-top:10px;
+  }
+  table.ledger td.bit{ border-radius:5px; }
+  table.ledger td.bit-one{
+    background:var(--yellow);
+    color:var(--yellow-ink);
+    font-weight:700;
+  }
+  .ledger-summary{
+    margin-top:14px;
+    padding:12px 14px;
+    background:rgba(233,162,59,0.08);
+    border:1px solid rgba(233,162,59,0.25);
+    border-radius:var(--radius-sm);
+    font-family:var(--font-mono);
+    font-size:14px;
+    text-align:center;
+  }
+  .ledger-empty{ font-size:13.5px; color:var(--sand-dim); font-style:italic; }
+
+  /* ---------- hint toggle ---------- */
+  .hint-widget{
+    background:rgba(8,27,25,0.5);
+    border:1px solid rgba(238,227,201,0.1);
+    border-radius:var(--radius-md);
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .hint-widget .switch-row{
+    background:none;
+    border:none;
+    padding:0;
+    margin-bottom:0;
+  }
+  .hint-widget .hint-text{ margin-top:14px; }
+  .switch-row{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:14px;
+    background:rgba(8,27,25,0.5);
+    border:1px solid rgba(238,227,201,0.1);
+    border-radius:var(--radius-md);
+    padding:12px 16px;
+    margin-bottom:12px;
+    cursor:pointer;
+  }
+  .switch-label-group{ display:flex; flex-direction:column; gap:1px; }
+  .switch-label{ font-family:var(--font-display); font-weight:600; font-size:15.5px; color:var(--sand); }
+  .switch-caption{ font-size:12px; color:var(--sand-dim); }
+  .switch{ position:relative; display:inline-block; width:44px; height:26px; flex-shrink:0; }
+  .switch input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .switch-track{
+    position:absolute; inset:0;
+    background:rgba(238,227,201,0.18);
+    border:1px solid rgba(238,227,201,0.28);
+    border-radius:999px;
+    transition:background .2s ease, border-color .2s ease;
+  }
+  .switch-thumb{
+    position:absolute; top:2px; left:2px;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--sand);
+    transition:transform .2s ease, background .2s ease;
+    box-shadow:0 2px 5px rgba(0,0,0,0.4);
+  }
+  .switch input:checked + .switch-track{ background:var(--amber); border-color:var(--amber-deep); }
+  .switch input:checked + .switch-track .switch-thumb{ transform:translateX(18px); background:var(--ink); }
+  .switch input:focus-visible + .switch-track{ outline:3px solid var(--amber); outline-offset:2px; }
+
+  .hint-text{
+    margin-top:14px;
+    padding:11px 14px;
+    background:rgba(233,162,59,0.12);
+    border:1px solid rgba(233,162,59,0.35);
+    border-radius:var(--radius-sm);
+    font-size:13.5px;
+    color:var(--sand);
+    line-height:1.55;
+  }
+  .hint-text b{ color:var(--amber); }
+
+  .ledger-card{
+    background:rgba(8,27,25,0.5);
+    border:1px solid rgba(238,227,201,0.1);
+    border-radius:var(--radius-md);
+    padding:16px;
+    margin-bottom:12px;
+  }
+  .ledger-card-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16px;
+    margin:0 0 4px;
+  }
+
+  /* ---------- move log ---------- */
+  .log-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; }
+  .log-list li{
+    font-size:13px; line-height:1.5;
+    color:var(--sand-dim);
+    padding:8px 10px;
+    border-radius:8px;
+    background:rgba(238,227,201,0.04);
+  }
+  .log-list li b{ color:var(--sand); }
+  .log-list .log-empty{ font-style:italic; }
+
+  /* ---------- preview tip ---------- */
+  .tip-box{
+    display:flex; gap:10px; align-items:flex-start;
+    background:rgba(95,179,172,0.1);
+    border:1px solid rgba(95,179,172,0.3);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+    font-size:13.5px;
+    color:var(--sand);
+    margin-top:14px;
+    line-height:1.5;
+  }
+  .tip-box .tip-icon{ font-size:17px; flex-shrink:0; }
+
+  .starter-buttons{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .starter-buttons .btn{ flex:1; min-width:150px; }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(4,14,13,0.72);
+    backdrop-filter:blur(3px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+    animation:fade-in .18s ease;
+  }
+  @keyframes fade-in{ from{opacity:0;} to{opacity:1;} }
+  .modal-overlay.hidden{ display:none; }
+  .modal{
+    background:linear-gradient(180deg, var(--bg-panel-2), var(--bg-panel));
+    border:1px solid rgba(238,227,201,0.15);
+    border-radius:var(--radius-lg);
+    max-width:560px;
+    width:100%;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:26px;
+    box-shadow:var(--shadow-deep);
+  }
+  .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;}
+  .modal h2{ font-family:var(--font-display); font-size:24px; margin:0 0 4px; }
+  .modal h3{ font-family:var(--font-display); font-size:17px; margin:22px 0 8px; color:var(--amber); }
+  .modal p, .modal li{ color:var(--sand-dim); font-size:14.5px; line-height:1.6; }
+  .modal .example-box{
+    font-family:var(--font-mono);
+    font-size:13px;
+    background:rgba(8,27,25,0.6);
+    border:1px solid rgba(238,227,201,0.1);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+    margin:10px 0;
+    color:var(--sand);
+    line-height:1.7;
+    white-space:pre-wrap;
+  }
+
+  /* ---------- end modal ---------- */
+  #modal-end .result-emoji{ font-size:48px; text-align:center; display:block; margin-bottom:6px; }
+  #modal-end h2{ text-align:center; }
+  #modal-end .result-sub{ text-align:center; margin-bottom:18px; }
+  .end-actions{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+  .end-actions .btn{ flex:1; min-width:140px; }
+
+  footer.credit{
+    text-align:center;
+    margin-top:30px;
+    font-size:12px;
+    color:var(--sand-dim);
+    line-height:1.6;
+  }
+
+  .hidden{ display:none !important; }
+
+  @media (max-width:420px){
+    .coin-slot{ width:54px; }
+    .coin{ width:48px; height:48px; }
+    .coin .emoji{ font-size:22px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-mark">🐢</div>
+      <div>
+        <h1>Turning Turtles</h1>
+        <p>a game of heads, tails &amp; hidden binary</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-open-rules" title="Rules &amp; strategy" aria-label="Open rules and strategy guide">?</button>
+      <button class="icon-btn hidden" id="btn-new-game" title="New game" aria-label="Start a new game">↻</button>
+    </div>
+  </header>
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <section id="screen-setup">
+    <div class="card">
+      <p class="eyebrow">How it works</p>
+      <h2>A row of coins, one clever trick</h2>
+      <p>You'll face a row of coins, each lying heads-up or tails-up. You and your opponent take turns. Whoever makes the very last move wins.</p>
+      <ol class="rule-steps">
+        <li><span class="rule-num">1</span><span><b>Pick a coin that's heads-up</b> and turn it to tails. Every move needs this part.</span></li>
+        <li><span class="rule-num">2</span><span><b>Optionally, flip one more coin</b> — but only one that sits to the <b>left</b> of the coin you just chose. It can flip either direction.</span></li>
+        <li><span class="rule-num">3</span><span>Coins are numbered <b>1, 2, 3…</b> from the left. That numbering turns out to matter a lot.</span></li>
+        <li><span class="rule-num">4</span><span>Once every coin shows tails, nobody can move. <b>Whoever made the last flip wins.</b></span></li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">Get started</p>
+      <h2>Who goes first?</h2>
+      <div class="choice-stack">
+        <button class="choice-btn" id="btn-you-first">
+          <span class="choice-emoji">🙋</span>
+          <span class="choice-text"><strong>I'll go first</strong><span>Jump straight in — coins will be laid out fresh.</span></span>
+        </button>
+        <button class="choice-btn" id="btn-bot-first">
+          <span class="choice-emoji">🤖</span>
+          <span class="choice-text"><strong>Shelldon goes first</strong><span>Let the bot open — new coins, same rules.</span></span>
+        </button>
+        <button class="choice-btn" id="btn-preview">
+          <span class="choice-emoji">👀</span>
+          <span class="choice-text"><strong>Show me the coins first</strong><span>See the row, work out the numbers, then pick who opens.</span></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PREVIEW SCREEN ===================== -->
+  <section id="screen-preview" class="hidden">
+    <div class="card">
+      <p class="eyebrow">Before anyone moves</p>
+      <h2>Here's the row</h2>
+      <p>Study the position below. Positions are numbered from the left, starting at 1 — that's the number each heads-up coin contributes to the ledger underneath.</p>
+    </div>
+    <div class="board-wrap">
+      <div class="board" id="preview-board"></div>
+    </div>
+    <div class="hint-widget">
+      <label class="switch-row" for="hint-toggle-preview">
+        <span class="switch-label-group">
+          <span class="switch-label">Show hint</span>
+          <span class="switch-caption">Tell me who should go first</span>
+        </span>
+        <span class="switch">
+          <input type="checkbox" id="hint-toggle-preview">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </span>
+      </label>
+      <div id="hint-text-preview"></div>
+    </div>
+    <div id="preview-ledger-mount"></div>
+    <div class="card">
+      <div class="tip-box">
+        <span class="tip-icon">💡</span>
+        <span>The ledger above shows the live binary breakdown — 1s are highlighted so you can add up each column yourself. Try reading it before you decide, or flip on "Show hint" to have it spelled out.</span>
+      </div>
+      <div class="starter-buttons">
+        <button class="btn btn-moss" id="btn-preview-you">I'll go first</button>
+        <button class="btn btn-ghost" id="btn-preview-bot">Shelldon goes first</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <section id="screen-game" class="hidden">
+    <div class="status-bar">
+      <div class="status-turn" id="status-turn">
+        <span class="status-dot" id="status-dot"></span>
+        <strong id="status-turn-text">—</strong>
+      </div>
+      <span class="status-move" id="status-move-text"></span>
+    </div>
+
+    <p class="helper-text" id="helper-text"></p>
+
+    <div class="board-wrap">
+      <div class="board" id="game-board"></div>
+      <div class="move-controls hidden" id="move-controls">
+        <button class="btn btn-ghost btn-sm" id="btn-clear-selection">Clear selection</button>
+        <button class="btn btn-primary btn-sm" id="btn-confirm-move" disabled>Confirm move ▸</button>
+      </div>
+      <div class="selection-legend">
+        <span><span class="legend-swatch" style="background:var(--amber)"></span>coin turning to tails</span>
+        <span><span class="legend-swatch" style="background:var(--teal-accent)"></span>optional second flip</span>
+      </div>
+    </div>
+
+    <div class="hint-widget">
+      <label class="switch-row" for="hint-toggle-game">
+        <span class="switch-label-group">
+          <span class="switch-label">Show hint</span>
+          <span class="switch-caption">Tell me the winning move</span>
+        </span>
+        <span class="switch">
+          <input type="checkbox" id="hint-toggle-game">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </span>
+      </label>
+      <div id="hint-text-game"></div>
+    </div>
+    <div id="game-ledger-mount"></div>
+
+    <details class="panel" id="log-panel">
+      <summary>Move log</summary>
+      <div class="panel-body">
+        <ul class="log-list" id="log-list"><li class="log-empty">No moves yet.</li></ul>
+      </div>
+    </details>
+  </section>
+
+  <footer class="credit">
+    Turning Turtles is a coin-turning game devised by H.&nbsp;W.&nbsp;Lenstra.<br>
+    This app plays it out so you can see the binary strategy underneath.
+  </footer>
+</div>
+
+<!-- ===================== RULES / LEARN MODAL ===================== -->
+<div class="modal-overlay hidden" id="modal-rules">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <div class="modal-head">
+      <h2 id="rules-title">Rules &amp; strategy</h2>
+      <button class="icon-btn" id="btn-close-rules" aria-label="Close">✕</button>
+    </div>
+
+    <h3>How to play</h3>
+    <p>A row of coins is laid out, each showing heads or tails. Players alternate turns.</p>
+    <ol class="rule-steps">
+      <li><span class="rule-num">1</span><span>Choose any coin currently showing <b>heads</b> and flip it to <b>tails</b>. This part is required.</span></li>
+      <li><span class="rule-num">2</span><span>You may <b>also</b> flip exactly one other coin — but it must sit to the <b>left</b> of the coin from step 1. That one can flip in either direction.</span></li>
+      <li><span class="rule-num">3</span><span>If you can't move (no coins are heads-up), you lose. The player who plays the last coin — leaving the whole row tails — wins.</span></li>
+    </ol>
+
+    <h3>Numbering the coins</h3>
+    <p>Number the coins 1, 2, 3… from the left. This numbering is the whole secret: a coin showing heads at position <i>p</i> behaves exactly like a Nim pile holding <i>p</i> tokens.</p>
+
+    <h3>The nim-sum</h3>
+    <p>Write every heads-up position in binary and stack them up. XOR them together — add each column of digits and keep only whether the count is odd (1) or even (0), with no carrying. That result is the <b>nim-sum</b>.</p>
+    <div class="example-box">Heads-up at positions 5, 6, and 3:
+  5 = 101
+  6 = 110
+  3 = 011
+  -------
+XOR = 000  →  nim-sum is 0</div>
+    <ul>
+      <li><b>Nim-sum = 0:</b> whoever moves next is in trouble. Against perfect play, every move they make hands their opponent a winning position.</li>
+      <li><b>Nim-sum ≠ 0:</b> the player to move has a winning reply — some move brings the nim-sum back to 0.</li>
+    </ul>
+
+    <h3>Finding the winning move</h3>
+    <p>If the nim-sum <i>X</i> isn't 0, look for a heads-up coin at position <i>p</i> where <i>p</i> XOR <i>X</i> is smaller than <i>p</i>. Call that smaller number <i>t</i>.</p>
+    <ul>
+      <li>Flip the coin at position <i>p</i> to tails (the required move).</li>
+      <li>If <i>t</i> is 0, stop there — no second flip needed.</li>
+      <li>If <i>t</i> is greater than 0, also flip the coin at position <i>t</i>. It's guaranteed to be to the left of <i>p</i>, so it's always a legal second flip.</li>
+    </ul>
+    <div class="example-box">Nim-sum X = 6 (110). Heads-up coin at position p = 7 (111).
+p XOR X = 111 XOR 110 = 001 = 1, and 1 &lt; 7 ✓
+→ Flip coin 7 to tails, and flip coin 1 too.
+New nim-sum: 0 — your opponent is now stuck.</div>
+    <p>The live ledger under the board does the binary bookkeeping for you as you play — use it to check your own reasoning.</p>
+  </div>
+</div>
+
+<!-- ===================== END-OF-GAME MODAL ===================== -->
+<div class="modal-overlay hidden" id="modal-end">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="end-title">
+    <span class="result-emoji" id="end-emoji">🐢</span>
+    <h2 id="end-title">—</h2>
+    <p class="result-sub" id="end-sub">—</p>
+    <div id="end-ledger-mount"></div>
+    <div class="end-actions">
+      <button class="btn btn-moss" id="btn-play-again">Play again</button>
+      <button class="btn btn-ghost" id="btn-review-board">Review board</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  var state = {
+    phase: 'setup',       // setup | preview | playing | gameover
+    coins: [],            // [{pos, s: 'H'|'T'}]
+    n: 0,
+    current: null,        // 'human' | 'bot'
+    starter: null,
+    selection: { primary: null, secondary: null },
+    moveHistory: [],
+    moveCount: 0,
+    winner: null,
+    justFlipped: [],       // positions to animate on next render
+    hintOn: false          // whether the perfect-move hint text is revealed
+  };
+
+  var BOT_NAME = 'Shelldon';
+  var botThinking = false;
+
+  /* ============================================================
+     GAME MATH
+  ============================================================ */
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function generateBoard(){
+    var n = randInt(6, 13);
+    var coins, headCount;
+    do {
+      coins = [];
+      headCount = 0;
+      for (var i = 1; i <= n; i++){
+        var s = Math.random() < 0.5 ? 'H' : 'T';
+        if (s === 'H') headCount++;
+        coins.push({ pos: i, s: s });
+      }
+    } while (headCount === 0);
+    state.n = n;
+    state.coins = coins;
+  }
+
+  function headsPositions(coins){
+    var out = [];
+    for (var i = 0; i < coins.length; i++){
+      if (coins[i].s === 'H') out.push(coins[i].pos);
+    }
+    return out;
+  }
+
+  function nimSum(coins){
+    var heads = headsPositions(coins);
+    var x = 0;
+    for (var i = 0; i < heads.length; i++) x ^= heads[i];
+    return x;
+  }
+
+  function bitWidthFor(n){
+    return Math.max(1, n.toString(2).length);
+  }
+
+  function toBin(num, width){
+    var s = num.toString(2);
+    while (s.length < width) s = '0' + s;
+    return s;
+  }
+
+  function isTerminal(coins){
+    for (var i = 0; i < coins.length; i++){
+      if (coins[i].s === 'H') return false;
+    }
+    return true;
+  }
+
+  // Returns {primary, secondary|null}
+  function botChooseMove(coins){
+    var X = nimSum(coins);
+    var heads = headsPositions(coins);
+
+    if (X !== 0){
+      for (var i = 0; i < heads.length; i++){
+        var p = heads[i];
+        var t = p ^ X;
+        if (t < p){
+          return { primary: p, secondary: t > 0 ? t : null };
+        }
+      }
+    }
+    // Losing / fallback position: make any legal move.
+    var p2 = heads[randInt(0, heads.length - 1)];
+    var secondary = null;
+    if (p2 > 1 && Math.random() < 0.5){
+      secondary = randInt(1, p2 - 1);
+    }
+    return { primary: p2, secondary: secondary };
+  }
+
+  function applyMoveToCoins(coins, move){
+    var primaryCoin = null, secondaryCoin = null;
+    for (var i = 0; i < coins.length; i++){
+      if (coins[i].pos === move.primary) primaryCoin = coins[i];
+      if (move.secondary && coins[i].pos === move.secondary) secondaryCoin = coins[i];
+    }
+    primaryCoin.s = 'T';
+    var secInfo = null;
+    if (secondaryCoin){
+      var before = secondaryCoin.s;
+      secondaryCoin.s = (secondaryCoin.s === 'H') ? 'T' : 'H';
+      secInfo = { pos: secondaryCoin.pos, from: before, to: secondaryCoin.s };
+    }
+    return { primary: move.primary, secondary: secInfo };
+  }
+
+  /* ============================================================
+     DOM HELPERS
+  ============================================================ */
+  function $(id){ return document.getElementById(id); }
+  function esc(str){ return String(str); }
+
+  function renderCoinButton(coin, opts){
+    // opts: {clickable, kind: 'primary'|'secondary'|null, selected: 'primary'|'secondary'|null, justFlipped}
+    var classes = ['coin', coin.s === 'H' ? 'heads' : 'tails'];
+    if (opts.selected === 'primary') classes.push('sel-primary');
+    else if (opts.selected === 'secondary') classes.push('sel-secondary');
+    else if (opts.kind === 'primary') classes.push('can-primary');
+    else if (opts.kind === 'secondary') classes.push('can-secondary');
+    else if (!opts.clickable) classes.push('locked');
+
+    if (opts.justFlipped) classes.push('just-flipped');
+
+    var emoji = '🐢';
+    var label = 'Turtle ' + coin.pos + ', currently ' + (coin.s === 'H' ? 'heads-up' : 'tails-up') +
+      (opts.kind ? ('. Tap to ' + (opts.kind === 'primary' ? 'flip it to tails.' : 'flip it too.')) : '.');
+
+    var disabledAttr = opts.clickable ? '' : 'disabled';
+    var dataAttr = ' data-pos="' + coin.pos + '" data-role="' + (opts.kind || '') + '"';
+
+    return (
+      '<div class="coin-slot">' +
+        '<span class="pos-label">' + coin.pos + '</span>' +
+        '<button class="' + classes.join(' ') + '" ' + disabledAttr + dataAttr +
+          ' aria-label="' + label + '" title="' + label + '">' +
+          '<span class="emoji">' + emoji + '</span>' +
+          '<span class="state-badge">' + coin.s + '</span>' +
+        '</button>' +
+      '</div>'
+    );
+  }
+
+  function ledgerHTML(coins, opts){
+    opts = opts || {};
+    var heads = headsPositions(coins).slice().sort(function(a,b){ return a-b; });
+    var width = bitWidthFor(Math.max(state.n, 1));
+    var x = nimSum(coins);
+
+    var out = '';
+    out += '<div class="panel-sub">' + (opts.subtitle || 'Each heads-up coin\'s position, written in binary. 1s are highlighted — an odd count of them in a column makes the nim-sum 1 there.') + '</div>';
+
+    if (heads.length === 0){
+      out += '<p class="ledger-empty">No coins are heads-up — there\'s nothing left to add to the ledger.</p>';
+      out += '<div class="ledger-summary">nim-sum = 0</div>';
+      return out;
+    }
+
+    out += '<div class="ledger-scroll"><table class="ledger"><thead><tr><th style="text-align:left;">Pos</th>';
+    for (var b = width - 1; b >= 0; b--){
+      out += '<th>' + Math.pow(2, b) + '</th>';
+    }
+    out += '</tr></thead><tbody>';
+
+    for (var i = 0; i < heads.length; i++){
+      var bin = toBin(heads[i], width);
+      out += '<tr><td class="pos-cell">🐢 ' + heads[i] + '</td>';
+      for (var j = 0; j < width; j++){
+        var digit = bin[j];
+        out += '<td class="bit' + (digit === '1' ? ' bit-one' : '') + '">' + digit + '</td>';
+      }
+      out += '</tr>';
+    }
+
+    var xorBin = toBin(x, width);
+    out += '<tr class="xor-row"><td class="pos-cell">XOR</td>';
+    for (var k = 0; k < width; k++){
+      var xd = xorBin[k];
+      out += '<td class="bit' + (xd === '1' ? ' bit-one' : '') + '">' + xd + '</td>';
+    }
+    out += '</tr>';
+    out += '</tbody></table></div>';
+    out += '<div class="ledger-summary">nim-sum&nbsp; = &nbsp;' + xorBin + '<sub>2</sub>&nbsp; = &nbsp;' + x + '</div>';
+    return out;
+  }
+
+  function panelWrap(title, bodyHTML, open){
+    return (
+      '<details class="panel"' + (open ? ' open' : '') + '>' +
+        '<summary>' + title + '</summary>' +
+        '<div class="panel-body">' + bodyHTML + '</div>' +
+      '</details>'
+    );
+  }
+
+  function cardWrap(title, bodyHTML){
+    return (
+      '<div class="ledger-card">' +
+        '<h3 class="ledger-card-title">' + title + '</h3>' +
+        bodyHTML +
+      '</div>'
+    );
+  }
+
+  // The exact winning move for the current position, or null if the nim-sum is already 0
+  // (i.e. no move can save it). Mirrors botChooseMove's winning branch exactly.
+  function findWinningMove(coins){
+    var X = nimSum(coins);
+    if (X === 0) return null;
+    var heads = headsPositions(coins);
+    for (var i = 0; i < heads.length; i++){
+      var p = heads[i];
+      var t = p ^ X;
+      if (t < p) return { primary: p, secondary: t > 0 ? t : null };
+    }
+    return null;
+  }
+
+  function moveHintHTML(coins){
+    var move = findWinningMove(coins);
+    if (!move){
+      return 'Hint: there\'s no move that saves the nim-sum right now — every option hands ' + BOT_NAME + ' a nonzero board.';
+    }
+    var text = 'Hint: flip turtle <b>' + move.primary + '</b> to tails';
+    if (move.secondary){
+      text += ', and flip turtle <b>' + move.secondary + '</b> too';
+    }
+    text += ' — that leaves a nim-sum of 0.';
+    return text;
+  }
+
+  function starterHintHTML(x){
+    if (x === 0){
+      return 'Hint: the nim-sum is <b>0</b>. Whoever moves first is in trouble against perfect play — let ' + BOT_NAME + ' open if you want the edge.';
+    }
+    return 'Hint: the nim-sum is <b>' + x + '</b> (nonzero). Going first hands you a winning position, as long as you keep restoring the nim-sum to 0.';
+  }
+
+  // The ledger is always visible; the toggle only controls whether the plain-language
+  // recommendation underneath it is spelled out.
+  function hintBlockHTML(){
+    if (!state.hintOn) return '';
+    var text = '';
+    if (state.phase === 'preview'){
+      text = starterHintHTML(nimSum(state.coins));
+    } else if (state.phase === 'playing' && state.current === 'human'){
+      text = moveHintHTML(state.coins);
+    } else if (state.phase === 'playing' && state.current === 'bot'){
+      text = BOT_NAME + ' is reading this same ledger to plan its move.';
+    }
+    if (!text) return '';
+    return '<div class="hint-text">' + text + '</div>';
+  }
+
+  function ledgerCardHTML(coins){
+    return cardWrap('Nim ledger', ledgerHTML(coins));
+  }
+
+  function syncHintToggles(){
+    var pre = $('hint-toggle-preview');
+    var game = $('hint-toggle-game');
+    if (pre) pre.checked = state.hintOn;
+    if (game) game.checked = state.hintOn;
+  }
+
+  function setHint(val){
+    state.hintOn = val;
+    syncHintToggles();
+    if (state.phase === 'preview') renderPreview();
+    else if (state.phase === 'playing' || state.phase === 'gameover') renderLedgerPanel();
+  }
+
+  /* ============================================================
+     RENDER: SETUP
+  ============================================================ */
+  function showScreen(name){
+    ['setup','preview','game'].forEach(function(s){
+      $('screen-' + s).classList.toggle('hidden', s !== name);
+    });
+    $('btn-new-game').classList.toggle('hidden', name === 'setup');
+  }
+
+  /* ============================================================
+     RENDER: PREVIEW
+  ============================================================ */
+  function renderPreview(){
+    var board = $('preview-board');
+    var html = '';
+    for (var i = 0; i < state.coins.length; i++){
+      html += renderCoinButton(state.coins[i], { clickable: false, kind: null, selected: null });
+    }
+    board.innerHTML = html;
+
+    $('hint-text-preview').innerHTML = hintBlockHTML();
+    $('preview-ledger-mount').innerHTML = ledgerCardHTML(state.coins);
+    syncHintToggles();
+  }
+
+  /* ============================================================
+     RENDER: GAME
+  ============================================================ */
+  function renderStatus(){
+    var dot = $('status-dot');
+    var text = $('status-turn-text');
+    var moveText = $('status-move-text');
+
+    dot.className = 'status-dot';
+    if (state.phase === 'gameover'){
+      dot.classList.add('over');
+      text.textContent = (state.winner === 'human' ? 'You won!' : BOT_NAME + ' won.');
+    } else if (state.current === 'human'){
+      text.textContent = 'Your turn';
+    } else {
+      dot.classList.add('bot');
+      text.textContent = botThinking ? BOT_NAME + ' is thinking' : BOT_NAME + '\u2019s turn';
+      if (botThinking){
+        text.innerHTML = BOT_NAME + ' is thinking<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
+      }
+    }
+    moveText.textContent = 'Move ' + (state.moveCount + (state.phase === 'gameover' ? 0 : 1));
+    if (state.phase === 'gameover') moveText.textContent = state.moveCount + ' total moves';
+  }
+
+  function renderHelper(){
+    var helper = $('helper-text');
+    if (state.phase === 'gameover'){
+      helper.innerHTML = 'Game over — open the ledger below to see how the nim-sum landed on zero.';
+      return;
+    }
+    if (state.current === 'bot'){
+      helper.innerHTML = botThinking ? BOT_NAME + ' is working out the nim-sum…' : '&nbsp;';
+      return;
+    }
+    if (!state.selection.primary){
+      helper.innerHTML = 'Tap a <b>heads-up</b> turtle to flip it to tails.';
+    } else if (!state.selection.secondary){
+      helper.innerHTML = 'Optional: tap one turtle to the <b>left</b> of your choice to flip it too — or just confirm.';
+    } else {
+      helper.innerHTML = 'Ready — confirm your move, or clear it to start over.';
+    }
+  }
+
+  function renderBoard(){
+    var board = $('game-board');
+    var html = '';
+    var sel = state.selection;
+    var humanTurn = (state.phase === 'playing' && state.current === 'human');
+
+    for (var i = 0; i < state.coins.length; i++){
+      var coin = state.coins[i];
+      var opts = { clickable: false, kind: null, selected: null, justFlipped: state.justFlipped.indexOf(coin.pos) !== -1 };
+
+      if (humanTurn){
+        if (sel.primary === coin.pos){
+          opts.selected = 'primary';
+          opts.clickable = true;
+          opts.kind = 'primary'; // allow un-selecting
+        } else if (sel.secondary === coin.pos){
+          opts.selected = 'secondary';
+          opts.clickable = true;
+          opts.kind = 'secondary';
+        } else if (!sel.primary){
+          if (coin.s === 'H'){ opts.clickable = true; opts.kind = 'primary'; }
+        } else {
+          if (coin.pos < sel.primary){ opts.clickable = true; opts.kind = 'secondary'; }
+        }
+      }
+      html += renderCoinButton(coin, opts);
+    }
+    board.innerHTML = html;
+    state.justFlipped = [];
+
+    // move controls
+    var controls = $('move-controls');
+    if (humanTurn && sel.primary){
+      controls.classList.remove('hidden');
+      $('btn-confirm-move').disabled = false;
+    } else {
+      controls.classList.add('hidden');
+    }
+  }
+
+  function renderLedgerPanel(){
+    $('hint-text-game').innerHTML = hintBlockHTML();
+    $('game-ledger-mount').innerHTML = ledgerCardHTML(state.coins);
+    syncHintToggles();
+  }
+
+  function formatMoveLine(entry, idx){
+    var who = entry.player === 'human' ? 'You' : BOT_NAME;
+    var line = '<b>' + (idx + 1) + '. ' + who + '</b> — turtle ' + entry.primary + ' \u2192 tails';
+    if (entry.secondary){
+      var dir = entry.secondary.to === 'H' ? 'heads' : 'tails';
+      line += ', turtle ' + entry.secondary.pos + ' \u2192 ' + dir;
+    }
+    line += '. Nim-sum now ' + entry.nimSumAfter + '.';
+    return line;
+  }
+
+  function renderLog(){
+    var list = $('log-list');
+    if (state.moveHistory.length === 0){
+      list.innerHTML = '<li class="log-empty">No moves yet.</li>';
+      return;
+    }
+    var html = '';
+    for (var i = state.moveHistory.length - 1; i >= 0; i--){
+      html += '<li>' + formatMoveLine(state.moveHistory[i], i) + '</li>';
+    }
+    list.innerHTML = html;
+  }
+
+  function renderGame(){
+    renderStatus();
+    renderHelper();
+    renderBoard();
+    renderLedgerPanel();
+    renderLog();
+  }
+
+  function render(){
+    if (state.phase === 'setup'){
+      showScreen('setup');
+    } else if (state.phase === 'preview'){
+      showScreen('preview');
+      renderPreview();
+    } else {
+      showScreen('game');
+      renderGame();
+    }
+  }
+
+  /* ============================================================
+     GAME FLOW
+  ============================================================ */
+  function startGame(starter){
+    state.phase = 'playing';
+    state.current = starter;
+    state.starter = starter;
+    state.moveHistory = [];
+    state.moveCount = 0;
+    state.winner = null;
+    state.selection = { primary: null, secondary: null };
+    state.justFlipped = [];
+    render();
+    if (state.current === 'bot'){
+      scheduleBotTurn();
+    }
+  }
+
+  function afterMove(mover){
+    state.moveCount++;
+    state.selection = { primary: null, secondary: null };
+    if (isTerminal(state.coins)){
+      state.winner = mover;
+      state.phase = 'gameover';
+      render();
+      openEndModal();
+      return;
+    }
+    state.current = (mover === 'human') ? 'bot' : 'human';
+    render();
+    if (state.current === 'bot'){
+      scheduleBotTurn();
+    }
+  }
+
+  function scheduleBotTurn(){
+    botThinking = true;
+    renderStatus();
+    renderHelper();
+    setTimeout(doBotTurn, 850 + randInt(0, 400));
+  }
+
+  function doBotTurn(){
+    botThinking = false;
+    var move = botChooseMove(state.coins);
+    var info = applyMoveToCoins(state.coins, move);
+    state.justFlipped = [info.primary];
+    if (info.secondary) state.justFlipped.push(info.secondary.pos);
+    state.moveHistory.push({
+      player: 'bot',
+      primary: info.primary,
+      secondary: info.secondary,
+      nimSumAfter: nimSum(state.coins)
+    });
+    afterMove('bot');
+  }
+
+  function confirmHumanMove(){
+    var sel = state.selection;
+    if (!sel.primary) return;
+    var move = { primary: sel.primary, secondary: sel.secondary || null };
+    var info = applyMoveToCoins(state.coins, move);
+    state.justFlipped = [info.primary];
+    if (info.secondary) state.justFlipped.push(info.secondary.pos);
+    state.moveHistory.push({
+      player: 'human',
+      primary: info.primary,
+      secondary: info.secondary,
+      nimSumAfter: nimSum(state.coins)
+    });
+    afterMove('human');
+  }
+
+  function handleBoardClick(e){
+    var btn = e.target.closest('button.coin');
+    if (!btn || btn.disabled) return;
+    if (state.phase !== 'playing' || state.current !== 'human') return;
+
+    var pos = parseInt(btn.getAttribute('data-pos'), 10);
+    var role = btn.getAttribute('data-role');
+    var sel = state.selection;
+
+    if (!sel.primary){
+      if (role === 'primary'){
+        sel.primary = pos;
+      }
+    } else if (pos === sel.primary){
+      // toggle off primary selection entirely
+      sel.primary = null;
+      sel.secondary = null;
+    } else if (role === 'secondary'){
+      sel.secondary = (sel.secondary === pos) ? null : pos;
+    }
+    renderBoard();
+    renderHelper();
+  }
+
+  function clearSelection(){
+    state.selection = { primary: null, secondary: null };
+    renderBoard();
+    renderHelper();
+  }
+
+  /* ============================================================
+     MODALS
+  ============================================================ */
+  function openModal(id){ $(id).classList.remove('hidden'); }
+  function closeModal(id){ $(id).classList.add('hidden'); }
+
+  function openEndModal(){
+    var won = state.winner === 'human';
+    $('end-emoji').textContent = won ? '🏆' : '🐢';
+    $('end-title').textContent = won ? 'You win!' : BOT_NAME + ' wins.';
+    $('end-sub').textContent = won
+      ? 'You made the final flip — every coin is tails.'
+      : BOT_NAME + ' made the final flip. Check the ledger to see where the nim-sum turned against you.';
+    $('end-ledger-mount').innerHTML = panelWrap('Full game recap', renderRecapHTML(), false);
+    openModal('modal-end');
+  }
+
+  function renderRecapHTML(){
+    var html = '<ul class="log-list">';
+    if (state.moveHistory.length === 0){
+      html += '<li class="log-empty">No moves were made.</li>';
+    } else {
+      for (var i = 0; i < state.moveHistory.length; i++){
+        html += '<li>' + formatMoveLine(state.moveHistory[i], i) + '</li>';
+      }
+    }
+    html += '</ul>';
+    return html;
+  }
+
+  function newGame(){
+    state.phase = 'setup';
+    state.coins = [];
+    state.n = 0;
+    state.current = null;
+    state.starter = null;
+    state.selection = { primary: null, secondary: null };
+    state.moveHistory = [];
+    state.moveCount = 0;
+    state.winner = null;
+    state.justFlipped = [];
+    botThinking = false;
+    render();
+  }
+
+  /* ============================================================
+     WIRE UP
+  ============================================================ */
+  $('btn-you-first').addEventListener('click', function(){
+    generateBoard();
+    startGame('human');
+  });
+  $('btn-bot-first').addEventListener('click', function(){
+    generateBoard();
+    startGame('bot');
+  });
+  $('btn-preview').addEventListener('click', function(){
+    generateBoard();
+    state.phase = 'preview';
+    render();
+  });
+
+  $('btn-preview-you').addEventListener('click', function(){ startGame('human'); });
+  $('btn-preview-bot').addEventListener('click', function(){ startGame('bot'); });
+
+  $('hint-toggle-preview').addEventListener('change', function(e){ setHint(e.target.checked); });
+  $('hint-toggle-game').addEventListener('change', function(e){ setHint(e.target.checked); });
+
+  $('game-board').addEventListener('click', handleBoardClick);
+  $('btn-clear-selection').addEventListener('click', clearSelection);
+  $('btn-confirm-move').addEventListener('click', confirmHumanMove);
+
+  $('btn-open-rules').addEventListener('click', function(){ openModal('modal-rules'); });
+  $('btn-close-rules').addEventListener('click', function(){ closeModal('modal-rules'); });
+  $('modal-rules').addEventListener('click', function(e){
+    if (e.target === $('modal-rules')) closeModal('modal-rules');
+  });
+
+  $('btn-new-game').addEventListener('click', function(){
+    if (state.phase === 'playing' && state.moveHistory.length > 0){
+      if (!confirm('Start a new game? Your current game will be lost.')) return;
+    }
+    newGame();
+  });
+
+  $('btn-play-again').addEventListener('click', function(){
+    closeModal('modal-end');
+    newGame();
+  });
+  $('btn-review-board').addEventListener('click', function(){
+    closeModal('modal-end');
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){
+      closeModal('modal-rules');
+    }
+  });
+
+  /* init */
+  render();
+})();
+</script>
+</body>
+</html>
