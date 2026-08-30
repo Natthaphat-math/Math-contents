@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quick Maths — Speed-Math Training Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  :root{
+    --desk:#10162B;
+    --desk-2:#161F3D;
+    --desk-line: rgba(231,236,243,0.09);
+    --desk-text:#E7ECF3;
+    --desk-text-muted:#8C99C2;
+    --paper:#E9EEF0;
+    --paper-2:#FFFFFF;
+    --ink:#1B2340;
+    --ink-soft:#5B6584;
+    --line: rgba(27,35,64,0.13);
+    --grid: rgba(27,35,64,0.055);
+    --amber:#F2A93B;
+    --amber-ink:#7A4E0B;
+    --amber-deep:#C4841F;
+    --teal:#12B3A0;
+    --teal-deep:#0C8578;
+    --coral:#FF6E5A;
+    --r-sm:8px;
+    --r-md:14px;
+    --r-lg:22px;
+    --shadow: 0 10px 30px rgba(6,9,22,0.35);
+    --shadow-soft: 0 4px 14px rgba(6,9,22,0.12);
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1B2547 0%, var(--desk) 55%);
+    color:var(--desk-text);
+    font-family:'Manrope',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:48px;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 18px;}
+
+  /* ---------- Header ---------- */
+  header.top{padding:28px 18px 18px;text-align:center;}
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--desk-text-muted);
+    margin:0 0 6px;
+  }
+  .wordmark{
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:30px;
+    letter-spacing:-0.01em;
+    margin:0;
+    color:var(--desk-text);
+  }
+  .wordmark span{color:var(--amber);}
+  .tagline{
+    color:var(--desk-text-muted);
+    font-size:14px;
+    margin:8px 0 0;
+    line-height:1.5;
+  }
+
+  /* ---------- Segmented controls ---------- */
+  .control-row{margin:18px 0;}
+  .control-label{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--desk-text-muted);
+    margin:0 0 8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .seg{
+    display:flex;
+    gap:8px;
+  }
+  .seg button{
+    flex:1;
+    background:var(--desk-2);
+    border:1px solid var(--desk-line);
+    color:var(--desk-text-muted);
+    font-family:'Manrope',sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    padding:11px 8px;
+    border-radius:var(--r-sm);
+    cursor:pointer;
+    transition:transform .12s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    line-height:1.25;
+  }
+  .seg button .sub{display:block;font-weight:500;font-size:11px;opacity:.8;margin-top:2px;}
+  .seg button:hover{border-color:rgba(231,236,243,0.25);}
+  .seg button:active{transform:scale(0.97);}
+  .seg button.active{
+    background:var(--amber);
+    color:#241804;
+    border-color:var(--amber);
+  }
+  .seg button.active .sub{opacity:.75;}
+  .seg button:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--teal);
+    outline-offset:2px;
+  }
+  .level-note{
+    font-size:12.5px;
+    color:var(--desk-text-muted);
+    margin:9px 2px 0;
+    line-height:1.5;
+  }
+
+  /* ---------- Paper stage ---------- */
+  .paper{
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/100% 24px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/24px 100%,
+      var(--paper);
+    border-radius:var(--r-lg);
+    padding:22px 18px 20px;
+    box-shadow:var(--shadow);
+    margin:20px 0;
+    color:var(--ink);
+  }
+  .stage-label{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+    text-align:center;
+  }
+
+  .tiles{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+    perspective:600px;
+  }
+  .tile{
+    width:56px;
+    height:64px;
+    background:linear-gradient(180deg, #1E2748, #141A32);
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:26px;
+    color:var(--desk-text);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 6px 14px rgba(10,14,30,0.35);
+    transform-style:preserve-3d;
+    transition:transform .32s cubic-bezier(.5,0,.2,1);
+  }
+  .tile.flip{transform:rotateX(90deg);}
+  @media (prefers-reduced-motion: reduce){
+    .tile{transition:none;}
+    .tile.flip{transform:none;}
+  }
+
+  .equals-row{
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:2px 0 14px;
+    font-style:italic;
+  }
+
+  .target-readout{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:6px;
+  }
+  .target-digit{
+    width:46px;
+    height:60px;
+    background:linear-gradient(180deg,#FFD98A,var(--amber));
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:30px;
+    color:#241804;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 6px 14px rgba(196,132,31,0.35);
+    transform-style:preserve-3d;
+    transition:transform .32s cubic-bezier(.5,0,.2,1);
+  }
+  .target-digit.flip{transform:rotateX(90deg);}
+  @media (prefers-reduced-motion: reduce){
+    .target-digit{transition:none;}
+    .target-digit.flip{transform:none;}
+  }
+  .target-caption{
+    text-align:center;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-family:'Space Mono',monospace;
+    margin-bottom:18px;
+  }
+
+  .btn{
+    display:block;
+    width:100%;
+    border:none;
+    border-radius:var(--r-sm);
+    padding:14px 16px;
+    font-family:'Manrope',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    cursor:pointer;
+    transition:transform .12s ease, filter .15s ease, opacity .15s ease;
+    text-align:center;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{
+    background:var(--desk);
+    color:var(--desk-text);
+    box-shadow:0 6px 16px rgba(16,22,43,0.35);
+  }
+  .btn-primary:hover{filter:brightness(1.15);}
+  .btn-teal{
+    background:var(--teal);
+    color:#04231F;
+  }
+  .btn-teal:hover{filter:brightness(1.08);}
+  .btn-ghost{
+    background:transparent;
+    color:var(--ink);
+    border:1.5px solid var(--line);
+  }
+  .btn-ghost:hover{border-color:var(--ink-soft);}
+  .btn[disabled]{opacity:.55;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;margin-top:10px;}
+  .btn-row .btn{flex:1;}
+
+  /* ---------- Scratchpad ---------- */
+  .scratch-label{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:2px 0 8px;
+    line-height:1.5;
+  }
+  textarea.scratch{
+    width:100%;
+    min-height:64px;
+    resize:vertical;
+    background:var(--paper-2);
+    border:1.5px dashed var(--line);
+    border-radius:var(--r-sm);
+    padding:10px 12px;
+    font-family:'Space Mono',monospace;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  textarea.scratch::placeholder{color:#9AA3BE;}
+
+  /* ---------- Solution panel ---------- */
+  .solution{
+    margin-top:16px;
+    display:none;
+  }
+  .solution.open{display:block;}
+  .sol-badge{
+    display:inline-block;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:5px 10px;
+    border-radius:999px;
+    margin-bottom:10px;
+    font-weight:700;
+  }
+  .sol-badge.exact{background:rgba(18,179,160,0.15);color:var(--teal-deep);}
+  .sol-badge.close{background:rgba(242,169,59,0.18);color:var(--amber-ink);}
+  .sol-card{
+    background:var(--paper-2);
+    border-radius:var(--r-md);
+    padding:16px 14px;
+    box-shadow: var(--shadow-soft);
+    overflow-x:auto;
+  }
+  .sol-card .katex-display{margin:0;}
+  .sol-note{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    line-height:1.5;
+  }
+  .alts{margin-top:14px;}
+  .alts-title{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+  }
+  .alt-card{
+    background:var(--paper-2);
+    border-radius:var(--r-sm);
+    padding:10px 12px;
+    margin-bottom:8px;
+    box-shadow: var(--shadow-soft);
+    overflow-x:auto;
+  }
+  .alt-card .katex-display{margin:0;font-size:0.85em;}
+
+  /* ---------- Custom panel ---------- */
+  .field-row{display:flex;gap:10px;margin-bottom:10px;}
+  .field{flex:1;}
+  .field label{
+    display:block;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+    font-family:'Space Mono',monospace;
+    letter-spacing:.04em;
+  }
+  .field input{
+    width:100%;
+    padding:11px 12px;
+    border-radius:var(--r-sm);
+    border:1.5px solid var(--line);
+    background:var(--paper-2);
+    font-family:'Space Mono',monospace;
+    font-size:14.5px;
+    color:var(--ink);
+  }
+  .field input:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+  .form-error{
+    color:#B23A2E;
+    font-size:12.5px;
+    margin:4px 2px 0;
+    min-height:16px;
+  }
+
+  /* ---------- Rulebook ---------- */
+  .rulebook summary{
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:2px 0 6px;
+  }
+  .rulebook summary::-webkit-details-marker{display:none;}
+  .rulebook summary .chev{transition:transform .2s ease;font-family:sans-serif;}
+  .rulebook[open] summary .chev{transform:rotate(90deg);}
+  .rule-block{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+  .rule-block:first-of-type{border-top:none;}
+  .rule-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .rule-tag{
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:12px;
+    padding:3px 8px;
+    border-radius:5px;
+    color:#fff;
+  }
+  .rule-tag.l1{background:#3E4A7A;}
+  .rule-tag.l2{background:var(--amber-deep);}
+  .rule-tag.l3{background:var(--coral);}
+  .rule-title{font-weight:700;font-size:14px;}
+  .rule-block p{font-size:13px;line-height:1.55;color:var(--ink);margin:6px 0;}
+  .rule-block .ex{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    background:var(--grid);
+    border-radius:6px;
+    padding:8px 10px;
+    margin-top:6px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  .digit-rule{
+    font-size:13px;
+    line-height:1.6;
+    color:var(--ink);
+    margin:0 0 4px;
+  }
+
+  footer{
+    text-align:center;
+    color:var(--desk-text-muted);
+    font-size:11.5px;
+    padding:26px 18px 4px;
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p class="eyebrow">practice bench</p>
+  <h1 class="wordmark">QUICK<span>MATHS</span></h1>
+  <p class="tagline">Build the target from the numbers you're dealt.<br>Then see the cleanest way it's done.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="control-row">
+    <p class="control-label"><span>Level</span></p>
+    <div class="seg" id="levelSeg">
+      <button data-level="1">1<span class="sub">Core ops</span></button>
+      <button data-level="2">2<span class="sub">+ Roots</span></button>
+      <button data-level="3" class="active">3<span class="sub">+ Facts &amp; Σ</span></button>
+    </div>
+    <p class="level-note" id="levelNote"></p>
+  </div>
+
+  <div class="control-row">
+    <p class="control-label"><span>Format</span></p>
+    <div class="seg" id="typeSeg">
+      <button data-type="A" class="active">4 numbers<span class="sub">2-digit target</span></button>
+      <button data-type="B">5 numbers<span class="sub">3-digit target</span></button>
+    </div>
+  </div>
+
+  <div class="paper">
+    <p class="stage-label">The Problem</p>
+    <div class="tiles" id="tiles"></div>
+    <p class="equals-row">use every number once to reach —</p>
+    <div class="target-readout" id="targetReadout"></div>
+    <p class="target-caption" id="targetCaption">target</p>
+    <button class="btn btn-primary" id="newProblemBtn">⟳ New Problem</button>
+  </div>
+
+  <div class="paper">
+    <p class="stage-label">Your Working</p>
+    <p class="scratch-label">Scratch it out before you peek — this box isn't graded, it's just for your head to catch up to your hands.</p>
+    <textarea class="scratch" id="scratchpad" placeholder="e.g. (9 × 7) + (5 × 4) ..."></textarea>
+    <button class="btn btn-teal" id="revealBtn" style="margin-top:12px;">Reveal Best Solution</button>
+
+    <div class="solution" id="solutionBox">
+      <div id="solBadgeWrap"></div>
+      <div class="sol-card" id="solCard"></div>
+      <p class="sol-note" id="solNote"></p>
+
+      <div class="alts" id="altsWrap" style="display:none;">
+        <p class="alts-title">Other ways in</p>
+        <div id="altsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="paper">
+    <p class="stage-label">Build Your Own</p>
+    <p class="scratch-label">Type a problem you've written yourself and see how the solver would tackle it.</p>
+    <div class="field-row" id="customDigitsRow"></div>
+    <div class="field-row">
+      <div class="field">
+        <label for="customTarget">Target</label>
+        <input id="customTarget" inputmode="numeric" placeholder="e.g. 83">
+      </div>
+    </div>
+    <p class="form-error" id="customError"></p>
+    <button class="btn btn-ghost" id="customSolveBtn">Solve This</button>
+  </div>
+
+  <details class="rulebook">
+    <summary><span>Rulebook</span><span class="chev">›</span></summary>
+
+    <div class="rule-block">
+      <p class="digit-rule"><strong>Drawing the numbers.</strong> Every digit comes from 0–9. Zero can show up at most once. Any other digit can repeat, but never more than twice.</p>
+      <div class="ex">valid&nbsp;&nbsp; 2 1 2 7 &nbsp;&nbsp;·&nbsp;&nbsp; invalid&nbsp;&nbsp; 2 1 2 2 (three 2s)&nbsp;&nbsp;·&nbsp;&nbsp; invalid&nbsp;&nbsp; 0 0 5 4 (two 0s)</div>
+    </div>
+
+    <div class="rule-block">
+      <div class="rule-head"><span class="rule-tag l1">L1</span><span class="rule-title">Core operations</span></div>
+      <p>Addition, subtraction, multiplication, division, and exponents. Combine all the dealt numbers, each used exactly once.</p>
+      <div class="ex" id="ex-l1"></div>
+    </div>
+
+    <div class="rule-block">
+      <div class="rule-head"><span class="rule-tag l2">L2</span><span class="rule-title">+ nth roots</span></div>
+      <p>Everything from Level 1, plus the principal nth root — only when it lands on a whole number. The root's index must be one of your dealt numbers, except the square root, which is free to use without spending a "2". Roots can't nest inside other roots at this level.</p>
+      <div class="ex" id="ex-l2"></div>
+    </div>
+
+    <div class="rule-block">
+      <div class="rule-head"><span class="rule-tag l3">L3</span><span class="rule-title">+ factorials &amp; summation</span></div>
+      <p>Everything from Level 2. Factorials stack as deep as you like, as long as the grouping is unambiguous — <span style="font-family:'Space Mono',monospace;">(3!)! = 720</span>. Roots may now nest two layers deep. Summation (Σ) sweeps <span style="font-family:'Space Mono',monospace;">i</span> across a range built from your dealt numbers.</p>
+      <div class="ex" id="ex-l3"></div>
+      <p style="margin-top:10px;font-size:12px;color:var(--ink-soft);">Solver note: the auto-solver searches root chains up to two layers, factorial chains up to two deep, and six summation patterns — Σi, Σ(i+i), Σ(i×i), Σiⁱ, Σi^(i!) and Σ(i!/i) — with both bounds built from any expression in your numbers.</p>
+    </div>
+  </details>
+
+  <footer>Numbers are dealt at random within the rules above. If no exact route exists, the solver shows the closest one it found.</footer>
+</div>
+
+<script>
+/* ============================================================
+   SOLVER ENGINE
+   ============================================================ */
+const MAX_VALUE = 1e6;
+const EPS = 1e-6;
+
+function isNearInt(x){ return Math.abs(x - Math.round(x)) < EPS; }
+function popcount(m){ let c=0; while(m){ c+=m&1; m>>=1; } return c; }
+function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function isWrapped(expr){
+  if (expr[0] !== '(' || expr[expr.length-1] !== ')') return false;
+  let depth = 0;
+  for (let i=0;i<expr.length;i++){
+    if (expr[i]==='(') depth++;
+    else if (expr[i]===')'){ depth--; if (depth===0 && i!==expr.length-1) return false; }
+  }
+  return true;
+}
+function wrap(expr){ return isWrapped(expr) ? expr : `(${expr})`; }
+
+function pushV(out, value, expr){
+  if (!Number.isFinite(value)) return;
+  if (Math.abs(value) > MAX_VALUE) return;
+  out.push({value, expr, rootChain:0, factChain:0});
+}
+
+function tryPow(base, exp, baseExpr, expExpr, out){
+  if (!Number.isFinite(base) || !Number.isFinite(exp)) return;
+  if (Math.abs(exp) > 12) return;
+  if (base === 0 && exp <= 0) return;
+  if (base < 0 && !Number.isInteger(exp)) return;
+  const val = Math.pow(base, exp);
+  if (!Number.isFinite(val) || Math.abs(val) > MAX_VALUE) return;
+  out.push({value: val, expr: `${baseExpr}^{${expExpr}}`, rootChain:0, factChain:0});
+}
+
+function tryRoot(index, radicand, indexExpr, radicandExpr, out){
+  if (!isNearInt(index)) return;
+  const n = Math.round(index);
+  if (n < 2 || n > 12) return;
+  if (radicand < 0) return;
+  const r = Math.pow(radicand, 1/n);
+  if (!Number.isFinite(r)) return;
+  const val = Math.round(r);
+  if (Math.abs(val - r) < 1e-4 && Math.abs(Math.pow(val, n) - radicand) < 1e-3){
+    out.push({value: val, expr: `\\sqrt[${indexExpr}]{${radicandExpr}}`, rootChain:1, factChain:0});
+  }
+}
+
+function combine(a, b, level, out){
+  const A=a.value, B=b.value;
+  pushV(out, A+B, `(${a.expr}+${b.expr})`);
+  pushV(out, A-B, `(${a.expr}-${b.expr})`);
+  pushV(out, B-A, `(${b.expr}-${a.expr})`);
+  pushV(out, A*B, `(${a.expr}\\times ${b.expr})`);
+  if (Math.abs(B) > EPS) pushV(out, A/B, `(${a.expr}\\div ${b.expr})`);
+  if (Math.abs(A) > EPS) pushV(out, B/A, `(${b.expr}\\div ${a.expr})`);
+  tryPow(A,B,a.expr,b.expr,out);
+  tryPow(B,A,b.expr,a.expr,out);
+  if (level >= 2){
+    tryRoot(A,B,a.expr,b.expr,out);
+    tryRoot(B,A,b.expr,a.expr,out);
+  }
+}
+
+function trySum(aEntry, bEntry, level, out){
+  if (level < 3) return;
+  if (!isNearInt(aEntry.value) || !isNearInt(bEntry.value)) return;
+  const lo = Math.round(aEntry.value), hi = Math.round(bEntry.value);
+  if (lo < 0 || hi < lo || hi > 30 || hi - lo > 30) return;
+
+  const sumLinear = n => n*(n+1)/2;
+  const sumSquares = n => n*(n+1)*(2*n+1)/6;
+  const n1 = hi, n0 = lo - 1;
+
+  const closedForm = [
+    { tex:'i',           fn:() => sumLinear(n1) - sumLinear(n0) },
+    { tex:'i+i',         fn:() => 2*(sumLinear(n1) - sumLinear(n0)) },
+    { tex:'i\\times i',  fn:() => sumSquares(n1) - sumSquares(n0) },
+  ];
+  for (const p of closedForm){
+    const val = p.fn();
+    if (!Number.isFinite(val) || Math.abs(val) > MAX_VALUE) continue;
+    out.push({ value: val, expr: `\\sum_{i=${aEntry.expr}}^{${bEntry.expr}}\\left(${p.tex}\\right)`, rootChain:0, factChain:0 });
+  }
+
+  // patterns below involve i in an exponent or denominator - only sound for i >= 1
+  if (lo >= 1){
+    const looped = [
+      { tex:'i^{i}',          term:i => Math.pow(i, i) },
+      { tex:'i^{i!}',         term:i => Math.pow(i, factorial(i)) },
+      { tex:'\\frac{i!}{i}',  term:i => factorial(i) / i },
+    ];
+    for (const p of looped){
+      let total = 0, ok = true;
+      for (let i = lo; i <= hi; i++){
+        const t = p.term(i);
+        if (!Number.isFinite(t) || Math.abs(t) > MAX_VALUE){ ok = false; break; }
+        total += t;
+        if (Math.abs(total) > MAX_VALUE){ ok = false; break; }
+      }
+      if (ok){
+        out.push({ value: total, expr: `\\sum_{i=${aEntry.expr}}^{${bEntry.expr}}\\left(${p.tex}\\right)`, rootChain:0, factChain:0 });
+      }
+    }
+  }
+}
+
+function applyUnary(entry, level, out){
+  if (level >= 2){
+    const maxRootDepth = level === 2 ? 1 : 2;
+    if (entry.value >= 0 && entry.rootChain < maxRootDepth){
+      const r = Math.sqrt(entry.value);
+      if (isNearInt(r)){
+        out.push({ value: Math.round(r), expr: `\\sqrt{${entry.expr}}`, rootChain: entry.rootChain+1, factChain:0 });
+      }
+    }
+  }
+  if (level >= 3){
+    if (isNearInt(entry.value) && entry.value >= 0 && entry.value <= 10 && entry.factChain < 2){
+      const val = factorial(Math.round(entry.value));
+      if (val <= MAX_VALUE){
+        out.push({ value: val, expr: `${wrap(entry.expr)}!`, rootChain:0, factChain: entry.factChain+1 });
+      }
+    }
+  }
+}
+
+function expandUnary(baseEntries, level){
+  let all = baseEntries.slice();
+  let frontier = baseEntries;
+  for (let pass=0; pass<2; pass++){
+    const next = [];
+    for (const e of frontier){
+      const out = [];
+      applyUnary(e, level, out);
+      for (const o of out){ all.push(o); next.push(o); }
+    }
+    frontier = next;
+    if (!frontier.length) break;
+  }
+  return all;
+}
+
+function spreadSample(list, cap){
+  if (list.length <= cap) return list;
+  const sorted = list.slice().sort((a,b)=>a.value-b.value);
+  const step = sorted.length/cap;
+  const out = [];
+  for (let i=0;i<cap;i++) out.push(sorted[Math.floor(i*step)]);
+  return out;
+}
+
+function dedupeCap(entries, cap){
+  const seen = new Map();
+  for (const e of entries){
+    const key = Math.round(e.value*10000)/10000;
+    const existing = seen.get(key);
+    if (!existing || e.expr.length < existing.expr.length) seen.set(key, e);
+  }
+  const all = Array.from(seen.values());
+  const ints = all.filter(e => isNearInt(e.value));
+  const floats = all.filter(e => !isNearInt(e.value));
+  const intCap = Math.round(cap*0.85);
+  const floatCap = cap - intCap;
+  ints.sort((a,b)=>a.expr.length-b.expr.length);
+  const floatsSorted = floats.slice().sort((a,b)=>a.expr.length-b.expr.length);
+  const intsPool = ints.slice(0, Math.max(intCap*2, 200));
+  const floatsPool = floatsSorted.slice(0, Math.max(floatCap*2, 100));
+  return spreadSample(intsPool, intCap).concat(spreadSample(floatsPool, floatCap));
+}
+
+function solveExpr(numbers, target, level, cap){
+  const n = numbers.length;
+  const dp = {};
+  for (let i=0;i<n;i++){
+    const mask = 1<<i;
+    const base = [{ value:numbers[i], expr:String(numbers[i]), rootChain:0, factChain:0 }];
+    dp[mask] = dedupeCap(expandUnary(base, level), cap);
+  }
+  const masks = [];
+  for (let m=1; m<(1<<n); m++) if (popcount(m) > 1) masks.push(m);
+  masks.sort((a,b)=>popcount(a)-popcount(b));
+  for (const mask of masks){
+    const entries = [];
+    for (let sub=(mask-1)&mask; sub>0; sub=(sub-1)&mask){
+      const other = mask ^ sub;
+      if (sub >= other) continue;
+      if (!dp[sub] || !dp[other]) continue;
+      for (const a of dp[sub]){
+        for (const b of dp[other]){
+          combine(a,b,level,entries);
+          if (level === 3){
+            trySum(a,b,level,entries);
+            trySum(b,a,level,entries);
+          }
+        }
+      }
+    }
+    dp[mask] = dedupeCap(expandUnary(entries, level), cap);
+  }
+  const full = dp[(1<<n)-1] || [];
+  full.sort((x,y)=> Math.abs(x.value-target)-Math.abs(y.value-target) || x.expr.length-y.expr.length);
+  return full;
+}
+
+/* ============================================================
+   PROBLEM GENERATION
+   ============================================================ */
+function genNumbers(n){
+  while (true){
+    const arr = Array.from({length:n}, () => Math.floor(Math.random()*10));
+    const counts = {};
+    let ok = true;
+    for (const d of arr){
+      counts[d] = (counts[d]||0) + 1;
+      if (d === 0 ? counts[d] > 1 : counts[d] > 2){ ok = false; break; }
+    }
+    if (ok) return arr;
+  }
+}
+function validDigits(arr){
+  const counts = {};
+  for (const d of arr){
+    if (!Number.isInteger(d) || d < 0 || d > 9) return false;
+    counts[d] = (counts[d]||0) + 1;
+    if (d === 0 ? counts[d] > 1 : counts[d] > 2) return false;
+  }
+  return true;
+}
+function genTarget(type){
+  return type === 'A' ? (11 + Math.floor(Math.random()*89)) : (111 + Math.floor(Math.random()*889));
+}
+
+/* ============================================================
+   STATE + UI
+   ============================================================ */
+const state = { level: 3, type: 'A', numbers: [], target: 0 };
+
+function digitCount(type){ return type === 'A' ? 4 : 5; }
+function solveCap(type){ return type === 'A' ? 1500 : 220; }
+
+function renderMath(el, latex, displayMode){
+  try{
+    katex.render(latex, el, { throwOnError:false, displayMode: !!displayMode, strict:false });
+  }catch(e){
+    el.textContent = latex;
+  }
+}
+
+function fmtValue(v){
+  return isNearInt(v) ? String(Math.round(v)) : v.toFixed(2);
+}
+
+function buildTiles(){
+  const wrap = document.getElementById('tiles');
+  wrap.innerHTML = '';
+  state.numbers.forEach((d,i) => {
+    const t = document.createElement('div');
+    t.className = 'tile';
+    t.textContent = d;
+    t.dataset.i = i;
+    wrap.appendChild(t);
+  });
+}
+function buildTargetReadout(){
+  const wrap = document.getElementById('targetReadout');
+  wrap.innerHTML = '';
+  String(state.target).split('').forEach(ch => {
+    const d = document.createElement('div');
+    d.className = 'target-digit';
+    d.textContent = ch;
+    wrap.appendChild(d);
+  });
+  document.getElementById('targetCaption').textContent =
+    state.type === 'A' ? 'target · 2 digits' : 'target · 3 digits';
+}
+
+function flipAndSet(el, newText){
+  el.classList.add('flip');
+  setTimeout(() => {
+    el.textContent = newText;
+    el.classList.remove('flip');
+  }, 160);
+}
+
+function newProblem(animate){
+  state.numbers = genNumbers(digitCount(state.type));
+  state.target = genTarget(state.type);
+  closeSolution();
+
+  const tileEls = document.querySelectorAll('#tiles .tile');
+  const targetEls = document.querySelectorAll('#targetReadout .target-digit');
+  const needsRebuild = tileEls.length !== state.numbers.length ||
+                        targetEls.length !== String(state.target).length;
+
+  if (!animate || needsRebuild){
+    buildTiles();
+    buildTargetReadout();
+    return;
+  }
+  tileEls.forEach((el,i) => flipAndSet(el, state.numbers[i]));
+  const digits = String(state.target).split('');
+  targetEls.forEach((el,i) => flipAndSet(el, digits[i]));
+}
+
+function levelLabel(l){
+  return l===1 ? 'core operations only.' :
+         l===2 ? 'core operations plus principal roots.' :
+                 'everything, plus factorials and Σ summation.';
+}
+function updateLevelNote(){
+  document.getElementById('levelNote').textContent = 'Allowed this round: ' + levelLabel(state.level);
+}
+
+function closeSolution(){
+  document.getElementById('solutionBox').classList.remove('open');
+  document.getElementById('revealBtn').textContent = 'Reveal Best Solution';
+}
+
+function showSolution(numbers, target, level){
+  const results = solveExpr(numbers, target, level, solveCap(state.type));
+  const box = document.getElementById('solutionBox');
+  const badgeWrap = document.getElementById('solBadgeWrap');
+  const card = document.getElementById('solCard');
+  const note = document.getElementById('solNote');
+  const altsWrap = document.getElementById('altsWrap');
+  const altsList = document.getElementById('altsList');
+
+  if (!results.length){
+    badgeWrap.innerHTML = '';
+    card.innerHTML = '<p style="font-size:13px;color:var(--ink-soft);margin:0;">No route found inside the search limits for this problem — try New Problem for a fresh deal.</p>';
+    note.textContent = '';
+    altsWrap.style.display = 'none';
+    box.classList.add('open');
+    return;
+  }
+
+  const best = results[0];
+  const diff = Math.abs(best.value - target);
+  const exact = diff < 1e-6;
+
+  badgeWrap.innerHTML = `<span class="sol-badge ${exact ? 'exact' : 'close'}">${exact ? 'Exact match' : 'Closest found · off by ' + fmtValue(diff)}</span>`;
+  renderMath(card, `${best.expr} = ${fmtValue(best.value)}`, true);
+  note.textContent = exact
+    ? 'Every number used exactly once, landing right on target.'
+    : `No exact route turned up in the search — this is the nearest value the solver reached (target was ${target}).`;
+
+  const seen = new Set([Math.round(best.value*10000)]);
+  const alts = [];
+  for (const r of results.slice(1)){
+    const key = Math.round(r.value*10000);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    alts.push(r);
+    if (alts.length >= 3) break;
+  }
+  if (alts.length){
+    altsList.innerHTML = '';
+    alts.forEach(r => {
+      const d = document.createElement('div');
+      d.className = 'alt-card';
+      altsList.appendChild(d);
+      renderMath(d, `${r.expr} = ${fmtValue(r.value)}`, true);
+    });
+    altsWrap.style.display = 'block';
+  } else {
+    altsWrap.style.display = 'none';
+  }
+
+  box.classList.add('open');
+}
+
+/* ---------- Level / Type controls ---------- */
+document.getElementById('levelSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#levelSeg button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.level = Number(btn.dataset.level);
+  updateLevelNote();
+  closeSolution();
+});
+document.getElementById('typeSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#typeSeg button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.type = btn.dataset.type;
+  buildCustomDigitFields();
+  newProblem(false);
+});
+
+document.getElementById('newProblemBtn').addEventListener('click', () => newProblem(true));
+
+document.getElementById('revealBtn').addEventListener('click', () => {
+  const btn = document.getElementById('revealBtn');
+  const box = document.getElementById('solutionBox');
+  if (box.classList.contains('open')){ closeSolution(); return; }
+  btn.textContent = 'Solving…';
+  setTimeout(() => {
+    showSolution(state.numbers, state.target, state.level);
+    btn.textContent = 'Hide Solution';
+  }, 30);
+});
+
+/* ---------- Custom panel ---------- */
+function buildCustomDigitFields(){
+  const row = document.getElementById('customDigitsRow');
+  row.innerHTML = '';
+  const n = digitCount(state.type);
+  for (let i=0;i<n;i++){
+    const f = document.createElement('div');
+    f.className = 'field';
+    f.style.flex = '1 1 0';
+    f.innerHTML = `<label for="cd${i}">#${i+1}</label><input id="cd${i}" inputmode="numeric" maxlength="1" placeholder="0-9">`;
+    row.appendChild(f);
+  }
+  document.getElementById('customTarget').placeholder = state.type === 'A' ? 'e.g. 83' : 'e.g. 512';
+}
+buildCustomDigitFields();
+
+document.getElementById('customSolveBtn').addEventListener('click', () => {
+  const n = digitCount(state.type);
+  const errorEl = document.getElementById('customError');
+  const nums = [];
+  for (let i=0;i<n;i++){
+    const raw = document.getElementById('cd'+i).value.trim();
+    if (raw === '' || !/^\d$/.test(raw)){
+      errorEl.textContent = `Enter a single digit (0–9) in every box — box #${i+1} is empty or invalid.`;
+      return;
+    }
+    nums.push(Number(raw));
+  }
+  if (!validDigits(nums)){
+    errorEl.textContent = 'Zero can appear at most once, and no other digit more than twice. Adjust your numbers.';
+    return;
+  }
+  const targetRaw = document.getElementById('customTarget').value.trim();
+  if (!/^\d+$/.test(targetRaw)){
+    errorEl.textContent = 'Enter a whole number target.';
+    return;
+  }
+  const target = Number(targetRaw);
+  errorEl.textContent = '';
+
+  state.numbers = nums;
+  state.target = target;
+  buildTiles();
+  buildTargetReadout();
+  const workingPanel = document.querySelectorAll('.paper')[1];
+  window.scrollTo({ top: workingPanel.getBoundingClientRect().top + window.scrollY - 12, behavior:'smooth' });
+  const btn = document.getElementById('revealBtn');
+  btn.textContent = 'Solving…';
+  setTimeout(() => {
+    showSolution(state.numbers, state.target, state.level);
+    btn.textContent = 'Hide Solution';
+  }, 30);
+});
+
+/* ---------- Rulebook worked examples ---------- */
+renderMath(document.getElementById('ex-l1'), '(9\\times 7)+(5\\times 4)=83 \\quad\\text{from }4,9,5,7\\rightarrow 83', false);
+renderMath(document.getElementById('ex-l2'), '(9\\times 7)+5^{\\sqrt{4}}=88 \\quad\\text{from }4,9,5,7\\rightarrow 88', false);
+renderMath(document.getElementById('ex-l3'), '2+\\sum_{i=2^{0}}^{7}i = 2+\\sum_{i=1}^{7}i = 30 \\quad\\text{from }0,2,2,7\\rightarrow 30', false);
+
+/* ---------- Init ---------- */
+updateLevelNote();
+newProblem(false);
+</script>
+</body>
+</html>
