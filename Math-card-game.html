@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Math Card Game — เกมการ์ดคณิตศาสตร์</title>
+<title>เซตการ์ด — เกมฝึกดำเนินการเซต</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,25 +55,16 @@
     height:100dvh;
     display:flex;
     flex-direction:column;
-    padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
+    /* No in-flow topbar anymore — .menu-btn-fixed floats over the top-left
+       corner instead, so the top padding is sized to clear it (its own
+       10px offset + 34px height + a little breathing room) rather than
+       the old ~12px, otherwise the stage would render underneath it. */
+    padding: max(52px, calc(env(safe-area-inset-top) + 52px)) 14px max(12px, env(safe-area-inset-bottom));
     gap:10px;
   }
 
-  /* ---------- Topbar ---------- */
-  .topbar{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    position:relative;
-  }
-  .topbar-left{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:relative;
-    min-width:0;
-  }
+  /* ---------- Brand (title + description) — lives inside the burger
+     menu drawer now, not a topbar; see .menu-drawer-brand below. ---------- */
   .brand{display:flex;align-items:center;gap:10px;min-width:0;}
   .brand-mark{
     font-family:var(--font-display);
@@ -99,7 +90,6 @@
     font-size:0.68rem;
     color:var(--chalk-dim);
   }
-  .topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .icon-btn, .ghost-btn{
     border-radius:10px;
     border:1.5px solid var(--chalk-faint);
@@ -123,6 +113,19 @@
   }
   .icon-btn:hover, .ghost-btn:hover{ background:rgba(244,241,228,0.12); border-color:rgba(244,241,228,0.35); }
   .icon-btn:active, .ghost-btn:active{ transform: scale(0.94); }
+
+  /* Docked to the top-left screen edge — same fixed/floating treatment
+     as .shop-btn (which docks to the left edge, vertically centered),
+     just anchored to the top instead. There's no in-flow topbar
+     anymore; .board's own top padding (below) reserves enough
+     clearance so the stage never sits under this button. */
+  .menu-btn-fixed{
+    position:fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    z-index:6;
+    background:rgba(23,51,44,0.55);
+  }
 
   /* ---------- Burger menu (side drawer) ---------- */
   .menu-backdrop{
@@ -163,6 +166,13 @@
     font-weight:700;
     font-size:1rem;
     color:var(--chalk);
+  }
+  /* Game title + description — moved here from the old topbar so the
+     top of the screen stays clear; only visible once the drawer opens. */
+  .menu-drawer-brand{
+    padding:14px 14px 12px;
+    border-bottom:1.5px dashed rgba(244,241,228,0.2);
+    flex-shrink:0;
   }
   .menu-drawer-body{
     display:flex;
@@ -372,28 +382,27 @@
     inset:0;
   }
 
-  /* Bottom zone: deck pile pinned to the left, play button centered in
-     the row. min-height is set to the deck pile's own real rendered
-     height (deck-stack 90px + 5px gap + hint line ~18px ≈ 113px) —
-     previously this was only 64px (sized for the button), so the taller
-     deck silently overflowed *above* this box and quietly ate into the
-     gap above it, which is why cards still touched the deck even after
-     that gap was widened. Fixed height + fixed gap above = the deck's
-     true top edge is now what the gap is actually measured against. */
+  /* Bottom zone now only holds the play button — the deck pile moved
+     out to a fixed position docked to the left screen edge (like
+     .shop-btn) so this row no longer needs to reserve height for it.
+     min-height still keeps a fixed height reserved for the button, so
+     toggling its [hidden] state never shifts the hand above it. */
   .bottom-row{
-    position:relative;
     width:100%;
-    min-height:116px;
+    min-height:64px;
     display:flex;
     align-items:center;
     justify-content:center;
     margin-bottom:16px;
   }
+  /* Docked to the left screen edge, near the hand/deck zone at the
+     bottom — same fixed/floating treatment as .shop-btn and
+     .menu-btn-fixed, just anchored from the bottom instead of the top. */
   .deck-pile{
-    position:absolute;
-    left:0;
-    top:50%;
-    transform:translateY(-50%);
+    position:fixed;
+    left: max(10px, env(safe-area-inset-left));
+    bottom: calc(env(safe-area-inset-bottom) + 22px);
+    z-index:6;
     background:none;
     border:none;
     cursor:pointer;
@@ -572,9 +581,10 @@
   .card-preview .card-back-content .back-math{ margin-top:8px; font-size:1.05em; }
 
   /* ---------- Play button ----------
-     Sits inside .bottom-row, centered, next to the deck pile on the left.
-     .bottom-row already reserves a fixed height, so toggling the button's
-     [hidden] state never changes anything above it. */
+     Sits inside .bottom-row, centered (the deck pile now docks to the
+     left screen edge separately — see .deck-pile). .bottom-row already
+     reserves a fixed height, so toggling the button's [hidden] state
+     never changes anything above it. */
   .play-slot{
     display:flex;
     align-items:center;
@@ -871,23 +881,11 @@
 <body>
 
 <div class="board">
-  <header class="topbar">
-    <div class="topbar-left">
-      <button id="menuBtn" class="icon-btn" aria-label="เมนู" aria-haspopup="true" aria-expanded="false">☰</button>
-      <div class="brand">
-        <span class="brand-mark">∪</span>
-        <div class="brand-text">
-          <h1>Math Card Game</h1>
-          <p>ฝึกดำเนินการระหว่างวัตถุทางคณิตศาสตร์แบบเกมการ์ด</p>
-        </div>
-      </div>
-    </div>
-    <div class="topbar-actions">
-      <button id="helpBtn" class="icon-btn" aria-label="วิธีเล่น">?</button>
-      <button id="restartBtn" class="ghost-btn">เล่นใหม่</button>
-    </div>
-  </header>
-
+  <!-- No in-flow topbar — these float over the board instead, so the
+       stage has the top of the screen to itself. See .menu-btn-fixed /
+       .shop-btn / .deck-pile CSS for exact docking. Title+description
+       and the help/restart actions live in the burger drawer now. -->
+  <button id="menuBtn" class="icon-btn menu-btn-fixed" aria-label="เมนู" aria-haspopup="true" aria-expanded="false">☰</button>
   <button type="button" class="shop-btn" id="shopBtn" aria-label="เข้าร้านค้า">🛒 ร้านค้า</button>
 
   <main class="stage-wrap">
@@ -922,19 +920,20 @@
     </div>
     <div class="hand-count" id="handCount">การ์ดบนมือ 0/0</div>
     <div class="bottom-row">
-      <button class="deck-pile" id="deckPile" aria-label="แตะเพื่อจั่วการ์ด">
-        <div class="deck-stack">
-          <div class="deck-card"></div>
-          <div class="deck-card"></div>
-          <div class="deck-card deck-card-top"><span class="deck-count" id="deckCount">28</span></div>
-        </div>
-        <span class="deck-hint">แตะเพื่อจั่ว</span>
-      </button>
       <div class="play-slot" id="playSlot">
         <button type="button" class="expr-play-btn" id="playBtn" hidden>ใช้การ์ดที่เลือก</button>
       </div>
     </div>
   </footer>
+
+  <button class="deck-pile" id="deckPile" aria-label="แตะเพื่อจั่วการ์ด">
+    <div class="deck-stack">
+      <div class="deck-card"></div>
+      <div class="deck-card"></div>
+      <div class="deck-card deck-card-top"><span class="deck-count" id="deckCount">28</span></div>
+    </div>
+    <span class="deck-hint">แตะเพื่อจั่ว</span>
+  </button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -960,7 +959,6 @@
       <li><b>แตะค้าง</b> ที่การ์ดในมือ เพื่อ <b>พลิกดูคำอธิบาย</b> ชั่วคราว ปล่อยมือแล้วกลับด้านหน้าเอง</li>
       <li>แตะ <b>กระดาน</b> เพื่อเลือกมันเข้าร่วมนิพจน์ได้ด้วย — จะแตะก่อนหรือหลังการ์ดใบอื่นก็ได้ ลำดับที่แตะจะถูกใช้แสดงนิพจน์</li>
       <li>แตะปุ่ม <b>🛒</b> ทางซ้ายของจอเพื่อเข้า <b>ร้านค้า</b> ใช้เหรียญที่สะสมได้ซื้อการ์ดตัวดำเนินการเพิ่ม การ์ดที่ซื้อจะขึ้นมือทันที</li>
-      <li>สร้าง <b>เซตที่มีสมาชิกเยอะ</b> หรือ <b>จำนวนจริงที่มากๆ</b> บนกระดานได้ <b>รางวัลพิเศษ</b> เป็นเหรียญเพิ่ม (ยิ่งใหญ่ยิ่งได้เยอะ แต่ไม่สะสมซ้อนกันในรอบเดียว)</li>
       <!-- Do NOT add how-to-play items here that explain what individual
            op/object cards do (e.g. which cards × or ÷ work with, coin
            values per card, matrix vs set vs number rules). Each card's
@@ -991,7 +989,24 @@
     <span class="menu-drawer-title">เมนู</span>
     <button type="button" class="icon-btn" id="menuDrawerClose" aria-label="ปิดเมนู">✕</button>
   </div>
+  <div class="menu-drawer-brand">
+    <div class="brand">
+      <span class="brand-mark">∪</span>
+      <div class="brand-text">
+        <h1>Math Card Game</h1>
+        <p>ฝึกดำเนินการระหว่างวัตถุทางคณิตศาสตร์แบบเกมการ์ด</p>
+      </div>
+    </div>
+  </div>
   <div class="menu-drawer-body">
+    <button type="button" class="menu-tab" id="menuRestartBtn">
+      <span class="menu-tab-icon" aria-hidden="true">🔄</span>
+      <span class="menu-tab-label">เล่นใหม่</span>
+    </button>
+    <button type="button" class="menu-tab" id="menuHelpBtn">
+      <span class="menu-tab-icon" aria-hidden="true">❓</span>
+      <span class="menu-tab-label">วิธีเล่น</span>
+    </button>
     <button type="button" class="menu-tab" id="menuSettingsBtn">
       <span class="menu-tab-icon" aria-hidden="true">⚙️</span>
       <span class="menu-tab-label">ตั้งค่า</span>
@@ -1103,38 +1118,6 @@
   var MAX_HAND_SIZE_SETTING = 12;
   var COIN_REWARD_UNARY = 1;
   var COIN_REWARD_BINARY = 2;
-  /* Milestone rewards — separate bonus on top of COIN_REWARD_UNARY/BINARY
-     above, for creating a "big" set or "big" real number on the board.
-     Each list is sorted highest-threshold-first; milestoneRewardFor()
-     (near awardCoins() below) walks it and returns the FIRST (i.e.
-     highest) tier the result strictly exceeds, so tiers never stack —
-     a real number > 100 pays out 5 coins total, not 5+3+1. */
-  var SET_SIZE_REWARD_TIERS = [ [15,10], [10,5], [5,3] ]; /* [member-count threshold, coins] */
-  var NUMBER_VALUE_REWARD_TIERS = [ [1000000,20], [1000,10], [100,5], [50,3], [20,1] ]; /* [value threshold, coins] */
-  /* Hard cap on how many members a set is ever allowed to have. Some
-     set-producing plays multiply rather than add (square on a set does
-     a self Cartesian product, |A|→|A|²; times/× between two sets does
-     |A|×|B|), so reapplying them compounds fast — from even a tiny
-     starting set, two or three squarings reaches millions of members,
-     which both breaks the KaTeX render (falls back to showing raw TeX
-     source — the "just latex code" symptom) and, one squaring further,
-     freezes/crashes the tab outright while JS tries to build an array
-     that size. isPatternPlayable() and executePlay() both check the
-     PREDICTED result size against this cap *before* doing the
-     multiply/build (see the 'square' and 'times'/set and 'union'
-     branches in each) so the play button simply won't offer a play
-     that would blow past it, instead of offering it and then failing.
-     60 is comfortably above the top set-size coin-reward tier (>15)
-     while keeping even a worst-case self-product (60×60=3600) trivial
-     to compute. */
-  var MAX_SET_ELEMENTS = 60;
-  /* Once a set has more members than this, setTex() below shows an
-     abbreviated "{first, few, …, last} (N ตัว)" form instead of
-     listing every member — long past the point of being readable as a
-     literal list anyway, and this keeps the rendered string small
-     regardless of how deeply nested (from repeated squaring) the
-     individual elements are. */
-  var SET_DISPLAY_ELLIPSIS_THRESHOLD = 12;
   /* Shop prices — unary op cards (single operand: n(A), { }, det) cost
      more than binary ones (∪, ∩, −, +, ×, ÷) since a unary card can be
      played against the center alone, no second operand card needed. */
@@ -1256,29 +1239,6 @@
     }
     return result;
   }
-  /* Determinant, general n×n via cofactor expansion along the first row.
-     Matrices here are always tiny (see the shape comment above matRows),
-     so this recursive O(n!) approach is plenty fast — but it's written
-     for ANY square size rather than assuming exactly 2×2. The det card
-     used to hardcode the 2×2 formula (ad−bc) directly at its call site,
-     which crashed when a 1×2 row card × a 2×1 vector card produced a
-     1×1 matrix (the old code unconditionally read m[1][1], which is
-     undefined on a 1-row matrix). Caller must already have checked
-     matRows(m)===matCols(m) — this assumes a square matrix. */
-  function matDet(m){
-    var n = matRows(m);
-    if(n===1) return m[0][0];
-    if(n===2) return fracSub(fracMul(m[0][0], m[1][1]), fracMul(m[0][1], m[1][0]));
-    var det = makeFraction(0,1);
-    for(var col=0; col<n; col++){
-      var minor = m.slice(1).map(function(row){
-        return row.filter(function(_, c){ return c !== col; });
-      });
-      var cofactor = fracMul(m[0][col], matDet(minor));
-      det = (col % 2 === 0) ? fracAdd(det, cofactor) : fracSub(det, cofactor);
-    }
-    return det;
-  }
   function matrixTex(m){
     var rows = m.map(function(row){ return row.map(fractionTex).join(' & '); });
     return '\\begin{bmatrix}' + rows.join(' \\\\ ') + '\\end{bmatrix}';
@@ -1366,11 +1326,6 @@
   function setTex(elements){
     if(!elements || elements.length===0) return '\\varnothing';
     var sorted = elements.slice().sort(compareElements);
-    if(sorted.length > SET_DISPLAY_ELLIPSIS_THRESHOLD){
-      var head = sorted.slice(0,4).map(elementTex);
-      var tail = sorted.slice(-2).map(elementTex);
-      return '\\{' + head.join(',\\,') + ',\\,\\ldots,\\,' + tail.join(',\\,') + '\\}\\ (' + sorted.length + '\\ \\text{ตัว})';
-    }
     return '\\{' + sorted.map(elementTex).join(',\\,') + '\\}';
   }
   function cardFrontTex(card){
@@ -1695,28 +1650,6 @@
     renderCoins();
     showCoinGain(n);
     updateShopAffordability();
-  }
-  /* Bonus coins for the object just CREATED on the board (state.center
-     right after a play) being a big set or a big real number — see
-     SET_SIZE_REWARD_TIERS / NUMBER_VALUE_REWARD_TIERS above. Returns 0
-     for matrices, and for a set/number that doesn't clear the lowest
-     tier. Only the single highest tier reached applies (non-stacking). */
-  function milestoneRewardFor(center){
-    if(center.type==='set'){
-      var size = center.elements.length;
-      for(var i=0;i<SET_SIZE_REWARD_TIERS.length;i++){
-        if(size > SET_SIZE_REWARD_TIERS[i][0]) return SET_SIZE_REWARD_TIERS[i][1];
-      }
-      return 0;
-    }
-    if(center.type==='number'){
-      var val = center.num / center.den;
-      for(var j=0;j<NUMBER_VALUE_REWARD_TIERS.length;j++){
-        if(val > NUMBER_VALUE_REWARD_TIERS[j][0]) return NUMBER_VALUE_REWARD_TIERS[j][1];
-      }
-      return 0;
-    }
-    return 0;
   }
 
 
@@ -2559,7 +2492,7 @@
       if(unopCard.kind==='transpose') return state.center.type==='matrix';
       if(unopCard.kind==='square'){
         if(state.center.type==='number') return true;
-        if(state.center.type==='set') return (state.center.elements.length * state.center.elements.length) <= MAX_SET_ELEMENTS;
+        if(state.center.type==='set') return true;
         if(state.center.type==='matrix') return matRows(state.center.m)===matCols(state.center.m);
         return false;
       }
@@ -2569,11 +2502,7 @@
     if(pattern.op==='union' || pattern.op==='intersection'){
       if(state.center.type!=='set') return false;
       var setCard = tokenCard(pattern.setToken);
-      if(!setCard || setCard.kind!=='set') return false;
-      if(pattern.op==='union'){
-        return (state.center.elements.length + setCard.elements.length) <= MAX_SET_ELEMENTS;
-      }
-      return true; /* intersection can never have more members than the smaller operand */
+      return !!setCard && setCard.kind==='set';
     }
 
     if(pattern.op==='difference'){
@@ -2602,8 +2531,7 @@
       }
       if(state.center.type==='set'){
         if(pattern.op!=='times') return false;
-        if(operand.kind!=='set') return false;
-        return (state.center.elements.length * operand.elements.length) <= MAX_SET_ELEMENTS;
+        return operand.kind==='set';
       }
       if(state.center.type!=='number') return false;
       if(pattern.op==='times' && operand.kind==='matrix') return true;
@@ -2678,7 +2606,7 @@
           showToast('หา det ได้เฉพาะเมทริกซ์จัตุรัสเท่านั้น (ขนาด ' + matShapeLabel(m) + ' ไม่ใช่จัตุรัส)');
           return;
         }
-        var detFrac = matDet(m);
+        var detFrac = fracSub(fracMul(m[0][0], m[1][1]), fracMul(m[0][1], m[1][0]));
         state.center = { type:'number', num: detFrac.num, den: detFrac.den };
         removeFromHand(card.id);
       } else if(card.kind==='transpose'){
@@ -2696,15 +2624,7 @@
         } else if(state.center.type==='set'){
           /* A² for a set is the Cartesian self-product A×A — same {pair:[x,y]}
              element shape the 'times' card already uses for A×B, just with
-             both sides being the same set. |A|² grows fast (and compounds
-             even faster if squared again), so this is checked against
-             MAX_SET_ELEMENTS *before* building the array — see the comment
-             on MAX_SET_ELEMENTS above for why. */
-          var squaredSize = state.center.elements.length * state.center.elements.length;
-          if(squaredSize > MAX_SET_ELEMENTS){
-            showToast('เซตนี้จะมีสมาชิก ' + squaredSize + ' ตัว เกินขีดจำกัด ' + MAX_SET_ELEMENTS + ' ตัว ทำไม่ได้');
-            return;
-          }
+             both sides being the same set. */
           var selfProductElements = [];
           state.center.elements.forEach(function(x){
             state.center.elements.forEach(function(y){
@@ -2732,11 +2652,6 @@
       if(setCard.kind!=='set'){ showToast('ใช้ ' + opSymbol + ' ต้องใช้การ์ดเซต'); return; }
       var resultElements;
       if(pattern.op==='union'){
-        var predictedUnionSize = state.center.elements.length + setCard.elements.length;
-        if(predictedUnionSize > MAX_SET_ELEMENTS){
-          showToast('เซตนี้อาจมีสมาชิกเกิน ' + MAX_SET_ELEMENTS + ' ตัว ทำไม่ได้');
-          return;
-        }
         var merged = state.center.elements.concat(setCard.elements);
         var seenKeys = {};
         resultElements = [];
@@ -2851,11 +2766,6 @@
         var centerFirstS = pattern.centerFirst !== false;
         var leftSetEls = centerFirstS ? state.center.elements : setOperand.elements;
         var rightSetEls = centerFirstS ? setOperand.elements : state.center.elements;
-        var predictedProductSize = leftSetEls.length * rightSetEls.length;
-        if(predictedProductSize > MAX_SET_ELEMENTS){
-          showToast('เซตผลคูณคาร์ทีเซียนนี้จะมีสมาชิก ' + predictedProductSize + ' ตัว เกินขีดจำกัด ' + MAX_SET_ELEMENTS + ' ตัว ทำไม่ได้');
-          return;
-        }
         var productElements = [];
         leftSetEls.forEach(function(x){
           rightSetEls.forEach(function(y){
@@ -2915,12 +2825,7 @@
     }
 
     var earnedCoins = pattern.op==='unary' ? COIN_REWARD_UNARY : COIN_REWARD_BINARY;
-    var milestoneCoins = milestoneRewardFor(state.center);
-    awardCoins(earnedCoins + milestoneCoins);
-    if(milestoneCoins > 0){
-      var milestoneMsg = state.center.type==='set' ? 'เซตใหญ่จัง! ' : 'จำนวนเยอะจัง! ';
-      showToast(milestoneMsg + 'ได้รางวัลพิเศษ +' + milestoneCoins + ' 🪙');
-    }
+    awardCoins(earnedCoins);
 
     state.selected = [];
     triggerBurst();
@@ -2966,9 +2871,7 @@
   /* ---------------- Bindings ---------------- */
   document.getElementById('deckPile').addEventListener('click', drawCard);
   document.getElementById('playBtn').addEventListener('click', executePlay);
-  document.getElementById('restartBtn').addEventListener('click', initGame);
   document.getElementById('overlayRestart').addEventListener('click', initGame);
-  document.getElementById('helpBtn').addEventListener('click', function(){ document.getElementById('helpOverlay').hidden = false; });
   document.getElementById('helpClose').addEventListener('click', function(){ document.getElementById('helpOverlay').hidden = true; });
   /* Click on the dimmed backdrop (not the card itself) closes the overlay.
      e.target === currentTarget only when the click landed directly on the
@@ -3025,6 +2928,14 @@
   });
   document.getElementById('menuDrawerClose').addEventListener('click', closeMenuDrawer);
   document.getElementById('menuBackdrop').addEventListener('click', closeMenuDrawer);
+  document.getElementById('menuRestartBtn').addEventListener('click', function(){
+    closeMenuDrawer();
+    initGame();
+  });
+  document.getElementById('menuHelpBtn').addEventListener('click', function(){
+    closeMenuDrawer();
+    document.getElementById('helpOverlay').hidden = false;
+  });
   function updateHandSizeStepperUI(){
     document.getElementById('handSizeValue').textContent = MAX_HAND_SIZE;
     document.getElementById('handSizeDec').disabled = (MAX_HAND_SIZE<=MIN_HAND_SIZE_SETTING);
