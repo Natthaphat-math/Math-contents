@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Turning Turtles — a game of hidden binary</title>
+<title id="doc-title">พลิกเต่า — เกมเลขฐานสองที่ซ่อนอยู่</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A2%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg-deep:#0c2624;
@@ -30,8 +30,8 @@
     --radius-md:14px;
     --radius-sm:9px;
     --shadow-deep:0 18px 40px -14px rgba(0,0,0,0.55);
-    --font-display:'Fraunces', Georgia, serif;
-    --font-body:'Work Sans', system-ui, sans-serif;
+    --font-display:'Fraunces', 'Noto Serif Thai', Georgia, serif;
+    --font-body:'Work Sans', 'Noto Sans Thai', system-ui, sans-serif;
     --font-mono:'IBM Plex Mono', 'Courier New', monospace;
   }
 
@@ -70,6 +70,8 @@
     align-items:flex-start;
     justify-content:space-between;
     gap:12px;
+    flex-wrap:wrap;
+    row-gap:12px;
     margin-bottom:22px;
   }
   .brand{ display:flex; align-items:center; gap:12px; }
@@ -82,7 +84,7 @@
   .brand h1{
     font-family:var(--font-display);
     font-weight:700;
-    font-size:clamp(24px,5vw,32px);
+    font-size:clamp(22px,5vw,32px);
     margin:0;
     letter-spacing:0.2px;
   }
@@ -92,20 +94,43 @@
     color:var(--sand-dim);
     letter-spacing:0.3px;
   }
-  .header-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .header-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
 
   .icon-btn{
-    width:40px; height:40px;
+    width:38px; height:38px;
     border-radius:50%;
     border:1px solid rgba(238,227,201,0.25);
     background:rgba(238,227,201,0.06);
     color:var(--sand);
-    font-size:17px;
+    font-size:16px;
     cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     transition:transform .15s ease, background .15s ease;
   }
   .icon-btn:hover{ background:rgba(238,227,201,0.14); transform:translateY(-1px); }
+
+  .lang-switch{
+    display:flex;
+    border:1px solid rgba(238,227,201,0.25);
+    border-radius:999px;
+    overflow:hidden;
+    flex-shrink:0;
+    height:38px;
+  }
+  .lang-btn{
+    border:none;
+    background:rgba(238,227,201,0.06);
+    color:var(--sand-dim);
+    font-family:var(--font-mono);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    padding:0 14px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .lang-btn:hover{ background:rgba(238,227,201,0.14); }
+  .lang-btn.active{ background:var(--amber); color:var(--ink); }
 
   /* ---------- generic card / buttons ---------- */
   .card{
@@ -130,7 +155,7 @@
     font-size:22px;
     margin:0 0 10px;
   }
-  .card p{ color:var(--sand-dim); line-height:1.55; margin:0 0 12px; font-size:15px;}
+  .card p{ color:var(--sand-dim); line-height:1.6; margin:0 0 12px; font-size:15px;}
   .card p:last-child{ margin-bottom:0; }
 
   .btn{
@@ -170,6 +195,8 @@
     cursor:pointer;
     display:flex; align-items:center; gap:14px;
     transition:transform .15s ease, background .15s ease, border-color .15s ease;
+    width:100%;
+    font-family:inherit;
   }
   .choice-btn:hover{
     background:rgba(233,162,59,0.1);
@@ -177,6 +204,7 @@
     transform:translateY(-1px);
   }
   .choice-emoji{ font-size:24px; flex-shrink:0; }
+  .choice-text{ text-align:left; }
   .choice-text strong{ display:block; font-size:15.5px; margin-bottom:2px; }
   .choice-text span{ font-size:13px; color:var(--sand-dim); }
 
@@ -184,7 +212,7 @@
   .rule-steps{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
   .rule-steps li{
     display:flex; gap:12px; align-items:flex-start;
-    font-size:14.5px; color:var(--sand-dim); line-height:1.5;
+    font-size:14.5px; color:var(--sand-dim); line-height:1.55;
   }
   .rule-num{
     font-family:var(--font-mono);
@@ -213,6 +241,7 @@
     width:10px; height:10px; border-radius:50%;
     background:var(--moss);
     box-shadow:0 0 0 4px rgba(127,176,105,0.2);
+    flex-shrink:0;
   }
   .status-dot.bot{ background:var(--amber); box-shadow:0 0 0 4px rgba(233,162,59,0.2); }
   .status-dot.over{ background:var(--sand-dim); box-shadow:none; }
@@ -229,6 +258,7 @@
     margin:0 0 14px;
     padding:0 2px;
     min-height:18px;
+    line-height:1.5;
   }
   .helper-text b{ color:var(--amber); }
 
@@ -377,7 +407,7 @@
   }
   details.panel[open] summary::after{ transform:rotate(90deg); }
   .panel-body{ padding:0 16px 18px; }
-  .panel-sub{ font-size:12.5px; color:var(--sand-dim); margin:-6px 0 14px; }
+  .panel-sub{ font-size:12.5px; color:var(--sand-dim); margin:-6px 0 14px; line-height:1.5; }
 
   .ledger-scroll{ overflow-x:auto; }
   table.ledger{
@@ -398,7 +428,7 @@
     font-size:11.5px;
     letter-spacing:1px;
   }
-  table.ledger td.pos-cell{ color:var(--sand-dim); text-align:left; }
+  table.ledger td.pos-cell{ color:var(--sand-dim); text-align:left; font-family:var(--font-body); }
   table.ledger tr.xor-row td{
     border-top:2px solid rgba(238,227,201,0.3);
     border-bottom:none;
@@ -406,7 +436,17 @@
     padding-top:10px;
   }
   table.ledger td.bit{ border-radius:5px; }
-  table.ledger td.bit-one{
+  .digit-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:20px;
+    height:20px;
+    padding:0 3px;
+    border-radius:6px;
+    line-height:1;
+  }
+  .digit-chip.one{
     background:var(--yellow);
     color:var(--yellow-ink);
     font-weight:700;
@@ -420,8 +460,36 @@
     font-family:var(--font-mono);
     font-size:14px;
     text-align:center;
+    transition:background .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .ledger-summary.preview{
+    border-style:dashed;
+    background:rgba(95,179,172,0.1);
+    border-color:rgba(95,179,172,0.4);
+    color:var(--sand);
+  }
+  .ledger-summary.preview.zero{
+    background:rgba(127,176,105,0.16);
+    border-color:var(--moss);
+    color:var(--moss);
+    font-weight:700;
   }
   .ledger-empty{ font-size:13.5px; color:var(--sand-dim); font-style:italic; }
+  .ledger-badge{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    background:rgba(95,179,172,0.18);
+    color:var(--teal-accent);
+    border:1px solid rgba(95,179,172,0.4);
+    border-radius:999px;
+    padding:2px 8px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
 
   /* ---------- hint toggle ---------- */
   .hint-widget{
@@ -500,7 +568,7 @@
   /* ---------- move log ---------- */
   .log-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; }
   .log-list li{
-    font-size:13px; line-height:1.5;
+    font-size:13px; line-height:1.55;
     color:var(--sand-dim);
     padding:8px 10px;
     border-radius:8px;
@@ -519,7 +587,7 @@
     font-size:13.5px;
     color:var(--sand);
     margin-top:14px;
-    line-height:1.5;
+    line-height:1.55;
   }
   .tip-box .tip-icon{ font-size:17px; flex-shrink:0; }
 
@@ -552,7 +620,7 @@
   .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;}
   .modal h2{ font-family:var(--font-display); font-size:24px; margin:0 0 4px; }
   .modal h3{ font-family:var(--font-display); font-size:17px; margin:22px 0 8px; color:var(--amber); }
-  .modal p, .modal li{ color:var(--sand-dim); font-size:14.5px; line-height:1.6; }
+  .modal p, .modal li{ color:var(--sand-dim); font-size:14.5px; line-height:1.65; }
   .modal .example-box{
     font-family:var(--font-mono);
     font-size:13px;
@@ -578,7 +646,7 @@
     margin-top:30px;
     font-size:12px;
     color:var(--sand-dim);
-    line-height:1.6;
+    line-height:1.7;
   }
 
   .hidden{ display:none !important; }
@@ -601,198 +669,33 @@
     <div class="brand">
       <div class="brand-mark">🐢</div>
       <div>
-        <h1>Turning Turtles</h1>
-        <p>a game of heads, tails &amp; hidden binary</p>
+        <h1 id="brand-title">—</h1>
+        <p id="brand-subtitle">—</p>
       </div>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="btn-open-rules" title="Rules &amp; strategy" aria-label="Open rules and strategy guide">?</button>
-      <button class="icon-btn hidden" id="btn-new-game" title="New game" aria-label="Start a new game">↻</button>
+      <div class="lang-switch" role="group" aria-label="Language / ภาษา">
+        <button class="lang-btn" id="btn-lang-th" data-action="set-lang" data-lang="th">TH</button>
+        <button class="lang-btn" id="btn-lang-en" data-action="set-lang" data-lang="en">EN</button>
+      </div>
+      <button class="icon-btn" id="btn-open-rules" data-action="open-rules">?</button>
+      <button class="icon-btn hidden" id="btn-new-game" data-action="new-game">↻</button>
     </div>
   </header>
 
-  <!-- ===================== SETUP SCREEN ===================== -->
-  <section id="screen-setup">
-    <div class="card">
-      <p class="eyebrow">How it works</p>
-      <h2>A row of coins, one clever trick</h2>
-      <p>You'll face a row of coins, each lying heads-up or tails-up. You and your opponent take turns. Whoever makes the very last move wins.</p>
-      <ol class="rule-steps">
-        <li><span class="rule-num">1</span><span><b>Pick a coin that's heads-up</b> and turn it to tails. Every move needs this part.</span></li>
-        <li><span class="rule-num">2</span><span><b>Optionally, flip one more coin</b> — but only one that sits to the <b>left</b> of the coin you just chose. It can flip either direction.</span></li>
-        <li><span class="rule-num">3</span><span>Coins are numbered <b>1, 2, 3…</b> from the left. That numbering turns out to matter a lot.</span></li>
-        <li><span class="rule-num">4</span><span>Once every coin shows tails, nobody can move. <b>Whoever made the last flip wins.</b></span></li>
-      </ol>
-    </div>
+  <section id="screen-setup"></section>
+  <section id="screen-preview" class="hidden"></section>
+  <section id="screen-game" class="hidden"></section>
 
-    <div class="card">
-      <p class="eyebrow">Get started</p>
-      <h2>Who goes first?</h2>
-      <div class="choice-stack">
-        <button class="choice-btn" id="btn-you-first">
-          <span class="choice-emoji">🙋</span>
-          <span class="choice-text"><strong>I'll go first</strong><span>Jump straight in — coins will be laid out fresh.</span></span>
-        </button>
-        <button class="choice-btn" id="btn-bot-first">
-          <span class="choice-emoji">🤖</span>
-          <span class="choice-text"><strong>Shelldon goes first</strong><span>Let the bot open — new coins, same rules.</span></span>
-        </button>
-        <button class="choice-btn" id="btn-preview">
-          <span class="choice-emoji">👀</span>
-          <span class="choice-text"><strong>Show me the coins first</strong><span>See the row, work out the numbers, then pick who opens.</span></span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== PREVIEW SCREEN ===================== -->
-  <section id="screen-preview" class="hidden">
-    <div class="card">
-      <p class="eyebrow">Before anyone moves</p>
-      <h2>Here's the row</h2>
-      <p>Study the position below. Positions are numbered from the left, starting at 1 — that's the number each heads-up coin contributes to the ledger underneath.</p>
-    </div>
-    <div class="board-wrap">
-      <div class="board" id="preview-board"></div>
-    </div>
-    <div class="hint-widget">
-      <label class="switch-row" for="hint-toggle-preview">
-        <span class="switch-label-group">
-          <span class="switch-label">Show hint</span>
-          <span class="switch-caption">Tell me who should go first</span>
-        </span>
-        <span class="switch">
-          <input type="checkbox" id="hint-toggle-preview">
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-        </span>
-      </label>
-      <div id="hint-text-preview"></div>
-    </div>
-    <div id="preview-ledger-mount"></div>
-    <div class="card">
-      <div class="tip-box">
-        <span class="tip-icon">💡</span>
-        <span>The ledger above shows the live binary breakdown — 1s are highlighted so you can add up each column yourself. Try reading it before you decide, or flip on "Show hint" to have it spelled out.</span>
-      </div>
-      <div class="starter-buttons">
-        <button class="btn btn-moss" id="btn-preview-you">I'll go first</button>
-        <button class="btn btn-ghost" id="btn-preview-bot">Shelldon goes first</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== GAME SCREEN ===================== -->
-  <section id="screen-game" class="hidden">
-    <div class="status-bar">
-      <div class="status-turn" id="status-turn">
-        <span class="status-dot" id="status-dot"></span>
-        <strong id="status-turn-text">—</strong>
-      </div>
-      <span class="status-move" id="status-move-text"></span>
-    </div>
-
-    <p class="helper-text" id="helper-text"></p>
-
-    <div class="board-wrap">
-      <div class="board" id="game-board"></div>
-      <div class="move-controls hidden" id="move-controls">
-        <button class="btn btn-ghost btn-sm" id="btn-clear-selection">Clear selection</button>
-        <button class="btn btn-primary btn-sm" id="btn-confirm-move" disabled>Confirm move ▸</button>
-      </div>
-      <div class="selection-legend">
-        <span><span class="legend-swatch" style="background:var(--amber)"></span>coin turning to tails</span>
-        <span><span class="legend-swatch" style="background:var(--teal-accent)"></span>optional second flip</span>
-      </div>
-    </div>
-
-    <div class="hint-widget">
-      <label class="switch-row" for="hint-toggle-game">
-        <span class="switch-label-group">
-          <span class="switch-label">Show hint</span>
-          <span class="switch-caption">Tell me the winning move</span>
-        </span>
-        <span class="switch">
-          <input type="checkbox" id="hint-toggle-game">
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-        </span>
-      </label>
-      <div id="hint-text-game"></div>
-    </div>
-    <div id="game-ledger-mount"></div>
-
-    <details class="panel" id="log-panel">
-      <summary>Move log</summary>
-      <div class="panel-body">
-        <ul class="log-list" id="log-list"><li class="log-empty">No moves yet.</li></ul>
-      </div>
-    </details>
-  </section>
-
-  <footer class="credit">
-    Turning Turtles is a coin-turning game devised by H.&nbsp;W.&nbsp;Lenstra.<br>
-    This app plays it out so you can see the binary strategy underneath.
-  </footer>
+  <footer class="credit" id="site-footer"></footer>
 </div>
 
-<!-- ===================== RULES / LEARN MODAL ===================== -->
 <div class="modal-overlay hidden" id="modal-rules">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-title">
-    <div class="modal-head">
-      <h2 id="rules-title">Rules &amp; strategy</h2>
-      <button class="icon-btn" id="btn-close-rules" aria-label="Close">✕</button>
-    </div>
-
-    <h3>How to play</h3>
-    <p>A row of coins is laid out, each showing heads or tails. Players alternate turns.</p>
-    <ol class="rule-steps">
-      <li><span class="rule-num">1</span><span>Choose any coin currently showing <b>heads</b> and flip it to <b>tails</b>. This part is required.</span></li>
-      <li><span class="rule-num">2</span><span>You may <b>also</b> flip exactly one other coin — but it must sit to the <b>left</b> of the coin from step 1. That one can flip in either direction.</span></li>
-      <li><span class="rule-num">3</span><span>If you can't move (no coins are heads-up), you lose. The player who plays the last coin — leaving the whole row tails — wins.</span></li>
-    </ol>
-
-    <h3>Numbering the coins</h3>
-    <p>Number the coins 1, 2, 3… from the left. This numbering is the whole secret: a coin showing heads at position <i>p</i> behaves exactly like a Nim pile holding <i>p</i> tokens.</p>
-
-    <h3>The nim-sum</h3>
-    <p>Write every heads-up position in binary and stack them up. XOR them together — add each column of digits and keep only whether the count is odd (1) or even (0), with no carrying. That result is the <b>nim-sum</b>.</p>
-    <div class="example-box">Heads-up at positions 5, 6, and 3:
-  5 = 101
-  6 = 110
-  3 = 011
-  -------
-XOR = 000  →  nim-sum is 0</div>
-    <ul>
-      <li><b>Nim-sum = 0:</b> whoever moves next is in trouble. Against perfect play, every move they make hands their opponent a winning position.</li>
-      <li><b>Nim-sum ≠ 0:</b> the player to move has a winning reply — some move brings the nim-sum back to 0.</li>
-    </ul>
-
-    <h3>Finding the winning move</h3>
-    <p>If the nim-sum <i>X</i> isn't 0, look for a heads-up coin at position <i>p</i> where <i>p</i> XOR <i>X</i> is smaller than <i>p</i>. Call that smaller number <i>t</i>.</p>
-    <ul>
-      <li>Flip the coin at position <i>p</i> to tails (the required move).</li>
-      <li>If <i>t</i> is 0, stop there — no second flip needed.</li>
-      <li>If <i>t</i> is greater than 0, also flip the coin at position <i>t</i>. It's guaranteed to be to the left of <i>p</i>, so it's always a legal second flip.</li>
-    </ul>
-    <div class="example-box">Nim-sum X = 6 (110). Heads-up coin at position p = 7 (111).
-p XOR X = 111 XOR 110 = 001 = 1, and 1 &lt; 7 ✓
-→ Flip coin 7 to tails, and flip coin 1 too.
-New nim-sum: 0 — your opponent is now stuck.</div>
-    <p>The live ledger under the board does the binary bookkeeping for you as you play — use it to check your own reasoning.</p>
-  </div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rules-title" id="modal-rules-inner"></div>
 </div>
 
-<!-- ===================== END-OF-GAME MODAL ===================== -->
 <div class="modal-overlay hidden" id="modal-end">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="end-title">
-    <span class="result-emoji" id="end-emoji">🐢</span>
-    <h2 id="end-title">—</h2>
-    <p class="result-sub" id="end-sub">—</p>
-    <div id="end-ledger-mount"></div>
-    <div class="end-actions">
-      <button class="btn btn-moss" id="btn-play-again">Play again</button>
-      <button class="btn btn-ghost" id="btn-review-board">Review board</button>
-    </div>
-  </div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="end-title" id="modal-end-inner"></div>
 </div>
 
 <script>
@@ -800,9 +703,263 @@ New nim-sum: 0 — your opponent is now stuck.</div>
   'use strict';
 
   /* ============================================================
+     TRANSLATIONS
+  ============================================================ */
+  var T = {
+    en: {
+      pageTitle: 'Turning Turtles — a game of hidden binary',
+      brandTitle: 'Turning Turtles',
+      brandSubtitle: 'a game of heads, tails & hidden binary',
+      rulesBtnLabel: 'Rules & strategy',
+      newGameBtnLabel: 'Start a new game',
+      confirmNewGame: 'Start a new game? Your current game will be lost.',
+
+      setupEyebrow1: 'How it works',
+      setupHeading1: 'A row of coins, one clever trick',
+      setupIntro: 'You\u2019ll face a row of coins, each lying heads-up or tails-up. You and your opponent take turns. Whoever makes the very last move wins.',
+      rule1: '<b>Pick a coin that\u2019s heads-up</b> and turn it to tails. Every move needs this part.',
+      rule2: '<b>Optionally, flip one more coin</b> \u2014 but only one that sits to the left of the coin you just chose. It can flip either direction.',
+      rule3: 'Coins are numbered <b>1, 2, 3\u2026</b> from the left. That numbering turns out to matter a lot.',
+      rule4: 'Once every coin shows tails, nobody can move. <b>Whoever made the last flip wins.</b>',
+      setupEyebrow2: 'Get started',
+      setupHeading2: 'Who goes first?',
+      choiceYouTitle: 'I\u2019ll go first',
+      choiceYouDesc: 'Jump straight in \u2014 coins will be laid out fresh.',
+      choiceBotTitle: '{bot} goes first',
+      choiceBotDesc: 'Let the bot open \u2014 new coins, same rules.',
+      choicePreviewTitle: 'Show me the coins first',
+      choicePreviewDesc: 'See the row, work out the numbers, then pick who opens.',
+
+      previewEyebrow: 'Before anyone moves',
+      previewHeading: 'Here\u2019s the row',
+      previewIntro: 'Study the position below. Positions are numbered from the left, starting at 1 \u2014 that\u2019s the number each heads-up coin contributes to the ledger underneath.',
+      previewTip: 'The ledger above shows the live binary breakdown \u2014 1s are highlighted so you can add up each column yourself. Try reading it before you decide, or flip on \u201cShow hint\u201d to have it spelled out.',
+      previewYouBtn: 'I\u2019ll go first',
+      previewBotBtn: '{bot} goes first',
+
+      hintLabel: 'Show hint',
+      hintCaptionPreview: 'Tell me who should go first',
+      hintCaptionGame: 'Tell me the winning move',
+
+      clearSelectionBtn: 'Clear selection',
+      confirmMoveBtn: 'Confirm move \u25b8',
+      legendPrimary: 'coin turning to tails',
+      legendSecondary: 'optional second flip',
+
+      ledgerTitle: 'Nim ledger',
+      ledgerSub: 'Each heads-up coin\u2019s position, written in binary. 1s are highlighted \u2014 an odd count of them in a column makes the nim-sum 1 there.',
+      ledgerEmpty: 'No coins are heads-up \u2014 there\u2019s nothing left to add to the ledger.',
+      nimSumWord: 'nim-sum',
+      nimSumAfterWord: 'nim-sum after this move',
+      ledgerPreviewTag: 'Preview',
+
+      logPanelTitle: 'Move log',
+      logEmpty: 'No moves yet.',
+      recapPanelTitle: 'Full game recap',
+      recapEmpty: 'No moves were made.',
+
+      statusYourTurn: 'Your turn',
+      statusBotTurn: '{bot}\u2019s turn',
+      statusBotThinking: '{bot} is thinking',
+      statusYouWon: 'You won!',
+      statusBotWon: '{bot} won.',
+      statusMoveN: 'Move {n}',
+      statusTotalMoves: '{n} total moves',
+
+      helperGameOver: 'Game over \u2014 open the ledger below to see how the nim-sum landed on zero.',
+      helperBotThinking: '{bot} is working out the nim-sum\u2026',
+      helperPickPrimary: 'Tap a <b>heads-up</b> turtle to flip it to tails.',
+      helperOptionalSecondary: 'Optional: tap one turtle to the <b>left</b> of your choice to flip it too \u2014 or just confirm.',
+      helperReady: 'Ready \u2014 confirm your move, or clear it to start over.',
+
+      coinLabelPlain: 'Turtle {pos}, currently {state}.',
+      coinLabelPrimary: 'Turtle {pos}, currently {state}. Tap to flip it to tails.',
+      coinLabelSecondary: 'Turtle {pos}, currently {state}. Tap to flip it too.',
+      headsWord: 'heads-up',
+      tailsWord: 'tails-up',
+
+      moveHintNone: 'Hint: there\u2019s no move that saves the nim-sum right now \u2014 every option hands {bot} a nonzero board.',
+      moveHintPrimaryOnly: 'Hint: flip turtle <b>{p}</b> to tails \u2014 that leaves a nim-sum of 0.',
+      moveHintWithSecondary: 'Hint: flip turtle <b>{p}</b> to tails, and flip turtle <b>{t}</b> too \u2014 that leaves a nim-sum of 0.',
+      starterHintZero: 'Hint: the nim-sum is <b>0</b>. Whoever moves first is in trouble against perfect play \u2014 let {bot} open if you want the edge.',
+      starterHintNonzero: 'Hint: the nim-sum is <b>{x}</b> (nonzero). Going first hands you a winning position, as long as you keep restoring the nim-sum to 0.',
+      botReadingLedger: '{bot} is reading this same ledger to plan its move.',
+
+      logLineWho_you: 'You',
+      logLineFlip: '<b>{n}. {who}</b> \u2014 turtle {p} \u2192 tails',
+      logLineSecondary: ', turtle {t} \u2192 {dir}',
+      logLineNimSum: '. Nim-sum now {x}.',
+      headWordShort: 'heads',
+      tailWordShort: 'tails',
+
+      endTitleWin: 'You win!',
+      endTitleLose: '{bot} wins.',
+      endSubWin: 'You made the final flip \u2014 every coin is tails.',
+      endSubLose: '{bot} made the final flip. Check the ledger to see where the nim-sum turned against you.',
+      playAgainBtn: 'Play again',
+      reviewBoardBtn: 'Review board',
+
+      rulesTitle: 'Rules & strategy',
+      rulesHowToPlayHeading: 'How to play',
+      rulesHowToPlayIntro: 'A row of coins is laid out, each showing heads or tails. Players alternate turns.',
+      rulesStep1: 'Choose any coin currently showing <b>heads</b> and flip it to <b>tails</b>. This part is required.',
+      rulesStep2: 'You may <b>also</b> flip one other coin \u2014 but it must sit to the <b>left</b> of the coin from step 1. That one can flip in either direction.',
+      rulesStep3: 'If you can\u2019t move (no coins are heads-up), you lose. The player who plays the last coin \u2014 leaving the whole row tails \u2014 wins.',
+      rulesNumberingHeading: 'Numbering the coins',
+      rulesNumberingText: 'Number the coins 1, 2, 3\u2026 from the left. This numbering is the whole secret: a coin showing heads at position <i>p</i> behaves exactly like a Nim pile holding <i>p</i> tokens.',
+      rulesNimSumHeading: 'The nim-sum',
+      rulesNimSumText: 'Write every heads-up position in binary and stack them up. XOR them together \u2014 add each column of digits and keep only whether the count is odd (1) or even (0), with no carrying. That result is the <b>nim-sum</b>.',
+      example1: 'Heads-up at positions 5, 6, and 3:\n  5 = 101\n  6 = 110\n  3 = 011\n  -------\nXOR = 000  \u2192  nim-sum is 0',
+      nimSumBullet1: '<b>Nim-sum = 0:</b> whoever moves next is in trouble. Against perfect play, every move they make hands their opponent a winning position.',
+      nimSumBullet2: '<b>Nim-sum \u2260 0:</b> the player to move has a winning reply \u2014 some move brings the nim-sum back to 0.',
+      rulesFindingHeading: 'Finding the winning move',
+      rulesFindingText: 'If the nim-sum <i>X</i> isn\u2019t 0, look for a heads-up coin at position <i>p</i> where <i>p</i> XOR <i>X</i> is smaller than <i>p</i>. Call that smaller number <i>t</i>.',
+      findingBullet1: 'Flip the coin at position <i>p</i> to tails (the required move).',
+      findingBullet2: 'If <i>t</i> is 0, stop there \u2014 no second flip needed.',
+      findingBullet3: 'If <i>t</i> is greater than 0, also flip the coin at position <i>t</i>. It\u2019s guaranteed to be to the left of <i>p</i>, so it\u2019s always a legal second flip.',
+      example2: 'Nim-sum X = 6 (110). Heads-up coin at position p = 7 (111).\np XOR X = 111 XOR 110 = 001 = 1, and 1 < 7 \u2713\n\u2192 Flip coin 7 to tails, and flip coin 1 too.\nNew nim-sum: 0 \u2014 your opponent is now stuck.',
+      rulesClosing: 'The live ledger under the board does the binary bookkeeping for you as you play \u2014 use it to check your own reasoning.',
+
+      footerCredit: 'Turning Turtles is a coin-turning game devised by H.\u00a0W.\u00a0Lenstra.<br>This app plays it out so you can see the binary strategy underneath.'
+    },
+    th: {
+      pageTitle: 'พลิกเต่า — เกมเลขฐานสองที่ซ่อนอยู่',
+      brandTitle: 'พลิกเต่า',
+      brandSubtitle: 'เกมหัว-ก้อย กับเลขฐานสองที่ซ่อนอยู่',
+      rulesBtnLabel: 'กติกาและกลยุทธ์',
+      newGameBtnLabel: 'เริ่มเกมใหม่',
+      confirmNewGame: 'เริ่มเกมใหม่ไหม? เกมปัจจุบันจะหายไป',
+
+      setupEyebrow1: 'วิธีเล่น',
+      setupHeading1: 'แถวเหรียญกับกลเม็ดสุดล้ำ',
+      setupIntro: 'คุณจะเจอแถวเหรียญที่บางใบหงาย บางใบคว่ำ คุณกับคู่แข่งผลัดกันเดินทีละตา ใครเดินตาสุดท้ายได้เป็นผู้ชนะ',
+      rule1: '<b>เลือกเต่าที่หงายอยู่</b> แล้วพลิกให้คว่ำ ทุกตาต้องทำขั้นตอนนี้เสมอ',
+      rule2: '<b>จะพลิกเต่าอีกตัวก็ได้ (ไม่บังคับ)</b> แต่ต้องอยู่ทางซ้ายของตัวที่เพิ่งเลือกเท่านั้น จะพลิกไปทางไหนก็ได้',
+      rule3: 'เต่าจะมีเลขกำกับ <b>1, 2, 3…</b> นับจากซ้าย ตัวเลขนี้สำคัญมากในเกมนี้',
+      rule4: 'เมื่อเต่าทุกตัวคว่ำหมด จะไม่มีใครเดินต่อได้ <b>ใครพลิกตัวสุดท้ายคือผู้ชนะ</b>',
+      setupEyebrow2: 'เริ่มเลย',
+      setupHeading2: 'ใครเล่นก่อน?',
+      choiceYouTitle: 'ฉันเล่นก่อน',
+      choiceYouDesc: 'ลุยเลย! จะมีการวางเต่าแถวใหม่ทันที',
+      choiceBotTitle: '{bot}เล่นก่อน',
+      choiceBotDesc: 'ให้บอทเปิดเกมก่อน เต่าแถวใหม่ กติกาเดิม',
+      choicePreviewTitle: 'ขอดูเต่าก่อน',
+      choicePreviewDesc: 'ดูแถวเต่า ลองคิดเลขดูก่อน แล้วค่อยเลือกว่าใครเริ่ม',
+
+      previewEyebrow: 'ก่อนเริ่มเกม',
+      previewHeading: 'นี่คือแถวเต่า',
+      previewIntro: 'ลองดูตำแหน่งด้านล่างนี้ นับตำแหน่งจากซ้ายเริ่มที่ 1 ตัวเลขนี้แหละที่เต่าตัวหงายแต่ละตัวจะนำไปคิดในตารางด้านล่าง',
+      previewTip: 'ตารางด้านบนแสดงเลขฐานสองแบบสด ๆ เลข 1 จะถูกไฮไลต์ไว้ให้บวกแต่ละหลักได้ง่ายขึ้น ลองอ่านเองก่อนตัดสินใจ หรือเปิด “แสดงคำใบ้” ให้บอกตรง ๆ ก็ได้',
+      previewYouBtn: 'ฉันเล่นก่อน',
+      previewBotBtn: '{bot}เล่นก่อน',
+
+      hintLabel: 'แสดงคำใบ้',
+      hintCaptionPreview: 'บอกฉันว่าใครควรเล่นก่อน',
+      hintCaptionGame: 'บอกฉันว่าเดินตาไหนชนะ',
+
+      clearSelectionBtn: 'ล้างการเลือก',
+      confirmMoveBtn: 'ยืนยันการเดิน ▸',
+      legendPrimary: 'เต่าที่จะพลิกเป็นคว่ำ',
+      legendSecondary: 'เต่าตัวที่สอง (ไม่บังคับ)',
+
+      ledgerTitle: 'ตารางนิมซัม',
+      ledgerSub: 'ตำแหน่งของเต่าที่หงายแต่ละตัว เขียนเป็นเลขฐานสอง เลข 1 ถูกไฮไลต์ไว้ — ถ้าหลักไหนมีเลข 1 เป็นจำนวนคี่ นิมซัมหลักนั้นจะเป็น 1',
+      ledgerEmpty: 'ไม่มีเต่าตัวไหนหงายแล้ว จึงไม่มีอะไรให้บวกในตารางนี้ต่อ',
+      nimSumWord: 'นิมซัม',
+      nimSumAfterWord: 'นิมซัมหลังเดินตานี้',
+      ledgerPreviewTag: 'ตัวอย่าง',
+
+      logPanelTitle: 'บันทึกการเดิน',
+      logEmpty: 'ยังไม่มีการเดิน',
+      recapPanelTitle: 'สรุปเกมทั้งหมด',
+      recapEmpty: 'ไม่มีการเดินเกิดขึ้น',
+
+      statusYourTurn: 'ตาคุณ',
+      statusBotTurn: 'ตา{bot}',
+      statusBotThinking: '{bot}กำลังคิด',
+      statusYouWon: 'คุณชนะ!',
+      statusBotWon: '{bot}ชนะ',
+      statusMoveN: 'ตาที่ {n}',
+      statusTotalMoves: 'รวม {n} ตา',
+
+      helperGameOver: 'จบเกมแล้ว — ดูตารางด้านล่างเพื่อดูว่านิมซัมกลายเป็นศูนย์ได้อย่างไร',
+      helperBotThinking: '{bot}กำลังคำนวณนิมซัม…',
+      helperPickPrimary: 'แตะเต่าที่<b>หงาย</b>เพื่อพลิกให้คว่ำ',
+      helperOptionalSecondary: 'ไม่บังคับ: แตะเต่าอีกตัวทาง<b>ซ้าย</b>ของตัวที่เลือก เพื่อพลิกด้วยก็ได้ — หรือจะยืนยันเลยก็ได้',
+      helperReady: 'พร้อมแล้ว — ยืนยันการเดิน หรือล้างค่าเพื่อเริ่มเลือกใหม่',
+
+      coinLabelPlain: 'เต่าตัวที่ {pos} ตอนนี้{state}',
+      coinLabelPrimary: 'เต่าตัวที่ {pos} ตอนนี้{state} แตะเพื่อพลิกให้คว่ำ',
+      coinLabelSecondary: 'เต่าตัวที่ {pos} ตอนนี้{state} แตะเพื่อพลิกตัวนี้ด้วย',
+      headsWord: 'หงายอยู่',
+      tailsWord: 'คว่ำอยู่',
+
+      moveHintNone: 'คำใบ้: ตอนนี้ไม่มีตาไหนช่วยนิมซัมได้เลย ไม่ว่าเดินยังไงก็ยกกระดานนิมซัมไม่เป็นศูนย์ให้{bot}',
+      moveHintPrimaryOnly: 'คำใบ้: พลิกเต่าตัวที่ <b>{p}</b> ให้คว่ำ — นิมซัมจะกลายเป็น 0',
+      moveHintWithSecondary: 'คำใบ้: พลิกเต่าตัวที่ <b>{p}</b> ให้คว่ำ แล้วพลิกเต่าตัวที่ <b>{t}</b> ด้วย — นิมซัมจะกลายเป็น 0',
+      starterHintZero: 'คำใบ้: นิมซัมตอนนี้คือ <b>0</b> ใครเดินก่อนจะเสียเปรียบถ้าคู่แข่งเล่นสมบูรณ์แบบ — ให้{bot}เริ่มก่อนถ้าอยากได้เปรียบ',
+      starterHintNonzero: 'คำใบ้: นิมซัมตอนนี้คือ <b>{x}</b> (ไม่ใช่ศูนย์) การเล่นก่อนทำให้คุณอยู่ในตำแหน่งที่ชนะได้ ตราบใดที่คอยดึงนิมซัมกลับไปที่ 0 เสมอ',
+      botReadingLedger: '{bot}กำลังอ่านตารางเดียวกันนี้เพื่อวางแผนการเดิน',
+
+      logLineWho_you: 'คุณ',
+      logLineFlip: '<b>{n}. {who}</b> — พลิกเต่า {p} เป็นคว่ำ',
+      logLineSecondary: ', พลิกเต่า {t} เป็น{dir}',
+      logLineNimSum: ' นิมซัมตอนนี้คือ {x}',
+      headWordShort: 'หงาย',
+      tailWordShort: 'คว่ำ',
+
+      endTitleWin: 'คุณชนะ!',
+      endTitleLose: '{bot}ชนะ',
+      endSubWin: 'คุณเป็นคนพลิกตัวสุดท้าย — ตอนนี้เต่าคว่ำหมดทุกตัวแล้ว',
+      endSubLose: '{bot}เป็นคนพลิกตัวสุดท้าย ลองดูตารางนิมซัมว่าพลาดตรงไหน',
+      playAgainBtn: 'เล่นอีกครั้ง',
+      reviewBoardBtn: 'ดูกระดานอีกครั้ง',
+
+      rulesTitle: 'กติกาและกลยุทธ์',
+      rulesHowToPlayHeading: 'วิธีเล่น',
+      rulesHowToPlayIntro: 'มีแถวเต่าวางอยู่ บางตัวหงาย บางตัวคว่ำ ผู้เล่นสลับกันเดินทีละตา',
+      rulesStep1: 'เลือกเต่าที่<b>หงาย</b>อยู่ตัวไหนก็ได้ แล้วพลิกให้<b>คว่ำ</b> ขั้นตอนนี้บังคับทำทุกครั้ง',
+      rulesStep2: 'จะ<b>พลิกเต่าอีกตัว</b>ก็ได้ แต่ต้องอยู่ทาง<b>ซ้าย</b>ของตัวในข้อ 1 เท่านั้น และพลิกไปทางไหนก็ได้',
+      rulesStep3: 'ถ้าเดินไม่ได้ (ไม่มีเต่าหงายเหลือ) ถือว่าแพ้ ผู้ที่พลิกตัวสุดท้ายจนเต่าคว่ำหมดคือผู้ชนะ',
+      rulesNumberingHeading: 'การนับตำแหน่งเต่า',
+      rulesNumberingText: 'นับเลขเต่า 1, 2, 3… จากซ้าย ตัวเลขนี้คือกุญแจของเกม เต่าที่หงายอยู่ตำแหน่ง <i>p</i> จะทำตัวเหมือนกองหินในเกม Nim ที่มี <i>p</i> ก้อนเป๊ะ ๆ',
+      rulesNimSumHeading: 'นิมซัมคืออะไร',
+      rulesNimSumText: 'เขียนตำแหน่งเต่าที่หงายทุกตัวเป็นเลขฐานสอง แล้ววางซ้อนกัน จากนั้นทำ XOR คือบวกแต่ละหลักแล้วดูว่าจำนวนเลข 1 ในหลักนั้นเป็นคี่ (ได้ 1) หรือคู่ (ได้ 0) โดยไม่มีการทด ผลลัพธ์ที่ได้เรียกว่า<b>นิมซัม</b>',
+      example1: 'เต่าหงายอยู่ที่ตำแหน่ง 5, 6 และ 3:\n  5 = 101\n  6 = 110\n  3 = 011\n  -------\nXOR = 000  →  นิมซัมคือ 0',
+      nimSumBullet1: '<b>นิมซัม = 0:</b> ใครเดินตาต่อไปมีปัญหาแน่ ถ้าคู่แข่งเล่นสมบูรณ์แบบ ไม่ว่าจะเดินยังไงก็ยกตำแหน่งที่ชนะให้คู่แข่งอยู่ดี',
+      nimSumBullet2: '<b>นิมซัม ≠ 0:</b> ผู้เล่นที่กำลังจะเดินมีตาชนะอยู่เสมอ — มีตาเดินที่ดึงนิมซัมกลับไปเป็น 0 ได้',
+      rulesFindingHeading: 'หาตาเดินที่ชนะ',
+      rulesFindingText: 'ถ้านิมซัม <i>X</i> ไม่ใช่ 0 ให้หาเต่าที่หงายอยู่ตำแหน่ง <i>p</i> ที่ <i>p</i> XOR <i>X</i> มีค่าน้อยกว่า <i>p</i> แล้วเรียกเลขที่น้อยกว่านั้นว่า <i>t</i>',
+      findingBullet1: 'พลิกเต่าตำแหน่ง <i>p</i> ให้คว่ำ (ขั้นตอนบังคับ)',
+      findingBullet2: 'ถ้า <i>t</i> เป็น 0 ก็หยุดแค่นั้น ไม่ต้องพลิกตัวที่สอง',
+      findingBullet3: 'ถ้า <i>t</i> มากกว่า 0 ให้พลิกเต่าตำแหน่ง <i>t</i> ด้วย ซึ่งรับประกันว่าอยู่ทางซ้ายของ <i>p</i> เสมอ จึงเป็นการพลิกที่ถูกกติกาแน่นอน',
+      example2: 'นิมซัม X = 6 (110) เต่าหงายอยู่ที่ตำแหน่ง p = 7 (111)\np XOR X = 111 XOR 110 = 001 = 1 และ 1 < 7 ✓\n→ พลิกเต่าตัวที่ 7 ให้คว่ำ แล้วพลิกเต่าตัวที่ 1 ด้วย\nนิมซัมใหม่: 0 — ตอนนี้คู่แข่งติดกับดักแล้ว',
+      rulesClosing: 'ตารางด้านล่างกระดานจะคำนวณเลขฐานสองให้แบบสด ๆ ระหว่างเล่น ใช้เช็คความคิดของตัวเองได้เลย',
+
+      footerCredit: 'พลิกเต่า (Turning Turtles) เป็นเกมพลิกเหรียญที่คิดค้นโดย H.\u00a0W.\u00a0Lenstra<br>แอปนี้จำลองเกมให้เห็นกลยุทธ์เลขฐานสองที่ซ่อนอยู่เบื้องหลัง'
+    }
+  };
+
+  function t(key){
+    var pack = T[state.lang] || T.en;
+    return (pack[key] !== undefined) ? pack[key] : (T.en[key] !== undefined ? T.en[key] : key);
+  }
+
+  function fmt(str, vars){
+    return str.replace(/\{(\w+)\}/g, function(_, k){
+      return (vars && Object.prototype.hasOwnProperty.call(vars, k)) ? vars[k] : '';
+    });
+  }
+
+  function botName(){
+    return state.lang === 'th' ? 'เชลดอน' : 'Shelldon';
+  }
+
+  /* ============================================================
      STATE
   ============================================================ */
   var state = {
+    lang: 'th',            // default language
     phase: 'setup',       // setup | preview | playing | gameover
     coins: [],            // [{pos, s: 'H'|'T'}]
     n: 0,
@@ -816,7 +973,6 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     hintOn: false          // whether the perfect-move hint text is revealed
   };
 
-  var BOT_NAME = 'Shelldon';
   var botThinking = false;
 
   /* ============================================================
@@ -882,19 +1038,31 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     if (X !== 0){
       for (var i = 0; i < heads.length; i++){
         var p = heads[i];
-        var t = p ^ X;
-        if (t < p){
-          return { primary: p, secondary: t > 0 ? t : null };
+        var tt = p ^ X;
+        if (tt < p){
+          return { primary: p, secondary: tt > 0 ? tt : null };
         }
       }
     }
-    // Losing / fallback position: make any legal move.
     var p2 = heads[randInt(0, heads.length - 1)];
     var secondary = null;
     if (p2 > 1 && Math.random() < 0.5){
       secondary = randInt(1, p2 - 1);
     }
     return { primary: p2, secondary: secondary };
+  }
+
+  // The exact winning move for the current position, or null if the nim-sum is already 0.
+  function findWinningMove(coins){
+    var X = nimSum(coins);
+    if (X === 0) return null;
+    var heads = headsPositions(coins);
+    for (var i = 0; i < heads.length; i++){
+      var p = heads[i];
+      var tt = p ^ X;
+      if (tt < p) return { primary: p, secondary: tt > 0 ? tt : null };
+    }
+    return null;
   }
 
   function applyMoveToCoins(coins, move){
@@ -913,14 +1081,32 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     return { primary: move.primary, secondary: secInfo };
   }
 
+  // A hypothetical board reflecting the player's in-progress (unconfirmed) selection,
+  // used only to preview the resulting nim-sum in the ledger. Never mutates real state.
+  function previewCoins(){
+    var sel = state.selection;
+    if (!sel.primary) return null;
+    var copy = state.coins.map(function(c){ return { pos: c.pos, s: c.s }; });
+    for (var i = 0; i < copy.length; i++){
+      if (copy[i].pos === sel.primary) copy[i].s = 'T';
+      else if (sel.secondary && copy[i].pos === sel.secondary) copy[i].s = (copy[i].s === 'H') ? 'T' : 'H';
+    }
+    return copy;
+  }
+
   /* ============================================================
      DOM HELPERS
   ============================================================ */
   function $(id){ return document.getElementById(id); }
-  function esc(str){ return String(str); }
+
+  function coinAriaLabel(coin, kind){
+    var stateWord = coin.s === 'H' ? t('headsWord') : t('tailsWord');
+    if (kind === 'primary') return fmt(t('coinLabelPrimary'), { pos: coin.pos, state: stateWord });
+    if (kind === 'secondary') return fmt(t('coinLabelSecondary'), { pos: coin.pos, state: stateWord });
+    return fmt(t('coinLabelPlain'), { pos: coin.pos, state: stateWord });
+  }
 
   function renderCoinButton(coin, opts){
-    // opts: {clickable, kind: 'primary'|'secondary'|null, selected: 'primary'|'secondary'|null, justFlipped}
     var classes = ['coin', coin.s === 'H' ? 'heads' : 'tails'];
     if (opts.selected === 'primary') classes.push('sel-primary');
     else if (opts.selected === 'secondary') classes.push('sel-secondary');
@@ -931,9 +1117,7 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     if (opts.justFlipped) classes.push('just-flipped');
 
     var emoji = '🐢';
-    var label = 'Turtle ' + coin.pos + ', currently ' + (coin.s === 'H' ? 'heads-up' : 'tails-up') +
-      (opts.kind ? ('. Tap to ' + (opts.kind === 'primary' ? 'flip it to tails.' : 'flip it too.')) : '.');
-
+    var label = coinAriaLabel(coin, opts.selected ? null : opts.kind);
     var disabledAttr = opts.clickable ? '' : 'disabled';
     var dataAttr = ' data-pos="' + coin.pos + '" data-role="' + (opts.kind || '') + '"';
 
@@ -949,22 +1133,23 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     );
   }
 
-  function ledgerHTML(coins, opts){
-    opts = opts || {};
+  function ledgerHTML(coins, isPreview){
     var heads = headsPositions(coins).slice().sort(function(a,b){ return a-b; });
     var width = bitWidthFor(Math.max(state.n, 1));
     var x = nimSum(coins);
+    var sumLabel = isPreview ? t('nimSumAfterWord') : t('nimSumWord');
+    var summaryClass = 'ledger-summary' + (isPreview ? ' preview' + (x === 0 ? ' zero' : '') : '');
 
     var out = '';
-    out += '<div class="panel-sub">' + (opts.subtitle || 'Each heads-up coin\'s position, written in binary. 1s are highlighted — an odd count of them in a column makes the nim-sum 1 there.') + '</div>';
+    out += '<div class="panel-sub">' + t('ledgerSub') + '</div>';
 
     if (heads.length === 0){
-      out += '<p class="ledger-empty">No coins are heads-up — there\'s nothing left to add to the ledger.</p>';
-      out += '<div class="ledger-summary">nim-sum = 0</div>';
+      out += '<p class="ledger-empty">' + t('ledgerEmpty') + '</p>';
+      out += '<div class="' + summaryClass + '">' + sumLabel + ' = 0</div>';
       return out;
     }
 
-    out += '<div class="ledger-scroll"><table class="ledger"><thead><tr><th style="text-align:left;">Pos</th>';
+    out += '<div class="ledger-scroll"><table class="ledger"><thead><tr><th style="text-align:left;">#</th>';
     for (var b = width - 1; b >= 0; b--){
       out += '<th>' + Math.pow(2, b) + '</th>';
     }
@@ -975,7 +1160,7 @@ New nim-sum: 0 — your opponent is now stuck.</div>
       out += '<tr><td class="pos-cell">🐢 ' + heads[i] + '</td>';
       for (var j = 0; j < width; j++){
         var digit = bin[j];
-        out += '<td class="bit' + (digit === '1' ? ' bit-one' : '') + '">' + digit + '</td>';
+        out += '<td class="bit"><span class="digit-chip' + (digit === '1' ? ' one' : '') + '">' + digit + '</span></td>';
       }
       out += '</tr>';
     }
@@ -984,11 +1169,11 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     out += '<tr class="xor-row"><td class="pos-cell">XOR</td>';
     for (var k = 0; k < width; k++){
       var xd = xorBin[k];
-      out += '<td class="bit' + (xd === '1' ? ' bit-one' : '') + '">' + xd + '</td>';
+      out += '<td class="bit"><span class="digit-chip' + (xd === '1' ? ' one' : '') + '">' + xd + '</span></td>';
     }
     out += '</tr>';
     out += '</tbody></table></div>';
-    out += '<div class="ledger-summary">nim-sum&nbsp; = &nbsp;' + xorBin + '<sub>2</sub>&nbsp; = &nbsp;' + x + '</div>';
+    out += '<div class="' + summaryClass + '">' + sumLabel + '&nbsp; = &nbsp;' + xorBin + '<sub>2</sub>&nbsp; = &nbsp;' + x + '</div>';
     return out;
   }
 
@@ -1010,42 +1195,22 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     );
   }
 
-  // The exact winning move for the current position, or null if the nim-sum is already 0
-  // (i.e. no move can save it). Mirrors botChooseMove's winning branch exactly.
-  function findWinningMove(coins){
-    var X = nimSum(coins);
-    if (X === 0) return null;
-    var heads = headsPositions(coins);
-    for (var i = 0; i < heads.length; i++){
-      var p = heads[i];
-      var t = p ^ X;
-      if (t < p) return { primary: p, secondary: t > 0 ? t : null };
-    }
-    return null;
-  }
-
   function moveHintHTML(coins){
     var move = findWinningMove(coins);
     if (!move){
-      return 'Hint: there\'s no move that saves the nim-sum right now — every option hands ' + BOT_NAME + ' a nonzero board.';
+      return fmt(t('moveHintNone'), { bot: botName() });
     }
-    var text = 'Hint: flip turtle <b>' + move.primary + '</b> to tails';
     if (move.secondary){
-      text += ', and flip turtle <b>' + move.secondary + '</b> too';
+      return fmt(t('moveHintWithSecondary'), { p: move.primary, t: move.secondary });
     }
-    text += ' — that leaves a nim-sum of 0.';
-    return text;
+    return fmt(t('moveHintPrimaryOnly'), { p: move.primary });
   }
 
   function starterHintHTML(x){
-    if (x === 0){
-      return 'Hint: the nim-sum is <b>0</b>. Whoever moves first is in trouble against perfect play — let ' + BOT_NAME + ' open if you want the edge.';
-    }
-    return 'Hint: the nim-sum is <b>' + x + '</b> (nonzero). Going first hands you a winning position, as long as you keep restoring the nim-sum to 0.';
+    if (x === 0) return fmt(t('starterHintZero'), { bot: botName() });
+    return fmt(t('starterHintNonzero'), { x: x });
   }
 
-  // The ledger is always visible; the toggle only controls whether the plain-language
-  // recommendation underneath it is spelled out.
   function hintBlockHTML(){
     if (!state.hintOn) return '';
     var text = '';
@@ -1054,102 +1219,145 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     } else if (state.phase === 'playing' && state.current === 'human'){
       text = moveHintHTML(state.coins);
     } else if (state.phase === 'playing' && state.current === 'bot'){
-      text = BOT_NAME + ' is reading this same ledger to plan its move.';
+      text = fmt(t('botReadingLedger'), { bot: botName() });
     }
     if (!text) return '';
     return '<div class="hint-text">' + text + '</div>';
   }
 
-  function ledgerCardHTML(coins){
-    return cardWrap('Nim ledger', ledgerHTML(coins));
+  function ledgerCardHTML(coins, isPreview){
+    var title = t('ledgerTitle');
+    if (isPreview) title += ' <span class="ledger-badge">' + t('ledgerPreviewTag') + '</span>';
+    return cardWrap(title, ledgerHTML(coins, isPreview));
   }
 
-  function syncHintToggles(){
-    var pre = $('hint-toggle-preview');
-    var game = $('hint-toggle-game');
-    if (pre) pre.checked = state.hintOn;
-    if (game) game.checked = state.hintOn;
-  }
-
-  function setHint(val){
-    state.hintOn = val;
-    syncHintToggles();
-    if (state.phase === 'preview') renderPreview();
-    else if (state.phase === 'playing' || state.phase === 'gameover') renderLedgerPanel();
+  function hintWidgetHTML(idSuffix, captionKey){
+    return (
+      '<div class="hint-widget">' +
+        '<label class="switch-row" for="hint-toggle-' + idSuffix + '">' +
+          '<span class="switch-label-group">' +
+            '<span class="switch-label">' + t('hintLabel') + '</span>' +
+            '<span class="switch-caption">' + t(captionKey) + '</span>' +
+          '</span>' +
+          '<span class="switch">' +
+            '<input type="checkbox" id="hint-toggle-' + idSuffix + '" data-action="toggle-hint"' + (state.hintOn ? ' checked' : '') + '>' +
+            '<span class="switch-track"><span class="switch-thumb"></span></span>' +
+          '</span>' +
+        '</label>' +
+        '<div id="hint-text-' + idSuffix + '">' + hintBlockHTML() + '</div>' +
+      '</div>'
+    );
   }
 
   /* ============================================================
      RENDER: SETUP
   ============================================================ */
-  function showScreen(name){
-    ['setup','preview','game'].forEach(function(s){
-      $('screen-' + s).classList.toggle('hidden', s !== name);
-    });
-    $('btn-new-game').classList.toggle('hidden', name === 'setup');
+  function renderSetupScreen(){
+    var html = '';
+    html += '<div class="card">' +
+      '<p class="eyebrow">' + t('setupEyebrow1') + '</p>' +
+      '<h2>' + t('setupHeading1') + '</h2>' +
+      '<p>' + t('setupIntro') + '</p>' +
+      '<ol class="rule-steps">' +
+        '<li><span class="rule-num">1</span><span>' + t('rule1') + '</span></li>' +
+        '<li><span class="rule-num">2</span><span>' + t('rule2') + '</span></li>' +
+        '<li><span class="rule-num">3</span><span>' + t('rule3') + '</span></li>' +
+        '<li><span class="rule-num">4</span><span>' + t('rule4') + '</span></li>' +
+      '</ol>' +
+    '</div>';
+
+    html += '<div class="card">' +
+      '<p class="eyebrow">' + t('setupEyebrow2') + '</p>' +
+      '<h2>' + t('setupHeading2') + '</h2>' +
+      '<div class="choice-stack">' +
+        '<button class="choice-btn" data-action="start-you">' +
+          '<span class="choice-emoji">🙋</span>' +
+          '<span class="choice-text"><strong>' + t('choiceYouTitle') + '</strong><span>' + t('choiceYouDesc') + '</span></span>' +
+        '</button>' +
+        '<button class="choice-btn" data-action="start-bot">' +
+          '<span class="choice-emoji">🤖</span>' +
+          '<span class="choice-text"><strong>' + fmt(t('choiceBotTitle'), {bot: botName()}) + '</strong><span>' + t('choiceBotDesc') + '</span></span>' +
+        '</button>' +
+        '<button class="choice-btn" data-action="start-preview">' +
+          '<span class="choice-emoji">👀</span>' +
+          '<span class="choice-text"><strong>' + t('choicePreviewTitle') + '</strong><span>' + t('choicePreviewDesc') + '</span></span>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+    $('screen-setup').innerHTML = html;
   }
 
   /* ============================================================
      RENDER: PREVIEW
   ============================================================ */
-  function renderPreview(){
-    var board = $('preview-board');
-    var html = '';
+  function renderPreviewScreen(){
+    var boardHtml = '';
     for (var i = 0; i < state.coins.length; i++){
-      html += renderCoinButton(state.coins[i], { clickable: false, kind: null, selected: null });
+      boardHtml += renderCoinButton(state.coins[i], { clickable: false, kind: null, selected: null });
     }
-    board.innerHTML = html;
 
-    $('hint-text-preview').innerHTML = hintBlockHTML();
-    $('preview-ledger-mount').innerHTML = ledgerCardHTML(state.coins);
-    syncHintToggles();
+    var html = '';
+    html += '<div class="card">' +
+      '<p class="eyebrow">' + t('previewEyebrow') + '</p>' +
+      '<h2>' + t('previewHeading') + '</h2>' +
+      '<p>' + t('previewIntro') + '</p>' +
+    '</div>';
+    html += '<div class="board-wrap"><div class="board">' + boardHtml + '</div></div>';
+    html += hintWidgetHTML('preview', 'hintCaptionPreview');
+    html += ledgerCardHTML(state.coins);
+    html += '<div class="card">' +
+      '<div class="tip-box"><span class="tip-icon">💡</span><span>' + t('previewTip') + '</span></div>' +
+      '<div class="starter-buttons">' +
+        '<button class="btn btn-moss" data-action="start-you">' + t('previewYouBtn') + '</button>' +
+        '<button class="btn btn-ghost" data-action="start-bot">' + fmt(t('previewBotBtn'), {bot: botName()}) + '</button>' +
+      '</div>' +
+    '</div>';
+
+    $('screen-preview').innerHTML = html;
   }
 
   /* ============================================================
      RENDER: GAME
   ============================================================ */
-  function renderStatus(){
-    var dot = $('status-dot');
-    var text = $('status-turn-text');
-    var moveText = $('status-move-text');
-
-    dot.className = 'status-dot';
+  function statusHTML(){
+    var dotClass = 'status-dot';
+    var text = '';
     if (state.phase === 'gameover'){
-      dot.classList.add('over');
-      text.textContent = (state.winner === 'human' ? 'You won!' : BOT_NAME + ' won.');
+      dotClass += ' over';
+      text = (state.winner === 'human') ? t('statusYouWon') : fmt(t('statusBotWon'), { bot: botName() });
     } else if (state.current === 'human'){
-      text.textContent = 'Your turn';
+      text = t('statusYourTurn');
     } else {
-      dot.classList.add('bot');
-      text.textContent = botThinking ? BOT_NAME + ' is thinking' : BOT_NAME + '\u2019s turn';
+      dotClass += ' bot';
       if (botThinking){
-        text.innerHTML = BOT_NAME + ' is thinking<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
+        text = fmt(t('statusBotThinking'), { bot: botName() }) + '<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
+      } else {
+        text = fmt(t('statusBotTurn'), { bot: botName() });
       }
     }
-    moveText.textContent = 'Move ' + (state.moveCount + (state.phase === 'gameover' ? 0 : 1));
-    if (state.phase === 'gameover') moveText.textContent = state.moveCount + ' total moves';
+    var moveText = (state.phase === 'gameover')
+      ? fmt(t('statusTotalMoves'), { n: state.moveCount })
+      : fmt(t('statusMoveN'), { n: state.moveCount + 1 });
+
+    return (
+      '<div class="status-bar">' +
+        '<div class="status-turn"><span class="' + dotClass + '"></span><strong>' + text + '</strong></div>' +
+        '<span class="status-move">' + moveText + '</span>' +
+      '</div>'
+    );
   }
 
-  function renderHelper(){
-    var helper = $('helper-text');
-    if (state.phase === 'gameover'){
-      helper.innerHTML = 'Game over — open the ledger below to see how the nim-sum landed on zero.';
-      return;
-    }
-    if (state.current === 'bot'){
-      helper.innerHTML = botThinking ? BOT_NAME + ' is working out the nim-sum…' : '&nbsp;';
-      return;
-    }
-    if (!state.selection.primary){
-      helper.innerHTML = 'Tap a <b>heads-up</b> turtle to flip it to tails.';
-    } else if (!state.selection.secondary){
-      helper.innerHTML = 'Optional: tap one turtle to the <b>left</b> of your choice to flip it too — or just confirm.';
-    } else {
-      helper.innerHTML = 'Ready — confirm your move, or clear it to start over.';
-    }
+  function helperHTML(){
+    if (state.phase === 'gameover') return t('helperGameOver');
+    if (state.current === 'bot') return botThinking ? fmt(t('helperBotThinking'), { bot: botName() }) : '&nbsp;';
+    var sel = state.selection;
+    if (!sel.primary) return t('helperPickPrimary');
+    if (!sel.secondary) return t('helperOptionalSecondary');
+    return t('helperReady');
   }
 
-  function renderBoard(){
-    var board = $('game-board');
+  function boardHTML(){
     var html = '';
     var sel = state.selection;
     var humanTurn = (state.phase === 'playing' && state.current === 'human');
@@ -1162,7 +1370,7 @@ New nim-sum: 0 — your opponent is now stuck.</div>
         if (sel.primary === coin.pos){
           opts.selected = 'primary';
           opts.clickable = true;
-          opts.kind = 'primary'; // allow un-selecting
+          opts.kind = 'primary';
         } else if (sel.secondary === coin.pos){
           opts.selected = 'secondary';
           opts.clickable = true;
@@ -1175,68 +1383,174 @@ New nim-sum: 0 — your opponent is now stuck.</div>
       }
       html += renderCoinButton(coin, opts);
     }
-    board.innerHTML = html;
-    state.justFlipped = [];
-
-    // move controls
-    var controls = $('move-controls');
-    if (humanTurn && sel.primary){
-      controls.classList.remove('hidden');
-      $('btn-confirm-move').disabled = false;
-    } else {
-      controls.classList.add('hidden');
-    }
-  }
-
-  function renderLedgerPanel(){
-    $('hint-text-game').innerHTML = hintBlockHTML();
-    $('game-ledger-mount').innerHTML = ledgerCardHTML(state.coins);
-    syncHintToggles();
+    return html;
   }
 
   function formatMoveLine(entry, idx){
-    var who = entry.player === 'human' ? 'You' : BOT_NAME;
-    var line = '<b>' + (idx + 1) + '. ' + who + '</b> — turtle ' + entry.primary + ' \u2192 tails';
+    var who = entry.player === 'human' ? t('logLineWho_you') : botName();
+    var line = fmt(t('logLineFlip'), { n: idx + 1, who: who, p: entry.primary });
     if (entry.secondary){
-      var dir = entry.secondary.to === 'H' ? 'heads' : 'tails';
-      line += ', turtle ' + entry.secondary.pos + ' \u2192 ' + dir;
+      var dir = entry.secondary.to === 'H' ? t('headWordShort') : t('tailWordShort');
+      line += fmt(t('logLineSecondary'), { t: entry.secondary.pos, dir: dir });
     }
-    line += '. Nim-sum now ' + entry.nimSumAfter + '.';
+    line += fmt(t('logLineNimSum'), { x: entry.nimSumAfter });
     return line;
   }
 
-  function renderLog(){
-    var list = $('log-list');
+  function logListHTML(){
     if (state.moveHistory.length === 0){
-      list.innerHTML = '<li class="log-empty">No moves yet.</li>';
-      return;
+      return '<li class="log-empty">' + t('logEmpty') + '</li>';
     }
     var html = '';
     for (var i = state.moveHistory.length - 1; i >= 0; i--){
       html += '<li>' + formatMoveLine(state.moveHistory[i], i) + '</li>';
     }
-    list.innerHTML = html;
+    return html;
   }
 
-  function renderGame(){
-    renderStatus();
-    renderHelper();
-    renderBoard();
-    renderLedgerPanel();
-    renderLog();
+  function renderGameScreen(){
+    var humanTurn = (state.phase === 'playing' && state.current === 'human');
+    var showControls = humanTurn && state.selection.primary;
+    var previewBoard = showControls ? previewCoins() : null;
+
+    var html = '';
+    html += statusHTML();
+    html += '<p class="helper-text">' + helperHTML() + '</p>';
+
+    html += '<div class="board-wrap">';
+    html += '<div class="board">' + boardHTML() + '</div>';
+    html += '<div class="move-controls' + (showControls ? '' : ' hidden') + '">' +
+      '<button class="btn btn-ghost btn-sm" data-action="clear-selection">' + t('clearSelectionBtn') + '</button>' +
+      '<button class="btn btn-primary btn-sm" data-action="confirm-move"' + (showControls ? '' : ' disabled') + '>' + t('confirmMoveBtn') + '</button>' +
+    '</div>';
+    html += '<div class="selection-legend">' +
+      '<span><span class="legend-swatch" style="background:var(--amber)"></span>' + t('legendPrimary') + '</span>' +
+      '<span><span class="legend-swatch" style="background:var(--teal-accent)"></span>' + t('legendSecondary') + '</span>' +
+    '</div>';
+    html += '</div>';
+
+    html += hintWidgetHTML('game', 'hintCaptionGame');
+    html += previewBoard ? ledgerCardHTML(previewBoard, true) : ledgerCardHTML(state.coins, false);
+
+    var logOpen = state.phase !== 'gameover';
+    html += panelWrap(t('logPanelTitle'), '<ul class="log-list">' + logListHTML() + '</ul>', logOpen);
+
+    state.justFlipped = [];
+    $('screen-game').innerHTML = html;
+  }
+
+  /* ============================================================
+     MASTER RENDER
+  ============================================================ */
+  function showScreen(name){
+    ['setup','preview','game'].forEach(function(s){
+      $('screen-' + s).classList.toggle('hidden', s !== name);
+    });
+    $('btn-new-game').classList.toggle('hidden', name === 'setup');
+  }
+
+  function renderChrome(){
+    document.documentElement.lang = state.lang;
+    $('doc-title').textContent = t('pageTitle');
+    document.title = t('pageTitle');
+    $('brand-title').textContent = t('brandTitle');
+    $('brand-subtitle').textContent = t('brandSubtitle');
+    $('btn-open-rules').setAttribute('aria-label', t('rulesBtnLabel'));
+    $('btn-open-rules').setAttribute('title', t('rulesBtnLabel'));
+    $('btn-new-game').setAttribute('aria-label', t('newGameBtnLabel'));
+    $('btn-new-game').setAttribute('title', t('newGameBtnLabel'));
+    $('site-footer').innerHTML = t('footerCredit');
+    $('btn-lang-th').classList.toggle('active', state.lang === 'th');
+    $('btn-lang-en').classList.toggle('active', state.lang === 'en');
+
+    if (!$('modal-rules').classList.contains('hidden')) renderRulesModal();
+    if (!$('modal-end').classList.contains('hidden')) renderEndModal();
   }
 
   function render(){
+    renderChrome();
     if (state.phase === 'setup'){
       showScreen('setup');
+      renderSetupScreen();
     } else if (state.phase === 'preview'){
       showScreen('preview');
-      renderPreview();
+      renderPreviewScreen();
     } else {
       showScreen('game');
-      renderGame();
+      renderGameScreen();
     }
   }
+
+  /* ============================================================
+     RULES MODAL
+  ============================================================ */
+  function renderRulesModal(){
+    var html = '';
+    html += '<div class="modal-head">' +
+      '<h2 id="rules-title">' + t('rulesTitle') + '</h2>' +
+      '<button class="icon-btn" data-action="close-rules" aria-label="Close">✕</button>' +
+    '</div>';
+
+    html += '<h3>' + t('rulesHowToPlayHeading') + '</h3>';
+    html += '<p>' + t('rulesHowToPlayIntro') + '</p>';
+    html += '<ol class="rule-steps">' +
+      '<li><span class="rule-num">1</span><span>' + t('rulesStep1') + '</span></li>' +
+      '<li><span class="rule-num">2</span><span>' + t('rulesStep2') + '</span></li>' +
+      '<li><span class="rule-num">3</span><span>' + t('rulesStep3') + '</span></li>' +
+    '</ol>';
+
+    html += '<h3>' + t('rulesNumberingHeading') + '</h3>';
+    html += '<p>' + t('rulesNumberingText') + '</p>';
+
+    html += '<h3>' + t('rulesNimSumHeading') + '</h3>';
+    html += '<p>' + t('rulesNimSumText') + '</p>';
+    html += '<div class="example-box">' + t('example1') + '</div>';
+    html += '<ul><li>' + t('nimSumBullet1') + '</li><li>' + t('nimSumBullet2') + '</li></ul>';
+
+    html += '<h3>' + t('rulesFindingHeading') + '</h3>';
+    html += '<p>' + t('rulesFindingText') + '</p>';
+    html += '<ul>' +
+      '<li>' + t('findingBullet1') + '</li>' +
+      '<li>' + t('findingBullet2') + '</li>' +
+      '<li>' + t('findingBullet3') + '</li>' +
+    '</ul>';
+    html += '<div class="example-box">' + t('example2') + '</div>';
+    html += '<p>' + t('rulesClosing') + '</p>';
+
+    $('modal-rules-inner').innerHTML = html;
+  }
+
+  /* ============================================================
+     END MODAL
+  ============================================================ */
+  function renderRecapHTML(){
+    if (state.moveHistory.length === 0){
+      return '<ul class="log-list"><li class="log-empty">' + t('recapEmpty') + '</li></ul>';
+    }
+    var html = '<ul class="log-list">';
+    for (var i = 0; i < state.moveHistory.length; i++){
+      html += '<li>' + formatMoveLine(state.moveHistory[i], i) + '</li>';
+    }
+    html += '</ul>';
+    return html;
+  }
+
+  function renderEndModal(){
+    var won = state.winner === 'human';
+    var html = '';
+    html += '<span class="result-emoji">' + (won ? '🏆' : '🐢') + '</span>';
+    html += '<h2 id="end-title">' + (won ? t('endTitleWin') : fmt(t('endTitleLose'), { bot: botName() })) + '</h2>';
+    html += '<p class="result-sub">' + (won ? t('endSubWin') : fmt(t('endSubLose'), { bot: botName() })) + '</p>';
+    html += panelWrap(t('recapPanelTitle'), renderRecapHTML(), false);
+    html += '<div class="end-actions">' +
+      '<button class="btn btn-moss" data-action="play-again">' + t('playAgainBtn') + '</button>' +
+      '<button class="btn btn-ghost" data-action="review-board">' + t('reviewBoardBtn') + '</button>' +
+    '</div>';
+    $('modal-end-inner').innerHTML = html;
+  }
+
+  function openModal(id){ $(id).classList.remove('hidden'); }
+  function closeModal(id){ $(id).classList.add('hidden'); }
 
   /* ============================================================
      GAME FLOW
@@ -1263,7 +1577,8 @@ New nim-sum: 0 — your opponent is now stuck.</div>
       state.winner = mover;
       state.phase = 'gameover';
       render();
-      openEndModal();
+      renderEndModal();
+      openModal('modal-end');
       return;
     }
     state.current = (mover === 'human') ? 'bot' : 'human';
@@ -1275,8 +1590,7 @@ New nim-sum: 0 — your opponent is now stuck.</div>
 
   function scheduleBotTurn(){
     botThinking = true;
-    renderStatus();
-    renderHelper();
+    render();
     setTimeout(doBotTurn, 850 + randInt(0, 400));
   }
 
@@ -1311,64 +1625,24 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     afterMove('human');
   }
 
-  function handleBoardClick(e){
-    var btn = e.target.closest('button.coin');
-    if (!btn || btn.disabled) return;
+  function handleBoardClick(pos, role){
     if (state.phase !== 'playing' || state.current !== 'human') return;
-
-    var pos = parseInt(btn.getAttribute('data-pos'), 10);
-    var role = btn.getAttribute('data-role');
     var sel = state.selection;
 
     if (!sel.primary){
-      if (role === 'primary'){
-        sel.primary = pos;
-      }
+      if (role === 'primary') sel.primary = pos;
     } else if (pos === sel.primary){
-      // toggle off primary selection entirely
       sel.primary = null;
       sel.secondary = null;
     } else if (role === 'secondary'){
       sel.secondary = (sel.secondary === pos) ? null : pos;
     }
-    renderBoard();
-    renderHelper();
+    renderGameScreen();
   }
 
   function clearSelection(){
     state.selection = { primary: null, secondary: null };
-    renderBoard();
-    renderHelper();
-  }
-
-  /* ============================================================
-     MODALS
-  ============================================================ */
-  function openModal(id){ $(id).classList.remove('hidden'); }
-  function closeModal(id){ $(id).classList.add('hidden'); }
-
-  function openEndModal(){
-    var won = state.winner === 'human';
-    $('end-emoji').textContent = won ? '🏆' : '🐢';
-    $('end-title').textContent = won ? 'You win!' : BOT_NAME + ' wins.';
-    $('end-sub').textContent = won
-      ? 'You made the final flip — every coin is tails.'
-      : BOT_NAME + ' made the final flip. Check the ledger to see where the nim-sum turned against you.';
-    $('end-ledger-mount').innerHTML = panelWrap('Full game recap', renderRecapHTML(), false);
-    openModal('modal-end');
-  }
-
-  function renderRecapHTML(){
-    var html = '<ul class="log-list">';
-    if (state.moveHistory.length === 0){
-      html += '<li class="log-empty">No moves were made.</li>';
-    } else {
-      for (var i = 0; i < state.moveHistory.length; i++){
-        html += '<li>' + formatMoveLine(state.moveHistory[i], i) + '</li>';
-      }
-    }
-    html += '</ul>';
-    return html;
+    renderGameScreen();
   }
 
   function newGame(){
@@ -1386,52 +1660,82 @@ New nim-sum: 0 — your opponent is now stuck.</div>
     render();
   }
 
-  /* ============================================================
-     WIRE UP
-  ============================================================ */
-  $('btn-you-first').addEventListener('click', function(){
-    generateBoard();
-    startGame('human');
-  });
-  $('btn-bot-first').addEventListener('click', function(){
-    generateBoard();
-    startGame('bot');
-  });
-  $('btn-preview').addEventListener('click', function(){
-    generateBoard();
-    state.phase = 'preview';
+  function setLang(lang){
+    if (lang !== 'th' && lang !== 'en') return;
+    state.lang = lang;
     render();
-  });
+  }
 
-  $('btn-preview-you').addEventListener('click', function(){ startGame('human'); });
-  $('btn-preview-bot').addEventListener('click', function(){ startGame('bot'); });
+  /* ============================================================
+     EVENTS (delegated)
+  ============================================================ */
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'modal-rules'){ closeModal('modal-rules'); return; }
 
-  $('hint-toggle-preview').addEventListener('change', function(e){ setHint(e.target.checked); });
-  $('hint-toggle-game').addEventListener('change', function(e){ setHint(e.target.checked); });
-
-  $('game-board').addEventListener('click', handleBoardClick);
-  $('btn-clear-selection').addEventListener('click', clearSelection);
-  $('btn-confirm-move').addEventListener('click', confirmHumanMove);
-
-  $('btn-open-rules').addEventListener('click', function(){ openModal('modal-rules'); });
-  $('btn-close-rules').addEventListener('click', function(){ closeModal('modal-rules'); });
-  $('modal-rules').addEventListener('click', function(e){
-    if (e.target === $('modal-rules')) closeModal('modal-rules');
-  });
-
-  $('btn-new-game').addEventListener('click', function(){
-    if (state.phase === 'playing' && state.moveHistory.length > 0){
-      if (!confirm('Start a new game? Your current game will be lost.')) return;
+    var coinBtn = e.target.closest('button.coin');
+    if (coinBtn && !coinBtn.disabled){
+      var pos = parseInt(coinBtn.getAttribute('data-pos'), 10);
+      var role = coinBtn.getAttribute('data-role');
+      handleBoardClick(pos, role);
+      return;
     }
-    newGame();
+
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    var action = el.getAttribute('data-action');
+
+    switch(action){
+      case 'start-you':
+        if (state.phase === 'setup') generateBoard();
+        startGame('human');
+        break;
+      case 'start-bot':
+        if (state.phase === 'setup') generateBoard();
+        startGame('bot');
+        break;
+      case 'start-preview':
+        generateBoard();
+        state.phase = 'preview';
+        render();
+        break;
+      case 'clear-selection':
+        clearSelection();
+        break;
+      case 'confirm-move':
+        confirmHumanMove();
+        break;
+      case 'open-rules':
+        renderRulesModal();
+        openModal('modal-rules');
+        break;
+      case 'close-rules':
+        closeModal('modal-rules');
+        break;
+      case 'new-game':
+        if (state.phase === 'playing' && state.moveHistory.length > 0){
+          if (!confirm(t('confirmNewGame'))) return;
+        }
+        newGame();
+        break;
+      case 'play-again':
+        closeModal('modal-end');
+        newGame();
+        break;
+      case 'review-board':
+        closeModal('modal-end');
+        break;
+      case 'set-lang':
+        setLang(el.getAttribute('data-lang'));
+        break;
+    }
   });
 
-  $('btn-play-again').addEventListener('click', function(){
-    closeModal('modal-end');
-    newGame();
-  });
-  $('btn-review-board').addEventListener('click', function(){
-    closeModal('modal-end');
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.getAttribute && e.target.getAttribute('data-action') === 'toggle-hint'){
+      state.hintOn = e.target.checked;
+      if (state.phase === 'preview') renderPreviewScreen();
+      else renderGameScreen();
+    }
   });
 
   document.addEventListener('keydown', function(e){
