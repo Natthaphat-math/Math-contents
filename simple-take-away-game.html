@@ -109,6 +109,7 @@
       gap:0 36px;
       align-items:start;
     }
+    #gameView[hidden]{ display:none; }
     .game-side{
       border-left:1px solid var(--chalk-hair);
       padding-left:36px;
@@ -743,8 +744,6 @@
     edgeNote: document.getElementById('edgeNote'),
     liveModExample: document.getElementById('liveModExample'),
     historyList: document.getElementById('historyList'),
-    strategyDetails: document.getElementById('strategyDetails'),
-    historyDetails: document.getElementById('historyDetails'),
     resultBanner: document.getElementById('resultBanner'),
     resultTitle: document.getElementById('resultTitle'),
     resultSub: document.getElementById('resultSub'),
@@ -1121,20 +1120,6 @@
   el.playAgainBtn.addEventListener('click', startRound);
 
   /* ============ INIT ============ */
-  var wideLayoutMq = window.matchMedia('(min-width: 840px)');
-  function openReferencePanelsIfWide(mq){
-    if (mq.matches){
-      el.strategyDetails.open = true;
-      el.historyDetails.open = true;
-    }
-  }
-  openReferencePanelsIfWide(wideLayoutMq);
-  if (wideLayoutMq.addEventListener){
-    wideLayoutMq.addEventListener('change', openReferencePanelsIfWide);
-  } else if (wideLayoutMq.addListener){
-    wideLayoutMq.addListener(openReferencePanelsIfWide);
-  }
-
   renderSetup();
 })();
 </script>
