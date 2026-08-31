@@ -983,6 +983,7 @@ function showSummary(){
   document.querySelector('.progress-track').style.display = 'none';
   swipeHint.classList.remove('active');
   swipeHint.style.opacity = '0';
+  if(document.activeElement === cardDrag) cardDrag.blur();
   cardDrag.hidden = true;
   summaryEl.hidden = false;
 
@@ -1043,7 +1044,12 @@ function onPointerMove(e){
   washYes.style.opacity = Math.max(0, ratio);
   washNo.style.opacity = Math.max(0, -ratio);
 }
-function onPointerUp(){
+function onPointerUp(e){
+  // Explicitly release pointer capture ourselves — some WebKit/mobile browser
+  // versions don't reliably auto-release capture on pointerup when the element
+  // also uses touch-action:none, which can otherwise cause the very next tap
+  // (e.g. on the summary buttons) to be swallowed and require a second tap.
+  if(e){ try{ cardDrag.releasePointerCapture(e.pointerId); }catch(err){} }
   if(!dragState) return;
   const {curX, moved} = dragState;
   const wasTap = !moved;
