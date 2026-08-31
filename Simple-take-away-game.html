@@ -96,6 +96,27 @@
   }
   .view[hidden]{ display:none; }
 
+  /* ============ WIDE-SCREEN LAYOUT (gameplay left, reference right) ============ */
+  .game-main, .game-side{ min-width:0; }
+
+  @media (min-width:840px){
+    .stage{ max-width:900px; }
+    .panel{ padding:32px 34px 30px; }
+    #setupView{ max-width:420px; margin:0 auto; }
+    #gameView{
+      display:grid;
+      grid-template-columns:minmax(300px,420px) minmax(260px,1fr);
+      gap:0 36px;
+      align-items:start;
+    }
+    .game-side{
+      border-left:1px solid var(--chalk-hair);
+      padding-left:36px;
+    }
+    .game-side details:first-child{ margin-top:0; border-top:none; padding-top:0; }
+    .history-list{ max-height:320px; }
+  }
+
   /* ============ SETUP VIEW ============ */
   .setup-block + .setup-block{ margin-top:22px; }
   .setup-label{
@@ -559,99 +580,107 @@
     <!-- ============ GAME VIEW ============ -->
     <section id="gameView" class="view" hidden>
 
-      <div class="game-topbar">
-        <span class="score-chip">คุณ <b id="scoreStudent">0</b> · บอท <b id="scoreBot">0</b></span>
-        <button type="button" class="icon-btn" id="newSetupBtn" aria-label="กลับไปตั้งค่า">⟲</button>
-      </div>
+      <div class="game-main">
 
-      <div class="goal-block">
-        <p class="goal-label">เป้าหมาย</p>
-        <p class="goal-number" id="goalNumber">0</p>
-      </div>
-
-      <div class="coin-row" id="coinRow" aria-hidden="true"></div>
-
-      <div class="track" id="track" aria-hidden="true">
-        <div class="track__line"></div>
-        <div class="track__goalcap"></div>
-        <div class="track__ticks" id="trackTicks"></div>
-        <div class="track__marker" id="trackMarker" style="left:0%"><span class="track__markerDot"></span></div>
-      </div>
-
-      <div class="counter-wrap">
-        <div class="counter" id="counter" aria-live="polite" aria-atomic="true">0</div>
-      </div>
-
-      <div class="first-pick" id="firstPickPrompt" hidden>
-        <p class="first-pick__prompt">เห็นเป้าหมายแล้ว ใครจะเริ่มก่อนดี?</p>
-        <div class="first-pick__actions">
-          <button type="button" class="toggle-pill" id="pickFirstStudent">คุณ<span class="sub">เริ่มก่อน</span></button>
-          <button type="button" class="toggle-pill" id="pickFirstBot">บอท<span class="sub">เริ่มก่อน</span></button>
+        <div class="game-topbar">
+          <span class="score-chip">คุณ <b id="scoreStudent">0</b> · บอท <b id="scoreBot">0</b></span>
+          <button type="button" class="icon-btn" id="newSetupBtn" aria-label="กลับไปตั้งค่า">⟲</button>
         </div>
-      </div>
 
-      <p class="status" id="statusText">ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3</p>
-
-      <div class="move-row">
-        <button type="button" class="btn-move" data-amount="1">+1</button>
-        <button type="button" class="btn-move" data-amount="2">+2</button>
-        <button type="button" class="btn-move" data-amount="3">+3</button>
-      </div>
-      <p class="hint-note" id="hintNote"></p>
-
-      <div class="hint-row">
-        <div class="switch">
-          <input type="checkbox" id="hintToggle">
-          <span class="switch__track"><span class="switch__thumb"></span></span>
+        <div class="goal-block">
+          <p class="goal-label">เป้าหมาย</p>
+          <p class="goal-number" id="goalNumber">0</p>
         </div>
-        <label for="hintToggle" id="hintLabel">แสดงคำใบ้กลยุทธ์</label>
-      </div>
 
-      <details id="strategyDetails">
-        <summary>ทำไมกลยุทธ์นี้ถึงได้ผล</summary>
-        <div class="details-body">
-          <p>ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง</p>
-          <div class="ladder" id="ladderChips"></div>
-          <p class="edge-note" id="edgeNote"></p>
+        <div class="coin-row" id="coinRow" aria-hidden="true"></div>
 
-          <p class="details-subhead">เบื้องหลังคณิตศาสตร์: เลขสมภาค (mod)</p>
-          <p>เหตุผลที่จุดปลอดภัยห่างกันทีละ 4 พอดี มาจากแนวคิดเรื่อง <em>เลขสมภาค (congruence)</em> ในวิชาทฤษฎีจำนวน</p>
-
-          <div class="formula-box">
-            <span class="formula-label">บทนิยาม</span>
-            a ≡ b (mod m) ก็ต่อเมื่อ m หาร a − b ลงตัว
-          </div>
-
-          <p>พูดง่าย ๆ คือ a กับ b ให้เศษเหลือเท่ากันเมื่อหารด้วย m</p>
-
-          <div class="example-box">
-            ตัวอย่าง: 15 ≡ 7 (mod 4) เพราะ 4 หาร 15 − 7 = 8 ลงตัว กล่าวอีกนัยหนึ่งคือ เศษเหลือจากการหาร 15 ด้วย 4 มีค่าเท่ากับเศษเหลือจากการหาร 7 ด้วย 4 (มีเศษเหลือเป็น 3 เหมือนกัน)
-          </div>
-
-          <p>ในเกมนี้ จุดปลอดภัยทุกจุดคือจำนวนที่สมภาคกับเป้าหมาย mod 4 นั่นคือ n ≡ เป้าหมาย (mod 4) เพราะจุดปลอดภัยแต่ละจุดมีค่าเท่ากับ เป้าหมาย − 4k เสมอ ซึ่งต่างจากเป้าหมายด้วยจำนวนที่หารด้วย 4 ลงตัว นี่คือนิยามของ ≡ พอดี</p>
-
-          <div class="example-box" id="liveModExample"></div>
-
-          <p>เคล็ดลับของกลยุทธ์นี้คือ 4 ≡ 0 (mod 4) การบวกด้วยพหุคูณของ 4 จึงไม่เปลี่ยนเศษเหลือเลย เมื่อคุณยืนอยู่บนจุดปลอดภัย ไม่ว่าอีกฝ่ายจะเดิน x (1, 2 หรือ 3) คุณก็เดินต่อด้วย 4 − x เสมอ รวมกันได้ 4 พอดี ตัวเลขใหม่จึงยังคงสมภาคกับเป้าหมาย mod 4 เหมือนเดิม คุณจึงกลับมายืนบนจุดปลอดภัยจุดถัดไปได้ทุกครั้ง จนกระทั่งจุดปลอดภัยจุดสุดท้ายคือเป้าหมายเอง (เพราะเป้าหมาย − เป้าหมาย = 0 และ 4 หาร 0 ลงตัวเสมอ)</p>
+        <div class="track" id="track" aria-hidden="true">
+          <div class="track__line"></div>
+          <div class="track__goalcap"></div>
+          <div class="track__ticks" id="trackTicks"></div>
+          <div class="track__marker" id="trackMarker" style="left:0%"><span class="track__markerDot"></span></div>
         </div>
-      </details>
 
-      <details id="historyDetails">
-        <summary>ประวัติการเดิน</summary>
-        <div class="details-body">
-          <div class="history-list" id="historyList">
-            <p class="history-empty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>
+        <div class="counter-wrap">
+          <div class="counter" id="counter" aria-live="polite" aria-atomic="true">0</div>
+        </div>
+
+        <div class="first-pick" id="firstPickPrompt" hidden>
+          <p class="first-pick__prompt">เห็นเป้าหมายแล้ว ใครจะเริ่มก่อนดี?</p>
+          <div class="first-pick__actions">
+            <button type="button" class="toggle-pill" id="pickFirstStudent">คุณ<span class="sub">เริ่มก่อน</span></button>
+            <button type="button" class="toggle-pill" id="pickFirstBot">บอท<span class="sub">เริ่มก่อน</span></button>
           </div>
         </div>
-      </details>
 
-      <div class="result-banner" id="resultBanner" hidden>
-        <p class="result-title" id="resultTitle"></p>
-        <p class="result-sub" id="resultSub"></p>
-        <div class="result-actions">
-          <button type="button" class="btn-secondary" id="changeSetupBtn">เปลี่ยนการตั้งค่า</button>
-          <button type="button" class="btn-primary" id="playAgainBtn">เล่นอีกครั้ง</button>
+        <p class="status" id="statusText">ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3</p>
+
+        <div class="move-row">
+          <button type="button" class="btn-move" data-amount="1">+1</button>
+          <button type="button" class="btn-move" data-amount="2">+2</button>
+          <button type="button" class="btn-move" data-amount="3">+3</button>
         </div>
+        <p class="hint-note" id="hintNote"></p>
+
+        <div class="hint-row">
+          <div class="switch">
+            <input type="checkbox" id="hintToggle">
+            <span class="switch__track"><span class="switch__thumb"></span></span>
+          </div>
+          <label for="hintToggle" id="hintLabel">แสดงคำใบ้กลยุทธ์</label>
+        </div>
+
+        <div class="result-banner" id="resultBanner" hidden>
+          <p class="result-title" id="resultTitle"></p>
+          <p class="result-sub" id="resultSub"></p>
+          <div class="result-actions">
+            <button type="button" class="btn-secondary" id="changeSetupBtn">เปลี่ยนการตั้งค่า</button>
+            <button type="button" class="btn-primary" id="playAgainBtn">เล่นอีกครั้ง</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="game-side">
+
+        <details id="strategyDetails">
+          <summary>ทำไมกลยุทธ์นี้ถึงได้ผล</summary>
+          <div class="details-body">
+            <p>ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง</p>
+            <div class="ladder" id="ladderChips"></div>
+            <p class="edge-note" id="edgeNote"></p>
+
+            <p class="details-subhead">เบื้องหลังคณิตศาสตร์: เลขสมภาค (mod)</p>
+            <p>เหตุผลที่จุดปลอดภัยห่างกันทีละ 4 พอดี มาจากแนวคิดเรื่อง <em>เลขสมภาค (congruence)</em> ในวิชาทฤษฎีจำนวน</p>
+
+            <div class="formula-box">
+              <span class="formula-label">บทนิยาม</span>
+              a ≡ b (mod m) ก็ต่อเมื่อ m หาร a − b ลงตัว
+            </div>
+
+            <p>พูดง่าย ๆ คือ a กับ b ให้เศษเหลือเท่ากันเมื่อหารด้วย m</p>
+
+            <div class="example-box">
+              ตัวอย่าง: 15 ≡ 7 (mod 4) เพราะ 4 หาร 15 − 7 = 8 ลงตัว กล่าวอีกนัยหนึ่งคือ เศษเหลือจากการหาร 15 ด้วย 4 มีค่าเท่ากับเศษเหลือจากการหาร 7 ด้วย 4 (มีเศษเหลือเป็น 3 เหมือนกัน)
+            </div>
+
+            <p>ในเกมนี้ จุดปลอดภัยทุกจุดคือจำนวนที่สมภาคกับเป้าหมาย mod 4 นั่นคือ n ≡ เป้าหมาย (mod 4) เพราะจุดปลอดภัยแต่ละจุดมีค่าเท่ากับ เป้าหมาย − 4k เสมอ ซึ่งต่างจากเป้าหมายด้วยจำนวนที่หารด้วย 4 ลงตัว นี่คือนิยามของ ≡ พอดี</p>
+
+            <div class="example-box" id="liveModExample"></div>
+
+            <p>เคล็ดลับของกลยุทธ์นี้คือ 4 ≡ 0 (mod 4) การบวกด้วยพหุคูณของ 4 จึงไม่เปลี่ยนเศษเหลือเลย เมื่อคุณยืนอยู่บนจุดปลอดภัย ไม่ว่าอีกฝ่ายจะเดิน x (1, 2 หรือ 3) คุณก็เดินต่อด้วย 4 − x เสมอ รวมกันได้ 4 พอดี ตัวเลขใหม่จึงยังคงสมภาคกับเป้าหมาย mod 4 เหมือนเดิม คุณจึงกลับมายืนบนจุดปลอดภัยจุดถัดไปได้ทุกครั้ง จนกระทั่งจุดปลอดภัยจุดสุดท้ายคือเป้าหมายเอง (เพราะเป้าหมาย − เป้าหมาย = 0 และ 4 หาร 0 ลงตัวเสมอ)</p>
+          </div>
+        </details>
+
+        <details id="historyDetails">
+          <summary>ประวัติการเดิน</summary>
+          <div class="details-body">
+            <div class="history-list" id="historyList">
+              <p class="history-empty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>
+            </div>
+          </div>
+        </details>
+
       </div>
 
     </section>
@@ -714,6 +743,8 @@
     edgeNote: document.getElementById('edgeNote'),
     liveModExample: document.getElementById('liveModExample'),
     historyList: document.getElementById('historyList'),
+    strategyDetails: document.getElementById('strategyDetails'),
+    historyDetails: document.getElementById('historyDetails'),
     resultBanner: document.getElementById('resultBanner'),
     resultTitle: document.getElementById('resultTitle'),
     resultSub: document.getElementById('resultSub'),
@@ -1090,6 +1121,20 @@
   el.playAgainBtn.addEventListener('click', startRound);
 
   /* ============ INIT ============ */
+  var wideLayoutMq = window.matchMedia('(min-width: 840px)');
+  function openReferencePanelsIfWide(mq){
+    if (mq.matches){
+      el.strategyDetails.open = true;
+      el.historyDetails.open = true;
+    }
+  }
+  openReferencePanelsIfWide(wideLayoutMq);
+  if (wideLayoutMq.addEventListener){
+    wideLayoutMq.addEventListener('change', openReferencePanelsIfWide);
+  } else if (wideLayoutMq.addListener){
+    wideLayoutMq.addListener(openReferencePanelsIfWide);
+  }
+
   renderSetup();
 })();
 </script>
