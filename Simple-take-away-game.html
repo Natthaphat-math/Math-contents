@@ -22,6 +22,7 @@
     --red-dark:   #AE2C20;
     --red-glow:   rgba(213,57,42,0.35);
     --amber:      #E8B23D;
+    --coin-shine: #FBE39B;
     --amber-dim:  rgba(232,178,61,0.18);
     --sage:       #7FB39A;
     --sage-dim:   rgba(127,179,154,0.16);
@@ -208,6 +209,33 @@
     letter-spacing:0.02em;
   }
 
+  /* ============ COIN ROW (take-away visualization) ============ */
+  .coin-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:5px;
+    margin:16px 2px 4px;
+    min-height:18px;
+  }
+  .coin{
+    width:15px; height:15px;
+    border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, var(--coin-shine), var(--amber) 68%);
+    border:1px solid rgba(0,0,0,0.18);
+    box-shadow:0 1px 2px rgba(0,0,0,0.28), inset 0 1px 1px rgba(255,255,255,0.45);
+    flex-shrink:0;
+    transition:opacity 380ms ease, filter 380ms ease, transform 380ms ease, box-shadow 380ms ease;
+  }
+  .coin.is-dimmed{
+    opacity:0.24;
+    filter:grayscale(65%);
+    transform:scale(0.8);
+    box-shadow:none;
+    border-color:var(--chalk-faint);
+  }
+
   /* ============ TRACK (signature element) ============ */
   .track{
     position:relative;
@@ -383,6 +411,36 @@
     color:var(--chalk);
     font-size:12.5px;
   }
+  .details-subhead{
+    font-weight:700; color:var(--chalk); font-size:13.5px;
+    margin-top:18px; margin-bottom:2px;
+  }
+  .formula-box{
+    background:var(--ink-3);
+    border:1px solid var(--chalk-hair);
+    border-left:3px solid var(--sage);
+    border-radius:8px;
+    padding:10px 12px;
+    margin:8px 0;
+    font-family:var(--font-mono);
+    font-size:13.5px;
+    color:var(--chalk);
+    line-height:1.6;
+  }
+  .formula-box .formula-label{
+    display:block; font-family:var(--font-body); font-weight:700;
+    font-size:11px; color:var(--chalk-dim); margin-bottom:4px;
+  }
+  .example-box{
+    background:var(--amber-dim);
+    border-left:3px solid var(--amber);
+    border-radius:8px;
+    padding:10px 12px;
+    margin:8px 0;
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--chalk);
+  }
 
   /* ============ HISTORY ============ */
   .history-list{
@@ -511,6 +569,8 @@
         <p class="goal-number" id="goalNumber">0</p>
       </div>
 
+      <div class="coin-row" id="coinRow" aria-hidden="true"></div>
+
       <div class="track" id="track" aria-hidden="true">
         <div class="track__line"></div>
         <div class="track__goalcap"></div>
@@ -553,6 +613,26 @@
           <p>ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง</p>
           <div class="ladder" id="ladderChips"></div>
           <p class="edge-note" id="edgeNote"></p>
+
+          <p class="details-subhead">เบื้องหลังคณิตศาสตร์: เลขสมภาค (mod)</p>
+          <p>เหตุผลที่จุดปลอดภัยห่างกันทีละ 4 พอดี มาจากแนวคิดเรื่อง <em>เลขสมภาค (congruence)</em> ในวิชาทฤษฎีจำนวน</p>
+
+          <div class="formula-box">
+            <span class="formula-label">บทนิยาม</span>
+            a ≡ b (mod m) ก็ต่อเมื่อ m หาร a − b ลงตัว
+          </div>
+
+          <p>พูดง่าย ๆ คือ a กับ b ให้เศษเหลือเท่ากันเมื่อหารด้วย m</p>
+
+          <div class="example-box">
+            ตัวอย่าง: 15 ≡ 7 (mod 4) เพราะ 4 หาร 15 − 7 = 8 ลงตัว กล่าวอีกนัยหนึ่งคือ เศษเหลือจากการหาร 15 ด้วย 4 มีค่าเท่ากับเศษเหลือจากการหาร 7 ด้วย 4 (มีเศษเหลือเป็น 3 เหมือนกัน)
+          </div>
+
+          <p>ในเกมนี้ จุดปลอดภัยทุกจุดคือจำนวนที่สมภาคกับเป้าหมาย mod 4 นั่นคือ n ≡ เป้าหมาย (mod 4) เพราะจุดปลอดภัยแต่ละจุดมีค่าเท่ากับ เป้าหมาย − 4k เสมอ ซึ่งต่างจากเป้าหมายด้วยจำนวนที่หารด้วย 4 ลงตัว นี่คือนิยามของ ≡ พอดี</p>
+
+          <div class="example-box" id="liveModExample"></div>
+
+          <p>เคล็ดลับของกลยุทธ์นี้คือ 4 ≡ 0 (mod 4) การบวกด้วยพหุคูณของ 4 จึงไม่เปลี่ยนเศษเหลือเลย เมื่อคุณยืนอยู่บนจุดปลอดภัย ไม่ว่าอีกฝ่ายจะเดิน x (1, 2 หรือ 3) คุณก็เดินต่อด้วย 4 − x เสมอ รวมกันได้ 4 พอดี ตัวเลขใหม่จึงยังคงสมภาคกับเป้าหมาย mod 4 เหมือนเดิม คุณจึงกลับมายืนบนจุดปลอดภัยจุดถัดไปได้ทุกครั้ง จนกระทั่งจุดปลอดภัยจุดสุดท้ายคือเป้าหมายเอง (เพราะเป้าหมาย − เป้าหมาย = 0 และ 4 หาร 0 ลงตัวเสมอ)</p>
         </div>
       </details>
 
@@ -620,6 +700,7 @@
     scoreStudent: document.getElementById('scoreStudent'),
     scoreBot: document.getElementById('scoreBot'),
     goalNumber: document.getElementById('goalNumber'),
+    coinRow: document.getElementById('coinRow'),
     track: document.getElementById('track'),
     trackTicks: document.getElementById('trackTicks'),
     trackMarker: document.getElementById('trackMarker'),
@@ -631,6 +712,7 @@
     hintLabel: document.getElementById('hintLabel'),
     ladderChips: document.getElementById('ladderChips'),
     edgeNote: document.getElementById('edgeNote'),
+    liveModExample: document.getElementById('liveModExample'),
     historyList: document.getElementById('historyList'),
     resultBanner: document.getElementById('resultBanner'),
     resultTitle: document.getElementById('resultTitle'),
@@ -687,6 +769,23 @@
       if (animate) span.style.animationDelay = (i * 40) + 'ms';
       span.textContent = str[i];
       el.counter.appendChild(span);
+    }
+  }
+
+  /* ============ RENDER: COINS (take-away visualization) ============ */
+  function renderCoins(){
+    var goal = state.goal;
+    if (el.coinRow.children.length !== goal){
+      el.coinRow.innerHTML = '';
+      for (var i = 0; i < goal; i++){
+        var coin = document.createElement('span');
+        coin.className = 'coin';
+        el.coinRow.appendChild(coin);
+      }
+    }
+    var kids = el.coinRow.children;
+    for (var j = 0; j < kids.length; j++){
+      kids[j].classList.toggle('is-dimmed', j < state.current);
     }
   }
 
@@ -774,6 +873,12 @@
       el.ladderChips.appendChild(chip);
     });
 
+    var a = state.goal;
+    var b = ladder.length > 1 ? ladder[1] : ladder[0];
+    var diff = a - b;
+    var remainder = a % 4;
+    el.liveModExample.textContent = 'ตัวอย่างในเกมนี้: ' + a + ' ≡ ' + b + ' (mod 4) เพราะ 4 หาร ' + a + ' − ' + b + ' = ' + diff + ' ลงตัว เศษเหลือจากการหาร ' + a + ' และ ' + b + ' ด้วย 4 เท่ากับ ' + remainder + ' ทั้งคู่ — ' + b + ' จึงเป็นจุดปลอดภัยของเป้าหมาย ' + a + ' ด้วย';
+
     if (state.pendingFirstPick || !state.roundFirstMover){
       el.edgeNote.textContent = 'เลือกว่าใครเริ่มก่อน แล้วดูว่าใครได้เปรียบจากตัวเลขด้านบน';
       return;
@@ -853,6 +958,7 @@
   function renderGame(animateCounter){
     el.goalNumber.textContent = state.goal;
     renderCounter(animateCounter);
+    renderCoins();
     renderTrack();
     renderFirstPick();
     renderStatus();
