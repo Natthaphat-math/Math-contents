@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F4F8">
+<title>บัตรคำ · ทบทวนคณิตศาสตร์</title>
+<meta name="description" content="แอปทบทวนบทเรียนคณิตศาสตร์ด้วยบัตรคำ แตะเพื่อดูคำตอบ แล้วปัดเพื่อบอกว่าจำได้หรือไม่">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Sans+Thai:wght@500;600;700&display=swap" rel="stylesheet">
+
+<!-- KaTeX: renders inline/display LaTeX math on card faces -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+
+<style>
+  :root{
+    /* ---- palette: a desk full of index cards, not a chalkboard ---- */
+    --paper:#F2F4F8;
+    --paper-deep:#E6E9F1;
+    --card-front:#FFFFFF;
+    --card-back:#FBFAF6;
+    --dot: rgba(43,76,126,.09);
+    --rule: rgba(43,76,126,.09);
+
+    --ink:#20232C;
+    --ink-soft:#616774;
+    --ink-faint:#9CA2AD;
+
+    --brand:#2B4C7E;
+    --brand-deep:#1D3557;
+
+    --yes:#1F8F5B;
+    --yes-soft:#E1F5EA;
+    --no:#D6483F;
+    --no-soft:#FBE7E4;
+
+    --ps:#E2793D;   --ps-soft:#FBEADC;
+    --jh:#1E8C8C;   --jh-soft:#DFF3F1;
+    --sh:#7A52C9;   --sh-soft:#ECE4F8;
+    --uni:#B23A5A;  --uni-soft:#F8E3E9;
+
+    --shadow: 0 20px 44px rgba(32,35,44,.16), 0 2px 0 rgba(32,35,44,.03);
+
+    --font-display:'Kanit','Noto Sans Thai','Segoe UI',sans-serif;
+    --font-body:'Sarabun','Noto Sans Thai','Segoe UI',sans-serif;
+    --font-mono:'JetBrains Mono','Noto Sans Thai',ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%; margin:0; overscroll-behavior:none;}
+  button{font:inherit; color:inherit; background:none;}
+  [hidden]{display:none !important;}
+
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:
+      radial-gradient(var(--dot) 1.1px, transparent 1.3px) 0 0/22px 22px,
+      var(--paper);
+    height:100vh; height:100dvh; width:100%;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  #app{position:relative; width:100%; height:100%; max-width:640px; margin:0 auto;}
+
+  .screen{
+    position:absolute; inset:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column; align-items:center;
+    padding:28px 20px 40px;
+    opacity:0; pointer-events:none; transform:translateY(8px);
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .screen.active{opacity:1; pointer-events:auto; transform:translateY(0);}
+
+  button:focus-visible, .deck-tile:focus-visible, .card-drag:focus-visible{
+    outline:3px solid var(--brand); outline-offset:3px; border-radius:8px;
+  }
+
+  /* ================= HOME ================= */
+  .home{width:100%; max-width:520px;}
+
+  .eyebrow{
+    font-family:var(--font-mono); font-size:11px; font-weight:700;
+    letter-spacing:.14em; color:var(--brand); margin:0 0 8px; text-transform:uppercase;
+  }
+  .home-title{
+    font-family:var(--font-display); font-weight:700;
+    font-size:clamp(28px,7vw,36px); color:var(--ink); margin:0 0 10px;
+  }
+  .home-lede{
+    font-size:14.5px; color:var(--ink-soft); margin:0; line-height:1.6; max-width:420px;
+  }
+
+  .level-rail{border-bottom:2px solid rgba(32,35,44,.1); margin:24px 0 22px;}
+  .level-tabs{
+    display:flex; gap:6px; padding:0 2px;
+    overflow-x:auto; overflow-y:hidden;
+    touch-action:pan-x; -webkit-overflow-scrolling:touch;
+  }
+  .tab{
+    flex:0 0 auto; font-family:var(--font-mono); font-weight:700; font-size:12px;
+    letter-spacing:.03em; padding:9px 15px 10px; border-radius:10px 10px 0 0;
+    border:1.5px solid rgba(32,35,44,.14); border-bottom:none;
+    background:#fff; color:var(--ink-soft); cursor:pointer; touch-action:manipulation;
+    transform:translateY(2px); transition:transform .15s, background .15s, color .15s;
+  }
+  .tab.active{background:var(--brand); border-color:var(--brand); color:#fff; transform:translateY(0); box-shadow:0 -4px 12px rgba(32,35,44,.1);}
+  .tab.active.lvl-ps{background:var(--ps); border-color:var(--ps);}
+  .tab.active.lvl-jh{background:var(--jh); border-color:var(--jh);}
+  .tab.active.lvl-sh{background:var(--sh); border-color:var(--sh);}
+  .tab.active.lvl-uni{background:var(--uni); border-color:var(--uni);}
+  .tab.empty{opacity:.4;}
+
+  .deck-list{display:flex; flex-direction:column; gap:16px; padding-bottom:30px;}
+  .empty-note{font-size:14px; color:var(--ink-faint); padding:18px 4px;}
+
+  .deck-tile{
+    position:relative; overflow:hidden; width:100%; display:flex; align-items:center; gap:14px;
+    text-align:left; padding:20px 22px; border-radius:14px;
+    border:1px solid rgba(32,35,44,.08); border-left:6px solid var(--lvl-color, var(--brand));
+    background:var(--card-front); cursor:pointer; touch-action:manipulation;
+    box-shadow:0 10px 22px rgba(32,35,44,.07);
+    transition:transform .16s ease, box-shadow .16s ease;
+    animation:riseIn .45s ease both;
+  }
+  .deck-tile:active{transform:translateY(0);}
+  @keyframes riseIn{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  .deck-glyph{
+    position:absolute; right:-4px; bottom:-22px; font-family:var(--font-display); font-weight:700;
+    font-size:100px; line-height:1; color:var(--lvl-color, var(--brand)); opacity:.11;
+    pointer-events:none; user-select:none;
+  }
+
+  .deck-info{flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; position:relative;}
+  .deck-topic{font-family:var(--font-display); font-weight:600; font-size:18.5px; color:var(--ink);}
+  .deck-meta{display:flex; align-items:center; gap:10px;}
+  .deck-count{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);}
+  .deck-progress{font-family:var(--font-mono); font-size:11px;}
+  .prog-yes{color:var(--yes); font-weight:700;}
+  .prog-no{color:var(--no); font-weight:700;}
+  .dotsep{opacity:.4; margin:0 1px;}
+
+  .reset-link{
+    align-self:center; display:inline-flex; align-items:center; gap:6px;
+    margin-top:8px; padding:10px 18px; border-radius:999px;
+    border:1.5px solid rgba(32,35,44,.18); background:transparent;
+    font-family:var(--font-mono); font-size:12px; font-weight:600;
+    color:var(--ink-soft); cursor:pointer; touch-action:manipulation;
+  }
+  .reset-link:active{background:rgba(32,35,44,.06);}
+  .reset-link.armed{color:var(--no); border-color:var(--no); background:var(--no-soft);}
+  .deck-arrow{font-size:18px; color:var(--ink-faint); flex:0 0 auto; position:relative;}
+
+  .level-pill{
+    font-family:var(--font-mono); font-size:10.5px; font-weight:700;
+    padding:4px 9px; border-radius:999px; white-space:nowrap; letter-spacing:.02em;
+  }
+  .lvl-ps.level-pill{background:var(--ps-soft); color:var(--ps);}
+  .lvl-jh.level-pill{background:var(--jh-soft); color:var(--jh);}
+  .lvl-sh.level-pill{background:var(--sh-soft); color:var(--sh);}
+  .lvl-uni.level-pill{background:var(--uni-soft); color:var(--uni);}
+
+  /* ================= STUDY ================= */
+  #screen-study{overflow:hidden; padding:16px 20px 14px;}
+
+  .study-top{
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%; max-width:420px; margin-bottom:10px; flex:0 0 auto; gap:10px;
+  }
+  .back-btn{
+    display:flex; align-items:center; gap:6px;
+    font-family:var(--font-body); font-weight:600; font-size:14px;
+    color:var(--ink-soft); cursor:pointer; padding:6px 4px; touch-action:manipulation;
+  }
+  .study-crumb{
+    font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px; min-width:0;
+  }
+  .study-crumb .topic-name{font-family:var(--font-display); font-weight:600; color:var(--ink);}
+  .study-crumb .dot{opacity:.5;}
+  .progress-label{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); white-space:nowrap;}
+
+  .progress-track{
+    width:100%; max-width:420px; height:5px; border-radius:999px;
+    background:rgba(32,35,44,.09); overflow:hidden; margin-bottom:14px; flex:0 0 auto;
+  }
+  .progress-fill{height:100%; background:var(--brand); border-radius:999px; transition:width .4s ease;}
+
+  .stage{
+    position:relative; width:100%; min-height:0; flex:1;
+    display:flex; align-items:center; justify-content:center; padding:2px 0;
+  }
+  .deck-behind, .card-drag{width:min(86vw,340px); height:100%; max-height:430px;}
+  .deck-behind{
+    position:absolute; border-radius:18px; background:var(--paper-deep);
+    border:1px solid rgba(32,35,44,.07);
+  }
+  .deck-behind-1{transform:rotate(-3deg) translateY(6px);}
+  .deck-behind-2{transform:rotate(3deg) translateY(10px); opacity:.7;}
+
+  .card-drag{
+    position:relative; z-index:2; perspective:1400px; cursor:grab;
+    touch-action:none; -webkit-user-select:none; user-select:none;
+  }
+  .card-drag:active{cursor:grabbing;}
+
+  .card-flip{
+    position:relative; width:100%; height:100%; transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .card-flip.flipped{transform:rotateY(180deg);}
+
+  .card-face{
+    position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border-radius:16px; box-shadow:var(--shadow); border:1px solid rgba(32,35,44,.09);
+    padding:24px 20px 16px; display:flex; flex-direction:column;
+    background-color:var(--card-front);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px);
+    background-position: 0 58px;
+  }
+  .card-back{background-color:var(--card-back); transform:rotateY(180deg);}
+
+  .card-hole{
+    position:absolute; top:14px; left:16px; width:15px; height:15px; border-radius:50%;
+    background:var(--paper);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.28), 0 1px 0 rgba(255,255,255,.7);
+    border:1px solid rgba(32,35,44,.14);
+  }
+  .corner-flag{
+    position:absolute; top:0; right:20px; width:30px; height:13px;
+    border-radius:0 0 5px 5px; background:var(--lvl-color, var(--brand));
+    box-shadow:0 3px 6px rgba(0,0,0,.15);
+  }
+  .face-tag-row{display:flex; justify-content:flex-end; margin-bottom:8px;}
+  .face-tag-row .level-pill{margin-left:auto;}
+  .answer-tag{
+    align-self:flex-end; font-family:var(--font-mono); font-size:10.5px; font-weight:700;
+    padding:4px 10px; border-radius:999px; background:var(--yes-soft); color:var(--yes);
+    letter-spacing:.04em; margin-bottom:6px;
+  }
+
+  .card-body{flex:1; min-height:0; overflow-y:auto; overflow-x:auto; display:table; width:100%;}
+  .card-body-inner{
+    display:table-cell; vertical-align:middle; text-align:center;
+    font-size:clamp(15px,4vw,17px); line-height:1.6; padding:4px 2px; color:var(--ink);
+  }
+  .card-body-inner strong{color:var(--brand-deep);}
+  .katex{white-space:nowrap;}
+
+  .tikz-holder{margin-top:10px; display:flex; justify-content:center; width:100%;}
+  .tikz-holder svg{max-width:100%; height:auto;}
+
+  .tap-hint{
+    margin-top:auto; padding-top:8px; font-family:var(--font-mono);
+    font-size:11px; color:var(--ink-faint); text-align:center; letter-spacing:.03em;
+  }
+
+  .wash{
+    position:absolute; inset:0; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; z-index:5;
+  }
+  .wash-yes{background:linear-gradient(120deg, rgba(31,143,91,0) 0%, rgba(31,143,91,.2) 100%);}
+  .wash-no{background:linear-gradient(240deg, rgba(214,72,63,0) 0%, rgba(214,72,63,.2) 100%);}
+  .stamp-text{
+    font-family:var(--font-display); font-weight:700; font-size:22px; letter-spacing:.05em;
+    padding:7px 16px; border:3px solid currentColor; border-radius:8px; text-transform:uppercase;
+  }
+  .wash-yes .stamp-text{color:var(--yes); transform:rotate(-9deg);}
+  .wash-no .stamp-text{color:var(--no); transform:rotate(9deg);}
+
+  .swipe-hint{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    width:100%; max-width:380px; margin-top:10px; flex:0 0 auto;
+    font-size:13px; opacity:.4; transition:opacity .25s; pointer-events:none;
+  }
+  .swipe-hint.active{opacity:1;}
+  .swipe-hint .no{color:var(--no); font-weight:600;}
+  .swipe-hint .yes{color:var(--yes); font-weight:600;}
+
+  /* ================= SUMMARY ================= */
+  .summary{
+    position:absolute; inset:0; z-index:3;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:18px; text-align:center;
+  }
+  .summary-mark{width:50px; height:50px; margin-bottom:2px;}
+  .summary-mark path{
+    fill:none; stroke:var(--yes); stroke-width:9; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:1; stroke-dashoffset:1; animation:drawcheck .6s ease .15s forwards;
+  }
+  @keyframes drawcheck{to{stroke-dashoffset:0;}}
+  .summary-title{font-family:var(--font-display); font-weight:600; font-size:clamp(19px,4.8vw,23px); margin:0;}
+  .summary-stat{font-family:var(--font-mono); font-size:14px; color:var(--ink-soft); margin:0;}
+  .summary-praise{font-size:13px; color:var(--yes); margin:0;}
+
+  .summary-actions{display:flex; flex-direction:column; gap:8px; width:100%; max-width:300px; margin-top:10px;}
+  .btn{
+    font-family:var(--font-display); font-weight:600; font-size:14.5px;
+    padding:12px 22px; border-radius:12px; border:none; cursor:pointer; touch-action:manipulation;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{background:var(--brand); color:#fff; box-shadow:0 10px 22px rgba(43,76,126,.28);}
+  .btn-ghost{background:transparent; border:1.5px solid rgba(32,35,44,.18); color:var(--ink);}
+
+  @media (min-width:640px){.screen{padding-top:46px;}}
+
+  /* Hover styling only for real pointer devices — on touch screens, WebKit/Chrome
+     can require a "spend" first tap to trigger :hover before a second tap actually
+     clicks. Gating hover behind this query keeps every button a single, immediate
+     tap on phones and tablets while still giving mouse users a hover cue. */
+  @media (hover:hover) and (pointer:fine){
+    .deck-tile:hover{transform:translateY(-2px); box-shadow:0 14px 28px rgba(32,35,44,.12);}
+    .reset-link:hover{border-color:var(--no); color:var(--no);}
+    .back-btn:hover{color:var(--brand);}
+    .btn-primary:hover{transform:translateY(-2px);}
+    .btn-ghost:hover{border-color:var(--brand); color:var(--brand);}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .screen,.card-flip,.card-drag,.deck-tile,.tab,.btn,.progress-fill,.summary-mark path{
+      transition:none !important; animation:none !important; stroke-dashoffset:0 !important;
+    }
+  }
+</style>
+</head>
+<body>
+<noscript>แอปนี้ต้องเปิดใช้งาน JavaScript จึงจะทำงานได้</noscript>
+
+<div id="app">
+
+  <!-- ================= HOME ================= -->
+  <section class="screen active" id="screen-home">
+    <div class="home">
+      <p class="eyebrow">ทบทวนคณิตศาสตร์</p>
+      <h1 class="home-title">บัตรคำ</h1>
+      <p class="home-lede">มองด้านหน้าแล้วลองนึกคำตอบดู แตะที่การ์ดเพื่อตรวจคำตอบ จากนั้นปัดเพื่อบอกว่าจำได้หรือไม่</p>
+
+      <div class="level-rail">
+        <div class="level-tabs" id="level-tabs" role="tablist" aria-label="กรองตามระดับชั้น"></div>
+      </div>
+      <div class="deck-list" id="deck-list"></div>
+    </div>
+  </section>
+
+  <!-- ================= STUDY ================= -->
+  <section class="screen" id="screen-study">
+    <div class="study-top">
+      <button class="back-btn" id="back-btn" type="button" aria-label="กลับไปหน้าชุดการ์ด">← กลับ</button>
+      <span class="progress-label" id="progress-label">การ์ดที่ 1 จาก 1</span>
+    </div>
+    <div class="study-crumb" style="width:100%; max-width:420px; margin-bottom:8px;">
+      <span class="topic-name" id="crumb-topic">—</span>
+      <span class="dot">·</span>
+      <span class="level-pill" id="crumb-level">—</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+    <div class="stage" id="stage">
+      <div class="deck-behind deck-behind-2" aria-hidden="true"></div>
+      <div class="deck-behind deck-behind-1" aria-hidden="true"></div>
+
+      <div class="card-drag" id="card-drag" role="button" tabindex="0" aria-label="การ์ดคำถาม แตะเพื่อดูคำตอบ">
+        <div class="card-flip" id="card-flip">
+          <div class="card-face card-front">
+            <div class="card-hole" aria-hidden="true"></div>
+            <span class="corner-flag" id="front-flag" aria-hidden="true"></span>
+            <div class="face-tag-row"><span class="level-pill" id="front-level"></span></div>
+            <div class="card-body"><div class="card-body-inner" id="front-content"></div></div>
+            <span class="tap-hint">แตะเพื่อพลิก</span>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-hole" aria-hidden="true"></div>
+            <span class="corner-flag" id="back-flag" aria-hidden="true"></span>
+            <span class="answer-tag">คำตอบ</span>
+            <div class="card-body"><div class="card-body-inner" id="back-content"></div></div>
+            <span class="tap-hint">แตะเพื่อพลิกกลับ</span>
+          </div>
+        </div>
+        <div class="wash wash-yes" id="wash-yes" aria-hidden="true"><span class="stamp-text">จำได้</span></div>
+        <div class="wash wash-no" id="wash-no" aria-hidden="true"><span class="stamp-text">ทบทวน</span></div>
+      </div>
+
+      <div class="summary" id="summary" hidden>
+        <svg class="summary-mark" viewBox="0 0 100 100" aria-hidden="true"><path pathLength="1" d="M20,55 L42,75 L82,25"/></svg>
+        <h2 class="summary-title">จบการ์ดชุดนี้แล้ว</h2>
+        <p class="summary-stat" id="summary-stat"></p>
+        <p class="summary-praise" id="summary-praise" hidden>เยี่ยมมาก! จำได้ครบทุกใบ</p>
+        <div class="summary-actions" id="summary-actions"></div>
+      </div>
+    </div>
+
+    <div class="swipe-hint" id="swipe-hint">
+      <span class="no">← ยังจำไม่ได้ <span style="opacity:.7; font-weight:500;">(ปัดซ้าย)</span></span>
+      <span class="yes"><span style="opacity:.7; font-weight:500;">(ปัดขวา)</span> จำได้ →</span>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+/* ================================================================================
+   คู่มือแก้ไขสำหรับครู — อ่านก่อนแก้ไขอาร์เรย์ CARDS ด้านล่าง
+
+   การ์ดแต่ละใบคือหนึ่งอ็อบเจกต์ (ชื่อคีย์เป็นภาษาอังกฤษตามหลัก JavaScript คงไว้ตามเดิม):
+     {
+       topic: 'เซต',         // ชื่อชุด (deck) — ใส่ชื่อหัวข้อใหม่ที่ไม่เคยมีมาก่อน
+                             // ระบบจะสร้างชุดการ์ดใหม่บนหน้าแรกให้อัตโนมัติ
+                             // การ์ดที่ใช้ topic เดียวกันต้องอยู่ระดับชั้น (level)
+                             // เดียวกันเท่านั้น
+       level: 'sh',          // เลือกได้แค่: 'ps' (ประถม), 'jh' (ม.ต้น),
+                             //              'sh' (ม.ปลาย), 'uni' (มหาลัย)
+       front: `...`,         // สิ่งที่นักเรียนเห็นก่อน รองรับ:
+                             //   - สมการแทรกในบรรทัด: $a^2+b^2=c^2$
+                             //   - สมการแบบเต็มบรรทัด: $$\\int_0^1 x\\,dx$$
+                             //   - ตัวหนา ด้วย **ข้อความ**
+                             //   - ขึ้นบรรทัดใหม่ได้จริง (กด Enter ได้เลย เพราะ
+                             //     ใช้ backtick string)
+       back: `...`,          // คำตอบ ที่จะแสดงเมื่อแตะ ใช้กฎการจัดรูปแบบเดียวกัน
+       frontTikz: `...`,     // ไม่บังคับ ใส่โค้ด TikZ ดิบ ๆ รวมทั้ง
+       backTikz: `...`,      // \\begin{tikzpicture} ... \\end{tikzpicture}
+                             // จะวาดอยู่ใต้ข้อความของด้านนั้น ถ้าด้านไหนไม่มีรูป
+                             // ให้ไม่ต้องใส่คีย์นี้ (หรือใส่เป็น null)
+       id: 'set-1',          // ไม่บังคับ แต่แนะนำให้ใส่เมื่อเริ่มใช้กับนักเรียนจริง
+                             // ใช้สำหรับ "จำ" สถานะจำได้/ต้องทบทวนของการ์ดแต่ละใบ
+                             // ข้ามวันไว้ (บันทึกในเบราว์เซอร์) ใส่เป็นข้อความสั้น ๆ
+                             // ที่ไม่ซ้ำกันก็พอ ถ้าไม่ใส่ ระบบจะสร้างให้อัตโนมัติจาก
+                             // topic และตำแหน่งของการ์ด ซึ่งจะใช้ได้ดีจนกว่าจะมีการ
+                             // สลับลำดับหรือลบการ์ดที่อยู่ก่อนหน้า ซึ่งอาจทำให้
+                             // ความคืบหน้าที่บันทึกไว้ไปอยู่ผิดใบได้ ใส่ id ชัดเจน
+                             // ไว้จะปลอดภัยกว่า
+     }
+
+   เนื่องจากนี่คือ JavaScript string ปกติ เครื่องหมาย backslash ทุกตัวในคำสั่ง LaTeX
+   หรือ TikZ ต้องพิมพ์สองครั้ง — \\dfrac, \\begin{...}, \\node ฯลฯ — เพื่อให้เหลือ
+   backslash ตัวเดียวหลัง JavaScript อ่านค่าสตริงนั้น จุดนี้คือส่วนที่มักพลาดตอนแก้ไขเอง
+   ส่วนที่เหลือเป็นข้อความธรรมดาทั้งหมด
+
+   หากต้องการเพิ่มหัวข้อใหม่ ให้เพิ่มการ์ดของหัวข้อนั้นตรงไหนก็ได้ในอาร์เรย์ — ชุดการ์ด
+   ใหม่จะปรากฏบนหน้าแรกเองพร้อมนับจำนวนให้ ถ้าอยากให้หัวข้อใหม่มีไอคอนพื้นหลังจาง ๆ
+   เป็นของตัวเอง ให้เพิ่มรายการลงใน TOPIC_GLYPH ด้านล่าง (ไม่บังคับ — หัวข้อที่ไม่ได้
+   ระบุไว้จะใช้ตัวอักษรแรกของชื่อแทน)
+   ================================================================================ */
+
+const TOPIC_GLYPH = {
+  'เซต': '∈',
+  'จำนวนเต็ม': 'ℤ',
+  'สมบัติของเลขยกกําลัง': 'aᵇ',
+  'การแยกตัวประกอบพหุนามดีกรีสอง' : 'x',
+  'เศษส่วน': '½',
+};
+
+const CARDS = [
+
+  // ---------- หัวข้อ: เซต (มัธยมปลาย) ----------
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-1',
+    front: `กำหนดให้ $A = \\{1, 2, 3, 4, 5\\}$ และ $B = \\{3, 4, 5, 6, 7\\}$
+จงหา $A \\cap B$`,
+    frontTikz: `\\begin{tikzpicture}[scale=0.8]
+\\draw[thick,blue] (-0.9,0) circle (1.4);
+\\draw[thick,red] (0.9,0) circle (1.4);
+\\node at (-1.9,1.15) {$A$};
+\\node at (1.9,1.15) {$B$};
+\\node at (-1.3,0.3) {1};
+\\node at (-1.3,-0.3) {2};
+\\node at (0,0.4) {3};
+\\node at (0,0) {4};
+\\node at (0,-0.4) {5};
+\\node at (1.3,0.3) {6};
+\\node at (1.3,-0.3) {7};
+\\end{tikzpicture}`,
+    back: `$A \\cap B = \\{3, 4, 5\\}$
+คือสมาชิกที่อยู่ใน**ทั้งสอง**เซต`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-2',
+    front: `กำหนดให้ $A = \\{2, 4, 6\\}$ และ $B = \\{1, 2, 3, 4, 5, 6\\}$
+$A \\subseteq B$ หรือไม่`,
+    back: `**ใช่** $A \\subseteq B$
+สมาชิกทุกตัวของ $A$ คือ 2, 4 และ 6 ก็เป็นสมาชิกของ $B$ ด้วย`,
+  },
+  // ---------- หัวข้อ: สมบัติของเลขยกกําลัง (ม.2) ----------
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'def1',
+    front: `**บทนิยาม**
+    เมื่อ $a$ เป็นจํานวนใด ๆ และ $n$ เป็นจํานวนเต็มบวก
+    $a^n = \\,?$`,
+    back: `$a^{n}=\\underbrace{a\\times a\\times \\ldots \\times a}_{n\\  \\text{ตัว}}$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'def2',
+    front: `**บทนิยาม**
+    เมื่อ $a$ เป็นจํานวนใด ๆ ที่ไม่เท่ากับ $0$ และ $n$ เป็นจํานวนเต็ม
+    $a^{-n} = \\,?$`,
+    back: `$a^{-n}=\\frac{1}{a^n}$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'def3',
+    front: `**บทนิยาม**
+    เมื่อ $a$ เป็นจํานวนใด ๆ ที่ไม่เท่ากับ $0$
+    $a^{0} = \\,?$`,
+    back: `$a^{0}=1$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'thm1',
+    front: `**สมบัติของเลขยกกําลัง**
+    เมื่อ $a$ เป็นจํานวนใด ๆ $m$ และ $n$ เป็นจํานวนเต็ม
+    $a^m \\times a^n = \\,?$`,
+    back: `$a^m \\times a^n =a^{m+n}$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'thm2',
+    front: `**สมบัติของเลขยกกําลัง**
+    เมื่อ $a$ เป็นจํานวนใด ๆ โดยที่ $a\\neq0$ $m$ และ $n$ เป็นจํานวนเต็ม
+    $a^m \\div a^n = \\,?$`,
+    back: `$a^m \\div a^n =a^{m-n}$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'thm3',
+    front: `**สมบัติของเลขยกกําลัง**
+    เมื่อ $a$ เป็นจํานวนใด ๆ $m$ และ $n$ เป็นจํานวนเต็ม
+    $\\left( a^{m} \\right)^{n} = \\,?$`,
+    back: `$\\left( a^{m} \\right)^{n} =a^{m\\times n}$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'thm4',
+    front: `**สมบัติของเลขยกกําลัง**
+    เมื่อ $a,b$ เป็นจํานวนใด ๆ $n$ เป็นจํานวนเต็ม
+    $\\left( a\\times b \\right)^{n} = \\,?$`,
+    back: `$\\left( a\\times b \\right)^{n} =a^{n}\\times b^{n}$`,
+  },
+  {
+    topic: 'สมบัติของเลขยกกําลัง',
+    level: 'jh',
+    id: 'thm5',
+    front: `**สมบัติของเลขยกกําลัง**
+    เมื่อ $a,b$ เป็นจํานวนใด ๆ โดยที่ $b\\neq0$ $n$ เป็นจํานวนเต็ม
+    $\\left( \\frac{a}{b} \\right)^{n} = \\,?$`,
+    back: `$\\left( \\frac{a}{b} \\right)^{n} =\\frac{a^{n}}{b^{n}}$`,
+  },
+  // ---------- หัวข้อ: การแยกตัวประกอบพหุนามดีกรีสอง (ม.ต้น) ----------
+  {
+    topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
+    level: 'jh',
+    id: 'perfect-square+',
+    front: `$(x+y)^2 = \\,?$`,
+    back: `$x^2 +2xy +y^2$`,
+  },
+  {
+    topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
+    level: 'jh',
+    id: 'perfect-square-',
+    front: `$(x-y)^2= \\,?$`,
+    back: `$x^2 -2xy +y^2$`,
+  },
+  // ---------- หัวข้อ: จำนวนเต็ม (มัธยมต้น) ----------
+  {
+    topic: 'จำนวนเต็ม',
+    level: 'jh',
+    id: 'int-1',
+    front: `$(-8) + (-5) = \\,?$`,
+    back: `$-13$
+บวกจำนวนลบสองจำนวน: นำค่าสัมบูรณ์มาบวกกัน แล้วใส่เครื่องหมายลบไว้เหมือนเดิม`,
+    backTikz: `\\begin{tikzpicture}[scale=0.5]
+\\draw[thick,->] (-15,0) -- (1,0);
+\\foreach \\x in {-14,-13,...,0}{
+  \\draw (\\x,-0.15) -- (\\x,0.15);
+}
+\\node[below] at (0,-0.4) {0};
+\\node[below] at (-8,-0.4) {-8};
+\\node[below] at (-13,-0.4) {-13};
+\\draw[thick,red,->] (0,0.7) to[bend left=25] (-8,0.7);
+\\node[above,red] at (-4,1.3) {-8};
+\\draw[thick,blue,->] (-8,1.9) to[bend left=25] (-13,1.9);
+\\node[above,blue] at (-10.5,2.5) {-5};
+\\end{tikzpicture}`,
+  },
+  {
+    topic: 'จำนวนเต็ม',
+    level: 'jh',
+    id: 'int-2',
+    front: `$(-4) \\times (-3) = \\,?$`,
+    back: `$12$
+**ลบคูณลบ** ได้ผลลัพธ์เป็นบวกเสมอ`,
+  },
+
+  // ---------- หัวข้อ: เศษส่วน (ประถมศึกษา) ----------
+  {
+    topic: 'เศษส่วน',
+    level: 'ps',
+    id: 'frac-1',
+    front: `$\\dfrac{1}{4} + \\dfrac{1}{2} = \\,?$`,
+    back: `$\\dfrac{3}{4}$
+ทำส่วนให้เท่ากันก่อน: $\\dfrac{1}{4} + \\dfrac{2}{4} = \\dfrac{3}{4}$`,
+    backTikz: `\\begin{tikzpicture}[scale=1]
+\\draw[thick] (0,0) circle (1.3);
+\\draw[thick] (0,0) -- (90:1.3);
+\\draw[thick] (0,0) -- (180:1.3);
+\\draw[thick] (0,0) -- (270:1.3);
+\\draw[thick] (0,0) -- (0:1.3);
+\\fill[teal,opacity=0.55] (0,0) -- (90:1.3) arc (90:180:1.3) -- cycle;
+\\fill[teal,opacity=0.55] (0,0) -- (180:1.3) arc (180:270:1.3) -- cycle;
+\\fill[teal,opacity=0.55] (0,0) -- (270:1.3) arc (270:360:1.3) -- cycle;
+\\end{tikzpicture}`,
+  },
+  {
+    topic: 'เศษส่วน',
+    level: 'ps',
+    id: 'frac-2',
+    front: `ทำ $\\dfrac{6}{8}$ ให้เป็นเศษส่วนอย่างต่ำ`,
+    back: `$\\dfrac{3}{4}$
+หารทั้งเศษและส่วนด้วย ห.ร.ม. คือ 2`,
+  },
+];
+
+/* ================================================================================
+   ตั้งแต่บรรทัดนี้ลงไปเป็นโค้ดของแอป — ไม่จำเป็นต้องแก้ไขเพื่อเพิ่ม/เปลี่ยนการ์ด
+   ================================================================================ */
+
+const LEVELS = [
+  {code:'ps', label:'ประถม'},
+  {code:'jh', label:'ม.ต้น'},
+  {code:'sh', label:'ม.ปลาย'},
+  {code:'uni', label:'มหาลัย'},
+];
+const LEVEL_LABEL = Object.fromEntries(LEVELS.map(l=>[l.code,l.label]));
+
+function levelClass(code){ return 'lvl-' + code; }
+function glyphFor(topic){
+  return TOPIC_GLYPH[topic] || (topic ? topic.charAt(0).toUpperCase() : '?');
+}
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatFace(raw){
+  let out = escapeHtml(raw);
+  out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  out = out.replace(/\n/g, '<br>');
+  return out;
+}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function cardsForTopic(topic){ return CARDS.filter(c => c.topic === topic); }
+
+// ---------- stable per-card id (falls back to topic + position if none given) ----------
+const CARD_IDS = new WeakMap();
+(function assignCardIds(){
+  const seenPerTopic = {};
+  CARDS.forEach(c=>{
+    seenPerTopic[c.topic] = (seenPerTopic[c.topic] || 0) + 1;
+    CARD_IDS.set(c, c.id || (c.topic + '__' + seenPerTopic[c.topic]));
+  });
+})();
+function idOf(card){ return CARD_IDS.get(card); }
+
+// ---------- progress: remembered / needs-review status, saved in this browser ----------
+const PROGRESS_KEY = 'mathFlashcards.progress.v1';
+function loadProgress(){
+  try{ return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}'); }
+  catch(err){ return {}; }
+}
+function saveProgress(){
+  try{ localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress)); }
+  catch(err){ /* storage unavailable (e.g. private browsing) — fail quietly */ }
+}
+function deckProgress(topic){
+  let mastered = 0, review = 0;
+  cardsForTopic(topic).forEach(c=>{
+    const status = progress[idOf(c)];
+    if(status === 'remembered') mastered++;
+    else if(status === 'review') review++;
+  });
+  return {mastered, review};
+}
+
+function getDecks(){
+  const map = new Map();
+  CARDS.forEach(c=>{
+    if(!map.has(c.topic)) map.set(c.topic, {topic:c.topic, level:c.level, count:0});
+    map.get(c.topic).count++;
+  });
+  return [...map.values()];
+}
+
+// ---------- lazy-load TikZJax only once a card that needs it is shown ----------
+let tikzLoading = null;
+function ensureTikzJax(){
+  if(window.__tikzjaxLoaded || tikzLoading) return tikzLoading;
+  tikzLoading = new Promise((resolve)=>{
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/@rod2ik/tikzjax/dist/fonts.min.css';
+    document.head.appendChild(link);
+    const scr = document.createElement('script');
+    scr.src = 'https://cdn.jsdelivr.net/npm/@rod2ik/tikzjax/dist/tikzjax.min.js';
+    scr.onload = ()=>{ window.__tikzjaxLoaded = true; resolve(); };
+    scr.onerror = ()=>{ resolve(); };
+    document.head.appendChild(scr);
+  });
+  return tikzLoading;
+}
+
+function renderFace(el, text, tikz){
+  el.innerHTML = formatFace(text);
+  if(tikz){
+    ensureTikzJax();
+    const holder = document.createElement('div');
+    holder.className = 'tikz-holder';
+    const scriptEl = document.createElement('script');
+    scriptEl.type = 'text/tikz';
+    scriptEl.textContent = tikz;
+    holder.appendChild(scriptEl);
+    el.appendChild(holder);
+  }
+  if(window.renderMathInElement){
+    window.renderMathInElement(el, {
+      delimiters:[
+        {left:'$$', right:'$$', display:true},
+        {left:'$', right:'$', display:false},
+      ],
+      throwOnError:false,
+    });
+  }
+}
+
+// ---------- DOM refs ----------
+const screenHome = document.getElementById('screen-home');
+const screenStudy = document.getElementById('screen-study');
+const levelTabsEl = document.getElementById('level-tabs');
+const deckListEl = document.getElementById('deck-list');
+const crumbTopic = document.getElementById('crumb-topic');
+const crumbLevel = document.getElementById('crumb-level');
+const progressLabel = document.getElementById('progress-label');
+const progressFill = document.getElementById('progress-fill');
+const stageEl = document.getElementById('stage');
+const cardDrag = document.getElementById('card-drag');
+const cardFlip = document.getElementById('card-flip');
+const frontLevel = document.getElementById('front-level');
+const frontFlag = document.getElementById('front-flag');
+const backFlag = document.getElementById('back-flag');
+const frontContent = document.getElementById('front-content');
+const backContent = document.getElementById('back-content');
+const washYes = document.getElementById('wash-yes');
+const washNo = document.getElementById('wash-no');
+const swipeHint = document.getElementById('swipe-hint');
+const summaryEl = document.getElementById('summary');
+const summaryStat = document.getElementById('summary-stat');
+const summaryPraise = document.getElementById('summary-praise');
+const summaryActions = document.getElementById('summary-actions');
+
+// ---------- state ----------
+let activeFilter = 'all';
+let currentTopic = null;
+let sessionCards = [];
+let sessionIndex = 0;
+let remembered = [];
+let forgotten = [];
+let revealed = false;
+let animating = false;
+let dragState = null;
+let progress = loadProgress(); // { [cardId]: 'remembered' | 'review' }, persisted to localStorage
+let resetArmTimer = null; // pending "tap again to confirm" revert for the reset-progress button
+
+function showScreen(name){
+  screenHome.classList.toggle('active', name === 'home');
+  screenStudy.classList.toggle('active', name === 'study');
+}
+function goHome(){
+  renderDeckList(); // refresh so any newly saved remembered/review counts show up
+  showScreen('home');
+}
+
+// ---------- home: level filter + deck list ----------
+function renderLevelTabs(){
+  const decks = getDecks();
+  const counts = {};
+  LEVELS.forEach(l => counts[l.code] = decks.filter(d => d.level === l.code).length);
+
+  const chips = [{code:'all', label:'ทั้งหมด'}, ...LEVELS];
+  levelTabsEl.innerHTML = '';
+  chips.forEach(chip=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('role','tab');
+    btn.setAttribute('aria-selected', activeFilter === chip.code ? 'true' : 'false');
+    let cls = 'tab';
+    if(chip.code !== 'all') cls += ' ' + levelClass(chip.code);
+    if(activeFilter === chip.code) cls += ' active';
+    if(chip.code !== 'all' && counts[chip.code] === 0) cls += ' empty';
+    btn.className = cls;
+    btn.textContent = chip.label;
+    btn.addEventListener('click', ()=>{
+      activeFilter = chip.code;
+      renderLevelTabs();
+      renderDeckList();
+    });
+    levelTabsEl.appendChild(btn);
+  });
+}
+
+function renderDeckList(){
+  const decks = getDecks().filter(d => activeFilter === 'all' || d.level === activeFilter);
+  deckListEl.innerHTML = '';
+  if(!decks.length){
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'ยังไม่มีชุดการ์ดในระดับนี้';
+    deckListEl.appendChild(p);
+    return;
+  }
+  decks.forEach((deck, i)=>{
+    const prog = deckProgress(deck.topic);
+    const progParts = [];
+    if(prog.mastered) progParts.push('<span class="prog-yes">จำได้ ' + prog.mastered + ' ใบ</span>');
+    if(prog.review) progParts.push('<span class="prog-no">ต้องทบทวน ' + prog.review + ' ใบ</span>');
+    const progressLine = progParts.length
+      ? '<span class="deck-progress">' + progParts.join(' <span class="dotsep">·</span> ') + '</span>'
+      : '';
+
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'deck-tile';
+    tile.style.setProperty('--lvl-color', `var(--${deck.level})`);
+    tile.style.animationDelay = (i*60) + 'ms';
+    tile.innerHTML =
+      '<span class="deck-glyph" aria-hidden="true">' + escapeHtml(glyphFor(deck.topic)) + '</span>' +
+      '<span class="deck-info">' +
+        '<span class="deck-topic">' + escapeHtml(deck.topic) + '</span>' +
+        '<span class="deck-meta">' +
+          '<span class="level-pill ' + levelClass(deck.level) + '">' + escapeHtml(LEVEL_LABEL[deck.level] || deck.level) + '</span>' +
+          '<span class="deck-count">' + deck.count + ' ใบ</span>' +
+        '</span>' +
+        progressLine +
+      '</span>' +
+      '<span class="deck-arrow" aria-hidden="true">→</span>';
+    tile.addEventListener('click', ()=> startDeck(deck.topic));
+    deckListEl.appendChild(tile);
+  });
+
+  if(Object.keys(progress).length){
+    clearTimeout(resetArmTimer);
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'reset-link';
+    resetBtn.textContent = 'ล้างความคืบหน้าที่บันทึกไว้';
+    let armed = false;
+    resetBtn.addEventListener('click', ()=>{
+      if(!armed){
+        armed = true;
+        resetBtn.textContent = 'แตะอีกครั้งเพื่อยืนยัน';
+        resetBtn.classList.add('armed');
+        resetArmTimer = setTimeout(()=>{
+          armed = false;
+          resetBtn.textContent = 'ล้างความคืบหน้าที่บันทึกไว้';
+          resetBtn.classList.remove('armed');
+        }, 4000);
+        return;
+      }
+      clearTimeout(resetArmTimer);
+      progress = {};
+      saveProgress();
+      renderDeckList();
+    });
+    deckListEl.appendChild(resetBtn);
+  }
+}
+
+// ---------- study session ----------
+function startDeck(topic){
+  currentTopic = topic;
+  sessionCards = shuffle(cardsForTopic(topic).slice());
+  sessionIndex = 0; remembered = []; forgotten = [];
+
+  const level = sessionCards[0] ? sessionCards[0].level : '';
+  crumbTopic.textContent = topic;
+  crumbLevel.textContent = LEVEL_LABEL[level] || level;
+  crumbLevel.className = 'level-pill ' + levelClass(level);
+
+  showSessionCard();
+  showScreen('study');
+}
+
+function showSessionCard(){
+  revealed = false;
+  animating = false;
+  cardFlip.classList.remove('flipped');
+  cardDrag.style.transition = 'none';
+  cardDrag.style.transform = '';
+  cardDrag.style.opacity = '1';
+  washYes.style.opacity = 0;
+  washNo.style.opacity = 0;
+  swipeHint.classList.add('active');
+
+  cardDrag.hidden = false;
+  summaryEl.hidden = true;
+  document.querySelector('.progress-track').style.display = '';
+  document.getElementById('back-btn').parentElement.style.display = '';
+
+  const card = sessionCards[sessionIndex];
+  const lvlCls = levelClass(card.level);
+
+  frontLevel.textContent = LEVEL_LABEL[card.level] || card.level;
+  frontLevel.className = 'level-pill ' + lvlCls;
+  frontFlag.style.setProperty('--lvl-color', `var(--${card.level})`);
+  backFlag.style.setProperty('--lvl-color', `var(--${card.level})`);
+
+  renderFace(frontContent, card.front, card.frontTikz);
+  renderFace(backContent, card.back, card.backTikz);
+
+  progressLabel.textContent = 'การ์ดที่ ' + (sessionIndex + 1) + ' จาก ' + sessionCards.length;
+  progressFill.style.width = (sessionIndex / sessionCards.length) * 100 + '%';
+
+  void cardDrag.offsetWidth;
+  cardDrag.style.transition = '';
+}
+
+function flipCard(){
+  if(animating) return;
+  revealed = !revealed;
+  cardFlip.classList.toggle('flipped', revealed);
+}
+
+function commit(isYes){
+  if(animating) return;
+  animating = true;
+  const dir = isYes ? 1 : -1;
+  const dy = dragState ? dragState.curY : 0;
+  cardDrag.style.transition = 'transform .4s cubic-bezier(.2,.8,.2,1), opacity .4s ease';
+  cardDrag.style.transform = 'translate(' + (dir * (window.innerWidth || 600)) + 'px,' + dy + 'px) rotate(' + (dir*20) + 'deg)';
+  cardDrag.style.opacity = '0';
+  const wash = isYes ? washYes : washNo;
+  wash.style.opacity = '1';
+
+  const card = sessionCards[sessionIndex];
+  (isYes ? remembered : forgotten).push(card);
+  progress[idOf(card)] = isYes ? 'remembered' : 'review';
+  saveProgress();
+
+  setTimeout(()=>{
+    sessionIndex++;
+    if(sessionIndex < sessionCards.length){
+      showSessionCard();
+    } else {
+      showSummary();
+    }
+  }, 400);
+}
+
+function showSummary(){
+  animating = false;
+  document.querySelector('.progress-track').style.display = 'none';
+  swipeHint.classList.remove('active');
+  swipeHint.style.opacity = '0';
+  cardDrag.hidden = true;
+  summaryEl.hidden = false;
+
+  summaryStat.textContent = 'จำได้ ' + remembered.length + ' จาก ' + sessionCards.length + ' ใบ';
+  summaryPraise.hidden = !(sessionCards.length > 0 && forgotten.length === 0);
+
+  summaryActions.innerHTML = '';
+  if(forgotten.length){
+    summaryActions.appendChild(makeBtn(
+      'ทบทวนใบที่ยังจำไม่ได้ (' + forgotten.length + ')', 'btn btn-primary',
+      ()=>{
+        sessionCards = shuffle(forgotten.slice());
+        sessionIndex = 0; remembered = []; forgotten = [];
+        swipeHint.style.opacity = '';
+        showSessionCard();
+      }
+    ));
+  }
+  summaryActions.appendChild(makeBtn(
+    'สุ่มใหม่ทั้งชุด', forgotten.length ? 'btn btn-ghost' : 'btn btn-primary',
+    ()=>{
+      sessionCards = shuffle(cardsForTopic(currentTopic));
+      sessionIndex = 0; remembered = []; forgotten = [];
+      swipeHint.style.opacity = '';
+      showSessionCard();
+    }
+  ));
+  summaryActions.appendChild(makeBtn('กลับไปหน้าชุดการ์ด', 'btn btn-ghost', ()=> goHome()));
+}
+
+function makeBtn(label, cls, onClick){
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = cls;
+  b.textContent = label;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+// ---------- drag / swipe ----------
+const THRESHOLD = 100;
+
+function onPointerDown(e){
+  if(animating) return;
+  dragState = {startX:e.clientX, startY:e.clientY, curX:0, curY:0, moved:false};
+  try{ cardDrag.setPointerCapture(e.pointerId); }catch(err){}
+  cardDrag.style.transition = 'none';
+}
+function onPointerMove(e){
+  if(!dragState) return;
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+  dragState.curX = dx; dragState.curY = dy;
+  if(Math.abs(dx) > 6 || Math.abs(dy) > 6) dragState.moved = true;
+  const rot = dx / 18;
+  cardDrag.style.transform = 'translate(' + dx + 'px,' + (dy*0.25) + 'px) rotate(' + rot + 'deg)';
+  const ratio = clamp(dx / THRESHOLD, -1, 1);
+  washYes.style.opacity = Math.max(0, ratio);
+  washNo.style.opacity = Math.max(0, -ratio);
+}
+function onPointerUp(){
+  if(!dragState) return;
+  const {curX, moved} = dragState;
+  const wasTap = !moved;
+  dragState = null;
+
+  if(Math.abs(curX) > THRESHOLD){
+    commit(curX > 0);
+    return;
+  }
+  cardDrag.style.transition = 'transform .35s cubic-bezier(.2,.8,.2,1)';
+  cardDrag.style.transform = '';
+  washYes.style.opacity = 0;
+  washNo.style.opacity = 0;
+
+  if(wasTap){
+    flipCard();
+  }
+}
+cardDrag.addEventListener('pointerdown', onPointerDown);
+cardDrag.addEventListener('pointermove', onPointerMove);
+cardDrag.addEventListener('pointerup', onPointerUp);
+cardDrag.addEventListener('pointercancel', onPointerUp);
+
+// ---------- buttons / keyboard ----------
+document.getElementById('back-btn').addEventListener('click', ()=> goHome());
+
+document.addEventListener('keydown', (e)=>{
+  if(!screenStudy.classList.contains('active') || !summaryEl.hidden){
+    if(e.key === 'Escape' && screenStudy.classList.contains('active')) goHome();
+    return;
+  }
+  if(e.key === 'Escape'){ goHome(); return; }
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); flipCard(); return; }
+  if(e.key === 'ArrowRight') commit(true);
+  if(e.key === 'ArrowLeft') commit(false);
+});
+
+// ---------- go ----------
+renderLevelTabs();
+renderDeckList();
+</script>
+</body>
+</html>
