@@ -66,6 +66,35 @@
 
   .stage{ width:100%; max-width:460px; display:flex; flex-direction:column; align-items:center; gap:18px; }
 
+  .lang-switch{
+    display:flex; gap:3px;
+    align-self:flex-end;
+    background:var(--ink-2);
+    border:1px solid var(--chalk-hair);
+    border-radius:999px;
+    padding:3px;
+    margin-bottom:-8px;
+  }
+  .lang-btn{
+    border:1px solid transparent;
+    background:transparent;
+    color:var(--chalk-dim);
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    padding:5px 11px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  .lang-btn:hover{ color:var(--chalk); }
+  .lang-btn[aria-pressed="true"]{
+    background:var(--sage-dim);
+    border-color:var(--sage);
+    color:var(--chalk);
+  }
+
   /* ============ MASTHEAD ============ */
   .masthead{ text-align:center; padding:4px 6px 0; }
   .eyebrow{
@@ -547,10 +576,15 @@
 
 <div class="stage">
 
+  <div class="lang-switch" role="group" aria-label="Language / ภาษา">
+    <button type="button" class="lang-btn" id="langTh" aria-pressed="true">TH</button>
+    <button type="button" class="lang-btn" id="langEn" aria-pressed="false">EN</button>
+  </div>
+
   <div class="masthead">
-    <p class="eyebrow">ห้องทดลองกลยุทธ์ตัวเลข</p>
-    <h1 class="title">ชนเป้า</h1>
-    <p class="tagline">เพิ่มเลขทีละ 1, 2 หรือ 3 ใครทำให้ตัวเลขตรงเป้าหมายพอดีก่อน คนนั้นชนะ</p>
+    <p class="eyebrow" data-i18n="eyebrow">ห้องทดลองกลยุทธ์ตัวเลข</p>
+    <h1 class="title" data-i18n="title">ชนเป้า</h1>
+    <p class="tagline" data-i18n="tagline">เพิ่มเลขทีละ 1, 2 หรือ 3 ใครทำให้ตัวเลขตรงเป้าหมายพอดีก่อน คนนั้นชนะ</p>
   </div>
 
   <main class="panel">
@@ -558,24 +592,24 @@
     <!-- ============ SETUP VIEW ============ -->
     <section id="setupView" class="view">
       <div class="setup-block">
-        <span class="setup-label">ใครเริ่มก่อน?</span>
+        <span class="setup-label" data-i18n="whoFirstLabel">ใครเริ่มก่อน?</span>
         <div class="first-player-group" role="group" aria-label="Choose who plays first">
-          <button type="button" class="toggle-pill" id="pickStudent" aria-pressed="true">คุณ<span class="sub">เริ่มก่อน</span></button>
-          <button type="button" class="toggle-pill" id="pickBot" aria-pressed="false">บอท<span class="sub">เริ่มก่อน</span></button>
-          <button type="button" class="toggle-pill" id="pickDecide" data-variant="decide" aria-pressed="false">ดูเป้าหมายก่อน<span class="sub">ค่อยเลือก</span></button>
+          <button type="button" class="toggle-pill" id="pickStudent" data-i18n="pickStudent" aria-pressed="true">คุณ<span class="sub">เริ่มก่อน</span></button>
+          <button type="button" class="toggle-pill" id="pickBot" data-i18n="pickBot" aria-pressed="false">บอท<span class="sub">เริ่มก่อน</span></button>
+          <button type="button" class="toggle-pill" id="pickDecide" data-variant="decide" data-i18n="pickDecide" aria-pressed="false">ดูเป้าหมายก่อน<span class="sub">ค่อยเลือก</span></button>
         </div>
       </div>
 
       <div class="setup-block">
-        <span class="setup-label">กติกา</span>
+        <span class="setup-label" data-i18n="rulesLabel">กติกา</span>
         <ul class="rules-mini">
-          <li>เริ่มนับจาก 0 และระบบจะสุ่มเป้าหมายให้ทุกครั้ง</li>
-          <li>เมื่อถึงตาคุณ ให้เพิ่มตัวเลขทีละ 1, 2 หรือ 3</li>
-          <li>ใครทำให้ตัวเลขตรงกับเป้าหมายพอดีก่อน คนนั้นเป็นผู้ชนะ</li>
+          <li data-i18n="rule1">เริ่มนับจาก 0 และระบบจะสุ่มเป้าหมายให้ทุกครั้ง</li>
+          <li data-i18n="rule2">เมื่อถึงตาคุณ ให้เพิ่มตัวเลขทีละ 1, 2 หรือ 3</li>
+          <li data-i18n="rule3">ใครทำให้ตัวเลขตรงกับเป้าหมายพอดีก่อน คนนั้นเป็นผู้ชนะ</li>
         </ul>
       </div>
 
-      <button type="button" class="btn-start" id="startBtn">เริ่มเกม</button>
+      <button type="button" class="btn-start" id="startBtn" data-i18n="startBtn">เริ่มเกม</button>
     </section>
 
     <!-- ============ GAME VIEW ============ -->
@@ -584,12 +618,12 @@
       <div class="game-main">
 
         <div class="game-topbar">
-          <span class="score-chip">คุณ <b id="scoreStudent">0</b> · บอท <b id="scoreBot">0</b></span>
+          <span class="score-chip"><span data-i18n="scoreYouLabel">คุณ</span> <b id="scoreStudent">0</b> · <span data-i18n="scoreBotLabel">บอท</span> <b id="scoreBot">0</b></span>
           <button type="button" class="icon-btn" id="newSetupBtn" aria-label="กลับไปตั้งค่า">⟲</button>
         </div>
 
         <div class="goal-block">
-          <p class="goal-label">เป้าหมาย</p>
+          <p class="goal-label" data-i18n="goalLabel">เป้าหมาย</p>
           <p class="goal-number" id="goalNumber">0</p>
         </div>
 
@@ -607,14 +641,14 @@
         </div>
 
         <div class="first-pick" id="firstPickPrompt" hidden>
-          <p class="first-pick__prompt">เห็นเป้าหมายแล้ว ใครจะเริ่มก่อนดี?</p>
+          <p class="first-pick__prompt" data-i18n="firstPickPrompt">เห็นเป้าหมายแล้ว ใครจะเริ่มก่อนดี?</p>
           <div class="first-pick__actions">
-            <button type="button" class="toggle-pill" id="pickFirstStudent">คุณ<span class="sub">เริ่มก่อน</span></button>
-            <button type="button" class="toggle-pill" id="pickFirstBot">บอท<span class="sub">เริ่มก่อน</span></button>
+            <button type="button" class="toggle-pill" id="pickFirstStudent" data-i18n="pickStudent">คุณ<span class="sub">เริ่มก่อน</span></button>
+            <button type="button" class="toggle-pill" id="pickFirstBot" data-i18n="pickBot">บอท<span class="sub">เริ่มก่อน</span></button>
           </div>
         </div>
 
-        <p class="status" id="statusText">ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3</p>
+        <p class="status" id="statusText" data-i18n="statusYourTurn">ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3</p>
 
         <div class="move-row">
           <button type="button" class="btn-move" data-amount="1">+1</button>
@@ -628,15 +662,15 @@
             <input type="checkbox" id="hintToggle">
             <span class="switch__track"><span class="switch__thumb"></span></span>
           </div>
-          <label for="hintToggle" id="hintLabel">แสดงคำใบ้กลยุทธ์</label>
+          <label for="hintToggle" id="hintLabel" data-i18n="hintToggleLabel">แสดงคำใบ้กลยุทธ์</label>
         </div>
 
         <div class="result-banner" id="resultBanner" hidden>
           <p class="result-title" id="resultTitle"></p>
           <p class="result-sub" id="resultSub"></p>
           <div class="result-actions">
-            <button type="button" class="btn-secondary" id="changeSetupBtn">เปลี่ยนการตั้งค่า</button>
-            <button type="button" class="btn-primary" id="playAgainBtn">เล่นอีกครั้ง</button>
+            <button type="button" class="btn-secondary" id="changeSetupBtn" data-i18n="changeSetupBtn">เปลี่ยนการตั้งค่า</button>
+            <button type="button" class="btn-primary" id="playAgainBtn" data-i18n="playAgainBtn">เล่นอีกครั้ง</button>
           </div>
         </div>
 
@@ -645,39 +679,39 @@
       <div class="game-side">
 
         <details id="strategyDetails">
-          <summary>ทำไมกลยุทธ์นี้ถึงได้ผล</summary>
+          <summary data-i18n="strategySummary">ทำไมกลยุทธ์นี้ถึงได้ผล</summary>
           <div class="details-body">
-            <p>ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง</p>
+            <p data-i18n="strategyIntroP">ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง</p>
             <div class="ladder" id="ladderChips"></div>
             <p class="edge-note" id="edgeNote"></p>
 
-            <p class="details-subhead">เบื้องหลังคณิตศาสตร์: เลขสมภาค (mod)</p>
-            <p>เหตุผลที่จุดปลอดภัยห่างกันทีละ 4 พอดี มาจากแนวคิดเรื่อง <em>เลขสมภาค (congruence)</em> ในวิชาทฤษฎีจำนวน</p>
+            <p class="details-subhead" data-i18n="strategySubhead">เบื้องหลังคณิตศาสตร์: เลขสมภาค (mod)</p>
+            <p data-i18n="strategyCongruenceIntro">เหตุผลที่จุดปลอดภัยห่างกันทีละ 4 พอดี มาจากแนวคิดเรื่อง <em>เลขสมภาค (congruence)</em> ในวิชาทฤษฎีจำนวน</p>
 
-            <div class="formula-box">
+            <div class="formula-box" data-i18n="formulaBox">
               <span class="formula-label">บทนิยาม</span>
               a ≡ b (mod m) ก็ต่อเมื่อ m หาร a − b ลงตัว
             </div>
 
-            <p>พูดง่าย ๆ คือ a กับ b ให้เศษเหลือเท่ากันเมื่อหารด้วย m</p>
+            <p data-i18n="remainderExplain">พูดง่าย ๆ คือ a กับ b ให้เศษเหลือเท่ากันเมื่อหารด้วย m</p>
 
-            <div class="example-box">
+            <div class="example-box" data-i18n="staticModExample">
               ตัวอย่าง: 15 ≡ 7 (mod 4) เพราะ 4 หาร 15 − 7 = 8 ลงตัว กล่าวอีกนัยหนึ่งคือ เศษเหลือจากการหาร 15 ด้วย 4 มีค่าเท่ากับเศษเหลือจากการหาร 7 ด้วย 4 (มีเศษเหลือเป็น 3 เหมือนกัน)
             </div>
 
-            <p>ในเกมนี้ จุดปลอดภัยทุกจุดคือจำนวนที่สมภาคกับเป้าหมาย mod 4 นั่นคือ n ≡ เป้าหมาย (mod 4) เพราะจุดปลอดภัยแต่ละจุดมีค่าเท่ากับ เป้าหมาย − 4k เสมอ ซึ่งต่างจากเป้าหมายด้วยจำนวนที่หารด้วย 4 ลงตัว นี่คือนิยามของ ≡ พอดี</p>
+            <p data-i18n="congruenceGameConnection">ในเกมนี้ จุดปลอดภัยทุกจุดคือจำนวนที่สมภาคกับเป้าหมาย mod 4 นั่นคือ n ≡ เป้าหมาย (mod 4) เพราะจุดปลอดภัยแต่ละจุดมีค่าเท่ากับ เป้าหมาย − 4k เสมอ ซึ่งต่างจากเป้าหมายด้วยจำนวนที่หารด้วย 4 ลงตัว นี่คือนิยามของ ≡ พอดี</p>
 
             <div class="example-box" id="liveModExample"></div>
 
-            <p>เคล็ดลับของกลยุทธ์นี้คือ 4 ≡ 0 (mod 4) การบวกด้วยพหุคูณของ 4 จึงไม่เปลี่ยนเศษเหลือเลย เมื่อคุณยืนอยู่บนจุดปลอดภัย ไม่ว่าอีกฝ่ายจะเดิน x (1, 2 หรือ 3) คุณก็เดินต่อด้วย 4 − x เสมอ รวมกันได้ 4 พอดี ตัวเลขใหม่จึงยังคงสมภาคกับเป้าหมาย mod 4 เหมือนเดิม คุณจึงกลับมายืนบนจุดปลอดภัยจุดถัดไปได้ทุกครั้ง จนกระทั่งจุดปลอดภัยจุดสุดท้ายคือเป้าหมายเอง (เพราะเป้าหมาย − เป้าหมาย = 0 และ 4 หาร 0 ลงตัวเสมอ)</p>
+            <p data-i18n="congruenceTrickExplain">เคล็ดลับของกลยุทธ์นี้คือ 4 ≡ 0 (mod 4) การบวกด้วยพหุคูณของ 4 จึงไม่เปลี่ยนเศษเหลือเลย เมื่อคุณยืนอยู่บนจุดปลอดภัย ไม่ว่าอีกฝ่ายจะเดิน x (1, 2 หรือ 3) คุณก็เดินต่อด้วย 4 − x เสมอ รวมกันได้ 4 พอดี ตัวเลขใหม่จึงยังคงสมภาคกับเป้าหมาย mod 4 เหมือนเดิม คุณจึงกลับมายืนบนจุดปลอดภัยจุดถัดไปได้ทุกครั้ง จนกระทั่งจุดปลอดภัยจุดสุดท้ายคือเป้าหมายเอง (เพราะเป้าหมาย − เป้าหมาย = 0 และ 4 หาร 0 ลงตัวเสมอ)</p>
           </div>
         </details>
 
         <details id="historyDetails">
-          <summary>ประวัติการเดิน</summary>
+          <summary data-i18n="historySummary">ประวัติการเดิน</summary>
           <div class="details-body">
             <div class="history-list" id="historyList">
-              <p class="history-empty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>
+              <p class="history-empty" data-i18n="historyEmpty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>
             </div>
           </div>
         </details>
@@ -688,7 +722,7 @@
 
   </main>
 
-  <p class="credits">เกมลบเลขคลาสสิกที่ให้ลงมือเล่นจริง — แนวคิดเดียวกับเกมนิม (Nim)</p>
+  <p class="credits" data-i18n="credits">เกมลบเลขคลาสสิกที่ให้ลงมือเล่นจริง — แนวคิดเดียวกับเกมนิม (Nim)</p>
 
 </div>
 
@@ -699,6 +733,7 @@
   /* ============ STATE ============ */
   var state = {
     screen: 'setup',        // 'setup' | 'game'
+    lang: 'th',              // 'th' | 'en'
     firstPlayer: 'student', // 'student' | 'bot' | 'decide'
     goal: 0,
     current: 0,
@@ -715,6 +750,8 @@
 
   /* ============ DOM REFS ============ */
   var el = {
+    langTh: document.getElementById('langTh'),
+    langEn: document.getElementById('langEn'),
     setupView: document.getElementById('setupView'),
     gameView: document.getElementById('gameView'),
     pickStudent: document.getElementById('pickStudent'),
@@ -750,6 +787,141 @@
     changeSetupBtn: document.getElementById('changeSetupBtn'),
     playAgainBtn: document.getElementById('playAgainBtn')
   };
+
+  /* ============ I18N STRINGS ============ */
+  var STRINGS = {
+    th: {
+      pageTitle: 'ชนเป้า — ห้องทดลองกลยุทธ์ตัวเลข',
+      eyebrow: 'ห้องทดลองกลยุทธ์ตัวเลข',
+      title: 'ชนเป้า',
+      tagline: 'เพิ่มเลขทีละ 1, 2 หรือ 3 ใครทำให้ตัวเลขตรงเป้าหมายพอดีก่อน คนนั้นชนะ',
+      whoFirstLabel: 'ใครเริ่มก่อน?',
+      pickStudent: 'คุณ<span class="sub">เริ่มก่อน</span>',
+      pickBot: 'บอท<span class="sub">เริ่มก่อน</span>',
+      pickDecide: 'ดูเป้าหมายก่อน<span class="sub">ค่อยเลือก</span>',
+      rulesLabel: 'กติกา',
+      rule1: 'เริ่มนับจาก 0 และระบบจะสุ่มเป้าหมายให้ทุกครั้ง',
+      rule2: 'เมื่อถึงตาคุณ ให้เพิ่มตัวเลขทีละ 1, 2 หรือ 3',
+      rule3: 'ใครทำให้ตัวเลขตรงกับเป้าหมายพอดีก่อน คนนั้นเป็นผู้ชนะ',
+      startBtn: 'เริ่มเกม',
+      scoreYouLabel: 'คุณ',
+      scoreBotLabel: 'บอท',
+      backToSetupAria: 'กลับไปตั้งค่า',
+      goalLabel: 'เป้าหมาย',
+      firstPickPrompt: 'เห็นเป้าหมายแล้ว ใครจะเริ่มก่อนดี?',
+      statusYourTurn: 'ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3',
+      statusBotThinking: 'บอทกำลังคิด',
+      hintToggleLabel: 'แสดงคำใบ้กลยุทธ์',
+      hintNoteNoSafe: 'ตานี้ไม่มีตัวเลือกที่ปลอดภัยแน่นอน ไม่ว่าเลือกอะไรก็มีทางแก้',
+      hintNoteSafe: 'ปุ่มที่เรืองแสงจะพาไปยังจุดปลอดภัย',
+      strategySummary: 'ทำไมกลยุทธ์นี้ถึงได้ผล',
+      strategyIntroP: 'ให้นับถอยหลังจากเป้าหมายทีละ 4 ตัวเลขเหล่านี้คือ <em>จุดปลอดภัย</em> — ใครไปหยุดตรงจุดนี้ได้ ก็จะตอบโต้ทุกการเดิน (1, 2 หรือ 3) ของอีกฝ่ายให้รวมกันครบ 4 ได้เสมอ และบังคับให้อีกฝ่ายเจอจุดปลอดภัยถัดไปอีกครั้ง',
+      edgeNotePending: 'เลือกว่าใครเริ่มก่อน แล้วดูว่าใครได้เปรียบจากตัวเลขด้านบน',
+      edgeNoteFirstCanForce: '{first}เริ่มก่อน และสามารถบังคับให้ชนะได้ถ้าเล่นสมบูรณ์แบบ โดยเริ่มด้วย +{n}',
+      edgeNoteFirstCannotForce: '{first}เริ่มก่อน แต่เริ่มจากจุดที่เสียเปรียบ — {second}จะได้เปรียบในทางทฤษฎี ถ้าเก็บจุดปลอดภัยได้ครบทุกจุด',
+      youWord: 'คุณ',
+      botWord: 'บอท',
+      strategySubhead: 'เบื้องหลังคณิตศาสตร์: เลขสมภาค (mod)',
+      strategyCongruenceIntro: 'เหตุผลที่จุดปลอดภัยห่างกันทีละ 4 พอดี มาจากแนวคิดเรื่อง <em>เลขสมภาค (congruence)</em> ในวิชาทฤษฎีจำนวน',
+      formulaBox: '<span class="formula-label">บทนิยาม</span>a ≡ b (mod m) ก็ต่อเมื่อ m หาร a − b ลงตัว',
+      remainderExplain: 'พูดง่าย ๆ คือ a กับ b ให้เศษเหลือเท่ากันเมื่อหารด้วย m',
+      staticModExample: 'ตัวอย่าง: 15 ≡ 7 (mod 4) เพราะ 4 หาร 15 − 7 = 8 ลงตัว กล่าวอีกนัยหนึ่งคือ เศษเหลือจากการหาร 15 ด้วย 4 มีค่าเท่ากับเศษเหลือจากการหาร 7 ด้วย 4 (มีเศษเหลือเป็น 3 เหมือนกัน)',
+      congruenceGameConnection: 'ในเกมนี้ จุดปลอดภัยทุกจุดคือจำนวนที่สมภาคกับเป้าหมาย mod 4 นั่นคือ n ≡ เป้าหมาย (mod 4) เพราะจุดปลอดภัยแต่ละจุดมีค่าเท่ากับ เป้าหมาย − 4k เสมอ ซึ่งต่างจากเป้าหมายด้วยจำนวนที่หารด้วย 4 ลงตัว นี่คือนิยามของ ≡ พอดี',
+      liveModExampleTemplate: 'ตัวอย่างในเกมนี้: {a} ≡ {b} (mod 4) เพราะ 4 หาร {a} − {b} = {diff} ลงตัว เศษเหลือจากการหาร {a} และ {b} ด้วย 4 เท่ากับ {remainder} ทั้งคู่ — {b} จึงเป็นจุดปลอดภัยของเป้าหมาย {a} ด้วย',
+      congruenceTrickExplain: 'เคล็ดลับของกลยุทธ์นี้คือ 4 ≡ 0 (mod 4) การบวกด้วยพหุคูณของ 4 จึงไม่เปลี่ยนเศษเหลือเลย เมื่อคุณยืนอยู่บนจุดปลอดภัย ไม่ว่าอีกฝ่ายจะเดิน x (1, 2 หรือ 3) คุณก็เดินต่อด้วย 4 − x เสมอ รวมกันได้ 4 พอดี ตัวเลขใหม่จึงยังคงสมภาคกับเป้าหมาย mod 4 เหมือนเดิม คุณจึงกลับมายืนบนจุดปลอดภัยจุดถัดไปได้ทุกครั้ง จนกระทั่งจุดปลอดภัยจุดสุดท้ายคือเป้าหมายเอง (เพราะเป้าหมาย − เป้าหมาย = 0 และ 4 หาร 0 ลงตัวเสมอ)',
+      historySummary: 'ประวัติการเดิน',
+      historyEmpty: 'ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0',
+      tagSafe: 'ปลอดภัย',
+      tagExposed: 'เปิดช่อง',
+      tagWin: 'ชนะ',
+      resultWinTitle: 'คุณชนะ! 🎉',
+      resultLoseTitle: 'บอทชนะรอบนี้',
+      resultSubTemplate: '{winner}ทำให้ตัวเลขตรงกับ {goal} พอดีเป็นคนแรก',
+      changeSetupBtn: 'เปลี่ยนการตั้งค่า',
+      playAgainBtn: 'เล่นอีกครั้ง',
+      credits: 'เกมลบเลขคลาสสิกที่ให้ลงมือเล่นจริง — แนวคิดเดียวกับเกมนิม (Nim)'
+    },
+    en: {
+      pageTitle: 'Hit the Goal — a Number Strategy Lab',
+      eyebrow: 'Number Strategy Lab',
+      title: 'Hit the Goal',
+      tagline: 'Add 1, 2, or 3 to the count. Land exactly on the goal to win.',
+      whoFirstLabel: 'Who plays first?',
+      pickStudent: 'You<span class="sub">go first</span>',
+      pickBot: 'Bot<span class="sub">goes first</span>',
+      pickDecide: 'See goal first<span class="sub">then choose</span>',
+      rulesLabel: 'The rules',
+      rule1: 'The count starts at 0, and the goal is randomized every time.',
+      rule2: 'On your turn, add 1, 2, or 3 to the count.',
+      rule3: 'Whoever makes the count land exactly on the goal wins.',
+      startBtn: 'Start game',
+      scoreYouLabel: 'You',
+      scoreBotLabel: 'Bot',
+      backToSetupAria: 'Back to setup',
+      goalLabel: 'Goal',
+      firstPickPrompt: "You've seen the goal — who should go first?",
+      statusYourTurn: 'Your turn — add 1, 2, or 3',
+      statusBotThinking: 'Bot is thinking',
+      hintToggleLabel: 'Show strategy hints',
+      hintNoteNoSafe: 'No guaranteed-safe move this turn — any choice can be answered.',
+      hintNoteSafe: 'The glowing button keeps you on a safe number.',
+      strategySummary: 'Why this works',
+      strategyIntroP: 'Count backwards from the goal in steps of 4. Each of these numbers is a <em>safe landing</em> — whoever lands on one can always answer any move (1, 2, or 3) by completing it back up to 4, forcing the next safe number too.',
+      edgeNotePending: 'Pick who goes first, then see who has the edge from the numbers above.',
+      edgeNoteFirstCanForce: '{first} moved first and can force a win with perfect play, by opening with +{n}.',
+      edgeNoteFirstCannotForce: '{first} moved first but opened from a cold spot — {second} holds the theoretical edge if every safe number gets taken.',
+      youWord: 'You',
+      botWord: 'Bot',
+      strategySubhead: 'The math behind it: congruence (mod)',
+      strategyCongruenceIntro: 'The reason safe spots sit exactly 4 apart comes from the idea of <em>congruence</em> in number theory.',
+      formulaBox: '<span class="formula-label">Definition</span>a ≡ b (mod m) if and only if m divides a − b',
+      remainderExplain: 'In plain terms: a and b leave the same remainder when divided by m.',
+      staticModExample: 'Example: 15 ≡ 7 (mod 4) because 4 divides 15 − 7 = 8. In other words, the remainder of 15 divided by 4 equals the remainder of 7 divided by 4 (both leave remainder 3).',
+      congruenceGameConnection: "In this game, every safe number is congruent to the goal mod 4 — that is, n ≡ goal (mod 4) — because each safe number equals goal − 4k, which always differs from the goal by a multiple of 4. That's exactly the definition of ≡.",
+      liveModExampleTemplate: 'Example from this round: {a} ≡ {b} (mod 4) because 4 divides {a} − {b} = {diff}. The remainders of {a} and {b} divided by 4 are both {remainder} — so {b} is also a safe number when the goal is {a}.',
+      congruenceTrickExplain: "The trick behind the strategy: 4 ≡ 0 (mod 4), so adding a multiple of 4 never changes the remainder. When you're standing on a safe number, whatever the opponent adds — x (1, 2, or 3) — you always answer with 4 − x. Together that's exactly 4, so the new number is still congruent to the goal mod 4. That's how you keep landing back on the next safe number, all the way to the last one: the goal itself (since goal − goal = 0, and 4 always divides 0).",
+      historySummary: 'Move history',
+      historyEmpty: 'No moves yet — the count is still at 0.',
+      tagSafe: 'safe landing',
+      tagExposed: 'left it open',
+      tagWin: 'winning move',
+      resultWinTitle: 'You win! 🎉',
+      resultLoseTitle: 'Bot wins this round',
+      resultSubTemplate: '{winner} made the count land exactly on {goal} first.',
+      changeSetupBtn: 'Change setup',
+      playAgainBtn: 'Play again',
+      credits: 'A hands-on look at a classic subtraction game — the same idea behind Nim.'
+    }
+  };
+
+  function fmt(str, vals){
+    return str.replace(/\{(\w+)\}/g, function(_, k){ return vals[k]; });
+  }
+
+  function applyStaticTranslations(){
+    var S = STRINGS[state.lang];
+    document.title = S.pageTitle;
+    document.documentElement.lang = state.lang;
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++){
+      var key = nodes[i].getAttribute('data-i18n');
+      if (S[key] !== undefined){ nodes[i].innerHTML = S[key]; }
+    }
+    el.newSetupBtn.setAttribute('aria-label', S.backToSetupAria);
+  }
+
+  function setLanguage(lang){
+    if (lang !== 'th' && lang !== 'en') return;
+    state.lang = lang;
+    el.langTh.setAttribute('aria-pressed', lang === 'th' ? 'true' : 'false');
+    el.langEn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+    applyStaticTranslations();
+    if (state.screen === 'setup'){
+      renderSetup();
+    } else {
+      renderGame(false);
+    }
+  }
 
   /* ============ HELPERS ============ */
   function randInt(min, max){
@@ -853,6 +1025,7 @@
   }
 
   function renderStatus(){
+    var S = STRINGS[state.lang];
     el.statusText.classList.remove('is-you', 'is-bot');
     if (state.pendingFirstPick){
       el.statusText.textContent = '';
@@ -863,15 +1036,16 @@
       return;
     }
     if (state.turn === 'student'){
-      el.statusText.textContent = 'ตาคุณ — เพิ่มทีละ 1, 2 หรือ 3';
+      el.statusText.textContent = S.statusYourTurn;
       el.statusText.classList.add('is-you');
     } else {
-      el.statusText.innerHTML = 'บอทกำลังคิด<span class="dots"></span>';
+      el.statusText.innerHTML = S.statusBotThinking + '<span class="dots"></span>';
       el.statusText.classList.add('is-bot');
     }
   }
 
   function renderButtons(){
+    var S = STRINGS[state.lang];
     var opt = state.hint && state.turn === 'student' && !state.gameOver && !state.pendingFirstPick
       ? optimalMove(state.goal, state.current) : null;
 
@@ -884,9 +1058,7 @@
     });
 
     if (state.hint && state.turn === 'student' && !state.gameOver && !state.pendingFirstPick){
-      el.hintNote.textContent = (opt === null)
-        ? 'ตานี้ไม่มีตัวเลือกที่ปลอดภัยแน่นอน ไม่ว่าเลือกอะไรก็มีทางแก้'
-        : 'ปุ่มที่เรืองแสงจะพาไปยังจุดปลอดภัย';
+      el.hintNote.textContent = (opt === null) ? S.hintNoteNoSafe : S.hintNoteSafe;
     } else {
       el.hintNote.textContent = '';
     }
@@ -894,6 +1066,7 @@
 
   /* ============ RENDER: STRATEGY NOTES ============ */
   function renderStrategyNotes(){
+    var S = STRINGS[state.lang];
     var ladder = safeLadder(state.goal);
     el.ladderChips.innerHTML = '';
     ladder.forEach(function(n){
@@ -907,31 +1080,29 @@
     var b = ladder.length > 1 ? ladder[1] : ladder[0];
     var diff = a - b;
     var remainder = a % 4;
-    el.liveModExample.textContent = 'ตัวอย่างในเกมนี้: ' + a + ' ≡ ' + b + ' (mod 4) เพราะ 4 หาร ' + a + ' − ' + b + ' = ' + diff + ' ลงตัว เศษเหลือจากการหาร ' + a + ' และ ' + b + ' ด้วย 4 เท่ากับ ' + remainder + ' ทั้งคู่ — ' + b + ' จึงเป็นจุดปลอดภัยของเป้าหมาย ' + a + ' ด้วย';
+    el.liveModExample.textContent = fmt(S.liveModExampleTemplate, { a: a, b: b, diff: diff, remainder: remainder });
 
     if (state.pendingFirstPick || !state.roundFirstMover){
-      el.edgeNote.textContent = 'เลือกว่าใครเริ่มก่อน แล้วดูว่าใครได้เปรียบจากตัวเลขด้านบน';
+      el.edgeNote.textContent = S.edgeNotePending;
       return;
     }
 
-    var firstLabel = state.roundFirstMover === 'student' ? 'คุณ' : 'บอท';
-    var secondLabel = state.roundFirstMover === 'student' ? 'บอท' : 'คุณ';
+    var firstLabel = state.roundFirstMover === 'student' ? S.youWord : S.botWord;
+    var secondLabel = state.roundFirstMover === 'student' ? S.botWord : S.youWord;
     var firstCanForce = (state.goal % 4) !== 0;
-    var edge;
-    if (firstCanForce){
-      edge = firstLabel + 'เริ่มก่อน และสามารถบังคับให้ชนะได้ถ้าเล่นสมบูรณ์แบบ โดยเริ่มด้วย +' + (state.goal % 4);
-    } else {
-      edge = firstLabel + 'เริ่มก่อน แต่เริ่มจากจุดที่เสียเปรียบ — ' + secondLabel + 'จะได้เปรียบในทางทฤษฎี ถ้าเก็บจุดปลอดภัยได้ครบทุกจุด';
-    }
+    var edge = firstCanForce
+      ? fmt(S.edgeNoteFirstCanForce, { first: firstLabel, n: (state.goal % 4) })
+      : fmt(S.edgeNoteFirstCannotForce, { first: firstLabel, second: secondLabel });
     el.edgeNote.textContent = edge;
   }
 
   /* ============ RENDER: HISTORY ============ */
-  var tagLabel = { safe: 'ปลอดภัย', exposed: 'เปิดช่อง', win: 'ชนะ' };
-
   function renderHistory(){
+    var S = STRINGS[state.lang];
+    var tagLabel = { safe: S.tagSafe, exposed: S.tagExposed, win: S.tagWin };
+
     if (state.history.length === 0){
-      el.historyList.innerHTML = '<p class="history-empty">ยังไม่มีการเดิน — ตัวเลขยังอยู่ที่ 0</p>';
+      el.historyList.innerHTML = '<p class="history-empty">' + S.historyEmpty + '</p>';
       return;
     }
     el.historyList.innerHTML = '';
@@ -941,7 +1112,7 @@
 
       var who = document.createElement('span');
       who.className = 'history-who';
-      who.textContent = m.who === 'student' ? 'คุณ' : 'บอท';
+      who.textContent = m.who === 'student' ? S.youWord : S.botWord;
 
       var move = document.createElement('span');
       move.className = 'history-move';
@@ -972,15 +1143,17 @@
 
   /* ============ RENDER: RESULT ============ */
   function renderResult(){
+    var S = STRINGS[state.lang];
     if (!state.gameOver){
       el.resultBanner.hidden = true;
       return;
     }
     var lastMove = state.history[state.history.length - 1];
     var studentWon = lastMove.who === 'student';
-    el.resultTitle.textContent = studentWon ? 'คุณชนะ! 🎉' : 'บอทชนะรอบนี้';
+    el.resultTitle.textContent = studentWon ? S.resultWinTitle : S.resultLoseTitle;
     el.resultTitle.className = 'result-title ' + (studentWon ? 'win' : 'lose');
-    el.resultSub.textContent = (studentWon ? 'คุณ' : 'บอท') + 'ทำให้ตัวเลขตรงกับ ' + state.goal + ' พอดีเป็นคนแรก';
+    var winnerLabel = studentWon ? S.youWord : S.botWord;
+    el.resultSub.textContent = fmt(S.resultSubTemplate, { winner: winnerLabel, goal: state.goal });
     el.resultBanner.hidden = false;
   }
 
@@ -1077,6 +1250,9 @@
   }
 
   /* ============ EVENTS ============ */
+  el.langTh.addEventListener('click', function(){ setLanguage('th'); });
+  el.langEn.addEventListener('click', function(){ setLanguage('en'); });
+
   el.pickStudent.addEventListener('click', function(){
     state.firstPlayer = 'student';
     renderSetup();
@@ -1120,6 +1296,7 @@
   el.playAgainBtn.addEventListener('click', startRound);
 
   /* ============ INIT ============ */
+  applyStaticTranslations();
   renderSetup();
 })();
 </script>
