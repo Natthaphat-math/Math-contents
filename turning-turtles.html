@@ -59,9 +59,35 @@
   }
 
   .app-shell{
-    max-width:760px;
+    max-width:1180px;
     margin:0 auto;
     padding:20px 16px 64px;
+  }
+
+  /* Single-column reading measure, used for setup cards, screen intros, and the footer,
+     even when the outer app-shell is wide. */
+  .narrow-wrap{
+    max-width:760px;
+    margin:0 auto;
+  }
+
+  /* Two-column layout for the game and preview screens on wide viewports:
+     gameplay + hint on the left, ledger/log reference material on the right. */
+  .game-layout{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    align-items:flex-start;
+  }
+  .game-layout > .game-main,
+  .game-layout > .game-side{
+    width:100%;
+    min-width:0;
+  }
+  @media (min-width:860px){
+    .game-layout{ flex-direction:row; gap:20px; }
+    .game-layout > .game-main{ flex:1 1 56%; }
+    .game-layout > .game-side{ flex:1 1 44%; }
   }
 
   /* ---------- header ---------- */
@@ -642,11 +668,12 @@
   .end-actions .btn{ flex:1; min-width:140px; }
 
   footer.credit{
-    text-align:center;
-    margin-top:30px;
+    max-width:760px;
+    margin:30px auto 0;
     font-size:12px;
     color:var(--sand-dim);
     line-height:1.7;
+    text-align:center;
   }
 
   .hidden{ display:none !important; }
@@ -1253,7 +1280,7 @@
      RENDER: SETUP
   ============================================================ */
   function renderSetupScreen(){
-    var html = '';
+    var html = '<div class="narrow-wrap">';
     html += '<div class="card">' +
       '<p class="eyebrow">' + t('setupEyebrow1') + '</p>' +
       '<h2>' + t('setupHeading1') + '</h2>' +
@@ -1284,6 +1311,7 @@
         '</button>' +
       '</div>' +
     '</div>';
+    html += '</div>';
 
     $('screen-setup').innerHTML = html;
   }
@@ -1298,14 +1326,16 @@
     }
 
     var html = '';
-    html += '<div class="card">' +
+    html += '<div class="narrow-wrap"><div class="card">' +
       '<p class="eyebrow">' + t('previewEyebrow') + '</p>' +
       '<h2>' + t('previewHeading') + '</h2>' +
       '<p>' + t('previewIntro') + '</p>' +
-    '</div>';
+    '</div></div>';
+
+    html += '<div class="game-layout">';
+    html += '<div class="game-main">';
     html += '<div class="board-wrap"><div class="board">' + boardHtml + '</div></div>';
     html += hintWidgetHTML('preview', 'hintCaptionPreview');
-    html += ledgerCardHTML(state.coins);
     html += '<div class="card">' +
       '<div class="tip-box"><span class="tip-icon">💡</span><span>' + t('previewTip') + '</span></div>' +
       '<div class="starter-buttons">' +
@@ -1313,6 +1343,11 @@
         '<button class="btn btn-ghost" data-action="start-bot">' + fmt(t('previewBotBtn'), {bot: botName()}) + '</button>' +
       '</div>' +
     '</div>';
+    html += '</div>';
+    html += '<div class="game-side">';
+    html += ledgerCardHTML(state.coins);
+    html += '</div>';
+    html += '</div>';
 
     $('screen-preview').innerHTML = html;
   }
@@ -1413,7 +1448,9 @@
     var showControls = humanTurn && state.selection.primary;
     var previewBoard = showControls ? previewCoins() : null;
 
-    var html = '';
+    var html = '<div class="game-layout">';
+
+    html += '<div class="game-main">';
     html += statusHTML();
     html += '<p class="helper-text">' + helperHTML() + '</p>';
 
@@ -1430,10 +1467,16 @@
     html += '</div>';
 
     html += hintWidgetHTML('game', 'hintCaptionGame');
+    html += '</div>';
+
+    html += '<div class="game-side">';
     html += previewBoard ? ledgerCardHTML(previewBoard, true) : ledgerCardHTML(state.coins, false);
 
     var logOpen = state.phase !== 'gameover';
     html += panelWrap(t('logPanelTitle'), '<ul class="log-list">' + logListHTML() + '</ul>', logOpen);
+    html += '</div>';
+
+    html += '</div>';
 
     state.justFlipped = [];
     $('screen-game').innerHTML = html;
