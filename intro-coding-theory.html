@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Introduction to Coding Theory</title>
+<meta name="description" content="An interactive introduction to coding theory: silent errors, parity codes, and self-correcting Hamming codes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10182B;
+    --ink-2:#1B2740;
+    --ink-3:#26335A;
+    --paper:#ECE8DC;
+    --paper-2:#DFDACB;
+    --muted:#9BA3BE;
+    --muted-2:#6b7390;
+    --amber:#E3A63E;
+    --amber-dim:#7a5b22;
+    --teal:#3F9C8C;
+    --teal-dim:#1f4a43;
+    --brick:#C4483C;
+    --brick-dim:#5c2119;
+    --ink-text:#1B2233;
+    --ink-text-muted:#565C71;
+    --radius-s:4px;
+    --radius-m:6px;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Source Serif 4',serif;
+    --font-mono:'IBM Plex Mono',monospace;
+    --content-w:700px;
+    --wide-w:900px;
+    --rail-w:230px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--font-body);
+    font-size:1.05rem;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:var(--font-display);
+    font-weight:600;
+    line-height:1.15;
+    margin:0 0 1rem 0;
+    color:var(--paper);
+  }
+  h1{font-size:clamp(2rem,1.5rem + 2.2vw,3.1rem); font-weight:700;}
+  h2{font-size:clamp(1.55rem,1.3rem + 1.1vw,2.15rem);}
+  p{margin:0 0 1.1rem 0;}
+  a{color:var(--amber);}
+  ul,ol{margin:0 0 1.1rem 0; padding-left:1.3rem;}
+  li{margin-bottom:.35rem;}
+  code, .mono{font-family:var(--font-mono);}
+  strong{color:var(--paper); font-weight:600;}
+
+  ::selection{background:var(--amber); color:var(--ink);}
+
+  :focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+
+  button{font-family:var(--font-display); cursor:pointer;}
+
+  /* ---------- layout shells ---------- */
+  main{position:relative; z-index:1;}
+  .section{
+    padding:5.5rem 1.5rem;
+    border-bottom:1px solid rgba(236,232,220,0.08);
+  }
+  .section:last-of-type{border-bottom:none;}
+  .section-inner{max-width:var(--content-w); margin:0 auto;}
+  .section-inner.wide{max-width:var(--wide-w);}
+  .lede{font-size:1.15rem; color:var(--paper); max-width:60ch;}
+  .sub{color:var(--muted); max-width:60ch;}
+
+  @media (min-width:1100px){
+    body{padding-left:var(--rail-w);}
+  }
+
+  /* ---------- rail (desktop signal path nav) ---------- */
+  .railwire{
+    display:none;
+  }
+  @media (min-width:1100px){
+    .railwire{
+      display:block;
+      position:fixed;
+      left:0; top:0; bottom:0;
+      width:var(--rail-w);
+      padding:3rem 0 3rem 2.6rem;
+      overflow-y:auto;
+    }
+    .railwire::before{
+      content:"";
+      position:absolute;
+      top:3.2rem; bottom:3.2rem; left:2.9rem;
+      width:2px;
+      background:linear-gradient(to bottom, transparent, rgba(227,166,62,.35) 6%, rgba(227,166,62,.35) 94%, transparent);
+    }
+    .rail-node{
+      position:relative;
+      display:block;
+      width:100%;
+      text-align:left;
+      background:none;
+      border:none;
+      color:var(--muted);
+      font-size:.85rem;
+      letter-spacing:.01em;
+      padding:.6rem 0 .6rem 1.1rem;
+      margin-bottom:.15rem;
+      line-height:1.3;
+      transition:color .2s ease;
+    }
+    .rail-node::before{
+      content:"";
+      position:absolute;
+      left:-.35rem; top:50%;
+      width:8px; height:8px;
+      border-radius:50%;
+      background:var(--ink-3);
+      border:2px solid var(--ink);
+      transform:translateY(-50%);
+      transition:background .2s ease, box-shadow .2s ease;
+    }
+    .rail-node:hover{color:var(--paper);}
+    .rail-node.is-active{color:var(--paper); font-weight:500;}
+    .rail-node.is-active::before{
+      background:var(--amber);
+      box-shadow:0 0 0 4px rgba(227,166,62,.18);
+    }
+  }
+
+  /* ---------- mobile top progress ---------- */
+  .topbar{
+    position:fixed; top:0; left:0; right:0; height:3px;
+    background:rgba(236,232,220,0.08);
+    z-index:50;
+  }
+  @media (min-width:1100px){ .topbar{display:none;} }
+  .topbar-fill{
+    height:100%; width:0%;
+    background:var(--amber);
+    transition:width .1s linear;
+  }
+  .current-section-pill{
+    position:fixed; top:10px; right:12px;
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    color:var(--muted);
+    background:rgba(16,24,43,.85);
+    border:1px solid rgba(236,232,220,.15);
+    padding:.3rem .55rem;
+    border-radius:20px;
+    z-index:50;
+    pointer-events:none;
+  }
+  @media (min-width:1100px){ .current-section-pill{display:none;} }
+
+  /* ---------- hero ---------- */
+  .hero{
+    padding-top:6.5rem;
+    border-bottom:1px solid rgba(236,232,220,0.08);
+  }
+  .hero-anim{
+    margin:2.6rem auto 1rem auto;
+    max-width:var(--wide-w);
+    display:flex; align-items:center; gap:1rem;
+  }
+  .hero-node{
+    font-family:var(--font-mono);
+    font-size:.75rem;
+    color:var(--muted);
+    border:1px solid rgba(236,232,220,.2);
+    border-radius:var(--radius-s);
+    padding:.5rem .8rem;
+    white-space:nowrap;
+  }
+  .hero-wire{
+    position:relative;
+    flex:1;
+    height:2px;
+    background:rgba(236,232,220,.18);
+  }
+  .hero-dot{
+    position:absolute; top:50%; left:0;
+    width:10px; height:10px; margin-top:-5px;
+    border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 10px 2px rgba(227,166,62,.5);
+    animation:travel 3.6s ease-in-out infinite;
+  }
+  @keyframes travel{
+    0%{left:0%;}
+    45%{left:100%;}
+    50%{left:100%;}
+    95%{left:0%;}
+    100%{left:0%;}
+  }
+  .hero-caption{color:var(--muted); font-size:.9rem; max-width:var(--wide-w); margin:0 auto;}
+  @media (prefers-reduced-motion:reduce){
+    .hero-dot{animation:none; left:48%;}
+    html{scroll-behavior:auto;}
+  }
+
+  /* ---------- legend ---------- */
+  .legend{
+    display:flex; flex-wrap:wrap; gap:1.4rem;
+    margin:0 0 1.6rem 0;
+    font-size:.85rem; color:var(--muted);
+    font-family:var(--font-mono);
+  }
+  .legend-item{display:flex; align-items:center; gap:.5rem;}
+  .dot{width:9px; height:9px; border-radius:50%; display:inline-block; flex:none;}
+  .dot.amber{background:var(--amber);}
+  .dot.teal{background:var(--teal);}
+  .dot.brick{background:var(--brick);}
+
+  /* ---------- cards / panels ---------- */
+  .panel{
+    background:var(--ink-2);
+    border:1px solid rgba(236,232,220,.08);
+    border-radius:var(--radius-m);
+    padding:1.6rem;
+    margin:1.6rem 0;
+  }
+  .panel-title{
+    font-family:var(--font-mono);
+    font-size:.8rem;
+    color:var(--muted);
+    margin-bottom:1rem;
+  }
+
+  .msg-row{display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.3rem;}
+  .msg-btn{
+    background:transparent;
+    border:1px solid rgba(236,232,220,.25);
+    color:var(--paper);
+    padding:.55rem 1rem;
+    border-radius:20px;
+    font-size:.85rem;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .msg-btn:hover{border-color:var(--amber);}
+  .msg-btn.is-selected{background:var(--amber); border-color:var(--amber); color:var(--ink); font-weight:600;}
+
+  .bits-row{display:flex; gap:.5rem; margin:.8rem 0;}
+  .bitcell{
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:1.3rem;
+    width:2.9rem; height:2.9rem;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:var(--radius-s);
+    border:1px solid rgba(236,232,220,.25);
+    background:var(--ink);
+    color:var(--paper);
+    transition:transform .1s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  button.bitcell:hover{border-color:var(--amber); transform:translateY(-1px);}
+  button.bitcell:active{transform:translateY(0);}
+  .bitcell.is-one{background:var(--ink-3); color:var(--amber);}
+  .bitcell.flash{box-shadow:0 0 0 3px rgba(227,166,62,.35);}
+  .bitcell.is-display{width:1.9rem; height:1.9rem; font-size:.95rem; cursor:default;}
+  .bitcell.is-display:hover{border-color:rgba(236,232,220,.25); transform:none;}
+
+  .code-block{
+    display:grid;
+    grid-template-columns:repeat(3,auto);
+    gap:2px;
+    background:var(--ink);
+    padding:.4rem;
+    border-radius:var(--radius-s);
+    border:1px solid rgba(236,232,220,.12);
+    width:max-content;
+  }
+
+  .btn-row{display:flex; flex-wrap:wrap; gap:.6rem; margin:1rem 0;}
+  .btn{
+    font-size:.85rem;
+    padding:.6rem 1.1rem;
+    border-radius:var(--radius-s);
+    border:1px solid transparent;
+    transition:filter .15s ease, transform .1s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--amber); color:var(--ink); font-weight:600;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent; color:var(--paper); border-color:rgba(236,232,220,.3);}
+  .btn-ghost:hover{border-color:var(--amber); color:var(--amber);}
+
+  .status{
+    border-left:4px solid var(--muted-2);
+    background:rgba(236,232,220,.03);
+    padding:.9rem 1.1rem;
+    border-radius:0 var(--radius-s) var(--radius-s) 0;
+    font-size:.98rem;
+    color:var(--paper);
+    margin-top:1rem;
+  }
+  .status .k{font-family:var(--font-mono); font-size:.8rem; color:var(--muted); display:block; margin-bottom:.3rem;}
+  .status.ok{border-color:var(--teal);}
+  .status.error{border-color:var(--brick);}
+  .status.warn{border-color:var(--amber);}
+
+  /* ---------- letter tables ---------- */
+  .letter-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+    gap:.55rem;
+  }
+  .letter-tile{
+    background:var(--paper);
+    color:var(--ink-text);
+    border-radius:var(--radius-s);
+    padding:.65rem .5rem;
+    text-align:center;
+  }
+  .letter-tile .L{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:1.15rem;
+    display:block;
+  }
+  .letter-tile .C{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.02em;
+    color:var(--ink-text-muted);
+    display:block;
+    margin-top:.25rem;
+    word-break:break-all;
+  }
+
+  .mini-table{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(70px,1fr));
+    gap:.5rem;
+    margin:1.2rem 0;
+  }
+  .mini-tile{
+    background:var(--paper);
+    color:var(--ink-text);
+    border-radius:var(--radius-s);
+    text-align:center;
+    padding:.5rem .3rem;
+  }
+  .mini-tile .n{font-family:var(--font-display); font-weight:700;}
+  .mini-tile .c{font-family:var(--font-mono); font-size:.75rem; color:var(--ink-text-muted); display:block;}
+
+  /* ---------- challenge ---------- */
+  .challenge-row{
+    display:flex; flex-wrap:wrap; gap:1.1rem;
+    margin:1.5rem 0;
+  }
+  .challenge-unit{display:flex; flex-direction:column; align-items:center; gap:.5rem;}
+  .letter-input{
+    width:2.9rem; height:2.9rem;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:1.2rem;
+    text-transform:uppercase;
+    border-radius:var(--radius-s);
+    border:1px solid rgba(236,232,220,.3);
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .letter-input.correct{border-color:var(--teal); background:rgba(63,156,140,.15); color:var(--teal);}
+  .letter-input.incorrect{border-color:var(--brick); background:rgba(196,72,60,.15); color:var(--brick);}
+
+  /* ---------- footer ---------- */
+  footer{
+    padding:4rem 1.5rem 5rem 1.5rem;
+    max-width:var(--content-w);
+    margin:0 auto;
+    color:var(--muted);
+    font-size:.95rem;
+  }
+  footer .credit{margin-top:1.6rem; font-size:.8rem; color:var(--muted-2); font-family:var(--font-mono);}
+
+  small.note{display:block; margin-top:.6rem; color:var(--muted); font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar"><div class="topbar-fill" id="topbarFill"></div></div>
+<div class="current-section-pill" id="currentPill">start</div>
+<nav class="railwire" id="railwire" aria-label="Section progress"></nav>
+
+<main>
+
+  <section class="section hero" id="start" data-rail="Start">
+    <div class="section-inner wide">
+      <h1>What happens when a signal gets it wrong?</h1>
+      <p class="lede">Every time information travels — down a wire, through the air, across a disk — there's a chance something along the way flips a bit. Coding theory is the study of shaping information so a receiver can tell when that's happened, and sometimes even fix it.</p>
+      <p class="sub">This page follows that idea from a code that breaks silently, to one that can catch its own mistakes, to one that can correct them outright. Along the way you'll try each machine yourself.</p>
+      <div class="hero-anim" aria-hidden="true">
+        <div class="hero-node">Sender</div>
+        <div class="hero-wire"><div class="hero-dot"></div></div>
+        <div class="hero-node">Receiver</div>
+      </div>
+      <p class="hero-caption">A sender encodes a message into bits. A receiver only ever sees what arrives — never what happened on the way.</p>
+    </div>
+  </section>
+
+  <section class="section" id="silent-errors" data-rail="Silent errors">
+    <div class="section-inner">
+      <h2>When one flipped bit changes everything</h2>
+      <p>Say you're placing an order at a machine that only understands two-bit codes:</p>
+      <ul>
+        <li><span class="mono">00</span> — milk tea</li>
+        <li><span class="mono">01</span> — tea</li>
+        <li><span class="mono">10</span> — milk</li>
+        <li><span class="mono">11</span> — coffee</li>
+      </ul>
+      <p>If the sender wants milk tea, they send <span class="mono">00</span>. But suppose the last digit gets flipped somewhere along the way, so <span class="mono">00</span> arrives as <span class="mono">01</span>. The receiver has no reason to doubt it — <span class="mono">01</span> is a perfectly ordinary code. It gets decoded as tea, and the wrong order goes out, with nobody the wiser.</p>
+
+      <div class="legend">
+        <span class="legend-item"><span class="dot amber"></span> as sent</span>
+        <span class="legend-item"><span class="dot teal"></span> decoded correctly / valid</span>
+        <span class="legend-item"><span class="dot brick"></span> error detected</span>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Try it — pick a drink, then click a digit to flip it</div>
+        <div class="msg-row" id="msgRow2"></div>
+        <div class="bits-row" id="bits2"></div>
+        <div class="status" id="status2"></div>
+      </div>
+
+      <p>Notice that the receiver always sees a code that looks completely valid. There's no pattern here that only correct messages can produce, so there's no way to notice an error even exists.</p>
+    </div>
+  </section>
+
+  <section class="section" id="detect" data-rail="Detect, not fix">
+    <div class="section-inner">
+      <h2>Add a bit, gain a warning</h2>
+      <p>The trouble with the two-bit code is that every possible pattern already means something. There's no room left to tell a correct code from a damaged one. So let's add a third bit, and only use four of the eight patterns it makes available:</p>
+      <ul>
+        <li><span class="mono">000</span> — milk tea</li>
+        <li><span class="mono">011</span> — tea</li>
+        <li><span class="mono">101</span> — milk</li>
+        <li><span class="mono">110</span> — coffee</li>
+      </ul>
+      <p>Now send milk, <span class="mono">101</span>. If the middle digit flips, the receiver gets <span class="mono">111</span> — and <span class="mono">111</span> isn't assigned to anything. For the first time, the receiver knows something went wrong. They still can't be certain what was meant, since <span class="mono">111</span> is exactly one flip away from tea, milk, and coffee alike — but at least they know not to trust it.</p>
+
+      <div class="panel">
+        <div class="panel-title">Try it — flip bits and watch for the moment a code stops meaning anything</div>
+        <div class="msg-row" id="msgRow3"></div>
+        <div class="bits-row" id="bits3"></div>
+        <div class="status" id="status3"></div>
+        <small class="note">As long as no more than one digit is disturbed, this code will always tell you something is wrong. See if you can find a two-flip combination that sneaks through unnoticed.</small>
+      </div>
+
+      <p>This is the core trade-off in coding theory: detecting an error is easier than fixing one. Going further means designing codes with even more built-in redundancy — and a good place to watch that idea grow up is in how computers came to represent letters in the first place.</p>
+    </div>
+  </section>
+
+  <section class="section" id="bcd" data-rail="BCD">
+    <div class="section-inner">
+      <h2>Counting the way early computers did: BCD</h2>
+      <p>Long before computers handled full alphabets, they needed to handle decimal numbers reliably, for calculators, digital clocks, and accounting machines. <strong>Binary-coded decimal (BCD)</strong> does this by giving each decimal digit, 0 through 9, its own fixed 4-bit binary pattern, rather than converting an entire number into one large binary value.</p>
+      <div class="mini-table" id="bcdTable"></div>
+      <p>BCD makes it simple to convert digits to and from binary one at a time, which mattered when circuits were built from simple hardware. But it only covers ten symbols. It has no way to represent a letter, a punctuation mark, or even a space.</p>
+    </div>
+  </section>
+
+  <section class="section" id="ascii" data-rail="ASCII">
+    <div class="section-inner">
+      <h2>From digits to a full alphabet: ASCII</h2>
+      <p>As computers took on text — names, documents, commands — engineers needed a code that covered far more than ten digits. In the early 1960s, that need led to <strong>ASCII</strong> (American Standard Code for Information Interchange): the same underlying idea as BCD, a fixed-length binary pattern for every symbol, extended to cover uppercase and lowercase letters, punctuation, digits, and control characters, all inside a single 7-bit code.</p>
+      <p>A 7-bit code has 128 possible patterns, plenty of room for a whole keyboard's worth of symbols. But notice what it doesn't have: any built-in way to check whether a pattern arrived correctly. If a bit flips in transit, the result is just a different, equally valid character. That's the same silent-error problem from the drink-order code, wearing a bigger costume.</p>
+      <p>One common fix is to add a single check bit to every character, the same trick that turned our two-bit drink code into a detecting three-bit code. Here's what that looks like across a full alphabet.</p>
+    </div>
+  </section>
+
+  <section class="section" id="eight-bit" data-rail="The A–Z code">
+    <div class="section-inner wide">
+      <h2>A letter-by-letter code, with one extra bit</h2>
+      <p>Below is a set of 8-bit signals, one per letter of the alphabet. Every single one of them has an <strong>even number of 1s</strong> — that's the extra bit at work, set specifically to make the total come out even. It carries no meaning about the letter itself; it exists purely so the receiver has something to check.</p>
+      <div class="panel">
+        <div class="panel-title">A–Z, 8-bit signal (7 data bits + 1 check bit)</div>
+        <div class="letter-grid" id="grid8"></div>
+      </div>
+      <p>Because every valid signal has an even number of 1s, a single flipped bit is easy to catch: it always turns an even count into an odd one. Try it in the machine below.</p>
+
+      <div class="panel">
+        <div class="panel-title">Set the switches to any 8-bit pattern and see what the machine finds</div>
+        <div class="bits-row" id="bitsM1"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btnLoad8">Load a random letter</button>
+          <button class="btn btn-ghost" id="btnFlip8">Flip one bit</button>
+        </div>
+        <div class="status" id="statusM1"></div>
+      </div>
+
+      <p>This tells the receiver <em>that</em> something is wrong, but not what the original letter was. And not every error gets caught: if exactly two bits flip, the count of 1s stays even, and a damaged signal can slip through looking perfectly valid. Detecting an error and correcting one turn out to be two different problems.</p>
+    </div>
+  </section>
+
+  <section class="section" id="hamming" data-rail="Self-correcting code">
+    <div class="section-inner wide">
+      <h2>Building a code that can fix itself</h2>
+      <p>In 1950, mathematician Richard Hamming, frustrated with a computer that stopped and demanded a human's help every time it found an error, designed a code that could recover the original message on its own. The trick is redundancy, arranged carefully: every valid signal is built so that it differs from every other valid signal in at least <strong>three positions</strong>.</p>
+      <p>Because of that spacing, a single flipped bit moves a signal only one step away from where it started, but never closer than two steps to any other valid signal. That gap is what lets the receiver work backward and recover the original with confidence.</p>
+      <div class="panel">
+        <div class="panel-title">A–Z, 9-bit self-correcting signal</div>
+        <div class="letter-grid" id="grid9"></div>
+      </div>
+      <p>Try it yourself: think of a letter, find its 9-bit signal in the table above, and set the switches below to match it. Then flip one bit, or let the machine flip one for you, and see if it can recover the letter you had in mind.</p>
+
+      <div class="panel">
+        <div class="panel-title">Set the switches, introduce an error, and check the result</div>
+        <div class="bits-row" id="bitsM2"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btnLoad9">Load a random letter</button>
+          <button class="btn btn-ghost" id="btnFlip9">Flip one bit</button>
+          <button class="btn btn-ghost" id="btnClear9">Clear</button>
+        </div>
+        <div class="status" id="statusM2"></div>
+      </div>
+
+      <p>If more than one bit changes, the guarantee breaks down: the signal can drift close enough to a different letter to fool the receiver. Real systems handle that by adding still more redundancy, but the core idea stays the same. Spread valid signals far enough apart, and small errors become fixable instead of just noticeable.</p>
+    </div>
+  </section>
+
+  <section class="section" id="challenge" data-rail="Decode a word">
+    <div class="section-inner wide">
+      <h2>Decode a message</h2>
+      <p>Here's a short word, sent one letter at a time using the 9-bit code from above, no errors this time, just practice reading the code. Match each block against the table and type your answer, one letter per box.</p>
+
+      <div class="panel">
+        <div class="panel-title" id="challengeTitle">Word length: —</div>
+        <div class="challenge-row" id="challengeRow"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnCheckWord">Check answer</button>
+          <button class="btn btn-ghost" id="btnRevealWord">Reveal answer</button>
+          <button class="btn btn-ghost" id="btnNewWord">New word</button>
+        </div>
+        <div class="status" id="statusWord"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>The same ideas show up everywhere: add redundancy, space valid signals apart, check what arrives. QR codes, CDs and DVDs, computer memory, and deep-space communication all lean on some version of it. Every one of them is answering the question this page started with — if a bit gets flipped, how would you ever know?</p>
+    <div class="credit">An introduction to coding theory · error detection and correction</div>
+  </footer>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ data ============ */
+  var CODES8 = {
+    A:"10000001", B:"10000010", C:"11000011", D:"10000100", E:"11000101",
+    F:"11000110", G:"10000111", H:"10001000", I:"11001001", J:"11001010",
+    K:"10001011", L:"11001100", M:"10001101", N:"10001110", O:"11001111",
+    P:"10010000", Q:"11010001", R:"11010010", S:"10010011", T:"11010100",
+    U:"10010101", V:"10010110", W:"11010111", X:"11011000", Y:"10011001",
+    Z:"10011010"
+  };
+
+  var CODES9 = {
+    A:"000000000", B:"000011001", C:"000101110", D:"000110111", E:"001000110",
+    F:"001011111", G:"001101000", H:"001110001", I:"010001010", J:"010010011",
+    K:"010100100", L:"010111101", M:"011001100", N:"011010101", O:"011100010",
+    P:"011111011", Q:"100001100", R:"100010101", S:"100100010", T:"100111011",
+    U:"101001010", V:"101010011", W:"101100100", X:"101111101", Y:"110000110",
+    Z:"110011111"
+  };
+
+  var TABLE2 = {"00":"Milk tea","01":"Tea","10":"Milk","11":"Coffee"};
+  var TABLE3 = {"000":"Milk tea","011":"Tea","101":"Milk","110":"Coffee"};
+  var MESSAGES = [
+    {name:"Milk tea", c2:"00", c3:"000"},
+    {name:"Tea",      c2:"01", c3:"011"},
+    {name:"Milk",     c2:"10", c3:"101"},
+    {name:"Coffee",   c2:"11", c3:"110"}
+  ];
+
+  var CHALLENGE_WORDS = ["CODE","BYTE","DATA","WORD","MATH","STAR","MOON","BOOK","TREE","FISH","BIRD","GAME","WAVE","CHIP","DISK","ROBOT","PIXEL","RADIO","MORSE","LASER"];
+
+  /* ============ helpers ============ */
+  function hamming(a,b){
+    var d=0;
+    for(var i=0;i<a.length;i++){ if(a[i]!==b[i]) d++; }
+    return d;
+  }
+  function nearest(str,dict){
+    var min=Infinity, matches=[];
+    for(var k in dict){
+      var d=hamming(str,dict[k]);
+      if(d<min){ min=d; matches=[k]; }
+      else if(d===min){ matches.push(k); }
+    }
+    return {min:min, matches:matches};
+  }
+  function countOnes(bits){
+    var n=0;
+    for(var i=0;i<bits.length;i++){ if(bits[i]==="1") n++; }
+    return n;
+  }
+  function randInt(n){ return Math.floor(Math.random()*n); }
+  function randLetter(){
+    var letters = Object.keys(CODES9);
+    return letters[randInt(letters.length)];
+  }
+
+  function renderBits(container, bits, clickable){
+    container.innerHTML="";
+    bits.forEach(function(b, i){
+      var cell = document.createElement(clickable ? "button" : "span");
+      if(clickable) cell.type = "button";
+      cell.className = "bitcell " + (b==="1" ? "is-one" : "is-zero");
+      cell.textContent = b;
+      cell.setAttribute("aria-pressed", b==="1");
+      if(clickable){
+        cell.addEventListener("click", function(){
+          bits[i] = bits[i]==="1" ? "0" : "1";
+          renderBits(container, bits, clickable);
+          container.dispatchEvent(new CustomEvent("bitschange"));
+        });
+      }
+      container.appendChild(cell);
+    });
+  }
+
+  /* ============ Demo 1: two-bit silent error ============ */
+  (function(){
+    var msgRow = document.getElementById("msgRow2");
+    var bitsEl = document.getElementById("bits2");
+    var statusEl = document.getElementById("status2");
+    var bits = ["0","0"];
+    var selected = 0;
+
+    function buildButtons(){
+      msgRow.innerHTML="";
+      MESSAGES.forEach(function(m, idx){
+        var b = document.createElement("button");
+        b.className = "msg-btn" + (idx===selected ? " is-selected" : "");
+        b.type="button";
+        b.textContent = m.name;
+        b.addEventListener("click", function(){
+          selected = idx;
+          bits = m.c2.split("");
+          buildButtons();
+          render();
+        });
+        msgRow.appendChild(b);
+      });
+    }
+
+    function render(){
+      renderBits(bitsEl, bits, true);
+      var str = bits.join("");
+      var decoded = TABLE2[str];
+      statusEl.className = "status warn";
+      statusEl.innerHTML = '<span class="k">receiver sees ' + str + '</span>Decodes as "' + decoded + '." The receiver has no way to know whether this matches what was actually sent.';
+    }
+
+    bitsEl.addEventListener("bitschange", render);
+    buildButtons();
+    render();
+  })();
+
+  /* ============ Demo 2: three-bit detection ============ */
+  (function(){
+    var msgRow = document.getElementById("msgRow3");
+    var bitsEl = document.getElementById("bits3");
+    var statusEl = document.getElementById("status3");
+    var bits = ["0","0","0"];
+    var selected = 0;
+
+    function buildButtons(){
+      msgRow.innerHTML="";
+      MESSAGES.forEach(function(m, idx){
+        var b = document.createElement("button");
+        b.className = "msg-btn" + (idx===selected ? " is-selected" : "");
+        b.type="button";
+        b.textContent = m.name;
+        b.addEventListener("click", function(){
+          selected = idx;
+          bits = m.c3.split("");
+          buildButtons();
+          render();
+        });
+        msgRow.appendChild(b);
+      });
+    }
+
+    function render(){
+      renderBits(bitsEl, bits, true);
+      var str = bits.join("");
+      var decoded = TABLE3[str];
+      if(decoded){
+        statusEl.className = "status ok";
+        statusEl.innerHTML = '<span class="k">receiver sees ' + str + '</span>Matches a valid code. Decodes as "' + decoded + '."';
+      } else {
+        var n = nearest(str, TABLE3);
+        var names = n.matches.map(function(k){ return TABLE3[k] + " (" + k + ")"; }).join(", ");
+        statusEl.className = "status error";
+        statusEl.innerHTML = '<span class="k">receiver sees ' + str + '</span>Error detected — this pattern isn\'t assigned to anything. Equally close to: ' + names + '.';
+      }
+    }
+
+    bitsEl.addEventListener("bitschange", render);
+    buildButtons();
+    render();
+  })();
+
+  /* ============ BCD mini table ============ */
+  (function(){
+    var el = document.getElementById("bcdTable");
+    for(var d=0; d<=9; d++){
+      var tile = document.createElement("div");
+      tile.className = "mini-tile";
+      var bin = d.toString(2);
+      while(bin.length<4) bin = "0"+bin;
+      tile.innerHTML = '<span class="n">'+d+'</span><span class="c">'+bin+'</span>';
+      el.appendChild(tile);
+    }
+  })();
+
+  /* ============ letter tables ============ */
+  function buildLetterGrid(elId, dict){
+    var el = document.getElementById(elId);
+    Object.keys(dict).sort().forEach(function(letter){
+      var tile = document.createElement("div");
+      tile.className = "letter-tile";
+      tile.innerHTML = '<span class="L">'+letter+'</span><span class="C">'+dict[letter]+'</span>';
+      el.appendChild(tile);
+    });
+  }
+  buildLetterGrid("grid8", CODES8);
+  buildLetterGrid("grid9", CODES9);
+
+  /* ============ Machine 1: 8-bit parity checker ============ */
+  (function(){
+    var bitsEl = document.getElementById("bitsM1");
+    var statusEl = document.getElementById("statusM1");
+    var bits = "10000001".split(""); // start on a valid letter (A)
+
+    function findLetter(str){
+      for(var k in CODES8){ if(CODES8[k]===str) return k; }
+      return null;
+    }
+
+    function render(){
+      renderBits(bitsEl, bits, true);
+      var str = bits.join("");
+      var ones = countOnes(str);
+      if(ones % 2 !== 0){
+        statusEl.className = "status error";
+        statusEl.innerHTML = '<span class="k">'+str+' · '+ones+' ones</span>Error detected. A valid signal always has an even number of 1s — this one has an odd count, so something changed in transit.';
+        return;
+      }
+      var letter = findLetter(str);
+      if(letter){
+        statusEl.className = "status ok";
+        statusEl.innerHTML = '<span class="k">'+str+' · '+ones+' ones</span>No error detected. This decodes to the letter "'+letter+'."';
+      } else {
+        var n = nearest(str, CODES8);
+        statusEl.className = "status warn";
+        statusEl.innerHTML = '<span class="k">'+str+' · '+ones+' ones</span>The count of 1s checks out, but this exact pattern isn\'t assigned to any letter. Parity catches a lot, but not everything — an even number of flipped bits can slip through. Closest letter on file: "'+n.matches.join('", "')+'" (still '+n.min+' bits away, so that\'s a guess, not a guarantee).';
+      }
+    }
+
+    bitsEl.addEventListener("bitschange", render);
+
+    document.getElementById("btnLoad8").addEventListener("click", function(){
+      bits = CODES8[randLetter()].split("");
+      render();
+    });
+    document.getElementById("btnFlip8").addEventListener("click", function(){
+      var i = randInt(bits.length);
+      bits[i] = bits[i]==="1" ? "0" : "1";
+      render();
+    });
+
+    render();
+  })();
+
+  /* ============ Machine 2: 9-bit Hamming decoder ============ */
+  (function(){
+    var bitsEl = document.getElementById("bitsM2");
+    var statusEl = document.getElementById("statusM2");
+    var bits = "000000000".split("");
+
+    function render(){
+      renderBits(bitsEl, bits, true);
+      var str = bits.join("");
+      var n = nearest(str, CODES9);
+      if(n.min===0){
+        statusEl.className = "status ok";
+        statusEl.innerHTML = '<span class="k">'+str+'</span>No error. This is the letter "'+n.matches[0]+'."';
+      } else if(n.min===1){
+        statusEl.className = "status ok";
+        statusEl.innerHTML = '<span class="k">'+str+'</span>1-bit error detected, and corrected. This must have started as the letter "'+n.matches[0]+'."';
+      } else {
+        statusEl.className = "status error";
+        statusEl.innerHTML = '<span class="k">'+str+'</span>This doesn\'t cleanly match any letter — the closest is "'+n.matches.join('", "')+'" at '+n.min+' bits away. That\'s more disturbance than a single-error fix can recover from.';
+      }
+    }
+
+    bitsEl.addEventListener("bitschange", render);
+
+    document.getElementById("btnLoad9").addEventListener("click", function(){
+      bits = CODES9[randLetter()].split("");
+      render();
+    });
+    document.getElementById("btnFlip9").addEventListener("click", function(){
+      var i = randInt(bits.length);
+      bits[i] = bits[i]==="1" ? "0" : "1";
+      render();
+    });
+    document.getElementById("btnClear9").addEventListener("click", function(){
+      bits = "000000000".split("");
+      render();
+    });
+
+    render();
+  })();
+
+  /* ============ Word challenge ============ */
+  (function(){
+    var row = document.getElementById("challengeRow");
+    var title = document.getElementById("challengeTitle");
+    var statusEl = document.getElementById("statusWord");
+    var word = "";
+    var lastWord = "";
+    var inputs = [];
+
+    function pickWord(){
+      var w;
+      do { w = CHALLENGE_WORDS[randInt(CHALLENGE_WORDS.length)]; }
+      while(w===lastWord && CHALLENGE_WORDS.length>1);
+      lastWord = w;
+      return w;
+    }
+
+    function build(){
+      word = pickWord();
+      title.textContent = "Word length: " + word.length + " letters";
+      row.innerHTML = "";
+      inputs = [];
+      statusEl.className = "status";
+      statusEl.innerHTML = "";
+      word.split("").forEach(function(letter, idx){
+        var unit = document.createElement("div");
+        unit.className = "challenge-unit";
+
+        var block = document.createElement("div");
+        block.className = "code-block";
+        CODES9[letter].split("").forEach(function(b){
+          var c = document.createElement("span");
+          c.className = "bitcell is-display " + (b==="1" ? "is-one" : "is-zero");
+          c.textContent = b;
+          block.appendChild(c);
+        });
+
+        var input = document.createElement("input");
+        input.className = "letter-input";
+        input.maxLength = 1;
+        input.autocomplete = "off";
+        input.spellcheck = false;
+        input.setAttribute("aria-label", "Letter " + (idx+1));
+
+        input.addEventListener("input", function(){
+          input.value = input.value.toUpperCase().replace(/[^A-Z]/g, "");
+          input.classList.remove("correct","incorrect");
+          if(input.value && inputs[idx+1]) inputs[idx+1].focus();
+        });
+        input.addEventListener("keydown", function(e){
+          if(e.key==="Backspace" && !input.value && inputs[idx-1]){
+            inputs[idx-1].focus();
+          }
+        });
+
+        unit.appendChild(block);
+        unit.appendChild(input);
+        row.appendChild(unit);
+        inputs.push(input);
+      });
+      inputs[0].disabled = false;
+      inputs.forEach(function(inp){ inp.disabled=false; });
+    }
+
+    document.getElementById("btnCheckWord").addEventListener("click", function(){
+      var allCorrect = true;
+      inputs.forEach(function(inp, idx){
+        var ok = inp.value.toUpperCase() === word[idx];
+        inp.classList.toggle("correct", ok);
+        inp.classList.toggle("incorrect", !ok && inp.value!=="");
+        if(!ok) allCorrect = false;
+      });
+      if(allCorrect){
+        statusEl.className = "status ok";
+        statusEl.textContent = "Correct! You decoded the word.";
+      } else {
+        statusEl.className = "status error";
+        statusEl.textContent = "Not quite — the boxes marked in red don't match yet. Check them against the table above.";
+      }
+    });
+
+    document.getElementById("btnRevealWord").addEventListener("click", function(){
+      inputs.forEach(function(inp, idx){
+        inp.value = word[idx];
+        inp.classList.add("correct");
+        inp.classList.remove("incorrect");
+        inp.disabled = true;
+      });
+      statusEl.className = "status warn";
+      statusEl.textContent = "The word was \"" + word + ".\"";
+    });
+
+    document.getElementById("btnNewWord").addEventListener("click", build);
+
+    build();
+  })();
+
+  /* ============ rail nav + scroll progress ============ */
+  (function(){
+    var sections = Array.prototype.slice.call(document.querySelectorAll("main .section[data-rail]"));
+    var rail = document.getElementById("railwire");
+    var pill = document.getElementById("currentPill");
+    var fill = document.getElementById("topbarFill");
+
+    sections.forEach(function(sec){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "rail-node";
+      btn.textContent = sec.getAttribute("data-rail");
+      btn.dataset.target = sec.id;
+      btn.addEventListener("click", function(){
+        sec.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+      rail.appendChild(btn);
+    });
+
+    var railNodes = Array.prototype.slice.call(rail.querySelectorAll(".rail-node"));
+
+    function setActive(id, label){
+      railNodes.forEach(function(n){
+        n.classList.toggle("is-active", n.dataset.target===id);
+      });
+      if(pill) pill.textContent = label.toLowerCase();
+    }
+
+    if("IntersectionObserver" in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            setActive(entry.target.id, entry.target.getAttribute("data-rail"));
+          }
+        });
+      }, {rootMargin:"-45% 0px -50% 0px", threshold:0});
+      sections.forEach(function(sec){ io.observe(sec); });
+    }
+
+    function updateProgress(){
+      var doc = document.documentElement;
+      var scrollTop = doc.scrollTop || document.body.scrollTop;
+      var height = doc.scrollHeight - doc.clientHeight;
+      var pct = height>0 ? (scrollTop/height)*100 : 0;
+      if(fill) fill.style.width = pct + "%";
+    }
+    window.addEventListener("scroll", updateProgress, {passive:true});
+    updateProgress();
+  })();
+
+})();
+</script>
+</body>
+</html>
