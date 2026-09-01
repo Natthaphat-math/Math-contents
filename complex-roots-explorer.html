@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Roots You Can't See — Complex Roots of x² = −1</title>
+<title>รากที่มองไม่เห็น — รากเชิงซ้อนของ x² = −1</title>
 <style>
   :root{
     --ink: #0a151b;
@@ -42,6 +42,7 @@
   /* ---------- header ---------- */
   .site-head{
     display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px;
     padding-bottom: 20px; margin-bottom: 8px;
     border-bottom: 1px solid var(--brass-dimmer);
   }
@@ -54,6 +55,17 @@
     font-family: var(--font-display); font-style:italic; font-size:19px;
     color: var(--brass); letter-spacing:0.02em;
   }
+  .lang-switch{
+    display:flex; background: rgba(0,0,0,0.22);
+    border: 1px solid var(--brass-dimmer); border-radius: 8px; padding:3px; gap:2px;
+  }
+  .lang-switch__btn{
+    border:0; background:transparent; color:var(--text-dim);
+    font-family: var(--font-mono); font-size:11px; letter-spacing:0.06em;
+    font-weight:700; padding:6px 11px; border-radius:6px; cursor:pointer;
+    transition: background .2s ease, color .2s ease;
+  }
+  .lang-switch__btn[aria-pressed="true"]{ background: var(--brass); color: var(--ink); }
 
   /* ---------- hero ---------- */
   .hero{ padding: 44px 0 30px; }
@@ -257,43 +269,47 @@
 <div class="page">
 
   <header class="site-head">
-    <span class="eyebrow">A visual field guide</span>
+    <span class="eyebrow" data-i18n="eyebrow">คู่มือเชิงภาพ</span>
     <span class="site-head__mark">§ i</span>
+    <div class="lang-switch" id="langSwitch" role="group" aria-label="Language / ภาษา">
+      <button type="button" class="lang-switch__btn" id="btnTh" aria-pressed="true">TH</button>
+      <button type="button" class="lang-switch__btn" id="btnEn" aria-pressed="false">EN</button>
+    </div>
   </header>
 
   <section class="hero">
-    <p class="hero__kicker">Complex numbers · Chapter 1</p>
-    <h1 class="hero__title">The Roots You Can't See on an Ordinary Graph</h1>
+    <p class="hero__kicker" data-i18n="heroKicker">จำนวนเชิงซ้อน · บทที่ 1</p>
+    <h1 class="hero__title" data-i18n="heroTitle">รากที่คุณมองไม่เห็นบนกราฟธรรมดา</h1>
 
     <div class="readout">
       <div class="readout__row">
-        <span class="readout__label">Solve</span>
+        <span class="readout__label" data-i18n="readoutSolve">แก้สมการ</span>
         <span class="readout__eq">x<sup>2</sup> = −1</span>
       </div>
       <div class="readout__row readout__row--sub">
-        <span class="readout__label">Rearranged</span>
+        <span class="readout__label" data-i18n="readoutRearranged">จัดรูปใหม่</span>
         <span class="readout__eq readout__eq--sub">x<sup>2</sup> + 1 = 0</span>
       </div>
     </div>
 
-    <p class="hero__sub">Plot <strong>y = x² + 1</strong> using only real numbers, and it never crosses the x-axis. Tilt the very same chart into the <strong>complex plane</strong>, and two roots surface exactly where the terrain touches sea level.</p>
+    <p class="hero__sub" id="heroSub">ลองพล็อตกราฟ <strong>y = x² + 1</strong> ด้วยจำนวนจริงเพียงอย่างเดียว จะเห็นว่ากราฟไม่ตัดแกน x เลย แต่เมื่อเอียงกราฟเดียวกันนี้เข้าสู่ <strong>ระนาบจำนวนเชิงซ้อน</strong> จะปรากฏราก 2 ราก ขึ้นตรงจุดที่พื้นผิวแตะระดับน้ำทะเลพอดี</p>
   </section>
 
   <section class="console">
     <div class="scope" id="canvasWrap">
       <div class="scope__bezel">
         <canvas id="scene"></canvas>
-        <div class="scope__status" id="sceneStatus">Real line — curve view</div>
-        <div class="scope__hint" id="sceneHint">drag to look around</div>
+        <div class="scope__status" id="sceneStatus">เส้นจำนวนจริง — มุมมองเส้นโค้ง</div>
+        <div class="scope__hint" id="sceneHint" data-i18n="hintText">ลากเพื่อหมุนดูรอบๆ</div>
       </div>
     </div>
 
     <aside class="panel">
       <div class="panel__block">
-        <span class="panel__label">View</span>
+        <span class="panel__label" data-i18n="viewLabel">มุมมอง</span>
         <div class="switch" id="modeSwitch" role="group" aria-label="Chart view">
-          <button type="button" class="switch__btn" id="btnReal" aria-pressed="true">Real line <em>2D</em></button>
-          <button type="button" class="switch__btn" id="btnComplex" aria-pressed="false">Complex plane <em>3D</em></button>
+          <button type="button" class="switch__btn" id="btnReal" aria-pressed="true"><span data-i18n="modeRealLabel">เส้นจำนวนจริง</span> <em>2D</em></button>
+          <button type="button" class="switch__btn" id="btnComplex" aria-pressed="false"><span data-i18n="modeComplexLabel">ระนาบเชิงซ้อน</span> <em>3D</em></button>
           <span class="switch__thumb" aria-hidden="true"></span>
         </div>
       </div>
@@ -302,58 +318,58 @@
         <label class="dial" for="autoRotate">
           <input type="checkbox" id="autoRotate" disabled>
           <span class="dial__track"><span class="dial__thumb"></span></span>
-          Auto-rotate
+          <span data-i18n="autoRotateLabel">หมุนอัตโนมัติ</span>
         </label>
-        <button type="button" class="ghost-btn" id="resetView" disabled>Reset view</button>
+        <button type="button" class="ghost-btn" id="resetView" disabled data-i18n="resetViewLabel">รีเซ็ตมุมมอง</button>
       </div>
 
       <div class="panel__block panel__block--row">
         <label class="dial" for="showPlane">
           <input type="checkbox" id="showPlane" checked disabled>
           <span class="dial__track"><span class="dial__thumb"></span></span>
-          Cutting plane
+          <span data-i18n="cuttingPlaneLabel">ระนาบตัดขวาง</span>
         </label>
       </div>
 
       <div class="panel__block">
-        <span class="panel__label" id="statElevLabel">Minimum elevation</span>
-        <span class="panel__stat" id="statElev">1.00 at x = 0</span>
+        <span class="panel__label" id="statElevLabel">ระดับความสูงต่ำสุด</span>
+        <span class="panel__stat" id="statElev">1.00 ที่ x = 0</span>
       </div>
 
       <div class="panel__block">
-        <span class="panel__label">Roots found</span>
-        <span class="panel__stat panel__stat--flare" id="statRoots">0 — the curve never reaches y = 0</span>
+        <span class="panel__label" data-i18n="rootsFoundLabel">จำนวนรากที่พบ</span>
+        <span class="panel__stat panel__stat--flare" id="statRoots">0 — กราฟไม่แตะ y = 0 เลย</span>
       </div>
 
-      <p class="panel__caption" id="caption" aria-live="polite">Only real numbers are on the table here. The curve y = x² + 1 sits entirely above the axis, so there's nothing to find.</p>
+      <p class="panel__caption" id="caption" aria-live="polite">ตอนนี้ใช้ได้เฉพาะจำนวนจริงเท่านั้น กราฟ y = x² + 1 อยู่เหนือแกน x ทั้งเส้น จึงไม่มีรากให้พบ</p>
     </aside>
   </section>
 
   <section class="log">
     <article class="log__card">
       <span class="log__index">01</span>
-      <h3>Real line</h3>
-      <p>Plot y = x² + 1 using only real numbers. The curve never dips below 1.</p>
+      <h3 data-i18n="log1Title">เส้นจำนวนจริง</h3>
+      <p data-i18n="log1Body">พล็อตกราฟ y = x² + 1 โดยใช้จำนวนจริงเท่านั้น กราฟนี้จะไม่มีวันต่ำกว่า 1</p>
     </article>
     <article class="log__card">
       <span class="log__index">02</span>
-      <h3>No crossing</h3>
-      <p>Since the minimum value is 1, the curve never touches the x-axis — there's no real x with x² + 1 = 0.</p>
+      <h3 data-i18n="log2Title">ไม่ตัดแกน</h3>
+      <p data-i18n="log2Body">เพราะค่าต่ำสุดคือ 1 กราฟจึงไม่มีวันแตะแกน x — ไม่มีจำนวนจริง x ใดที่ทำให้ x² + 1 = 0</p>
     </article>
     <article class="log__card">
       <span class="log__index">03</span>
-      <h3>Open the chart</h3>
-      <p>Let x become a complex number, w = a + bi, and plot the elevation |w² + 1| over the whole plane, not just the line.</p>
+      <h3 data-i18n="log3Title">เปิดกราฟออกสู่ระนาบ</h3>
+      <p data-i18n="log3Body">ให้ x กลายเป็นจำนวนเชิงซ้อน w = a + bi แล้วพล็อตความสูง |w² + 1| ทั่วทั้งระนาบ ไม่ใช่แค่บนเส้นจำนวน</p>
     </article>
     <article class="log__card">
       <span class="log__index">04</span>
-      <h3>Sea level</h3>
-      <p>The terrain dips to exactly zero at two points: w = i and w = −i. Those are the complex roots of x² = −1.</p>
+      <h3 data-i18n="log4Title">ระดับน้ำทะเล</h3>
+      <p data-i18n="log4Body">พื้นผิวลดลงจนแตะศูนย์พอดีที่ 2 จุด คือ w = i และ w = −i นี่คือรากเชิงซ้อนของ x² = −1</p>
     </article>
   </section>
 
   <footer class="site-foot">
-    <p>Switch to the complex plane, then drag inside the chart to look around — every root is a place where |w² + 1| touches zero.</p>
+    <p data-i18n="footerText">สลับไปที่ระนาบเชิงซ้อน แล้วลากภายในกราฟเพื่อหมุนดูรอบๆ — ทุกรากคือจุดที่ |w² + 1| แตะศูนย์พอดี</p>
   </footer>
 
 </div>
@@ -381,8 +397,89 @@
   var statElevLabelEl = document.getElementById('statElevLabel');
   var statElevEl = document.getElementById('statElev');
   var statRootsEl = document.getElementById('statRoots');
+  var heroSubEl = document.getElementById('heroSub');
+  var btnTh = document.getElementById('btnTh');
+  var btnEn = document.getElementById('btnEn');
 
   var REDUCE_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------------- i18n ----------------
+  var I18N = {
+    en: {
+      pageTitle: "The Roots You Can't See — Complex Roots of x² = −1",
+      eyebrow: "A visual field guide",
+      heroKicker: "Complex numbers · Chapter 1",
+      heroTitle: "The Roots You Can't See on an Ordinary Graph",
+      readoutSolve: "Solve",
+      readoutRearranged: "Rearranged",
+      heroSubHtml: 'Plot <strong>y = x² + 1</strong> using only real numbers, and it never crosses the x-axis. Tilt the very same chart into the <strong>complex plane</strong>, and two roots surface exactly where the terrain touches sea level.',
+      modeSwitchAria: "Chart view",
+      viewLabel: "View",
+      modeRealLabel: "Real line",
+      modeComplexLabel: "Complex plane",
+      autoRotateLabel: "Auto-rotate",
+      cuttingPlaneLabel: "Cutting plane",
+      resetViewLabel: "Reset view",
+      rootsFoundLabel: "Roots found",
+      hintText: "drag to look around",
+      footerText: "Switch to the complex plane, then drag inside the chart to look around — every root is a place where |w² + 1| touches zero.",
+      log1Title: "Real line",
+      log1Body: "Plot y = x² + 1 using only real numbers. The curve never dips below 1.",
+      log2Title: "No crossing",
+      log2Body: "Since the minimum value is 1, the curve never touches the x-axis — there's no real x with x² + 1 = 0.",
+      log3Title: "Open the chart",
+      log3Body: "Let x become a complex number, w = a + bi, and plot the elevation |w² + 1| over the whole plane, not just the line.",
+      log4Title: "Sea level",
+      log4Body: "The terrain dips to exactly zero at two points: w = i and w = −i. Those are the complex roots of x² = −1.",
+      status2d: "Real line — curve view",
+      status3d: "Complex plane — surface view",
+      elevLabel2d: "Minimum elevation",
+      elevLabel3d: "Elevation at roots",
+      elevValue2d: "1.00 at x = 0",
+      elevValue3d: "0.00 at w = ±i",
+      roots2d: "0 — the curve never reaches y = 0",
+      roots3d: "2 → x = i, x = −i",
+      caption2d: "Only real numbers are on the table here. The curve y = x² + 1 sits entirely above the axis, so there's nothing to find.",
+      caption3d: "x now moves anywhere on the complex plane, w = a + bi. The height shown is |w² + 1| — how far that value sits from zero. It dips all the way down at exactly two points."
+    },
+    th: {
+      pageTitle: "รากที่มองไม่เห็น — รากเชิงซ้อนของ x² = −1",
+      eyebrow: "คู่มือเชิงภาพ",
+      heroKicker: "จำนวนเชิงซ้อน · บทที่ 1",
+      heroTitle: "รากที่คุณมองไม่เห็นบนกราฟธรรมดา",
+      readoutSolve: "แก้สมการ",
+      readoutRearranged: "จัดรูปใหม่",
+      heroSubHtml: 'ลองพล็อตกราฟ <strong>y = x² + 1</strong> ด้วยจำนวนจริงเพียงอย่างเดียว จะเห็นว่ากราฟไม่ตัดแกน x เลย แต่เมื่อเอียงกราฟเดียวกันนี้เข้าสู่ <strong>ระนาบจำนวนเชิงซ้อน</strong> จะปรากฏราก 2 ราก ขึ้นตรงจุดที่พื้นผิวแตะระดับน้ำทะเลพอดี',
+      modeSwitchAria: "มุมมองกราฟ",
+      viewLabel: "มุมมอง",
+      modeRealLabel: "เส้นจำนวนจริง",
+      modeComplexLabel: "ระนาบเชิงซ้อน",
+      autoRotateLabel: "หมุนอัตโนมัติ",
+      cuttingPlaneLabel: "ระนาบตัดขวาง",
+      resetViewLabel: "รีเซ็ตมุมมอง",
+      rootsFoundLabel: "จำนวนรากที่พบ",
+      hintText: "ลากเพื่อหมุนดูรอบๆ",
+      footerText: "สลับไปที่ระนาบเชิงซ้อน แล้วลากภายในกราฟเพื่อหมุนดูรอบๆ — ทุกรากคือจุดที่ |w² + 1| แตะศูนย์พอดี",
+      log1Title: "เส้นจำนวนจริง",
+      log1Body: "พล็อตกราฟ y = x² + 1 โดยใช้จำนวนจริงเท่านั้น กราฟนี้จะไม่มีวันต่ำกว่า 1",
+      log2Title: "ไม่ตัดแกน",
+      log2Body: "เพราะค่าต่ำสุดคือ 1 กราฟจึงไม่มีวันแตะแกน x — ไม่มีจำนวนจริง x ใดที่ทำให้ x² + 1 = 0",
+      log3Title: "เปิดกราฟออกสู่ระนาบ",
+      log3Body: "ให้ x กลายเป็นจำนวนเชิงซ้อน w = a + bi แล้วพล็อตความสูง |w² + 1| ทั่วทั้งระนาบ ไม่ใช่แค่บนเส้นจำนวน",
+      log4Title: "ระดับน้ำทะเล",
+      log4Body: "พื้นผิวลดลงจนแตะศูนย์พอดีที่ 2 จุด คือ w = i และ w = −i นี่คือรากเชิงซ้อนของ x² = −1",
+      status2d: "เส้นจำนวนจริง — มุมมองเส้นโค้ง",
+      status3d: "ระนาบเชิงซ้อน — มุมมองพื้นผิว",
+      elevLabel2d: "ระดับความสูงต่ำสุด",
+      elevLabel3d: "ระดับความสูงที่ราก",
+      elevValue2d: "1.00 ที่ x = 0",
+      elevValue3d: "0.00 ที่ w = ±i",
+      roots2d: "0 — กราฟไม่แตะ y = 0 เลย",
+      roots3d: "2 → x = i, x = −i",
+      caption2d: "ตอนนี้ใช้ได้เฉพาะจำนวนจริงเท่านั้น กราฟ y = x² + 1 อยู่เหนือแกน x ทั้งเส้น จึงไม่มีรากให้พบ",
+      caption3d: "ตอนนี้ x เคลื่อนที่ไปได้ทั่วระนาบเชิงซ้อน โดยให้ w = a + bi ความสูงที่เห็นคือ |w² + 1| ซึ่งบอกว่าค่านั้นห่างจากศูนย์แค่ไหน พื้นผิวนี้จะลดต่ำจนแตะศูนย์พอดีที่ 2 จุดเท่านั้น"
+    }
+  };
 
   // ---------------- math ----------------
   var DOMAIN = 1.4;
@@ -436,6 +533,7 @@
     animating: false,
     autoRotate: false,
     showPlane: true,
+    lang: 'th',
     dragging: false,
     lastX: 0, lastY: 0,
     scale: 1, originX: 0, originY: 0,
@@ -645,8 +743,8 @@
     ctx.font = '600 13px ' + FONT_MONO;
     ctx.fillStyle = 'rgba(231,237,238,0.88)';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Re', pa2.x+18, pa2.y);
-    ctx.fillText(t3 > 0.5 ? '|w²+1|' : 'y', ph2.x, ph2.y-14);
+    ctx.fillText(t3 > 0.5 ? 'Re' : 'X', pa2.x+18, pa2.y);
+    ctx.fillText(t3 > 0.5 ? '|w²+1|' : 'Y', ph2.x, ph2.y-14);
     if (t3 > 0.15){
       ctx.globalAlpha = clamp((t3-0.15)/0.5, 0, 1);
       ctx.fillText('Im', pb2.x, pb2.y-16);
@@ -698,6 +796,7 @@
   // ---------------- UI sync ----------------
   function updateUIForMode(){
     var is3d = state.mode === '3d';
+    var dict = I18N[state.lang];
     btnReal.setAttribute('aria-pressed', String(!is3d));
     btnComplex.setAttribute('aria-pressed', String(is3d));
     modeSwitch.classList.toggle('is-complex', is3d);
@@ -706,13 +805,11 @@
     resetViewBtn.disabled = !is3d;
     canvas.classList.toggle('is-3d', is3d);
 
-    sceneStatusEl.textContent = is3d ? 'Complex plane — surface view' : 'Real line — curve view';
-    statElevLabelEl.textContent = is3d ? 'Elevation at roots' : 'Minimum elevation';
-    statElevEl.textContent = is3d ? '0.00 at w = ±i' : '1.00 at x = 0';
-    statRootsEl.textContent = is3d ? '2 → x = i, x = −i' : '0 — the curve never reaches y = 0';
-    captionEl.textContent = is3d
-      ? 'x now moves anywhere on the complex plane, w = a + bi. The height shown is |w² + 1| — how far that value sits from zero. It dips all the way down at exactly two points.'
-      : 'Only real numbers are on the table here. The curve y = x² + 1 sits entirely above the axis, so there\'s nothing to find.';
+    sceneStatusEl.textContent = is3d ? dict.status3d : dict.status2d;
+    statElevLabelEl.textContent = is3d ? dict.elevLabel3d : dict.elevLabel2d;
+    statElevEl.textContent = is3d ? dict.elevValue3d : dict.elevValue2d;
+    statRootsEl.textContent = is3d ? dict.roots3d : dict.roots2d;
+    captionEl.textContent = is3d ? dict.caption3d : dict.caption2d;
 
     if (is3d && !state.hintShown){
       state.hintShown = true;
@@ -720,6 +817,31 @@
       setTimeout(function(){ sceneHintEl.classList.remove('is-visible'); }, 3200);
     }
   }
+
+  function applyStaticI18n(){
+    var dict = I18N[state.lang];
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var n=0; n<nodes.length; n++){
+      var key = nodes[n].getAttribute('data-i18n');
+      if (dict[key] !== undefined) nodes[n].textContent = dict[key];
+    }
+    document.title = dict.pageTitle;
+    document.documentElement.lang = state.lang;
+    heroSubEl.innerHTML = dict.heroSubHtml;
+    modeSwitch.setAttribute('aria-label', dict.modeSwitchAria);
+  }
+
+  function setLang(lang){
+    if (lang === state.lang) return;
+    state.lang = lang;
+    btnTh.setAttribute('aria-pressed', String(lang === 'th'));
+    btnEn.setAttribute('aria-pressed', String(lang === 'en'));
+    applyStaticI18n();
+    updateUIForMode();
+  }
+
+  btnTh.addEventListener('click', function(){ setLang('th'); });
+  btnEn.addEventListener('click', function(){ setLang('en'); });
 
   function setMode(nextMode){
     if (nextMode === state.mode) return;
@@ -823,6 +945,7 @@
     requestAnimationFrame(frame);
   }
 
+  applyStaticI18n();
   updateUIForMode();
   resize();
   requestAnimationFrame(frame);
