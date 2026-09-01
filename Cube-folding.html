@@ -216,7 +216,7 @@
   .board-wrap{
     position:relative;
     overflow-x:auto;
-    overflow-y:hidden;
+    overflow-y:visible;
     padding:22px;
     display:flex;
     justify-content:center;
@@ -478,6 +478,7 @@
   .modal-sub{font-size:13.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5;}
 
   .htp-section{ margin-top:20px; padding-top:16px; border-top:1px dashed var(--paper-line); }
+  .htp-actions{ display:flex; justify-content:center; margin-top:20px; }
   .htp-section:first-of-type{ margin-top:16px; border-top:none; padding-top:0; }
   .htp-eyebrow{
     font-family:var(--font-mono);
@@ -546,54 +547,41 @@
     .cell-empty.can-drop{ animation:none; }
   }
 
-  /* ---------- Manual side-select modal ---------- */
-  .manual-pair{
-    display:flex;
-    gap:22px;
-    justify-content:center;
-    flex-wrap:wrap;
-    margin-top:18px;
-  }
-  .manual-square{ display:flex; flex-direction:column; align-items:center; gap:8px; }
-  .manual-square-label{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); letter-spacing:.05em; }
-  .manual-square-frame{
-    position:relative;
-    width:118px;height:118px;
-  }
-  .manual-svg{
-    width:100%;height:100%;
-    border-radius:10px;
-  }
-  .dir-btn{
+  /* ---------- Inline side-picker (arrows on the real board tiles) ---------- */
+  .dir-pick-btn{
     position:absolute;
-    width:34px;height:26px;
-    border-radius:8px;
-    border:1.5px solid var(--ink);
+    width:38px;height:38px;
+    border-radius:10px;
+    border:2.5px solid var(--ink);
     background:var(--card);
     cursor:pointer;
     display:grid;place-items:center;
     color:var(--ink);
-    transition:background .15s, transform .1s;
+    z-index:8;
+    box-shadow:var(--shadow-1);
+    transition:background .15s, transform .1s, border-color .15s;
   }
-  .dir-btn:hover:not(:disabled){background:var(--teal-tint); border-color:var(--teal);}
-  .dir-btn:disabled{ opacity:.28; cursor:not-allowed; }
-  .dir-btn.chosen{ background:var(--amber); border-color:#b5811f; color:#fff; }
-  .dir-btn svg{width:13px;height:13px;}
-  .dir-N{ top:-13px; left:50%; transform:translateX(-50%); }
-  .dir-S{ bottom:-13px; left:50%; transform:translateX(-50%); }
-  .dir-E{ right:-17px; top:50%; transform:translateY(-50%) rotate(90deg); }
-  .dir-W{ left:-17px; top:50%; transform:translateY(-50%) rotate(90deg); }
-
-  .manual-feedback{
-    min-height:20px;
-    text-align:center;
-    font-size:13px;
-    font-weight:600;
-    color:var(--coral);
-    margin-top:14px;
+  .dir-pick-btn svg{ width:22px;height:22px; }
+  .dir-pick-btn:hover:not(:disabled){ background:var(--teal-tint); border-color:var(--teal); transform:scale(1.07); }
+  .dir-pick-btn:active:not(:disabled){ transform:scale(.93); }
+  .dir-pick-btn:disabled{ opacity:.25; cursor:not-allowed; pointer-events:none; }
+  .dir-pick-btn.chosen{ background:var(--amber); border-color:#b5811f; color:#fff; }
+  .dir-pick-N{
+    left:calc(var(--c) * var(--cell-size) + var(--cell-size)/2 - 19px);
+    top:calc(var(--r) * var(--cell-size) - 44px);
   }
-  .manual-feedback.ok{ color:var(--teal-dark); }
-  .manual-actions{ display:flex; justify-content:center; margin-top:6px; }
+  .dir-pick-S{
+    left:calc(var(--c) * var(--cell-size) + var(--cell-size)/2 - 19px);
+    top:calc(var(--r) * var(--cell-size) + var(--cell-size) + 6px);
+  }
+  .dir-pick-E{
+    left:calc(var(--c) * var(--cell-size) + var(--cell-size) + 6px);
+    top:calc(var(--r) * var(--cell-size) + var(--cell-size)/2 - 19px);
+  }
+  .dir-pick-W{
+    left:calc(var(--c) * var(--cell-size) - 44px);
+    top:calc(var(--r) * var(--cell-size) + var(--cell-size)/2 - 19px);
+  }
 
   .credit-note{
     text-align:center;
@@ -746,26 +734,13 @@
       <p class="htp-body">แต่ละข้อมีขอบที่ต้องหาให้ครบ 7 ขอบ เมื่อเชื่อมครบแล้วแปลว่ารูปคลี่นี้พับเป็นลูกบาศก์ได้สมบูรณ์ พร้อมไปข้อต่อไป</p>
     </div>
 
-    <div class="manual-actions" style="margin-top:20px;">
+    <div class="htp-actions">
       <button class="btn btn-primary" id="howToGotIt" type="button">เข้าใจแล้ว เริ่มเล่น</button>
     </div>
   </div>
 </div>
 
 <!-- Manual side-select modal -->
-<div class="modal-backdrop" id="manualModal" hidden>
-  <div class="modal-card manual-card" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
-    <button class="modal-close" id="manualClose" type="button" aria-label="ปิด">✕</button>
-    <h3 id="manualTitle">เลือกด้านที่คิดว่าจะเชื่อมกัน</h3>
-    <p class="modal-sub">สองรูปนี้ไม่ได้อยู่ในรูปแบบตัว L ลองเลือกด้านของแต่ละรูปที่คุณคิดว่าจะไปติดกันเมื่อพับเป็นลูกบาศก์</p>
-    <div class="manual-pair" id="manualPair"></div>
-    <p class="manual-feedback" id="manualFeedback" aria-live="polite"></p>
-    <div class="manual-actions">
-      <button class="btn btn-primary" id="manualConfirm" type="button" disabled>ยืนยันการเชื่อมต่อ</button>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
 "use strict";
@@ -1157,6 +1132,7 @@ function restartProblem(){
   state.squares = state.initialSquares.map(s=>({...s}));
   state.hiddenEdges.forEach(e=>e.discovered=false);
   state.selectedId = null;
+  state.pendingManual = null;
   state.mcAnswered = false;
   state.cubeOptions = buildCubeOptions();
   document.getElementById('winBanner').hidden = true;
@@ -1170,7 +1146,7 @@ function restartProblem(){
 /* ================= Rendering ================= */
 function buildBoard(){
   const board = document.getElementById('board');
-  board.querySelectorAll('.cell-empty, .tile').forEach(el=>el.remove());
+  board.querySelectorAll('.cell-empty, .tile, .dir-pick-btn').forEach(el=>el.remove());
   const frag = document.createDocumentFragment();
 
   for(let c=state.minC; c<=state.maxC; c++){
@@ -1224,7 +1200,9 @@ function renderSquarePositions(){
     el.style.setProperty('--r', sq.r-state.minR);
     const art = el.querySelector('.tile-art');
     art.style.transform = 'rotate('+sq.rotDeg+'deg)';
-    el.classList.toggle('is-selected', state.selectedId===sq.id);
+    const pm = state.pendingManual;
+    const isPending = pm && (sq.id===pm.idA || sq.id===pm.idB);
+    el.classList.toggle('is-selected', state.selectedId===sq.id || isPending);
   });
 }
 
@@ -1247,21 +1225,128 @@ function drawConnections(){
   svg.setAttribute('height', H);
   svg.innerHTML='';
   const cx = W/2, cy = H/2;
+  const size = state.cellSize;
+
+  /* Rectangles for every OTHER occupied tile (not the two endpoints of this
+     particular connection) — connecting lines must never cross these. A small
+     inset keeps the check to the tile's visible face, not its full cell. */
+  function obstacleRects(excludeIdA, excludeIdB){
+    return state.squares
+      .filter(s=>s.id!==excludeIdA && s.id!==excludeIdB)
+      .map(s=>{
+        const {x,y} = tilePixel(s);
+        const pad = 3;
+        return {x1:x+pad, y1:y+pad, x2:x+size-pad, y2:y+size-pad};
+      });
+  }
+  function quadPoint(pA, ctrl, pB, t){
+    const mt = 1-t;
+    return { x: mt*mt*pA.x + 2*mt*t*ctrl.x + t*t*pB.x, y: mt*mt*pA.y + 2*mt*t*ctrl.y + t*t*pB.y };
+  }
+  function quadClear(pA, ctrl, pB, rects){
+    for(let i=1;i<24;i++){
+      const p = quadPoint(pA, ctrl, pB, i/24);
+      for(const r of rects){
+        if(p.x>=r.x1 && p.x<=r.x2 && p.y>=r.y1 && p.y<=r.y2) return false;
+      }
+    }
+    return true;
+  }
+  function findClearControlPoint(pA, pB, rects){
+    const mx=(pA.x+pB.x)/2, my=(pA.y+pB.y)/2;
+    let bx = mx-cx, by = my-cy;
+    const blen = Math.hypot(bx,by)||1;
+    bx/=blen; by/=blen;
+    const dist = Math.hypot(pA.x-pB.x, pA.y-pB.y);
+    const baseMag = Math.min(46, dist*0.32+14);
+    const angles = [0,25,-25,50,-50,80,-80,110,-110,140,-140,180];
+    const mags = [baseMag, baseMag*1.5, baseMag*2.2, baseMag*3, size*1.5, size*2.2, size*3];
+    for(const mag of mags){
+      for(const ang of angles){
+        const rad = ang*Math.PI/180;
+        const rx = bx*Math.cos(rad) - by*Math.sin(rad);
+        const ry = bx*Math.sin(rad) + by*Math.cos(rad);
+        const ctrl = {x: mx+rx*mag, y: my+ry*mag};
+        if(quadClear(pA, ctrl, pB, rects)) return ctrl;
+      }
+    }
+    return null; // no single-bulge curve clears everything — caller must route instead
+  }
+  /* Guaranteed fallback for tight layouts a single bulge can't dodge: route
+     step-by-step through actually-empty grid cells (a square is never
+     "blocked" from routing through, only OTHER occupied tiles are), then
+     render the cell-to-cell path as one smooth rounded line. */
+  function findRouteCells(sqA, sqB){
+    const blocked = new Set();
+    state.squares.forEach(s=>{ if(s.id!==sqA.id && s.id!==sqB.id) blocked.add(s.c+','+s.r); });
+    const startKey = sqA.c+','+sqA.r, endKey = sqB.c+','+sqB.r;
+    const cameFrom = new Map([[startKey,null]]);
+    const queue = [[sqA.c,sqA.r]];
+    let qi = 0;
+    while(qi<queue.length){
+      const [c,r] = queue[qi++];
+      if(c===sqB.c && r===sqB.r) break;
+      for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const nc=c+dc, nr=r+dr, key=nc+','+nr;
+        if(nc<state.minC-1||nc>state.maxC+1||nr<state.minR-1||nr>state.maxR+1) continue;
+        if(blocked.has(key) && key!==endKey) continue;
+        if(cameFrom.has(key)) continue;
+        cameFrom.set(key, c+','+r);
+        queue.push([nc,nr]);
+      }
+    }
+    if(!cameFrom.has(endKey)) return null;
+    const cells = [];
+    let curKey = endKey;
+    while(curKey!==null){ const [c,r]=curKey.split(',').map(Number); cells.push({c,r}); curKey = cameFrom.get(curKey); }
+    cells.reverse();
+    return cells;
+  }
+  function cellCenter(c,r){
+    return { x: (c-state.minC)*size + size/2, y: (r-state.minR)*size + size/2 };
+  }
+  /* Draws a rounded-corner line through an ordered list of waypoints. */
+  function roundedPathD(points, radius){
+    if(points.length<=2){
+      return 'M '+points[0].x+' '+points[0].y+' L '+points[points.length-1].x+' '+points[points.length-1].y;
+    }
+    let d = 'M '+points[0].x+' '+points[0].y+' ';
+    for(let i=1;i<points.length-1;i++){
+      const prev=points[i-1], cur=points[i], next=points[i+1];
+      const d1 = Math.hypot(cur.x-prev.x, cur.y-prev.y)||1;
+      const d2 = Math.hypot(next.x-cur.x, next.y-cur.y)||1;
+      const r1 = Math.min(radius, d1/2), r2 = Math.min(radius, d2/2);
+      const p1 = { x: cur.x + (prev.x-cur.x)/d1*r1, y: cur.y + (prev.y-cur.y)/d1*r1 };
+      const p2 = { x: cur.x + (next.x-cur.x)/d2*r2, y: cur.y + (next.y-cur.y)/d2*r2 };
+      d += 'L '+p1.x+' '+p1.y+' Q '+cur.x+' '+cur.y+' '+p2.x+' '+p2.y+' ';
+    }
+    const last = points[points.length-1];
+    d += 'L '+last.x+' '+last.y;
+    return d;
+  }
 
   function drawArc(e, lineClass, tickClass){
     const sqA = getSquare(e.i), sqB = getSquare(e.j);
     const visA = visualDirFromHome(sqA, e.dirA);
     const visB = visualDirFromHome(sqB, e.dirB);
     const pA = edgeMidpoint(sqA, visA), pB = edgeMidpoint(sqB, visB);
-    const mx=(pA.x+pB.x)/2, my=(pA.y+pB.y)/2;
-    let nx = mx-cx, ny = my-cy;
-    const len = Math.hypot(nx,ny)||1;
-    nx/=len; ny/=len;
-    const dist = Math.hypot(pA.x-pB.x, pA.y-pB.y);
-    const bulge = Math.min(46, dist*0.32+14);
-    const ctrlX = mx + nx*bulge, ctrlY = my + ny*bulge;
+    const rects = obstacleRects(e.i, e.j);
+    const ctrl = findClearControlPoint(pA, pB, rects);
+    let d;
+    if(ctrl){
+      d = 'M '+pA.x+' '+pA.y+' Q '+ctrl.x+' '+ctrl.y+' '+pB.x+' '+pB.y;
+    } else {
+      const cells = findRouteCells(sqA, sqB);
+      if(cells && cells.length>2){
+        const waypoints = [pA, ...cells.slice(1,-1).map(c=>cellCenter(c.c,c.r)), pB];
+        d = roundedPathD(waypoints, size*0.32);
+      } else {
+        // No routable path found (extremely unlikely) — draw straight rather than crash.
+        d = 'M '+pA.x+' '+pA.y+' L '+pB.x+' '+pB.y;
+      }
+    }
     const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d', 'M '+pA.x+' '+pA.y+' Q '+ctrlX+' '+ctrlY+' '+pB.x+' '+pB.y);
+    path.setAttribute('d', d);
     path.setAttribute('class', lineClass);
     svg.appendChild(path);
     [pA,pB].forEach(p=>{
@@ -1295,7 +1380,12 @@ function updateProgress(){
 
 function updateHint(){
   const hint = document.getElementById('selectHint');
-  if(state.selectedId===null){
+  const pm = state.pendingManual;
+  if(pm){
+    hint.textContent = (pm.dirA && pm.dirB)
+      ? 'กำลังตรวจสอบ...'
+      : 'แตะลูกศรรอบรูปทั้งสองที่คิดว่าจะติดกันเมื่อพับ';
+  } else if(state.selectedId===null){
     hint.textContent = 'แตะสี่เหลี่ยม 1 รูปเพื่อเริ่ม';
   } else {
     hint.textContent = 'แตะสี่เหลี่ยมอีกรูปเพื่อเชื่อม หรือแตะช่องสีเหลืองเพื่อเลื่อน';
@@ -1458,7 +1548,7 @@ function attemptConnect(idA, idB){
     showToast('success','ถูกต้อง! เชื่อมด้วยหลักที่ 1 (มุมตัว L)');
     checkWin();
   } else {
-    openManualModal(idA, idB);
+    beginManualPick(idA, idB);
   }
 }
 
@@ -1479,6 +1569,15 @@ function checkWin(){
 
 /* board click delegation */
 document.getElementById('board').addEventListener('click', function(e){
+  const dirBtn = e.target.closest('.dir-pick-btn');
+  if(dirBtn){
+    handleManualDirClick(dirBtn);
+    return;
+  }
+  if(state.pendingManual){
+    cancelManualPick();
+    return;
+  }
   const tileBtn = e.target.closest('.tile-btn');
   if(tileBtn){
     const tile = tileBtn.closest('.tile');
@@ -1503,58 +1602,66 @@ document.getElementById('board').addEventListener('click', function(e){
   }
 });
 
-/* ================= Manual modal ================= */
-function dirArrowSvg(){
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 5l-5 5M12 5l5 5"/></svg>';
+/* ================= Inline side picker (on the real board tiles) ================= */
+function dirArrowSvg(dir){
+  const paths = {
+    N: 'M12 19V5M12 5l-6 6M12 5l6 6',
+    S: 'M12 5v14M12 19l-6-6M12 19l6-6',
+    E: 'M5 12h14M19 12l-6-6M19 12l-6 6',
+    W: 'M19 12H5M5 12l6-6M5 12l6 6'
+  };
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="'+paths[dir]+'"/></svg>';
 }
-
-function openManualModal(idA, idB){
-  state.pendingManual = {idA, idB, dirA:null, dirB:null};
-  renderManualModal();
-  document.getElementById('manualFeedback').textContent='';
-  document.getElementById('manualFeedback').className='manual-feedback';
-  document.getElementById('manualModal').hidden = false;
+function clearManualPickers(){
+  document.querySelectorAll('.dir-pick-btn').forEach(el=>el.remove());
 }
-function closeManualModal(){
-  document.getElementById('manualModal').hidden = true;
-  state.pendingManual = null;
-  clearSelection();
-}
-function buildManualSquareHTML(id, role, chosenDir){
-  const sq = getSquare(id);
-  const used = usedVisualDirs(sq);
-  const btns = DIR_ORDER.map(d=>{
-    const isUsed = used.has(d);
-    const isChosen = chosenDir===d;
-    return '<button type="button" class="dir-btn dir-'+d+' '+(isChosen?'chosen':'')+'" data-role="'+role+'" data-dir="'+d+'" '+(isUsed?'disabled':'')+' aria-label="ด้าน'+DIR_THAI[d]+'">'+dirArrowSvg()+'</button>';
-  }).join('');
-  return '<div class="manual-square">'+
-    '<span class="manual-square-label">รูปที่ '+(id+1)+'</span>'+
-    '<div class="manual-square-frame">'+
-      '<svg viewBox="0 0 100 100" class="manual-svg" style="transform:rotate('+sq.rotDeg+'deg)">'+
-        '<rect x="2" y="2" width="96" height="96" rx="10" fill="#fff" stroke="#20242A" stroke-width="4"/>'+
-        designMarkup(sq.designId)+
-      '</svg>'+
-      btns+
-    '</div>'+
-  '</div>';
-}
-function renderManualModal(){
+function renderManualPickers(){
+  clearManualPickers();
   const pm = state.pendingManual;
   if(!pm) return;
-  document.getElementById('manualPair').innerHTML =
-    buildManualSquareHTML(pm.idA,'A',pm.dirA) + buildManualSquareHTML(pm.idB,'B',pm.dirB);
-  document.getElementById('manualConfirm').disabled = !(pm.dirA && pm.dirB);
+  const board = document.getElementById('board');
+  [['A',pm.idA,pm.dirA],['B',pm.idB,pm.dirB]].forEach(([role,id,chosenDir])=>{
+    const sq = getSquare(id);
+    const used = usedVisualDirs(sq);
+    DIR_ORDER.forEach(d=>{
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dir-pick-btn dir-pick-'+d+(chosenDir===d?' chosen':'');
+      btn.dataset.role = role;
+      btn.dataset.dir = d;
+      if(used.has(d)) btn.disabled = true;
+      btn.style.setProperty('--c', sq.c-state.minC);
+      btn.style.setProperty('--r', sq.r-state.minR);
+      btn.setAttribute('aria-label', 'รูปที่ '+(id+1)+' ด้าน'+DIR_THAI[d]);
+      btn.innerHTML = dirArrowSvg(d);
+      board.appendChild(btn);
+    });
+  });
 }
-document.getElementById('manualPair').addEventListener('click', function(e){
-  const btn = e.target.closest('.dir-btn');
-  if(!btn || btn.disabled) return;
+function beginManualPick(idA, idB){
+  state.pendingManual = {idA, idB, dirA:null, dirB:null};
+  state.selectedId = null;
+  renderSquarePositions();
+  renderManualPickers();
+  updateHint();
+}
+function cancelManualPick(){
+  state.pendingManual = null;
+  clearManualPickers();
+  clearSelection();
+}
+function handleManualDirClick(btn){
+  const pm = state.pendingManual;
+  if(!pm || btn.disabled) return;
   const role = btn.dataset.role, dir = btn.dataset.dir;
-  if(role==='A') state.pendingManual.dirA = dir; else state.pendingManual.dirB = dir;
-  document.getElementById('manualFeedback').textContent='';
-  renderManualModal();
-});
-document.getElementById('manualConfirm').addEventListener('click', function(){
+  if(role==='A') pm.dirA = dir; else pm.dirB = dir;
+  renderManualPickers();
+  updateHint();
+  if(pm.dirA && pm.dirB){
+    setTimeout(evaluateManualPick, 380);
+  }
+}
+function evaluateManualPick(){
   const pm = state.pendingManual;
   if(!pm || !pm.dirA || !pm.dirB) return;
   const sqA = getSquare(pm.idA), sqB = getSquare(pm.idB);
@@ -1562,27 +1669,23 @@ document.getElementById('manualConfirm').addEventListener('click', function(){
   const homeDirB = homeDirFromVisual(sqB, pm.dirB);
   const e = findEdge(pm.idA, pm.idB);
   const correct = (e.i===pm.idA) ? (e.dirA===homeDirA && e.dirB===homeDirB) : (e.dirA===homeDirB && e.dirB===homeDirA);
-  const fb = document.getElementById('manualFeedback');
   if(correct){
     const he = findHiddenEdge(pm.idA, pm.idB);
     he.discovered = true;
-    fb.textContent = 'ถูกต้อง!';
-    fb.className = 'manual-feedback ok';
+    state.pendingManual = null;
+    clearManualPickers();
+    clearSelection();
     updateProgress();
     drawConnections();
-    setTimeout(()=>{
-      closeManualModal();
-      showToast('success','เชื่อมสำเร็จ!');
-      checkWin();
-    }, 480);
+    showToast('success','ถูกต้อง! เชื่อมสำเร็จ');
+    checkWin();
   } else {
-    fb.textContent = 'ยังไม่ถูกต้อง ลองใหม่อีกครั้ง';
-    fb.className = 'manual-feedback';
-    pm.dirA=null; pm.dirB=null;
-    renderManualModal();
+    showToast('warn','ยังไม่ถูกต้อง ลองใหม่อีกครั้ง');
+    pm.dirA = null; pm.dirB = null;
+    renderManualPickers();
+    updateHint();
   }
-});
-document.getElementById('manualClose').addEventListener('click', closeManualModal);
+}
 
 /* ================= Toast ================= */
 function showToast(kind, msg){
@@ -1605,10 +1708,8 @@ document.getElementById('resetBtn').addEventListener('click', restartProblem);
 document.getElementById('newBtn').addEventListener('click', ()=>{ state.problemNo++; newProblem(); });
 document.getElementById('nextProblemBtn').addEventListener('click', ()=>{ state.problemNo++; newProblem(); });
 
-[howToModal, document.getElementById('manualModal')].forEach(modal=>{
-  modal.addEventListener('click', (e)=>{
-    if(e.target===modal && modal.id==='howToModal'){ modal.hidden=true; }
-  });
+howToModal.addEventListener('click', (e)=>{
+  if(e.target===howToModal){ howToModal.hidden=true; }
 });
 
 window.addEventListener('resize', debounce(()=>layout(), 120));
@@ -1619,7 +1720,6 @@ function debounce(fn, ms){
 
 /* ================= Init ================= */
 newProblem();
-howToModal.hidden = false; // onboarding on first load
 
 })();
 </script>
