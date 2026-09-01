@@ -210,6 +210,15 @@
 
   .component-label{fill:var(--paper-dim); font-family:var(--font-mono); font-size:13px; text-anchor:middle;}
 
+  .numline-axis{stroke:var(--line-dim); stroke-width:2;}
+  .numline-arrowhead{fill:none; stroke:var(--line-dim); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .numline-tick{stroke:var(--paper-dim); stroke-width:2;}
+  .numline-tick-label{fill:var(--paper-dim); font-family:var(--font-mono); font-size:15px;}
+  .numline-sample-tick{stroke:var(--amber); stroke-width:3;}
+  .numline-sample-line{stroke:var(--amber); stroke-width:2;}
+  .numline-sample-arrowhead{fill:none; stroke:var(--amber); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .numline-sample-label{fill:var(--amber); font-family:var(--font-mono); font-size:16px; font-weight:700;}
+
   /* ---------- Explanation ---------- */
   .explain-card{
     margin-top:28px; border-left:3px solid var(--amber); padding:4px 0 4px 20px;
@@ -455,6 +464,141 @@
 
     <!-- ============ CONDITIONAL SECTION ============ -->
     <section class="mode-section" id="section-cond" data-mode="cond" hidden>
+
+      <div class="explain-card">
+        <h3>ที่มาของตัวเชื่อม “ถ้า...แล้ว...”</h3>
+        <p>เมื่อกล่าวถึงจำนวนจริง เราสามารถกล่าวได้ว่า “จำนวนใดที่มีค่าน้อยกว่า 100 จำนวนนั้นก็จะมีค่าน้อยกว่า 200 ด้วย” เขียนเป็นประพจน์ได้ว่า <strong>x &lt; 100 → x &lt; 200</strong> ลองพิจารณาความสมเหตุสมผลของประพจน์นี้ผ่านตัวอย่างตัวเลขทั้งสี่กรณีต่อไปนี้ เพื่อดูว่า p → q ควรมีค่าความจริงเป็นอย่างไรในแต่ละกรณี</p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">กรณีที่ 1</span>
+          <h3 class="example-expr">T → T</h3>
+        </div>
+        <p>พิจารณา “ถ้า 50 &lt; 100 แล้ว 50 &lt; 200” ข้อความนี้สมเหตุสมผล จึงได้ว่ามีค่าความจริงเป็นจริง เนื่องจากประพจน์ “50 &lt; 100” และประพจน์ “50 &lt; 200” มีค่าความจริงเป็นจริงทั้งคู่</p>
+        <div class="circuit-card">
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 10</span> เส้นจำนวน: 50 เทียบกับ 100 และ 200</div>
+          <div class="circuit-canvas">
+            <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เส้นจำนวนแสดงว่า 50 อยู่ทางซ้ายของทั้ง 100 และ 200">
+              <line class="numline-axis" x1="30" y1="80" x2="570" y2="80"></line>
+              <path class="numline-arrowhead" d="M38,74 L30,80 L38,86"></path>
+              <path class="numline-arrowhead" d="M562,74 L570,80 L562,86"></path>
+
+              <line class="numline-tick" x1="200" y1="72" x2="200" y2="88"></line>
+              <text class="numline-tick-label" x="200" y="108" text-anchor="middle">100</text>
+
+              <line class="numline-tick" x1="430" y1="72" x2="430" y2="88"></line>
+              <text class="numline-tick-label" x="430" y="108" text-anchor="middle">200</text>
+
+              <line class="numline-sample-tick" x1="90" y1="74" x2="90" y2="86"></line>
+              <line class="numline-sample-line" x1="90" y1="50" x2="90" y2="72"></line>
+              <path class="numline-sample-arrowhead" d="M84,66 L90,74 L96,66"></path>
+              <text class="numline-sample-label" x="90" y="38" text-anchor="middle">50</text>
+            </svg>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> 50 อยู่ทางซ้ายของ 100 จึงอยู่ทางซ้ายของ 200 ด้วยโดยอัตโนมัติ ดังนั้น T → T จึงควรมีค่าความจริงเป็น <strong>T</strong></p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">กรณีที่ 2</span>
+          <h3 class="example-expr">F → T</h3>
+        </div>
+        <p>ต่อไปพิจารณา “ถ้า 150 &lt; 100 แล้ว 150 &lt; 200” สมเหตุสมผลตามข้อความข้างต้น จึงได้ว่ามีค่าความจริงเป็นจริง ประพจน์ “150 &lt; 100” มีค่าความจริงเป็นเท็จ ในขณะที่ประพจน์ “150 &lt; 200” มีค่าความจริงเป็นจริง</p>
+        <div class="circuit-card">
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 11</span> เส้นจำนวน: 150 เทียบกับ 100 และ 200</div>
+          <div class="circuit-canvas">
+            <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เส้นจำนวนแสดงตำแหน่งของ 150 เทียบกับ 100 และ 200">
+              <line class="numline-axis" x1="30" y1="80" x2="570" y2="80"></line>
+              <path class="numline-arrowhead" d="M38,74 L30,80 L38,86"></path>
+              <path class="numline-arrowhead" d="M562,74 L570,80 L562,86"></path>
+
+              <line class="numline-tick" x1="200" y1="72" x2="200" y2="88"></line>
+              <text class="numline-tick-label" x="200" y="108" text-anchor="middle">100</text>
+
+              <line class="numline-tick" x1="430" y1="72" x2="430" y2="88"></line>
+              <text class="numline-tick-label" x="430" y="108" text-anchor="middle">200</text>
+
+              <line class="numline-sample-tick" x1="90" y1="74" x2="90" y2="86"></line>
+              <line class="numline-sample-line" x1="90" y1="50" x2="90" y2="72"></line>
+              <path class="numline-sample-arrowhead" d="M84,66 L90,74 L96,66"></path>
+              <text class="numline-sample-label" x="90" y="38" text-anchor="middle">150</text>
+            </svg>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> ดังนั้น F → T จึงควรมีค่าความจริงเป็น <strong>T</strong></p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">กรณีที่ 3</span>
+          <h3 class="example-expr">F → F</h3>
+        </div>
+        <p>ต่อไปพิจารณา “ถ้า 300 &lt; 100 แล้ว 300 &lt; 200” สมเหตุสมผลตามข้อความข้างต้น จึงได้ว่ามีค่าความจริงเป็นจริง เนื่องจากประพจน์ “300 &lt; 100” และ “300 &lt; 200” มีค่าความจริงเป็นเท็จทั้งคู่</p>
+        <div class="circuit-card">
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 12</span> เส้นจำนวน: 300 เทียบกับ 100 และ 200</div>
+          <div class="circuit-canvas">
+            <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เส้นจำนวนแสดงตำแหน่งของ 300 เทียบกับ 100 และ 200">
+              <line class="numline-axis" x1="30" y1="80" x2="570" y2="80"></line>
+              <path class="numline-arrowhead" d="M38,74 L30,80 L38,86"></path>
+              <path class="numline-arrowhead" d="M562,74 L570,80 L562,86"></path>
+
+              <line class="numline-tick" x1="200" y1="72" x2="200" y2="88"></line>
+              <text class="numline-tick-label" x="200" y="108" text-anchor="middle">100</text>
+
+              <line class="numline-tick" x1="430" y1="72" x2="430" y2="88"></line>
+              <text class="numline-tick-label" x="430" y="108" text-anchor="middle">200</text>
+
+              <line class="numline-sample-tick" x1="90" y1="74" x2="90" y2="86"></line>
+              <line class="numline-sample-line" x1="90" y1="50" x2="90" y2="72"></line>
+              <path class="numline-sample-arrowhead" d="M84,66 L90,74 L96,66"></path>
+              <text class="numline-sample-label" x="90" y="38" text-anchor="middle">300</text>
+            </svg>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> ดังนั้น F → F จึงควรมีค่าความจริงเป็น <strong>T</strong></p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-head">
+          <span class="example-tag">กรณีที่ 4</span>
+          <h3 class="example-expr">T → F</h3>
+        </div>
+        <p>พิจารณา “ถ้า 50 &lt; 100 แล้ว 50 &lt; 20” ข้อความนี้ไม่สมเหตุสมผล จึงได้ว่ามีค่าความจริงเป็นเท็จ สังเกตว่าประพจน์ “50 &lt; 100” มีค่าความจริงเป็นจริง แต่ประพจน์ “50 &lt; 20” มีค่าความจริงเป็นเท็จ</p>
+        <div class="circuit-card">
+          <div class="circuit-caption"><span class="fig-tag">แผนภาพที่ 13</span> เส้นจำนวน: 50 เทียบกับ 20 และ 100</div>
+          <div class="circuit-canvas">
+            <svg viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เส้นจำนวนแสดงตำแหน่งของ 50 เทียบกับ 20 และ 100 สองจุด">
+              <line class="numline-axis" x1="30" y1="80" x2="570" y2="80"></line>
+              <path class="numline-arrowhead" d="M38,74 L30,80 L38,86"></path>
+              <path class="numline-arrowhead" d="M562,74 L570,80 L562,86"></path>
+
+              <line class="numline-tick" x1="200" y1="72" x2="200" y2="88"></line>
+              <text class="numline-tick-label" x="200" y="108" text-anchor="middle">20</text>
+
+              <line class="numline-tick" x1="430" y1="72" x2="430" y2="88"></line>
+              <text class="numline-tick-label" x="430" y="108" text-anchor="middle">100</text>
+
+              <line class="numline-sample-tick" x1="90" y1="74" x2="90" y2="86"></line>
+              <line class="numline-sample-line" x1="90" y1="50" x2="90" y2="72"></line>
+              <path class="numline-sample-arrowhead" d="M84,66 L90,74 L96,66"></path>
+              <text class="numline-sample-label" x="90" y="38" text-anchor="middle">50</text>
+
+              <line class="numline-sample-tick" x1="310" y1="74" x2="310" y2="86"></line>
+              <line class="numline-sample-line" x1="310" y1="50" x2="310" y2="72"></line>
+              <path class="numline-sample-arrowhead" d="M304,66 L310,74 L316,66"></path>
+              <text class="numline-sample-label" x="310" y="38" text-anchor="middle">50</text>
+            </svg>
+          </div>
+        </div>
+        <p class="insight"><b>สรุป:</b> ดังนั้น T → F จึงควรมีค่าความจริงเป็น <strong>F</strong></p>
+      </div>
+
+      <div class="explain-card">
+        <p>ผลลัพธ์ทั้งสี่กรณีนี้ตรงกับตารางค่าความจริงของ p → q พอดี ลองสำรวจต่อด้วยวงจรไฟฟ้าด้านล่าง เพื่อดูว่าวงจรจำลองค่าความจริงเหล่านี้ได้อย่างไร</p>
+      </div>
+
       <div class="layout-grid">
 
         <aside class="panel">
@@ -699,6 +843,10 @@
     </section>
 
   </main>
+
+  <footer class="site-footer">
+    <p>ครบทั้ง 5 ตัวเชื่อมประพจน์: และ · หรือ · นิเสธ · ถ้า...แล้ว... · ก็ต่อเมื่อ</p>
+  </footer>
 
 </div>
 
