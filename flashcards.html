@@ -463,7 +463,71 @@ const CARDS = [
   {
     topic: 'เซต',
     level: 'sh',
-    id: 'set-1',
+    id: 'set-conditional-set',
+    front: `จงเขียนเซตนี้แบบแจกแจงสมาชิก
+    $\\left\\{ a\\in \\mathbb{N} \\mid 3a<20 \\right\\}$`,
+    back: `**วิธีการเขียนเซตแบบบอกเงื่อนไข**
+    $\\left\\{ a\\in \\mathbb{N} \\mid 3a<20 \\right\\}$
+    คือ เซตของจํานวนนับ $a$ โดยที่ $3a<20$
+    ตอบ $\\left\\{ 1,2,3,4,5,6 \\right\\}$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-Def-subset',
+    front: `**บทนิยาม** ของ $A \\subset B$ คืออะไร?
+    ($A \\subset B$ หมายความว่าอะไร)`,
+    back: `**บทนิยาม** $A \\subset B$
+    $A$ **เป็นสับเซต**ของ $B$ ก็ต่อเมื่อ
+    สมาชิกทุกตัวของ $A$ เป็นสมาชิกของ $B$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-Def-Power-set',
+    front: `**บทนิยาม** ของ $P\\left( A \\right)$ คืออะไร?
+    (พาวเวอร์เซตของเซต $A$ หมายความว่าอะไร)`,
+    back: `**บทนิยาม**
+    $P\\left( A \\right)=\\left\\{ X\\mid X\\subset A \\right\\}$
+    นั่นคือ $P\\left( A \\right)$ คือ **เซตของสับเซตทั้งหมดของ** $A$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-Def-nA',
+    front: `สัญลักษณ์ $n\\left( A \\right)$ คืออะไร?`,
+    back: `$n\\left( A \\right)$ คือ
+    **จํานวนสมาชิกของเซต** $A$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-Def-nPA',
+    front: `$n\\left( P\\left( A \\right) \\right) =\\,$ ?`,
+    back: `$n\\left( P\\left( A \\right) \\right) =2^{n\\left( A \\right)}$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-2union-formula',
+    front: `$n\\left( A\\cup B \\right) =\\,$ ?`,
+    back: `$n\\left( A\\cup B \\right)$
+    $ =n\\left( A \\right) +n\\left( B \\right) -n\\left( A\\cap B \\right)$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-3union-formula',
+    front: `$n\\left( A\\cup B\\cup C \\right) =\\,$ ?`,
+    back: `$n\\left( A\\cup B\\cup C \\right) $
+    $=n\\left( A \\right) +n\\left( B \\right) +n\\left( C \\right)$
+    $-n\\left( A\\cap B \\right) -n\\left( A\\cap C \\right) -n\\left( B\\cap C \\right)$
+    $ +n\\left( A\\cap B\\cap C \\right)$`,
+  },
+  {
+    topic: 'เซต',
+    level: 'sh',
+    id: 'set-prob1', //ห้ามเปลี่ยนชื่อแล้ว
     front: `กำหนดให้ $A = \\{1, 2, 3, 4, 5\\}$ และ $B = \\{3, 4, 5, 6, 7\\}$
 จงหา $A \\cap B$`,
     frontTikz: `\\begin{tikzpicture}[scale=0.8]
@@ -485,10 +549,10 @@ const CARDS = [
   {
     topic: 'เซต',
     level: 'sh',
-    id: 'set-2',
+    id: 'set-prob2', //ห้ามเปลี่ยนชื่อแล้ว
     front: `กำหนดให้ $A = \\{2, 4, 6\\}$ และ $B = \\{1, 2, 3, 4, 5, 6\\}$
-$A \\subseteq B$ หรือไม่`,
-    back: `**ใช่** $A \\subseteq B$
+$A \\subset B$ หรือไม่`,
+    back: `**ใช่** $A \\subset B$
 สมาชิกทุกตัวของ $A$ คือ 2, 4 และ 6 ก็เป็นสมาชิกของ $B$ ด้วย`,
   },
   // ---------- หัวข้อ: สมบัติของเลขยกกําลัง (ม.2) ----------
@@ -568,16 +632,53 @@ $A \\subseteq B$ หรือไม่`,
   {
     topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
     level: 'jh',
-    id: 'perfect-square+',
+    id: 'perfect-square-x+y',
     front: `$(x+y)^2 = \\,?$`,
-    back: `$x^2 +2xy +y^2$`,
+    back: `**สูตรกําลังสองสมบูรณ์**
+    $(x+y)^2 = x^2 +2xy +y^2$`,
   },
   {
     topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
     level: 'jh',
-    id: 'perfect-square-',
+    id: 'perfect-square-x-y',
     front: `$(x-y)^2= \\,?$`,
-    back: `$x^2 -2xy +y^2$`,
+    back: `**สูตรกําลังสองสมบูรณ์**
+    $(x-y)^2=x^2 -2xy +y^2$`,
+  },
+  {
+    topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
+    level: 'jh',
+    id: 'perfect-square-น+ล',
+    front: `$\\left( \\text{น} +\\text{ล} \\right)^{2} = \\,?$`,
+    back: `**สูตรกําลังสองสมบูรณ์**
+    $\\left( \\text{น} +\\text{ล} \\right)^{2} = \\text{น}^{2} +2\\text{นล} +\\text{ล}^{2}$`,
+  },
+  {
+    topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
+    level: 'jh',
+    id: 'perfect-square-น-ล',
+    front: `$\\left( \\text{น} -\\text{ล} \\right)^{2} = \\,?$`,
+    back: `**สูตรกําลังสองสมบูรณ์**
+    $\\left( \\text{น} -\\text{ล} \\right)^{2} = \\text{น}^{2} -2\\text{นล} +\\text{ล}^{2}$`,
+  },
+  {
+    topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
+    level: 'jh',
+    id: 'ผลต่างกําลังสอง-นล',
+    front: `$\\text{น}^{2} -\\text{ล}^{2} = \\,?$`,
+    back: `**สูตรผลต่างกําลังสอง**
+    $\\text{น}^{2} -\\text{ล}^{2} =\\left( \\text{น} +\\text{ล} \\right) \\left( \\text{น} -\\text{ล} \\right)$`,
+  },
+  {
+    topic: 'การแยกตัวประกอบพหุนามดีกรีสอง',
+    level: 'jh',
+    id: 'วิธีแยก-x^2+bx+c',
+    front: `**วิธีแยกตัวประกอบ** $x^2+bx+c$
+    เช่น $x^3+3x+2$ มีวิธีอย่างไร?`,
+    back: `หาตัวเลขที่**คูณกันได้ตัวหลัง**
+    และ**บวกกันได้ตัวกลาง**
+    $1\\times 2=2$ และ $1+2=3$
+    ตอบ $(x+1)(x+2)$`,
   },
   // ---------- หัวข้อ: จำนวนเต็ม (มัธยมต้น) ----------
   {
@@ -595,10 +696,10 @@ $A \\subseteq B$ หรือไม่`,
 \\node[below] at (0,-0.4) {0};
 \\node[below] at (-8,-0.4) {-8};
 \\node[below] at (-13,-0.4) {-13};
-\\draw[thick,red,->] (0,0.7) to[bend left=25] (-8,0.7);
-\\node[above,red] at (-4,1.3) {-8};
-\\draw[thick,blue,->] (-8,1.9) to[bend left=25] (-13,1.9);
-\\node[above,blue] at (-10.5,2.5) {-5};
+\\draw[thick,red,->] (0,-0.2) to[bend left=25] (-8,-0.2); //บวกแบบใช้เส้นจํานวน
+\\node[above,red] at (-4,-2.5) {-8};
+\\draw[thick,blue,->] (-8,-0.2) to[bend left=25] (-13,-0.2);
+\\node[above,blue] at (-10.5,-2) {-5};
 \\end{tikzpicture}`,
   },
   {
