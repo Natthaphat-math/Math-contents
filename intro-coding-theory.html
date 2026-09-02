@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Introduction to Coding Theory</title>
-<meta name="description" content="An interactive introduction to coding theory: silent errors, parity codes, and self-correcting Hamming codes.">
+<title id="docTitle">ความรู้เบื้องต้นเกี่ยวกับทฤษฎีการเข้ารหัส</title>
+<meta id="docDesc" name="description" content="บทเรียนเชิงโต้ตอบเกี่ยวกับทฤษฎีการเข้ารหัส ตั้งแต่ข้อผิดพลาดที่ตรวจไม่พบ รหัสพาริตี ไปจนถึงรหัสแฮมมิงที่แก้ไขตัวเองได้">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#10182B;
@@ -27,9 +27,9 @@
     --ink-text-muted:#565C71;
     --radius-s:4px;
     --radius-m:6px;
-    --font-display:'Space Grotesk',sans-serif;
-    --font-body:'Source Serif 4',serif;
-    --font-mono:'IBM Plex Mono',monospace;
+    --font-display:'Space Grotesk','Noto Sans Thai',sans-serif;
+    --font-body:'Source Serif 4','Noto Serif Thai',serif;
+    --font-mono:'IBM Plex Mono','Noto Sans Thai',monospace;
     --content-w:700px;
     --wide-w:900px;
     --rail-w:230px;
@@ -43,18 +43,19 @@
     color:var(--paper);
     font-family:var(--font-body);
     font-size:1.05rem;
-    line-height:1.7;
+    line-height:1.75;
     -webkit-font-smoothing:antialiased;
+    overflow-wrap:break-word;
   }
   h1,h2,h3{
     font-family:var(--font-display);
     font-weight:600;
-    line-height:1.15;
+    line-height:1.25;
     margin:0 0 1rem 0;
     color:var(--paper);
   }
-  h1{font-size:clamp(2rem,1.5rem + 2.2vw,3.1rem); font-weight:700;}
-  h2{font-size:clamp(1.55rem,1.3rem + 1.1vw,2.15rem);}
+  h1{font-size:clamp(1.9rem,1.4rem + 2.2vw,3rem); font-weight:700;}
+  h2{font-size:clamp(1.45rem,1.2rem + 1.1vw,2.05rem);}
   p{margin:0 0 1.1rem 0;}
   a{color:var(--amber);}
   ul,ol{margin:0 0 1.1rem 0; padding-left:1.3rem;}
@@ -68,6 +69,27 @@
 
   button{font-family:var(--font-display); cursor:pointer;}
 
+  /* ---------- language toggle ---------- */
+  .lang-toggle{
+    position:fixed; top:10px; left:12px; z-index:60;
+    display:flex; gap:2px;
+    background:rgba(16,24,43,.92);
+    border:1px solid rgba(236,232,220,.2);
+    border-radius:20px;
+    padding:3px;
+  }
+  .lang-btn{
+    font-family:var(--font-display);
+    font-size:.72rem;
+    padding:.32rem .65rem;
+    border-radius:16px;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    transition:background .15s ease, color .15s ease;
+  }
+  .lang-btn.is-active{background:var(--amber); color:var(--ink); font-weight:600;}
+
   /* ---------- layout shells ---------- */
   main{position:relative; z-index:1;}
   .section{
@@ -77,8 +99,8 @@
   .section:last-of-type{border-bottom:none;}
   .section-inner{max-width:var(--content-w); margin:0 auto;}
   .section-inner.wide{max-width:var(--wide-w);}
-  .lede{font-size:1.15rem; color:var(--paper); max-width:60ch;}
-  .sub{color:var(--muted); max-width:60ch;}
+  .lede{font-size:1.15rem; color:var(--paper); max-width:65ch;}
+  .sub{color:var(--muted); max-width:65ch;}
 
   @media (min-width:1100px){
     body{padding-left:var(--rail-w);}
@@ -94,13 +116,13 @@
       position:fixed;
       left:0; top:0; bottom:0;
       width:var(--rail-w);
-      padding:3rem 0 3rem 2.6rem;
+      padding:4.4rem 0 3rem 2.6rem;
       overflow-y:auto;
     }
     .railwire::before{
       content:"";
       position:absolute;
-      top:3.2rem; bottom:3.2rem; left:2.9rem;
+      top:4.6rem; bottom:3.2rem; left:2.9rem;
       width:2px;
       background:linear-gradient(to bottom, transparent, rgba(227,166,62,.35) 6%, rgba(227,166,62,.35) 94%, transparent);
     }
@@ -116,18 +138,17 @@
       letter-spacing:.01em;
       padding:.6rem 0 .6rem 1.1rem;
       margin-bottom:.15rem;
-      line-height:1.3;
+      line-height:1.35;
       transition:color .2s ease;
     }
     .rail-node::before{
       content:"";
       position:absolute;
-      left:-.35rem; top:50%;
+      left:-.35rem; top:1.1rem;
       width:8px; height:8px;
       border-radius:50%;
       background:var(--ink-3);
       border:2px solid var(--ink);
-      transform:translateY(-50%);
       transition:background .2s ease, box-shadow .2s ease;
     }
     .rail-node:hover{color:var(--paper);}
@@ -157,16 +178,20 @@
     color:var(--muted);
     background:rgba(16,24,43,.85);
     border:1px solid rgba(236,232,220,.15);
-    padding:.3rem .55rem;
+    padding:.32rem .6rem;
     border-radius:20px;
     z-index:50;
     pointer-events:none;
+    max-width:46vw;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   @media (min-width:1100px){ .current-section-pill{display:none;} }
 
   /* ---------- hero ---------- */
   .hero{
-    padding-top:6.5rem;
+    padding-top:7rem;
     border-bottom:1px solid rgba(236,232,220,0.08);
   }
   .hero-anim{
@@ -251,7 +276,7 @@
   .msg-btn:hover{border-color:var(--amber);}
   .msg-btn.is-selected{background:var(--amber); border-color:var(--amber); color:var(--ink); font-weight:600;}
 
-  .bits-row{display:flex; gap:.5rem; margin:.8rem 0;}
+  .bits-row{display:flex; flex-wrap:wrap; gap:.5rem; margin:.8rem 0;}
   .bitcell{
     font-family:var(--font-mono);
     font-weight:600;
@@ -267,7 +292,6 @@
   button.bitcell:hover{border-color:var(--amber); transform:translateY(-1px);}
   button.bitcell:active{transform:translateY(0);}
   .bitcell.is-one{background:var(--ink-3); color:var(--amber);}
-  .bitcell.flash{box-shadow:0 0 0 3px rgba(227,166,62,.35);}
   .bitcell.is-display{width:1.9rem; height:1.9rem; font-size:.95rem; cursor:default;}
   .bitcell.is-display:hover{border-color:rgba(236,232,220,.25); transform:none;}
 
@@ -289,6 +313,7 @@
     border-radius:var(--radius-s);
     border:1px solid transparent;
     transition:filter .15s ease, transform .1s ease;
+    font-family:var(--font-display);
   }
   .btn:active{transform:translateY(1px);}
   .btn-primary{background:var(--amber); color:var(--ink); font-weight:600;}
@@ -390,159 +415,164 @@
 </head>
 <body>
 
+<div class="lang-toggle" id="langToggle" role="group" aria-label="Language / ภาษา">
+  <button type="button" class="lang-btn" data-lang="th">TH</button>
+  <button type="button" class="lang-btn" data-lang="en">EN</button>
+</div>
+
 <div class="topbar" id="topbar"><div class="topbar-fill" id="topbarFill"></div></div>
-<div class="current-section-pill" id="currentPill">start</div>
+<div class="current-section-pill" id="currentPill"></div>
 <nav class="railwire" id="railwire" aria-label="Section progress"></nav>
 
 <main>
 
-  <section class="section hero" id="start" data-rail="Start">
+  <section class="section hero" id="start" data-rail-key="start">
     <div class="section-inner wide">
-      <h1>What happens when a signal gets it wrong?</h1>
-      <p class="lede">Every time information travels — down a wire, through the air, across a disk — there's a chance something along the way flips a bit. Coding theory is the study of shaping information so a receiver can tell when that's happened, and sometimes even fix it.</p>
-      <p class="sub">This page follows that idea from a code that breaks silently, to one that can catch its own mistakes, to one that can correct them outright. Along the way you'll try each machine yourself.</p>
+      <h1 data-i18n="hero_h1"></h1>
+      <p class="lede" data-i18n="hero_lede"></p>
+      <p class="sub" data-i18n="hero_sub"></p>
       <div class="hero-anim" aria-hidden="true">
-        <div class="hero-node">Sender</div>
+        <div class="hero-node" data-i18n="hero_sender"></div>
         <div class="hero-wire"><div class="hero-dot"></div></div>
-        <div class="hero-node">Receiver</div>
+        <div class="hero-node" data-i18n="hero_receiver"></div>
       </div>
-      <p class="hero-caption">A sender encodes a message into bits. A receiver only ever sees what arrives — never what happened on the way.</p>
+      <p class="hero-caption" data-i18n="hero_caption"></p>
     </div>
   </section>
 
-  <section class="section" id="silent-errors" data-rail="Silent errors">
+  <section class="section" id="silent-errors" data-rail-key="silent">
     <div class="section-inner">
-      <h2>When one flipped bit changes everything</h2>
-      <p>Say you're placing an order at a machine that only understands two-bit codes:</p>
+      <h2 data-i18n="s1_h2"></h2>
+      <p data-i18n="s1_p1"></p>
       <ul>
-        <li><span class="mono">00</span> — milk tea</li>
-        <li><span class="mono">01</span> — tea</li>
-        <li><span class="mono">10</span> — milk</li>
-        <li><span class="mono">11</span> — coffee</li>
+        <li data-i18n="s1_li1"></li>
+        <li data-i18n="s1_li2"></li>
+        <li data-i18n="s1_li3"></li>
+        <li data-i18n="s1_li4"></li>
       </ul>
-      <p>If the sender wants milk tea, they send <span class="mono">00</span>. But suppose the last digit gets flipped somewhere along the way, so <span class="mono">00</span> arrives as <span class="mono">01</span>. The receiver has no reason to doubt it — <span class="mono">01</span> is a perfectly ordinary code. It gets decoded as tea, and the wrong order goes out, with nobody the wiser.</p>
+      <p data-i18n="s1_p2"></p>
 
       <div class="legend">
-        <span class="legend-item"><span class="dot amber"></span> as sent</span>
-        <span class="legend-item"><span class="dot teal"></span> decoded correctly / valid</span>
-        <span class="legend-item"><span class="dot brick"></span> error detected</span>
+        <span class="legend-item"><span class="dot amber"></span><span data-i18n="legend_amber"></span></span>
+        <span class="legend-item"><span class="dot teal"></span><span data-i18n="legend_teal"></span></span>
+        <span class="legend-item"><span class="dot brick"></span><span data-i18n="legend_brick"></span></span>
       </div>
 
       <div class="panel">
-        <div class="panel-title">Try it — pick a drink, then click a digit to flip it</div>
+        <div class="panel-title" data-i18n="panel1_title"></div>
         <div class="msg-row" id="msgRow2"></div>
         <div class="bits-row" id="bits2"></div>
         <div class="status" id="status2"></div>
       </div>
 
-      <p>Notice that the receiver always sees a code that looks completely valid. There's no pattern here that only correct messages can produce, so there's no way to notice an error even exists.</p>
+      <p data-i18n="s1_p3"></p>
     </div>
   </section>
 
-  <section class="section" id="detect" data-rail="Detect, not fix">
+  <section class="section" id="detect" data-rail-key="detect">
     <div class="section-inner">
-      <h2>Add a bit, gain a warning</h2>
-      <p>The trouble with the two-bit code is that every possible pattern already means something. There's no room left to tell a correct code from a damaged one. So let's add a third bit, and only use four of the eight patterns it makes available:</p>
+      <h2 data-i18n="s2_h2"></h2>
+      <p data-i18n="s2_p1"></p>
       <ul>
-        <li><span class="mono">000</span> — milk tea</li>
-        <li><span class="mono">011</span> — tea</li>
-        <li><span class="mono">101</span> — milk</li>
-        <li><span class="mono">110</span> — coffee</li>
+        <li data-i18n="s2_li1"></li>
+        <li data-i18n="s2_li2"></li>
+        <li data-i18n="s2_li3"></li>
+        <li data-i18n="s2_li4"></li>
       </ul>
-      <p>Now send milk, <span class="mono">101</span>. If the middle digit flips, the receiver gets <span class="mono">111</span> — and <span class="mono">111</span> isn't assigned to anything. For the first time, the receiver knows something went wrong. They still can't be certain what was meant, since <span class="mono">111</span> is exactly one flip away from tea, milk, and coffee alike — but at least they know not to trust it.</p>
+      <p data-i18n="s2_p2"></p>
 
       <div class="panel">
-        <div class="panel-title">Try it — flip bits and watch for the moment a code stops meaning anything</div>
+        <div class="panel-title" data-i18n="panel2_title"></div>
         <div class="msg-row" id="msgRow3"></div>
         <div class="bits-row" id="bits3"></div>
         <div class="status" id="status3"></div>
-        <small class="note">As long as no more than one digit is disturbed, this code will always tell you something is wrong. See if you can find a two-flip combination that sneaks through unnoticed.</small>
+        <small class="note" data-i18n="panel2_note"></small>
       </div>
 
-      <p>This is the core trade-off in coding theory: detecting an error is easier than fixing one. Going further means designing codes with even more built-in redundancy — and a good place to watch that idea grow up is in how computers came to represent letters in the first place.</p>
+      <p data-i18n="s2_p3"></p>
     </div>
   </section>
 
-  <section class="section" id="bcd" data-rail="BCD">
+  <section class="section" id="bcd" data-rail-key="bcd">
     <div class="section-inner">
-      <h2>Counting the way early computers did: BCD</h2>
-      <p>Long before computers handled full alphabets, they needed to handle decimal numbers reliably, for calculators, digital clocks, and accounting machines. <strong>Binary-coded decimal (BCD)</strong> does this by giving each decimal digit, 0 through 9, its own fixed 4-bit binary pattern, rather than converting an entire number into one large binary value.</p>
+      <h2 data-i18n="bcd_h2"></h2>
+      <p data-i18n="bcd_p1"></p>
       <div class="mini-table" id="bcdTable"></div>
-      <p>BCD makes it simple to convert digits to and from binary one at a time, which mattered when circuits were built from simple hardware. But it only covers ten symbols. It has no way to represent a letter, a punctuation mark, or even a space.</p>
+      <p data-i18n="bcd_p2"></p>
     </div>
   </section>
 
-  <section class="section" id="ascii" data-rail="ASCII">
+  <section class="section" id="ascii" data-rail-key="ascii">
     <div class="section-inner">
-      <h2>From digits to a full alphabet: ASCII</h2>
-      <p>As computers took on text — names, documents, commands — engineers needed a code that covered far more than ten digits. In the early 1960s, that need led to <strong>ASCII</strong> (American Standard Code for Information Interchange): the same underlying idea as BCD, a fixed-length binary pattern for every symbol, extended to cover uppercase and lowercase letters, punctuation, digits, and control characters, all inside a single 7-bit code.</p>
-      <p>A 7-bit code has 128 possible patterns, plenty of room for a whole keyboard's worth of symbols. But notice what it doesn't have: any built-in way to check whether a pattern arrived correctly. If a bit flips in transit, the result is just a different, equally valid character. That's the same silent-error problem from the drink-order code, wearing a bigger costume.</p>
-      <p>One common fix is to add a single check bit to every character, the same trick that turned our two-bit drink code into a detecting three-bit code. Here's what that looks like across a full alphabet.</p>
+      <h2 data-i18n="ascii_h2"></h2>
+      <p data-i18n="ascii_p1"></p>
+      <p data-i18n="ascii_p2"></p>
+      <p data-i18n="ascii_p3"></p>
     </div>
   </section>
 
-  <section class="section" id="eight-bit" data-rail="The A–Z code">
+  <section class="section" id="eight-bit" data-rail-key="eightbit">
     <div class="section-inner wide">
-      <h2>A letter-by-letter code, with one extra bit</h2>
-      <p>Below is a set of 8-bit signals, one per letter of the alphabet. Every single one of them has an <strong>even number of 1s</strong> — that's the extra bit at work, set specifically to make the total come out even. It carries no meaning about the letter itself; it exists purely so the receiver has something to check.</p>
+      <h2 data-i18n="e8_h2"></h2>
+      <p data-i18n="e8_p1"></p>
       <div class="panel">
-        <div class="panel-title">A–Z, 8-bit signal (7 data bits + 1 check bit)</div>
+        <div class="panel-title" data-i18n="panel3_title"></div>
         <div class="letter-grid" id="grid8"></div>
       </div>
-      <p>Because every valid signal has an even number of 1s, a single flipped bit is easy to catch: it always turns an even count into an odd one. Try it in the machine below.</p>
+      <p data-i18n="e8_p2"></p>
 
       <div class="panel">
-        <div class="panel-title">Set the switches to any 8-bit pattern and see what the machine finds</div>
+        <div class="panel-title" data-i18n="panel4_title"></div>
         <div class="bits-row" id="bitsM1"></div>
         <div class="btn-row">
-          <button class="btn btn-ghost" id="btnLoad8">Load a random letter</button>
-          <button class="btn btn-ghost" id="btnFlip8">Flip one bit</button>
+          <button class="btn btn-ghost" id="btnLoad8" data-i18n="btn_load8"></button>
+          <button class="btn btn-ghost" id="btnFlip8" data-i18n="btn_flip8"></button>
         </div>
         <div class="status" id="statusM1"></div>
       </div>
 
-      <p>This tells the receiver <em>that</em> something is wrong, but not what the original letter was. And not every error gets caught: if exactly two bits flip, the count of 1s stays even, and a damaged signal can slip through looking perfectly valid. Detecting an error and correcting one turn out to be two different problems.</p>
+      <p data-i18n="e8_p3"></p>
     </div>
   </section>
 
-  <section class="section" id="hamming" data-rail="Self-correcting code">
+  <section class="section" id="hamming" data-rail-key="hamming">
     <div class="section-inner wide">
-      <h2>Building a code that can fix itself</h2>
-      <p>In 1950, mathematician Richard Hamming, frustrated with a computer that stopped and demanded a human's help every time it found an error, designed a code that could recover the original message on its own. The trick is redundancy, arranged carefully: every valid signal is built so that it differs from every other valid signal in at least <strong>three positions</strong>.</p>
-      <p>Because of that spacing, a single flipped bit moves a signal only one step away from where it started, but never closer than two steps to any other valid signal. That gap is what lets the receiver work backward and recover the original with confidence.</p>
+      <h2 data-i18n="ham_h2"></h2>
+      <p data-i18n="ham_p1"></p>
+      <p data-i18n="ham_p2"></p>
       <div class="panel">
-        <div class="panel-title">A–Z, 9-bit self-correcting signal</div>
+        <div class="panel-title" data-i18n="panel5_title"></div>
         <div class="letter-grid" id="grid9"></div>
       </div>
-      <p>Try it yourself: think of a letter, find its 9-bit signal in the table above, and set the switches below to match it. Then flip one bit, or let the machine flip one for you, and see if it can recover the letter you had in mind.</p>
+      <p data-i18n="ham_p3"></p>
 
       <div class="panel">
-        <div class="panel-title">Set the switches, introduce an error, and check the result</div>
+        <div class="panel-title" data-i18n="panel6_title"></div>
         <div class="bits-row" id="bitsM2"></div>
         <div class="btn-row">
-          <button class="btn btn-ghost" id="btnLoad9">Load a random letter</button>
-          <button class="btn btn-ghost" id="btnFlip9">Flip one bit</button>
-          <button class="btn btn-ghost" id="btnClear9">Clear</button>
+          <button class="btn btn-ghost" id="btnLoad9" data-i18n="btn_load9"></button>
+          <button class="btn btn-ghost" id="btnFlip9" data-i18n="btn_flip9"></button>
+          <button class="btn btn-ghost" id="btnClear9" data-i18n="btn_clear9"></button>
         </div>
         <div class="status" id="statusM2"></div>
       </div>
 
-      <p>If more than one bit changes, the guarantee breaks down: the signal can drift close enough to a different letter to fool the receiver. Real systems handle that by adding still more redundancy, but the core idea stays the same. Spread valid signals far enough apart, and small errors become fixable instead of just noticeable.</p>
+      <p data-i18n="ham_p4"></p>
     </div>
   </section>
 
-  <section class="section" id="challenge" data-rail="Decode a word">
+  <section class="section" id="challenge" data-rail-key="challenge">
     <div class="section-inner wide">
-      <h2>Decode a message</h2>
-      <p>Here's a short word, sent one letter at a time using the 9-bit code from above, no errors this time, just practice reading the code. Match each block against the table and type your answer, one letter per box.</p>
+      <h2 data-i18n="chal_h2"></h2>
+      <p data-i18n="chal_p1"></p>
 
       <div class="panel">
-        <div class="panel-title" id="challengeTitle">Word length: —</div>
+        <div class="panel-title" id="challengeTitle"></div>
         <div class="challenge-row" id="challengeRow"></div>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btnCheckWord">Check answer</button>
-          <button class="btn btn-ghost" id="btnRevealWord">Reveal answer</button>
-          <button class="btn btn-ghost" id="btnNewWord">New word</button>
+          <button class="btn btn-primary" id="btnCheckWord" data-i18n="btn_check_word"></button>
+          <button class="btn btn-ghost" id="btnRevealWord" data-i18n="btn_reveal_word"></button>
+          <button class="btn btn-ghost" id="btnNewWord" data-i18n="btn_new_word"></button>
         </div>
         <div class="status" id="statusWord"></div>
       </div>
@@ -550,8 +580,8 @@
   </section>
 
   <footer>
-    <p>The same ideas show up everywhere: add redundancy, space valid signals apart, check what arrives. QR codes, CDs and DVDs, computer memory, and deep-space communication all lean on some version of it. Every one of them is answering the question this page started with — if a bit gets flipped, how would you ever know?</p>
-    <div class="credit">An introduction to coding theory · error detection and correction</div>
+    <p data-i18n="footer_p1"></p>
+    <div class="credit" data-i18n="footer_credit"></div>
   </footer>
 
 </main>
@@ -559,6 +589,240 @@
 <script>
 (function(){
   "use strict";
+
+  /* ============ i18n ============ */
+  var LANG = "th";
+
+  var RAIL_LABELS = {
+    en:{ start:"Start", silent:"Silent errors", detect:"Detect, not fix", bcd:"BCD", ascii:"ASCII", eightbit:"The A\u2013Z code", hamming:"Self-correcting code", challenge:"Decode a word" },
+    th:{ start:"เริ่มต้น", silent:"ข้อผิดพลาดแบบเงียบ", detect:"ตรวจจับได้ แต่แก้ไม่ได้", bcd:"BCD", ascii:"ASCII", eightbit:"รหัส A\u2013Z", hamming:"รหัสแก้ไขตัวเอง", challenge:"ถอดรหัสคำศัพท์" }
+  };
+
+  var DRINK_NAMES = {
+    en:{ milktea:"Milk tea", tea:"Tea", milk:"Milk", coffee:"Coffee" },
+    th:{ milktea:"ชานม", tea:"ชา", milk:"นม", coffee:"กาแฟ" }
+  };
+
+  var I18N = {
+    en:{
+      hero_h1:"What happens when a signal gets it wrong?",
+      hero_lede:"Every time information travels \u2014 down a wire, through the air, across a disk \u2014 there's a chance something along the way flips a bit. Coding theory is the study of shaping information so a receiver can tell when that's happened, and sometimes even fix it.",
+      hero_sub:"This page follows that idea from a code that breaks silently, to one that can catch its own mistakes, to one that can correct them outright. Along the way you'll try each machine yourself.",
+      hero_sender:"Sender",
+      hero_receiver:"Receiver",
+      hero_caption:"A sender encodes a message into bits. A receiver only ever sees what arrives \u2014 never what happened on the way.",
+
+      s1_h2:"When one flipped bit changes everything",
+      s1_p1:"Say you're placing an order at a machine that only understands two-bit codes:",
+      s1_li1:'<span class="mono">00</span> \u2014 milk tea',
+      s1_li2:'<span class="mono">01</span> \u2014 tea',
+      s1_li3:'<span class="mono">10</span> \u2014 milk',
+      s1_li4:'<span class="mono">11</span> \u2014 coffee',
+      s1_p2:"If the sender wants milk tea, they send 00. But suppose the last digit gets flipped somewhere along the way, so 00 arrives as 01. The receiver has no reason to doubt it \u2014 01 is a perfectly ordinary code. It gets decoded as tea, and the wrong order goes out, with nobody the wiser.",
+      legend_amber:"as sent",
+      legend_teal:"decoded correctly / valid",
+      legend_brick:"error detected",
+      panel1_title:"Try it \u2014 pick a drink, then click a digit to flip it",
+      s1_p3:"Notice that the receiver always sees a code that looks completely valid. There's no pattern here that only correct messages can produce, so there's no way to notice an error even exists.",
+
+      s2_h2:"Add a bit, gain a warning",
+      s2_p1:"The trouble with the two-bit code is that every possible pattern already means something. There's no room left to tell a correct code from a damaged one. So let's add a third bit, and only use four of the eight patterns it makes available:",
+      s2_li1:'<span class="mono">000</span> \u2014 milk tea',
+      s2_li2:'<span class="mono">011</span> \u2014 tea',
+      s2_li3:'<span class="mono">101</span> \u2014 milk',
+      s2_li4:'<span class="mono">110</span> \u2014 coffee',
+      s2_p2:"Now send milk, 101. If the middle digit flips, the receiver gets 111 \u2014 and 111 isn't assigned to anything. For the first time, the receiver knows something went wrong. They still can't be certain what was meant, since 111 is exactly one flip away from tea, milk, and coffee alike \u2014 but at least they know not to trust it.",
+      panel2_title:"Try it \u2014 flip bits and watch for the moment a code stops meaning anything",
+      panel2_note:"As long as no more than one digit is disturbed, this code will always tell you something is wrong. See if you can find a two-flip combination that sneaks through unnoticed.",
+      s2_p3:"This is the core trade-off in coding theory: detecting an error is easier than fixing one. Going further means designing codes with even more built-in redundancy \u2014 and a good place to watch that idea grow up is in how computers came to represent letters in the first place.",
+
+      bcd_h2:"Counting the way early computers did: BCD",
+      bcd_p1:"Long before computers handled full alphabets, they needed to handle decimal numbers reliably, for calculators, digital clocks, and accounting machines. <strong>Binary-coded decimal (BCD)</strong> does this by giving each decimal digit, 0 through 9, its own fixed 4-bit binary pattern, rather than converting an entire number into one large binary value.",
+      bcd_p2:"BCD makes it simple to convert digits to and from binary one at a time, which mattered when circuits were built from simple hardware. But it only covers ten symbols. It has no way to represent a letter, a punctuation mark, or even a space.",
+
+      ascii_h2:"From digits to a full alphabet: ASCII",
+      ascii_p1:"As computers took on text \u2014 names, documents, commands \u2014 engineers needed a code that covered far more than ten digits. In the early 1960s, that need led to <strong>ASCII</strong> (American Standard Code for Information Interchange): the same underlying idea as BCD, a fixed-length binary pattern for every symbol, extended to cover uppercase and lowercase letters, punctuation, digits, and control characters, all inside a single 7-bit code.",
+      ascii_p2:"A 7-bit code has 128 possible patterns, plenty of room for a whole keyboard's worth of symbols. But notice what it doesn't have: any built-in way to check whether a pattern arrived correctly. If a bit flips in transit, the result is just a different, equally valid character. That's the same silent-error problem from the drink-order code, wearing a bigger costume.",
+      ascii_p3:"One common fix is to add a single check bit to every character, the same trick that turned our two-bit drink code into a detecting three-bit code. Here's what that looks like across a full alphabet.",
+
+      e8_h2:"A letter-by-letter code, with one extra bit",
+      e8_p1:"Below is a set of 8-bit signals, one per letter of the alphabet. Every single one of them has an <strong>even number of 1s</strong> \u2014 that's the extra bit at work, set specifically to make the total come out even. It carries no meaning about the letter itself; it exists purely so the receiver has something to check.",
+      panel3_title:"A\u2013Z, 8-bit signal (7 data bits + 1 check bit)",
+      e8_p2:"Because every valid signal has an even number of 1s, a single flipped bit is easy to catch: it always turns an even count into an odd one. Try it in the machine below.",
+      panel4_title:"Set the switches to any 8-bit pattern and see what the machine finds",
+      btn_load8:"Load a random letter",
+      btn_flip8:"Flip one bit",
+      e8_p3:"This tells the receiver that something is wrong, but not what the original letter was. And not every error gets caught: if exactly two bits flip, the count of 1s stays even, and a damaged signal can slip through looking perfectly valid. Detecting an error and correcting one turn out to be two different problems.",
+
+      ham_h2:"Building a code that can fix itself",
+      ham_p1:"In 1950, mathematician Richard Hamming, frustrated with a computer that stopped and demanded a human's help every time it found an error, designed a code that could recover the original message on its own. The trick is redundancy, arranged carefully: every valid signal is built so that it differs from every other valid signal in at least <strong>three positions</strong>.",
+      ham_p2:"Because of that spacing, a single flipped bit moves a signal only one step away from where it started, but never closer than two steps to any other valid signal. That gap is what lets the receiver work backward and recover the original with confidence.",
+      panel5_title:"A\u2013Z, 9-bit self-correcting signal",
+      ham_p3:"Try it yourself: think of a letter, find its 9-bit signal in the table above, and set the switches below to match it. Then flip one bit, or let the machine flip one for you, and see if it can recover the letter you had in mind.",
+      panel6_title:"Set the switches, introduce an error, and check the result",
+      btn_load9:"Load a random letter",
+      btn_flip9:"Flip one bit",
+      btn_clear9:"Clear",
+      ham_p4:"If more than one bit changes, the guarantee breaks down: the signal can drift close enough to a different letter to fool the receiver. Real systems handle that by adding still more redundancy, but the core idea stays the same. Spread valid signals far enough apart, and small errors become fixable instead of just noticeable.",
+
+      chal_h2:"Decode a message",
+      chal_p1:"Here's a short word, sent one letter at a time using the 9-bit code from above, no errors this time, just practice reading the code. Match each block against the table and type your answer, one letter per box.",
+      btn_check_word:"Check answer",
+      btn_reveal_word:"Reveal answer",
+      btn_new_word:"New word",
+
+      footer_p1:"The same ideas show up everywhere: add redundancy, space valid signals apart, check what arrives. QR codes, CDs and DVDs, computer memory, and deep-space communication all lean on some version of it. Every one of them is answering the question this page started with \u2014 if a bit gets flipped, how would you ever know?",
+      footer_credit:"An introduction to coding theory \u00b7 error detection and correction",
+
+      demo_k:"receiver sees {str}",
+      demo1_msg:'Decodes as \u201c{decoded}.\u201d The receiver has no way to know whether this matches what was actually sent.',
+      demo2_ok:'Matches a valid code. Decodes as \u201c{decoded}.\u201d',
+      demo2_err:"Error detected \u2014 this pattern isn't assigned to anything. Equally close to: {names}.",
+
+      m1_k:"{str} \u00b7 {ones} ones",
+      m1_err_parity:"Error detected. A valid signal always has an even number of 1s \u2014 this one has an odd count, so something changed in transit.",
+      m1_ok:'No error detected. This decodes to the letter \u201c{letter}.\u201d',
+      m1_warn:'The count of 1s checks out, but this exact pattern isn\'t assigned to any letter. Parity catches a lot, but not everything \u2014 an even number of flipped bits can slip through. Closest letter on file: \u201c{matches}\u201d (still {min} bits away, so that\'s a guess, not a guarantee).',
+
+      m2_ok:'No error. This is the letter \u201c{letter}.\u201d',
+      m2_corrected:'1-bit error detected, and corrected. This must have started as the letter \u201c{letter}.\u201d',
+      m2_ambiguous:'This doesn\'t cleanly match any letter \u2014 the closest is \u201c{matches}\u201d at {min} bits away. That\'s more disturbance than a single-error fix can recover from.',
+
+      chal_wordlen:"Word length: {n} letters",
+      chal_correct:"Correct! You decoded the word.",
+      chal_incorrect:"Not quite \u2014 the boxes marked in red don't match yet. Check them against the table above.",
+      chal_reveal:'The word was \u201c{word}.\u201d',
+      chal_letter_aria:"Letter {n}"
+    },
+    th:{
+      hero_h1:"เมื่อสัญญาณที่ส่งไปมีความผิดพลาด จะเกิดอะไรขึ้น?",
+      hero_lede:"ทุกครั้งที่ข้อมูลถูกส่งออกไป ไม่ว่าจะผ่านสายไฟ ผ่านอากาศ หรือบนแผ่นดิสก์ ย่อมมีโอกาสที่บิตใดบิตหนึ่งจะถูกพลิกระหว่างทาง ทฤษฎีการเข้ารหัสคือศาสตร์ที่ศึกษาวิธีจัดรูปแบบข้อมูล เพื่อให้ผู้รับสามารถรู้ได้ว่าเกิดความผิดพลาดขึ้น และบางครั้งก็สามารถแก้ไขมันได้ด้วย",
+      hero_sub:"หน้านี้จะพาไปดูแนวคิดนี้ทีละขั้น เริ่มจากรหัสที่ผิดพลาดแบบเงียบๆ ไปจนถึงรหัสที่ตรวจจับความผิดพลาดของตัวเองได้ และรหัสที่แก้ไขความผิดพลาดได้จริง ระหว่างทางคุณจะได้ลองเล่นเครื่องมือแต่ละแบบด้วยตัวเอง",
+      hero_sender:"ผู้ส่ง",
+      hero_receiver:"ผู้รับ",
+      hero_caption:"ผู้ส่งเข้ารหัสข้อความให้เป็นบิต ส่วนผู้รับจะเห็นเพียงสิ่งที่มาถึงเท่านั้น ไม่มีทางรู้เลยว่าเกิดอะไรขึ้นระหว่างทาง",
+
+      s1_h2:"เมื่อบิตเดียวที่พลิกกลับ เปลี่ยนทุกอย่าง",
+      s1_p1:"สมมติว่าคุณกำลังสั่งเครื่องดื่มจากเครื่องที่เข้าใจแค่รหัส 2 บิตเท่านั้น:",
+      s1_li1:'<span class="mono">00</span> \u2014 ชานม',
+      s1_li2:'<span class="mono">01</span> \u2014 ชา',
+      s1_li3:'<span class="mono">10</span> \u2014 นม',
+      s1_li4:'<span class="mono">11</span> \u2014 กาแฟ',
+      s1_p2:"ถ้าผู้ส่งต้องการสั่งชานม เขาจะส่งรหัส 00 ไป แต่สมมติว่าหลักสุดท้ายถูกพลิกระหว่างทาง ทำให้ 00 กลายเป็น 01 เมื่อถึงผู้รับ ผู้รับก็ไม่มีเหตุผลที่จะสงสัยเลย เพราะ 01 เป็นรหัสที่ดูปกติดีทุกประการ มันถูกถอดรหัสเป็นชา และออร์เดอร์ที่ผิดก็ถูกส่งออกไป โดยไม่มีใครรู้เลยว่าผิดพลาด",
+      legend_amber:"ตามที่ส่งไป",
+      legend_teal:"ถอดรหัสถูกต้อง / ใช้ได้",
+      legend_brick:"ตรวจพบข้อผิดพลาด",
+      panel1_title:"ลองเล่นดู \u2014 เลือกเครื่องดื่ม แล้วคลิกที่หลักใดหลักหนึ่งเพื่อพลิกบิต",
+      s1_p3:"สังเกตว่าผู้รับจะเห็นรหัสที่ดูถูกต้องสมบูรณ์อยู่เสมอ ไม่มีรูปแบบใดในรหัสนี้ที่เกิดขึ้นได้เฉพาะข้อความที่ถูกต้องเท่านั้น จึงไม่มีทางรู้เลยว่ามีข้อผิดพลาดเกิดขึ้น",
+
+      s2_h2:"เพิ่มอีกหนึ่งบิต แลกกับสัญญาณเตือน",
+      s2_p1:"ปัญหาของรหัส 2 บิตคือ ทุกรูปแบบที่เป็นไปได้ล้วนมีความหมายอยู่แล้ว จึงไม่เหลือที่ว่างให้แยกแยะรหัสที่ถูกต้องออกจากรหัสที่เสียหาย ลองเพิ่มบิตที่สามเข้าไป แล้วใช้แค่ 4 รูปแบบจากทั้งหมด 8 รูปแบบที่เป็นไปได้:",
+      s2_li1:'<span class="mono">000</span> \u2014 ชานม',
+      s2_li2:'<span class="mono">011</span> \u2014 ชา',
+      s2_li3:'<span class="mono">101</span> \u2014 นม',
+      s2_li4:'<span class="mono">110</span> \u2014 กาแฟ',
+      s2_p2:"ทีนี้ลองส่งรหัสของนม คือ 101 ถ้าหลักตรงกลางถูกพลิก ผู้รับจะได้รับ 111 ซึ่งไม่ได้ถูกกำหนดความหมายไว้เลย นี่เป็นครั้งแรกที่ผู้รับรู้ว่ามีบางอย่างผิดพลาด แม้จะยังไม่แน่ใจว่าข้อความจริงคืออะไร เพราะ 111 ห่างจากชา นม และกาแฟ เพียงแค่หนึ่งบิตเท่ากันหมด แต่อย่างน้อยผู้รับก็รู้ว่าไม่ควรเชื่อรหัสนี้",
+      panel2_title:"ลองเล่นดู \u2014 พลิกบิตแล้วสังเกตช่วงเวลาที่รหัสไม่มีความหมายอีกต่อไป",
+      panel2_note:"ตราบใดที่มีการรบกวนไม่เกินหนึ่งหลัก รหัสนี้จะบอกคุณเสมอว่ามีบางอย่างผิดพลาด ลองดูว่าคุณจะหาการพลิกสองบิตที่หลุดรอดไปโดยไม่มีใครรู้ได้หรือไม่",
+      s2_p3:"นี่คือข้อแลกเปลี่ยนสำคัญของทฤษฎีการเข้ารหัส การตรวจจับข้อผิดพลาดนั้นทำได้ง่ายกว่าการแก้ไขมัน การจะไปไกลกว่านี้ต้องออกแบบรหัสที่มีความซ้ำซ้อนมากขึ้นไปอีก และจุดที่ดีในการดูแนวคิดนี้เติบโตขึ้น ก็คือการที่คอมพิวเตอร์เริ่มต้นแทนตัวอักษรตั้งแต่แรก",
+
+      bcd_h2:"นับเลขแบบที่คอมพิวเตอร์ยุคแรกทำ: BCD",
+      bcd_p1:"ก่อนที่คอมพิวเตอร์จะรองรับตัวอักษรทั้งหมดได้ พวกมันต้องจัดการกับตัวเลขฐานสิบให้แม่นยำก่อน ไม่ว่าจะเป็นเครื่องคิดเลข นาฬิกาดิจิทัล หรือเครื่องบัญชี <strong>Binary-coded decimal (BCD)</strong> ทำสิ่งนี้ด้วยการกำหนดรูปแบบเลขฐานสอง 4 บิตให้กับตัวเลขฐานสิบแต่ละตัว ตั้งแต่ 0 ถึง 9 แทนที่จะแปลงตัวเลขทั้งจำนวนเป็นเลขฐานสองก้อนใหญ่ก้อนเดียว",
+      bcd_p2:"BCD ทำให้การแปลงตัวเลขไปมากับเลขฐานสองทำได้ง่ายทีละหลัก ซึ่งสำคัญมากในยุคที่วงจรถูกสร้างจากฮาร์ดแวร์ง่ายๆ แต่มันครอบคลุมได้แค่ 10 สัญลักษณ์เท่านั้น ไม่มีทางแทนตัวอักษร เครื่องหมายวรรคตอน หรือแม้แต่ช่องว่างได้เลย",
+
+      ascii_h2:"จากตัวเลขสู่ตัวอักษรครบชุด: ASCII",
+      ascii_p1:"เมื่อคอมพิวเตอร์เริ่มต้องจัดการกับข้อความ ไม่ว่าจะเป็นชื่อ เอกสาร หรือคำสั่ง วิศวกรจึงต้องการรหัสที่ครอบคลุมมากกว่าแค่ตัวเลขสิบตัว ความต้องการนี้นำไปสู่ <strong>ASCII</strong> (American Standard Code for Information Interchange) ในช่วงต้นทศวรรษ 1960 ซึ่งใช้แนวคิดเดียวกับ BCD คือให้ทุกสัญลักษณ์มีรูปแบบเลขฐานสองความยาวคงที่เป็นของตัวเอง แต่ขยายให้ครอบคลุมตัวอักษรพิมพ์ใหญ่พิมพ์เล็ก เครื่องหมายวรรคตอน ตัวเลข และอักขระควบคุมต่างๆ ทั้งหมดอยู่ในรหัส 7 บิตเดียว",
+      ascii_p2:"รหัส 7 บิตมีรูปแบบที่เป็นไปได้ถึง 128 แบบ เพียงพอสำหรับสัญลักษณ์ทั้งหมดบนแป้นพิมพ์ แต่สังเกตว่ามันขาดสิ่งหนึ่งไป นั่นคือวิธีตรวจสอบในตัวว่ารูปแบบที่ได้รับมานั้นถูกต้องหรือไม่ ถ้าบิตหนึ่งพลิกระหว่างทาง ผลลัพธ์ก็แค่กลายเป็นอักขระอื่นที่ดูใช้ได้เหมือนกันทุกประการ นี่คือปัญหาข้อผิดพลาดแบบเงียบๆ แบบเดียวกับรหัสสั่งเครื่องดื่ม เพียงแค่สวมชุดที่ใหญ่กว่าเดิม",
+      ascii_p3:"วิธีแก้ที่นิยมใช้กันคือ การเพิ่มบิตตรวจสอบเข้าไปอีกหนึ่งบิตในทุกอักขระ ซึ่งเป็นกลเม็ดเดียวกับที่เปลี่ยนรหัสเครื่องดื่ม 2 บิตของเราให้กลายเป็นรหัส 3 บิตที่ตรวจจับข้อผิดพลาดได้ นี่คือหน้าตาของมันเมื่อนำไปใช้กับตัวอักษรทั้งหมด",
+
+      e8_h2:"รหัสตัวอักษรทีละตัว พร้อมบิตพิเศษอีกหนึ่งบิต",
+      e8_p1:"ด้านล่างนี้คือชุดสัญญาณ 8 บิต หนึ่งชุดต่อหนึ่งตัวอักษร ทุกตัวมี<strong>จำนวนเลข 1 เป็นเลขคู่</strong>เสมอ นั่นคือหน้าที่ของบิตพิเศษที่ถูกกำหนดขึ้นมาเพื่อทำให้ผลรวมเป็นเลขคู่โดยเฉพาะ มันไม่มีความหมายเกี่ยวกับตัวอักษรนั้นเลย มีไว้เพียงเพื่อให้ผู้รับมีสิ่งที่ใช้ตรวจสอบได้",
+      panel3_title:"A\u2013Z สัญญาณ 8 บิต (ข้อมูล 7 บิต + บิตตรวจสอบ 1 บิต)",
+      e8_p2:"เพราะสัญญาณที่ถูกต้องทุกตัวมีเลข 1 เป็นจำนวนคู่เสมอ การพลิกบิตเพียงบิตเดียวจึงตรวจจับได้ง่าย เพราะมันจะเปลี่ยนจำนวนคู่ให้กลายเป็นจำนวนคี่เสมอ ลองเล่นในเครื่องมือด้านล่างนี้ดู",
+      panel4_title:"ตั้งค่าสวิตช์เป็นรูปแบบ 8 บิตอะไรก็ได้ แล้วดูว่าเครื่องมือตรวจพบอะไร",
+      btn_load8:"สุ่มโหลดตัวอักษร",
+      btn_flip8:"พลิกหนึ่งบิต",
+      e8_p3:"วิธีนี้บอกผู้รับได้แค่ว่ามีบางอย่างผิดพลาด แต่ไม่บอกว่าตัวอักษรดั้งเดิมคืออะไร และไม่ใช่ทุกข้อผิดพลาดจะถูกจับได้ ถ้ามีการพลิกสองบิตพอดี จำนวนเลข 1 ก็ยังคงเป็นเลขคู่เหมือนเดิม สัญญาณที่เสียหายจึงอาจหลุดรอดไปได้โดยดูเหมือนถูกต้องสมบูรณ์ การตรวจจับข้อผิดพลาดกับการแก้ไขข้อผิดพลาด จึงเป็นคนละปัญหากันเลย",
+
+      ham_h2:"สร้างรหัสที่แก้ไขตัวเองได้",
+      ham_p1:"ในปี 1950 นักคณิตศาสตร์ชื่อ Richard Hamming รู้สึกหงุดหงิดกับคอมพิวเตอร์ที่หยุดทำงานและร้องขอความช่วยเหลือจากมนุษย์ทุกครั้งที่พบข้อผิดพลาด เขาจึงออกแบบรหัสที่สามารถกู้คืนข้อความดั้งเดิมได้ด้วยตัวเอง เคล็ดลับคือความซ้ำซ้อนที่จัดวางอย่างพิถีพิถัน สัญญาณที่ถูกต้องทุกตัวถูกสร้างขึ้นให้แตกต่างจากสัญญาณที่ถูกต้องตัวอื่นๆ อย่างน้อย <strong>3 ตำแหน่ง</strong>เสมอ",
+      ham_p2:"ด้วยระยะห่างนี้ การพลิกบิตเพียงบิตเดียวจะทำให้สัญญาณห่างจากจุดเริ่มต้นแค่หนึ่งก้าว แต่จะไม่มีวันเข้าใกล้สัญญาณที่ถูกต้องตัวอื่นน้อยกว่าสองก้าว ช่องว่างนี้เองที่ทำให้ผู้รับสามารถย้อนกลับไปหาต้นฉบับได้อย่างมั่นใจ",
+      panel5_title:"A\u2013Z สัญญาณ 9 บิตที่แก้ไขตัวเองได้",
+      ham_p3:"ลองเล่นดูด้วยตัวเอง คิดตัวอักษรขึ้นมาสักตัว หาสัญญาณ 9 บิตของมันในตารางด้านบน แล้วตั้งค่าสวิตช์ด้านล่างให้ตรงกัน จากนั้นพลิกหนึ่งบิตเอง หรือให้เครื่องพลิกให้ก็ได้ แล้วดูว่ามันสามารถกู้คืนตัวอักษรที่คุณคิดไว้ได้หรือไม่",
+      panel6_title:"ตั้งค่าสวิตช์ ใส่ข้อผิดพลาดเข้าไป แล้วตรวจสอบผลลัพธ์",
+      btn_load9:"สุ่มโหลดตัวอักษร",
+      btn_flip9:"พลิกหนึ่งบิต",
+      btn_clear9:"ล้างค่า",
+      ham_p4:"ถ้ามีมากกว่าหนึ่งบิตเปลี่ยนไป การรับประกันนี้ก็จะพังลง เพราะสัญญาณอาจเลื่อนเข้าใกล้ตัวอักษรอื่นมากพอที่จะหลอกผู้รับได้ ระบบจริงจัดการกับปัญหานี้ด้วยการเพิ่มความซ้ำซ้อนเข้าไปอีก แต่แนวคิดหลักยังคงเดิม นั่นคือกระจายสัญญาณที่ถูกต้องให้ห่างกันมากพอ แล้วข้อผิดพลาดเล็กๆ ก็จะกลายเป็นสิ่งที่แก้ไขได้ ไม่ใช่แค่สังเกตเห็นได้เท่านั้น",
+
+      chal_h2:"ถอดรหัสข้อความ",
+      chal_p1:"นี่คือคำสั้นๆ ที่ถูกส่งทีละตัวอักษรด้วยรหัส 9 บิตจากด้านบน ครั้งนี้ไม่มีข้อผิดพลาดเจือปน เป็นแค่การฝึกอ่านรหัสเท่านั้น จับคู่แต่ละบล็อกกับตารางแล้วพิมพ์คำตอบ ทีละตัวอักษรต่อหนึ่งช่อง",
+      btn_check_word:"ตรวจคำตอบ",
+      btn_reveal_word:"เฉลยคำตอบ",
+      btn_new_word:"คำใหม่",
+
+      footer_p1:"แนวคิดเดียวกันนี้ปรากฏอยู่ทุกที่ ไม่ว่าจะเป็นการเพิ่มความซ้ำซ้อน การจัดระยะห่างระหว่างสัญญาณที่ถูกต้อง หรือการตรวจสอบสิ่งที่ได้รับมา ทั้ง QR code แผ่น CD และ DVD หน่วยความจำคอมพิวเตอร์ และการสื่อสารในอวกาศห้วงลึก ล้วนพึ่งพาแนวคิดนี้ในรูปแบบใดรูปแบบหนึ่ง ทุกอย่างล้วนตอบคำถามเดียวกับที่หน้านี้เริ่มต้นไว้ ถ้าบิตหนึ่งถูกพลิกไป คุณจะรู้ได้อย่างไร?",
+      footer_credit:"ความรู้เบื้องต้นเกี่ยวกับทฤษฎีการเข้ารหัส \u00b7 การตรวจจับและแก้ไขข้อผิดพลาด",
+
+      demo_k:"ผู้รับเห็นรหัส {str}",
+      demo1_msg:"ถอดรหัสได้เป็น \u201c{decoded}\u201d ผู้รับไม่มีทางรู้เลยว่าตรงกับสิ่งที่ถูกส่งมาจริงๆ หรือไม่",
+      demo2_ok:"ตรงกับรหัสที่ถูกต้อง ถอดรหัสได้เป็น \u201c{decoded}\u201d",
+      demo2_err:"ตรวจพบข้อผิดพลาด \u2014 รูปแบบนี้ไม่ได้ถูกกำหนดความหมายไว้เลย ใกล้เคียงกับ: {names} เท่าๆ กัน",
+
+      m1_k:"{str} \u00b7 มีเลข 1 อยู่ {ones} ตัว",
+      m1_err_parity:"ตรวจพบข้อผิดพลาด สัญญาณที่ถูกต้องจะมีจำนวนเลข 1 เป็นเลขคู่เสมอ แต่ตัวนี้เป็นเลขคี่ แสดงว่ามีบางอย่างเปลี่ยนไประหว่างทาง",
+      m1_ok:"ไม่พบข้อผิดพลาด ถอดรหัสได้เป็นตัวอักษร \u201c{letter}\u201d",
+      m1_warn:"จำนวนเลข 1 ผ่านการตรวจสอบ แต่รูปแบบนี้ไม่ได้ถูกกำหนดให้กับตัวอักษรใดเลย พาริตีจับข้อผิดพลาดได้หลายแบบ แต่ไม่ใช่ทั้งหมด ถ้าบิตพลิกเป็นจำนวนคู่ มันอาจหลุดรอดไปได้ ตัวอักษรที่ใกล้เคียงที่สุดคือ \u201c{matches}\u201d (ยังห่างอยู่ {min} บิต จึงเป็นแค่การเดา ไม่ใช่คำตอบที่แน่นอน)",
+
+      m2_ok:"ไม่มีข้อผิดพลาด นี่คือตัวอักษร \u201c{letter}\u201d",
+      m2_corrected:"ตรวจพบข้อผิดพลาด 1 บิต และแก้ไขให้แล้ว ต้นฉบับต้องเป็นตัวอักษร \u201c{letter}\u201d",
+      m2_ambiguous:"รูปแบบนี้ไม่ตรงกับตัวอักษรใดอย่างชัดเจน ตัวที่ใกล้เคียงที่สุดคือ \u201c{matches}\u201d ซึ่งห่างอยู่ {min} บิต นั่นเป็นความผิดพลาดที่มากเกินกว่าการแก้ไขแบบบิตเดียวจะรับมือไหว",
+
+      chal_wordlen:"ความยาวคำ: {n} ตัวอักษร",
+      chal_correct:"ถูกต้อง! คุณถอดรหัสคำนี้ได้แล้ว",
+      chal_incorrect:"ยังไม่ถูกต้อง \u2014 ช่องที่ทำเครื่องหมายสีแดงยังไม่ตรง ลองตรวจสอบกับตารางด้านบนอีกครั้ง",
+      chal_reveal:"คำตอบคือ \u201c{word}\u201d",
+      chal_letter_aria:"ตัวอักษรที่ {n}"
+    }
+  };
+
+  var META = {
+    en:{ title:"Introduction to Coding Theory", desc:"An interactive introduction to coding theory: silent errors, parity codes, and self-correcting Hamming codes." },
+    th:{ title:"ความรู้เบื้องต้นเกี่ยวกับทฤษฎีการเข้ารหัส", desc:"บทเรียนเชิงโต้ตอบเกี่ยวกับทฤษฎีการเข้ารหัส ตั้งแต่ข้อผิดพลาดที่ตรวจไม่พบ รหัสพาริตี ไปจนถึงรหัสแฮมมิงที่แก้ไขตัวเองได้" }
+  };
+
+  function t(key, vars){
+    var s = (I18N[LANG] && I18N[LANG][key] !== undefined) ? I18N[LANG][key] : key;
+    if(vars){
+      Object.keys(vars).forEach(function(k){
+        s = s.split("{"+k+"}").join(vars[k]);
+      });
+    }
+    return s;
+  }
+
+  var RERENDER = [];
+
+  function applyStaticText(){
+    document.querySelectorAll("[data-i18n]").forEach(function(el){
+      el.innerHTML = t(el.getAttribute("data-i18n"));
+    });
+    var titleEl = document.getElementById("docTitle");
+    var descEl = document.getElementById("docDesc");
+    if(titleEl) titleEl.textContent = META[LANG].title;
+    document.title = META[LANG].title;
+    if(descEl) descEl.setAttribute("content", META[LANG].desc);
+    document.documentElement.lang = LANG;
+  }
+
+  function applyLanguage(lang){
+    LANG = lang;
+    applyStaticText();
+    document.querySelectorAll(".lang-btn").forEach(function(b){
+      b.classList.toggle("is-active", b.getAttribute("data-lang")===LANG);
+    });
+    RERENDER.forEach(function(fn){ fn(); });
+  }
 
   /* ============ data ============ */
   var CODES8 = {
@@ -579,13 +843,13 @@
     Z:"110011111"
   };
 
-  var TABLE2 = {"00":"Milk tea","01":"Tea","10":"Milk","11":"Coffee"};
-  var TABLE3 = {"000":"Milk tea","011":"Tea","101":"Milk","110":"Coffee"};
+  var TABLE2 = {"00":"milktea","01":"tea","10":"milk","11":"coffee"};
+  var TABLE3 = {"000":"milktea","011":"tea","101":"milk","110":"coffee"};
   var MESSAGES = [
-    {name:"Milk tea", c2:"00", c3:"000"},
-    {name:"Tea",      c2:"01", c3:"011"},
-    {name:"Milk",     c2:"10", c3:"101"},
-    {name:"Coffee",   c2:"11", c3:"110"}
+    {key:"milktea", c2:"00", c3:"000"},
+    {key:"tea",     c2:"01", c3:"011"},
+    {key:"milk",    c2:"10", c3:"101"},
+    {key:"coffee",  c2:"11", c3:"110"}
   ];
 
   var CHALLENGE_WORDS = ["CODE","BYTE","DATA","WORD","MATH","STAR","MOON","BOOK","TREE","FISH","BIRD","GAME","WAVE","CHIP","DISK","ROBOT","PIXEL","RADIO","MORSE","LASER"];
@@ -649,7 +913,7 @@
         var b = document.createElement("button");
         b.className = "msg-btn" + (idx===selected ? " is-selected" : "");
         b.type="button";
-        b.textContent = m.name;
+        b.textContent = DRINK_NAMES[LANG][m.key];
         b.addEventListener("click", function(){
           selected = idx;
           bits = m.c2.split("");
@@ -663,12 +927,14 @@
     function render(){
       renderBits(bitsEl, bits, true);
       var str = bits.join("");
-      var decoded = TABLE2[str];
+      var decodedKey = TABLE2[str];
+      var decoded = DRINK_NAMES[LANG][decodedKey];
       statusEl.className = "status warn";
-      statusEl.innerHTML = '<span class="k">receiver sees ' + str + '</span>Decodes as "' + decoded + '." The receiver has no way to know whether this matches what was actually sent.';
+      statusEl.innerHTML = '<span class="k">'+t("demo_k",{str:str})+'</span>'+t("demo1_msg",{decoded:decoded});
     }
 
     bitsEl.addEventListener("bitschange", render);
+    RERENDER.push(function(){ buildButtons(); render(); });
     buildButtons();
     render();
   })();
@@ -687,7 +953,7 @@
         var b = document.createElement("button");
         b.className = "msg-btn" + (idx===selected ? " is-selected" : "");
         b.type="button";
-        b.textContent = m.name;
+        b.textContent = DRINK_NAMES[LANG][m.key];
         b.addEventListener("click", function(){
           selected = idx;
           bits = m.c3.split("");
@@ -701,19 +967,20 @@
     function render(){
       renderBits(bitsEl, bits, true);
       var str = bits.join("");
-      var decoded = TABLE3[str];
-      if(decoded){
+      var decodedKey = TABLE3[str];
+      if(decodedKey){
         statusEl.className = "status ok";
-        statusEl.innerHTML = '<span class="k">receiver sees ' + str + '</span>Matches a valid code. Decodes as "' + decoded + '."';
+        statusEl.innerHTML = '<span class="k">'+t("demo_k",{str:str})+'</span>'+t("demo2_ok",{decoded:DRINK_NAMES[LANG][decodedKey]});
       } else {
         var n = nearest(str, TABLE3);
-        var names = n.matches.map(function(k){ return TABLE3[k] + " (" + k + ")"; }).join(", ");
+        var names = n.matches.map(function(k){ return DRINK_NAMES[LANG][TABLE3[k]] + " (" + k + ")"; }).join(", ");
         statusEl.className = "status error";
-        statusEl.innerHTML = '<span class="k">receiver sees ' + str + '</span>Error detected — this pattern isn\'t assigned to anything. Equally close to: ' + names + '.';
+        statusEl.innerHTML = '<span class="k">'+t("demo_k",{str:str})+'</span>'+t("demo2_err",{names:names});
       }
     }
 
     bitsEl.addEventListener("bitschange", render);
+    RERENDER.push(function(){ buildButtons(); render(); });
     buildButtons();
     render();
   })();
@@ -759,23 +1026,25 @@
       renderBits(bitsEl, bits, true);
       var str = bits.join("");
       var ones = countOnes(str);
+      var kLabel = t("m1_k",{str:str, ones:ones});
       if(ones % 2 !== 0){
         statusEl.className = "status error";
-        statusEl.innerHTML = '<span class="k">'+str+' · '+ones+' ones</span>Error detected. A valid signal always has an even number of 1s — this one has an odd count, so something changed in transit.';
+        statusEl.innerHTML = '<span class="k">'+kLabel+'</span>'+t("m1_err_parity");
         return;
       }
       var letter = findLetter(str);
       if(letter){
         statusEl.className = "status ok";
-        statusEl.innerHTML = '<span class="k">'+str+' · '+ones+' ones</span>No error detected. This decodes to the letter "'+letter+'."';
+        statusEl.innerHTML = '<span class="k">'+kLabel+'</span>'+t("m1_ok",{letter:letter});
       } else {
         var n = nearest(str, CODES8);
         statusEl.className = "status warn";
-        statusEl.innerHTML = '<span class="k">'+str+' · '+ones+' ones</span>The count of 1s checks out, but this exact pattern isn\'t assigned to any letter. Parity catches a lot, but not everything — an even number of flipped bits can slip through. Closest letter on file: "'+n.matches.join('", "')+'" (still '+n.min+' bits away, so that\'s a guess, not a guarantee).';
+        statusEl.innerHTML = '<span class="k">'+kLabel+'</span>'+t("m1_warn",{matches:n.matches.join('", "'), min:n.min});
       }
     }
 
     bitsEl.addEventListener("bitschange", render);
+    RERENDER.push(render);
 
     document.getElementById("btnLoad8").addEventListener("click", function(){
       bits = CODES8[randLetter()].split("");
@@ -802,17 +1071,18 @@
       var n = nearest(str, CODES9);
       if(n.min===0){
         statusEl.className = "status ok";
-        statusEl.innerHTML = '<span class="k">'+str+'</span>No error. This is the letter "'+n.matches[0]+'."';
+        statusEl.innerHTML = '<span class="k">'+str+'</span>'+t("m2_ok",{letter:n.matches[0]});
       } else if(n.min===1){
         statusEl.className = "status ok";
-        statusEl.innerHTML = '<span class="k">'+str+'</span>1-bit error detected, and corrected. This must have started as the letter "'+n.matches[0]+'."';
+        statusEl.innerHTML = '<span class="k">'+str+'</span>'+t("m2_corrected",{letter:n.matches[0]});
       } else {
         statusEl.className = "status error";
-        statusEl.innerHTML = '<span class="k">'+str+'</span>This doesn\'t cleanly match any letter — the closest is "'+n.matches.join('", "')+'" at '+n.min+' bits away. That\'s more disturbance than a single-error fix can recover from.';
+        statusEl.innerHTML = '<span class="k">'+str+'</span>'+t("m2_ambiguous",{matches:n.matches.join('", "'), min:n.min});
       }
     }
 
     bitsEl.addEventListener("bitschange", render);
+    RERENDER.push(render);
 
     document.getElementById("btnLoad9").addEventListener("click", function(){
       bits = CODES9[randLetter()].split("");
@@ -839,6 +1109,7 @@
     var word = "";
     var lastWord = "";
     var inputs = [];
+    var lastStatus = null; // null | 'correct' | 'incorrect' | 'reveal'
 
     function pickWord(){
       var w;
@@ -848,13 +1119,35 @@
       return w;
     }
 
+    function renderStatus(){
+      if(lastStatus==="correct"){
+        statusEl.className = "status ok";
+        statusEl.textContent = t("chal_correct");
+      } else if(lastStatus==="incorrect"){
+        statusEl.className = "status error";
+        statusEl.textContent = t("chal_incorrect");
+      } else if(lastStatus==="reveal"){
+        statusEl.className = "status warn";
+        statusEl.textContent = t("chal_reveal",{word:word});
+      } else {
+        statusEl.className = "status";
+        statusEl.textContent = "";
+      }
+    }
+
+    function retranslate(){
+      title.textContent = t("chal_wordlen",{n:word.length});
+      inputs.forEach(function(inp, idx){
+        inp.setAttribute("aria-label", t("chal_letter_aria",{n:idx+1}));
+      });
+      renderStatus();
+    }
+
     function build(){
       word = pickWord();
-      title.textContent = "Word length: " + word.length + " letters";
+      lastStatus = null;
       row.innerHTML = "";
       inputs = [];
-      statusEl.className = "status";
-      statusEl.innerHTML = "";
       word.split("").forEach(function(letter, idx){
         var unit = document.createElement("div");
         unit.className = "challenge-unit";
@@ -873,7 +1166,6 @@
         input.maxLength = 1;
         input.autocomplete = "off";
         input.spellcheck = false;
-        input.setAttribute("aria-label", "Letter " + (idx+1));
 
         input.addEventListener("input", function(){
           input.value = input.value.toUpperCase().replace(/[^A-Z]/g, "");
@@ -891,8 +1183,7 @@
         row.appendChild(unit);
         inputs.push(input);
       });
-      inputs[0].disabled = false;
-      inputs.forEach(function(inp){ inp.disabled=false; });
+      retranslate();
     }
 
     document.getElementById("btnCheckWord").addEventListener("click", function(){
@@ -903,13 +1194,8 @@
         inp.classList.toggle("incorrect", !ok && inp.value!=="");
         if(!ok) allCorrect = false;
       });
-      if(allCorrect){
-        statusEl.className = "status ok";
-        statusEl.textContent = "Correct! You decoded the word.";
-      } else {
-        statusEl.className = "status error";
-        statusEl.textContent = "Not quite — the boxes marked in red don't match yet. Check them against the table above.";
-      }
+      lastStatus = allCorrect ? "correct" : "incorrect";
+      renderStatus();
     });
 
     document.getElementById("btnRevealWord").addEventListener("click", function(){
@@ -919,28 +1205,30 @@
         inp.classList.remove("incorrect");
         inp.disabled = true;
       });
-      statusEl.className = "status warn";
-      statusEl.textContent = "The word was \"" + word + ".\"";
+      lastStatus = "reveal";
+      renderStatus();
     });
 
     document.getElementById("btnNewWord").addEventListener("click", build);
 
+    RERENDER.push(retranslate);
     build();
   })();
 
   /* ============ rail nav + scroll progress ============ */
   (function(){
-    var sections = Array.prototype.slice.call(document.querySelectorAll("main .section[data-rail]"));
+    var sections = Array.prototype.slice.call(document.querySelectorAll("main .section[data-rail-key]"));
     var rail = document.getElementById("railwire");
     var pill = document.getElementById("currentPill");
     var fill = document.getElementById("topbarFill");
+    var activeKey = "start";
 
     sections.forEach(function(sec){
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "rail-node";
-      btn.textContent = sec.getAttribute("data-rail");
       btn.dataset.target = sec.id;
+      btn.dataset.key = sec.getAttribute("data-rail-key");
       btn.addEventListener("click", function(){
         sec.scrollIntoView({behavior:"smooth", block:"start"});
       });
@@ -949,18 +1237,26 @@
 
     var railNodes = Array.prototype.slice.call(rail.querySelectorAll(".rail-node"));
 
-    function setActive(id, label){
+    function refreshLabels(){
       railNodes.forEach(function(n){
-        n.classList.toggle("is-active", n.dataset.target===id);
+        n.textContent = RAIL_LABELS[LANG][n.dataset.key];
       });
-      if(pill) pill.textContent = label.toLowerCase();
+      if(pill) pill.textContent = RAIL_LABELS[LANG][activeKey];
+    }
+
+    function setActive(key){
+      activeKey = key;
+      railNodes.forEach(function(n){
+        n.classList.toggle("is-active", n.dataset.key===key);
+      });
+      if(pill) pill.textContent = RAIL_LABELS[LANG][key];
     }
 
     if("IntersectionObserver" in window){
       var io = new IntersectionObserver(function(entries){
         entries.forEach(function(entry){
           if(entry.isIntersecting){
-            setActive(entry.target.id, entry.target.getAttribute("data-rail"));
+            setActive(entry.target.getAttribute("data-rail-key"));
           }
         });
       }, {rootMargin:"-45% 0px -50% 0px", threshold:0});
@@ -976,7 +1272,19 @@
     }
     window.addEventListener("scroll", updateProgress, {passive:true});
     updateProgress();
+
+    RERENDER.push(refreshLabels);
+    refreshLabels();
   })();
+
+  /* ============ language toggle wiring ============ */
+  document.querySelectorAll(".lang-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      applyLanguage(btn.getAttribute("data-lang"));
+    });
+  });
+
+  applyLanguage("th");
 
 })();
 </script>
