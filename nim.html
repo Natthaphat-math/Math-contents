@@ -172,6 +172,22 @@ h1.title{
   color:var(--ink-faint); margin-bottom:10px;
 }
 
+.mode-label{
+  font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:34px 0 10px;
+}
+.mode-switch{
+  display:inline-flex; border:1px solid var(--panel-border); border-radius:999px; overflow:hidden;
+  background:var(--panel);
+}
+.mode-btn{
+  background:transparent; border:none; color:var(--ink-dim); padding:10px 20px;
+  font-family:var(--font-display); font-weight:600; font-size:0.88rem;
+  transition:background .15s ease, color .15s ease;
+}
+.mode-btn.active{ background:var(--lamp-on); color:#241600; }
+.mode-btn:not(.active):hover{ color:var(--ink); background:#ffffff10; }
+
 .prompt{ margin:38px 0 18px; font-size:1rem; color:var(--ink); font-weight:500; }
 
 .choice-row{
@@ -476,9 +492,10 @@ var BOT_NAME = "Nimatron"; // proper name — never translated
 var state = {
   screen: "setup",       // setup | peek | playing | gameover
   lang: "th",             // th | en — default Thai
+  mode: "bot",            // bot | friend — who the second turn-slot represents
   piles: [],
   firstPlayer: null,
-  currentPlayer: null,   // 'you' | 'bot'
+  currentPlayer: null,   // 'you' | 'bot' — the two turn-slots; in friend mode these are Player 1 / Player 2
   pending: null,         // {pile, count}
   pendingJustSet: false, // true for one render cycle right after a fresh coin selection
   moveLog: [],
@@ -511,12 +528,20 @@ var STRINGS = {
     rulesTitle: "How to play",
     rulesBody: "<b>Two players. Three piles of coins.</b> On your turn, remove any number of coins you like &mdash; but only from a single pile. <b>Whoever removes the last coin wins.</b>",
     promptSetup: "Three piles are already on the table. Who plays first?",
+    modeLabel: "How do you want to play?",
+    modeGroupLabel: "Game mode",
+    modeBotOption: "vs Nimatron",
+    modeFriendOption: "With a friend",
     optionYouLabel: "OPTION 01",
     optionYouTitle: "You go first",
     optionYouDesc: "Make the opening move blind.",
     optionBotLabel: "OPTION 02",
     optionBotTitle: function(name){ return name + " opens"; },
     optionBotDesc: "Let the machine move first.",
+    optionP1Title: "Player 1 goes first",
+    optionP1Desc: "Hand them the first move.",
+    optionP2Title: "Player 2 goes first",
+    optionP2Desc: "Hand them the first move.",
     optionPeekLabel: "OPTION 03",
     optionPeekTitle: "Peek at the piles",
     optionPeekDesc: "See the counts, then choose.",
@@ -534,7 +559,7 @@ var STRINGS = {
     backBtn: "&larr; Back",
 
     yourTurn: "YOUR TURN",
-    botTurnLabel: function(name){ return name.toUpperCase() + "&rsquo;S TURN"; },
+    turnLabelFor: function(name){ return name.toUpperCase() + "&rsquo;S TURN"; },
     botThinkingLabel: function(name){ return name.toUpperCase() + " COMPUTING&hellip;"; },
 
     confirmRemove: function(count, pile){ return "Remove <b>" + count + "</b> coin" + (count>1?"s":"") + " from <b>Pile " + pile + "</b>?"; },
@@ -560,9 +585,11 @@ var STRINGS = {
     moveLogEmpty: "No moves yet.",
     logYou: "YOU",
     logBot: "BOT",
+    logP1: "P1",
+    logP2: "P2",
 
     titleYouWin: "YOU WIN",
-    titleBotWins: function(name){ return name.toUpperCase() + " WINS"; },
+    titleWinsFor: function(name){ return name.toUpperCase() + " WINS"; },
     finalMove: function(actor, removed, pile){ return "Final move: " + actor + " took the last " + removed + " coin" + (removed>1?"s":"") + " from Pile " + pile + "."; },
     recapEyebrow: "Reading the board",
     recapTheory: function(ns, bits, nonzero, favored){
@@ -580,6 +607,8 @@ var STRINGS = {
     howDidThatHappen: "How did that happen? &rarr;",
     actorYou: "You",
     actorYouLower: "you",
+    player1Name: "Player 1",
+    player2Name: "Player 2",
 
     modalTitle: "The Math Behind the Machine",
     modalSub: "Binary numbers &middot; nim-sum &middot; a little history",
@@ -614,12 +643,20 @@ var STRINGS = {
     rulesTitle: "วิธีเล่น",
     rulesBody: "<b>ผู้เล่นสองคน สามกองเหรียญ</b> ในแต่ละตาของคุณ หยิบเหรียญออกจากกองไหนก็ได้ตามใจ จำนวนเท่าไหร่ก็ได้ &mdash; แต่หยิบได้จากกองเดียวเท่านั้น <b>ใครหยิบเหรียญสุดท้ายได้ เป็นผู้ชนะ</b>",
     promptSetup: "บนโต๊ะมีสามกองเหรียญวางอยู่แล้ว ใครจะเป็นคนเล่นก่อน?",
+    modeLabel: "อยากเล่นแบบไหน?",
+    modeGroupLabel: "โหมดการเล่น",
+    modeBotOption: "แข่งกับ Nimatron",
+    modeFriendOption: "เล่นกับเพื่อน",
     optionYouLabel: "ตัวเลือก 01",
     optionYouTitle: "คุณเล่นก่อน",
     optionYouDesc: "เดินหมากแรกโดยยังไม่เห็นตัวเลข",
     optionBotLabel: "ตัวเลือก 02",
     optionBotTitle: function(name){ return name + " เล่นก่อน"; },
     optionBotDesc: "ให้เครื่องจักรเดินก่อน",
+    optionP1Title: "ผู้เล่น 1 เล่นก่อน",
+    optionP1Desc: "ให้พวกเขาเดินก่อน",
+    optionP2Title: "ผู้เล่น 2 เล่นก่อน",
+    optionP2Desc: "ให้พวกเขาเดินก่อน",
     optionPeekLabel: "ตัวเลือก 03",
     optionPeekTitle: "แอบดูกองเหรียญก่อน",
     optionPeekDesc: "ดูจำนวนเหรียญก่อน แล้วค่อยเลือก",
@@ -637,7 +674,7 @@ var STRINGS = {
     backBtn: "&larr; ย้อนกลับ",
 
     yourTurn: "ตาคุณ",
-    botTurnLabel: function(name){ return "ตา " + name; },
+    turnLabelFor: function(name){ return "ตา " + name; },
     botThinkingLabel: function(name){ return name + " กำลังคำนวณ&hellip;"; },
 
     confirmRemove: function(count, pile){ return "หยิบ <b>" + count + "</b> เหรียญ จาก<b>กอง " + pile + "</b> ใช่ไหม?"; },
@@ -663,9 +700,11 @@ var STRINGS = {
     moveLogEmpty: "ยังไม่มีการเดิน",
     logYou: "คุณ",
     logBot: "บอท",
+    logP1: "P1",
+    logP2: "P2",
 
     titleYouWin: "คุณชนะ",
-    titleBotWins: function(name){ return name + " ชนะ"; },
+    titleWinsFor: function(name){ return name + " ชนะ"; },
     finalMove: function(actor, removed, pile){ return "ตาสุดท้าย: " + actor + "หยิบเหรียญสุดท้ายจำนวน " + removed + " เหรียญจากกอง " + pile; },
     recapEyebrow: "อ่านกระดาน",
     recapTheory: function(ns, bits, nonzero, favored){
@@ -683,6 +722,8 @@ var STRINGS = {
     howDidThatHappen: "มันเกิดขึ้นได้ยังไง? &rarr;",
     actorYou: "คุณ",
     actorYouLower: "คุณ",
+    player1Name: "ผู้เล่น 1",
+    player2Name: "ผู้เล่น 2",
 
     modalTitle: "คณิตศาสตร์เบื้องหลังเครื่องจักร",
     modalSub: "เลขฐานสอง &middot; nim-sum &middot; เกร็ดประวัติศาสตร์เล็กน้อย",
@@ -714,6 +755,21 @@ function t(key){
     return val.apply(null, args);
   }
   return val;
+}
+
+// Resolves a turn-slot ('you' / 'bot') to its display name for the current mode.
+// bot mode:    'you' -> "You" / "คุณ",        'bot' -> "Nimatron" (always, never translated)
+// friend mode: 'you' -> "Player 1",           'bot' -> "Player 2"
+function actorLabel(slot){
+  if(state.mode === "friend"){
+    return slot === "you" ? t('player1Name') : t('player2Name');
+  }
+  return slot === "you" ? t('actorYou') : BOT_NAME;
+}
+// Same, but uses the natural lowercase "you" mid-sentence in bot mode (English only).
+function actorLabelLower(slot){
+  if(state.mode === "bot" && slot === "you"){ return t('actorYouLower'); }
+  return actorLabel(slot);
 }
 
 /* ============================================================
@@ -772,7 +828,7 @@ function startGame(first){
   state.lastMove = null;
   state.initialNimSum = nimSum(state.piles);
   render();
-  if(first === "bot"){ setTimeout(botTurn, 700); }
+  if(state.mode === "bot" && first === "bot"){ setTimeout(botTurn, 700); }
 }
 
 function applyMove(pileIdx, count, who){
@@ -795,7 +851,7 @@ function applyMove(pileIdx, count, who){
   }
   state.currentPlayer = (who === "you") ? "bot" : "you";
   render();
-  if(state.currentPlayer === "bot"){ setTimeout(botTurn, 850); }
+  if(state.mode === "bot" && state.currentPlayer === "bot"){ setTimeout(botTurn, 850); }
 }
 
 function botTurn(){
@@ -840,6 +896,15 @@ function heroLampStrip(){
 }
 
 function renderSetup(){
+  var firstTitle, firstDesc, secondTitle, secondDesc;
+  if(state.mode === "friend"){
+    firstTitle = t('optionP1Title'); firstDesc = t('optionP1Desc');
+    secondTitle = t('optionP2Title'); secondDesc = t('optionP2Desc');
+  } else {
+    firstTitle = t('optionYouTitle'); firstDesc = t('optionYouDesc');
+    secondTitle = t('optionBotTitle', BOT_NAME); secondDesc = t('optionBotDesc');
+  }
+
   return '' +
   '<section class="hero">' +
     heroLampStrip() +
@@ -851,15 +916,20 @@ function renderSetup(){
       '<div class="rules-title">' + t('rulesTitle') + '</div>' +
       '<p>' + t('rulesBody') + '</p>' +
     '</div>' +
+    '<div class="mode-label">' + t('modeLabel') + '</div>' +
+    '<div class="mode-switch" role="group" aria-label="' + t('modeGroupLabel') + '">' +
+      '<button class="mode-btn' + (state.mode === "bot" ? " active" : "") + '" data-action="set-mode" data-mode="bot" aria-pressed="' + (state.mode === "bot") + '">' + t('modeBotOption') + '</button>' +
+      '<button class="mode-btn' + (state.mode === "friend" ? " active" : "") + '" data-action="set-mode" data-mode="friend" aria-pressed="' + (state.mode === "friend") + '">' + t('modeFriendOption') + '</button>' +
+    '</div>' +
     '<p class="prompt">' + t('promptSetup') + '</p>' +
     '<div class="choice-row">' +
       '<button class="choice-btn" data-action="choose-first" data-who="you">' +
-        '<span class="k">' + t('optionYouLabel') + '</span><span class="v">' + t('optionYouTitle') + '</span>' +
-        '<span class="d">' + t('optionYouDesc') + '</span>' +
+        '<span class="k">' + t('optionYouLabel') + '</span><span class="v">' + firstTitle + '</span>' +
+        '<span class="d">' + firstDesc + '</span>' +
       '</button>' +
       '<button class="choice-btn" data-action="choose-first" data-who="bot">' +
-        '<span class="k">' + t('optionBotLabel') + '</span><span class="v">' + t('optionBotTitle', BOT_NAME) + '</span>' +
-        '<span class="d">' + t('optionBotDesc') + '</span>' +
+        '<span class="k">' + t('optionBotLabel') + '</span><span class="v">' + secondTitle + '</span>' +
+        '<span class="d">' + secondDesc + '</span>' +
       '</button>' +
       '<button class="choice-btn" data-action="peek">' +
         '<span class="k">' + t('optionPeekLabel') + '</span><span class="v">' + t('optionPeekTitle') + '</span>' +
@@ -895,10 +965,10 @@ function renderPeek(){
     '<p class="prompt" style="margin-top:0;">' + t('promptPeek') + '</p>' +
     '<div class="choice-row">' +
       '<button class="choice-btn" data-action="choose-first" data-who="you">' +
-        '<span class="k">' + t('optionALabel') + '</span><span class="v">' + t('optionYouTitle') + '</span>' +
+        '<span class="k">' + t('optionALabel') + '</span><span class="v">' + (state.mode === "friend" ? t('optionP1Title') : t('optionYouTitle')) + '</span>' +
       '</button>' +
       '<button class="choice-btn" data-action="choose-first" data-who="bot">' +
-        '<span class="k">' + t('optionBLabel') + '</span><span class="v">' + t('optionBotTitle', BOT_NAME) + '</span>' +
+        '<span class="k">' + t('optionBLabel') + '</span><span class="v">' + (state.mode === "friend" ? t('optionP2Title') : t('optionBotTitle', BOT_NAME)) + '</span>' +
       '</button>' +
     '</div>' +
     '<button class="btn-ghost" data-action="back-to-setup">' + t('backBtn') + '</button>' +
@@ -937,8 +1007,15 @@ function bitGridHtml(piles, changedIdx){
    RENDER — GAME
    ============================================================ */
 function renderGame(){
-  var isYourTurn = state.currentPlayer === "you" && !state.botThinking;
-  var statusLabel = state.botThinking ? t('botThinkingLabel', BOT_NAME) : (state.currentPlayer === "you" ? t('yourTurn') : t('botTurnLabel', BOT_NAME));
+  var canInteract = state.mode === "friend" ? true : (state.currentPlayer === "you" && !state.botThinking);
+  var statusLabel;
+  if(state.mode === "bot" && state.botThinking){
+    statusLabel = t('botThinkingLabel', BOT_NAME);
+  } else if(state.mode === "bot" && state.currentPlayer === "you"){
+    statusLabel = t('yourTurn');
+  } else {
+    statusLabel = t('turnLabelFor', actorLabel(state.currentPlayer));
+  }
   var pillClass = (state.currentPlayer === "bot" || state.botThinking) ? "status-pill bot" : "status-pill";
 
   var html = '<div class="' + pillClass + '"><span class="pulse"></span>' + statusLabel + '</div>';
@@ -956,7 +1033,7 @@ function renderGame(){
       for(var pos=1; pos<=count; pos++){
         var markCount = state.pending && state.pending.pile === pIdx ? state.pending.count : 0;
         var isMarked = markCount > 0 && pos > (count - markCount);
-        if(isYourTurn){
+        if(canInteract){
           html += '<button type="button" class="coin' + (isMarked ? ' marked' : '') + '" data-action="select-coin" data-pile="' + pIdx + '" data-pos="' + pos + '" aria-label="' + t('coinAria', (count-pos+1), PILE_LABELS[pIdx]) + '"></button>';
         } else {
           html += '<span class="coin static' + (isMarked ? ' marked' : '') + '"></span>';
@@ -1000,7 +1077,7 @@ function renderPanel(){
     }
     html += bitGridHtml(displayPiles, changedIdx);
 
-    var turnActor = state.currentPlayer === "you" ? t('actorYou') : BOT_NAME;
+    var turnActor = actorLabel(state.currentPlayer);
     var captionText, captionClass = "caption";
     if(state.pending){
       var previewNs = nimSum(displayPiles);
@@ -1017,8 +1094,9 @@ function renderPanel(){
     html += '<div class="' + captionClass + '">' + captionText + '</div>';
 
     /* hint */
+    var canInteract = state.mode === "friend" ? true : (state.currentPlayer === "you" && !state.botThinking);
     html += '<div class="hint-row"><span class="switch' + (state.hintsEnabled ? ' on' : '') + '" data-action="toggle-hint" style="cursor:pointer;"><span class="switch-track"></span>' + t('showHint') + '</span></div>';
-    if(state.hintsEnabled && state.currentPlayer === "you" && !state.botThinking){
+    if(state.hintsEnabled && canInteract){
       var z = findZeroingMove(state.piles);
       if(z){
         html += '<div class="hint-text">' + t('hintFound', z.remove, PILE_LABELS[z.pile]) + '</div>';
@@ -1034,7 +1112,12 @@ function renderPanel(){
     html += '<div class="movelog-empty">' + t('moveLogEmpty') + '</div>';
   } else {
     state.moveLog.slice().reverse().forEach(function(m){
-      var who = m.who === "you" ? t('logYou') : t('logBot');
+      var who;
+      if(state.mode === "friend"){
+        who = m.who === "you" ? t('logP1') : t('logP2');
+      } else {
+        who = m.who === "you" ? t('logYou') : t('logBot');
+      }
       var cls = m.who === "you" ? "you" : "bot";
       var n = String(m.n).padStart(2,"0");
       html += '<div class="' + cls + '">' + n + '  ' + who + '  ' + t('pileWord') + ' ' + m.pile + '  -' + m.removed + '  \u2192 ' + m.piles.join(",") + '</div>';
@@ -1050,16 +1133,20 @@ function renderPanel(){
    RENDER — GAME OVER
    ============================================================ */
 function renderGameOver(){
-  var youWin = state.winner === "you";
-  var lamp = youWin ? "win" : "lose";
-  var title = youWin ? t('titleYouWin') : t('titleBotWins', BOT_NAME);
+  var lamp = state.mode === "friend" ? "win" : (state.winner === "you" ? "win" : "lose");
+  var title;
+  if(state.mode === "bot"){
+    title = state.winner === "you" ? t('titleYouWin') : t('titleWinsFor', BOT_NAME);
+  } else {
+    title = t('titleWinsFor', actorLabel(state.winner));
+  }
 
   var mover = state.lastMove;
-  var moverActor = mover ? (mover.who === "you" ? t('actorYouLower') : BOT_NAME) : "";
+  var moverActor = mover ? actorLabelLower(mover.who) : "";
   var moveDesc = mover ? t('finalMove', moverActor, mover.removed, mover.pile) : "";
 
   var favored = state.initialNimSum !== 0 ? state.firstPlayer : (state.firstPlayer === "you" ? "bot" : "you");
-  var favoredLabel = favored === "you" ? t('actorYou') : BOT_NAME;
+  var favoredLabel = actorLabel(favored);
   var matched = favored === state.winner;
 
   var theory = t('recapTheory', state.initialNimSum, toBits(state.initialNimSum).join(""), state.initialNimSum !== 0, favoredLabel);
@@ -1202,6 +1289,10 @@ document.addEventListener("click", function(e){
       state.lang = el.getAttribute("data-lang");
       render();
       break;
+    case "set-mode":
+      state.mode = el.getAttribute("data-mode");
+      render();
+      break;
     case "choose-first":
       startGame(el.getAttribute("data-who"));
       break;
@@ -1225,7 +1316,7 @@ document.addEventListener("click", function(e){
     }
     case "confirm-move":
       if(state.pending){
-        applyMove(state.pending.pile, state.pending.count, "you");
+        applyMove(state.pending.pile, state.pending.count, state.currentPlayer);
       }
       break;
     case "cancel-move":
