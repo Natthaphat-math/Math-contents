@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Math flashcards</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:ital,wght@0,400..700;1,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..600&display=swap" rel="stylesheet">
+
+<!-- LaTeX math -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+<!-- TikZ figures -->
+<link rel="stylesheet" href="https://tikzjax.com/v1/fonts.css">
+
+<style>
+:root{
+  --paper:#E8EDEF;
+  --grid:#D3DDE2;
+  --sheet:#FCFDFD;
+  --ink:#15252F;
+  --ink-soft:#5C7079;
+  --ink-faint:#8CA0A9;
+  --edge:#B9C7CE;
+  --yes:#1B6B4F;
+  --yes-tint:#E2F0EA;
+  --no:#AA4530;
+  --no-tint:#F6E5E0;
+
+  --ps-fg:#2A7A86; --ps-bg:#E1F1F2; --ps-br:#BEDFE2;
+  --jh-fg:#2C6493; --jh-bg:#E0EBF5; --jh-br:#C2D8EA;
+  --sh-fg:#40509A; --sh-bg:#E5E7F7; --sh-br:#CBD0EE;
+  --uni-fg:#5A3F87; --uni-bg:#EDE6F5; --uni-br:#D9CBEA;
+
+  --sans:"Familjen Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--serif);
+  color:var(--ink);
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+  background-position:-1px -1px;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--sh-fg);outline-offset:3px;border-radius:2px}
+
+.wrap{
+  max-width:640px;
+  margin:0 auto;
+  padding:26px 20px calc(48px + env(safe-area-inset-bottom));
+}
+.screen[hidden]{display:none}
+
+/* ---------- shared bits ---------- */
+.sheet{
+  background:var(--sheet);
+  border:1px solid var(--edge);
+  border-radius:3px;
+  box-shadow:3px 3px 0 rgba(21,37,47,.09);
+}
+.tag{
+  font-family:var(--sans);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.005em;
+  padding:3px 9px 4px;
+  border-radius:999px;
+  border:1px solid transparent;
+  white-space:nowrap;
+}
+.tag.ps {color:var(--ps-fg); background:var(--ps-bg); border-color:var(--ps-br)}
+.tag.jh {color:var(--jh-fg); background:var(--jh-bg); border-color:var(--jh-br)}
+.tag.sh {color:var(--sh-fg); background:var(--sh-bg); border-color:var(--sh-br)}
+.tag.uni{color:var(--uni-fg);background:var(--uni-bg);border-color:var(--uni-br)}
+
+.back-link{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--sans);font-size:15px;
+  background:none;border:0;padding:6px 2px;margin:0 0 14px -2px;
+  color:var(--ink-soft);
+}
+.back-link:hover{color:var(--ink)}
+
+/* ---------- home ---------- */
+.masthead{margin:6px 0 30px}
+.masthead h1{
+  font-family:var(--sans);
+  font-weight:700;
+  font-size:clamp(34px,9vw,46px);
+  line-height:1.02;
+  letter-spacing:-.028em;
+  margin:0 0 10px;
+}
+.masthead p{
+  margin:0;
+  max-width:38ch;
+  font-size:17px;
+  line-height:1.55;
+  color:var(--ink-soft);
+}
+.specimen{
+  margin:24px 0 0;
+  padding:20px 18px 16px;
+  border-left:3px solid var(--edge);
+}
+.specimen .math{font-size:22px;line-height:1.5;overflow-x:auto;overflow-y:hidden}
+.specimen figcaption{
+  font-family:var(--sans);
+  font-size:13px;
+  color:var(--ink-faint);
+  margin-top:10px;
+}
+
+.deck-list{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.deck{
+  display:block;width:100%;text-align:left;
+  padding:17px 18px;
+  border:1px solid var(--edge);
+  border-radius:3px;
+  background:var(--sheet);
+  box-shadow:3px 3px 0 rgba(21,37,47,.09);
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+.deck:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 rgba(21,37,47,.11)}
+.deck:active{transform:translate(1px,1px);box-shadow:1px 1px 0 rgba(21,37,47,.1)}
+.deck-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.deck-name{font-family:var(--sans);font-weight:600;font-size:21px;letter-spacing:-.01em}
+.deck-meta{
+  font-family:var(--sans);font-size:13.5px;color:var(--ink-soft);
+  margin-top:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+}
+.deck-meta .sep{color:var(--ink-faint)}
+.count-yes{color:var(--yes);font-weight:600}
+.count-no{color:var(--no);font-weight:600}
+.bar{
+  margin-top:12px;height:5px;border-radius:99px;overflow:hidden;
+  background:#DFE6E9;display:flex;
+}
+.bar i{display:block;height:100%}
+.bar .b-yes{background:var(--yes)}
+.bar .b-no{background:var(--no)}
+
+.reset{
+  display:block;margin:26px auto 0;
+  background:none;border:0;
+  font-family:var(--sans);font-size:14px;color:var(--ink-faint);
+  text-decoration:underline;text-underline-offset:3px;
+  padding:8px;
+}
+.reset:hover{color:var(--no)}
+
+/* ---------- deck menu ---------- */
+.deck-head{margin-bottom:24px}
+.deck-head h2{
+  font-family:var(--sans);font-weight:700;
+  font-size:clamp(28px,7.5vw,38px);letter-spacing:-.025em;
+  margin:0 0 12px;line-height:1.05;
+}
+.deck-head .sub{font-family:var(--sans);font-size:14.5px;color:var(--ink-soft);margin:0}
+.options{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.option{
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  width:100%;text-align:left;padding:16px 18px;
+  border:1px solid var(--edge);border-radius:3px;background:var(--sheet);
+  box-shadow:3px 3px 0 rgba(21,37,47,.09);
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+.option:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:5px 5px 0 rgba(21,37,47,.11)}
+.option:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.option b{font-family:var(--sans);font-weight:600;font-size:17.5px;display:block}
+.option small{font-family:var(--sans);font-size:13.5px;color:var(--ink-soft);display:block;margin-top:4px}
+.option .n{font-family:var(--sans);font-size:14px;color:var(--ink-faint);white-space:nowrap}
+
+/* ---------- study ---------- */
+.study-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.study-head .title{font-family:var(--sans);font-weight:600;font-size:17px;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-btn{
+  background:none;border:1px solid var(--edge);border-radius:3px;
+  width:34px;height:34px;line-height:1;font-size:17px;color:var(--ink-soft);
+  display:grid;place-items:center;flex:none;
+}
+.icon-btn:hover{color:var(--ink);border-color:var(--ink-soft)}
+.track{height:4px;background:#DCE4E7;border-radius:99px;overflow:hidden;margin:10px 0 4px}
+.track i{display:block;height:100%;background:var(--ink);transition:width .25s ease}
+.counter{font-family:var(--sans);font-size:13px;color:var(--ink-faint);text-align:right}
+
+.stage{position:relative;margin-top:12px;perspective:1400px}
+.ghost{
+  position:absolute;inset:0;top:8px;
+  transform:scale(.965);
+  border:1px solid var(--edge);border-radius:10px;background:#F2F5F6;
+  box-shadow:3px 3px 0 rgba(21,37,47,.06);
+}
+.card{
+  position:relative;
+  min-height:min(58vh,380px);
+  transform-style:preserve-3d;
+  transition:transform .38s cubic-bezier(.2,.7,.3,1);
+  touch-action:none;
+  cursor:grab;
+  will-change:transform;
+}
+.card.dragging{transition:none;cursor:grabbing}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:30px 24px;
+  background:var(--sheet);
+  border:1px solid var(--edge);border-radius:10px;
+  box-shadow:4px 4px 0 rgba(21,37,47,.11);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  overflow:auto;text-align:center;
+}
+.face.back{transform:rotateY(180deg);background:#FBFCFA}
+.face .content{font-size:20px;line-height:1.6;max-width:34ch}
+.face.front .content{font-size:22px}
+.face .kind{
+  position:absolute;top:12px;left:14px;
+  font-family:var(--sans);font-size:11.5px;color:var(--ink-faint);
+}
+.face .lvl{position:absolute;top:10px;right:12px}
+.figure{margin-top:4px;max-width:100%;overflow-x:auto}
+.figure svg{max-width:100%;height:auto}
+.figure.pending{color:var(--ink-faint);font-family:var(--sans);font-size:13px}
+
+.stamp{
+  position:absolute;top:20px;
+  font-family:var(--sans);font-weight:700;font-size:19px;
+  letter-spacing:.01em;
+  padding:6px 12px;border:2.5px solid;border-radius:6px;
+  opacity:0;pointer-events:none;
+}
+.stamp.s-yes{right:18px;color:var(--yes);border-color:var(--yes);background:var(--yes-tint);transform:rotate(9deg)}
+.stamp.s-no{left:18px;color:var(--no);border-color:var(--no);background:var(--no-tint);transform:rotate(-9deg)}
+
+.hint{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:18px;font-family:var(--sans);font-size:14.5px;
+}
+.hint button{background:none;border:0;padding:6px 2px}
+.hint .h-no{color:var(--no)}
+.hint .h-yes{color:var(--yes)}
+.hint button:hover{text-decoration:underline;text-underline-offset:3px}
+.undo-row{display:flex;justify-content:center;margin-top:14px}
+.undo{
+  background:none;border:1px solid var(--edge);border-radius:3px;
+  font-family:var(--sans);font-size:14px;color:var(--ink-soft);
+  padding:8px 16px;
+}
+.undo:disabled{opacity:.4;cursor:not-allowed}
+.undo:not(:disabled):hover{border-color:var(--ink-soft);color:var(--ink)}
+.tap-note{text-align:center;font-family:var(--sans);font-size:13px;color:var(--ink-faint);margin-top:14px}
+
+/* ---------- finish ---------- */
+.finish{padding:34px 24px;text-align:center}
+.finish h3{font-family:var(--sans);font-size:26px;letter-spacing:-.02em;margin:0 0 18px}
+.tally{display:flex;justify-content:center;gap:34px;margin-bottom:26px}
+.tally div{font-family:var(--sans)}
+.tally b{display:block;font-size:34px;line-height:1.1}
+.tally span{font-size:13.5px;color:var(--ink-soft)}
+.tally .y b{color:var(--yes)} .tally .n b{color:var(--no)}
+.finish .acts{display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto}
+.btn{
+  font-family:var(--sans);font-size:15.5px;padding:12px 18px;border-radius:3px;
+  border:1px solid var(--ink);background:var(--ink);color:#F4F8F9;
+}
+.btn.ghost-btn{background:none;color:var(--ink);border-color:var(--edge)}
+.btn.ghost-btn:hover{border-color:var(--ink-soft)}
+
+/* ---------- grid view ---------- */
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.mini{
+  position:relative;
+  min-height:132px;padding:20px 14px 26px;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  background:var(--sheet);border:1px solid var(--edge);border-radius:6px;
+  box-shadow:3px 3px 0 rgba(21,37,47,.08);
+  font-size:16px;line-height:1.45;
+}
+.mini .state{
+  position:absolute;left:0;right:0;bottom:0;
+  padding:5px 10px 6px;
+  font-family:var(--sans);font-size:11.5px;
+  border-top:1px solid var(--edge);border-radius:0 0 5px 5px;
+}
+.mini .state.yes{color:var(--yes);background:var(--yes-tint);border-color:#CBE2D8}
+.mini .state.no{color:var(--no);background:var(--no-tint);border-color:#EBD2CA}
+.mini .state.new{color:var(--ink-faint);background:#F1F4F5}
+.mini .figure{margin-top:8px}
+
+.empty{
+  padding:26px 20px;text-align:center;
+  font-family:var(--sans);font-size:15px;color:var(--ink-soft);
+}
+#tikz-stage{position:absolute;left:-99999px;top:0;width:900px;visibility:hidden}
+
+@media (max-width:420px){
+  .wrap{padding:20px 15px 44px}
+  .face{padding:26px 18px}
+  .hint{font-size:13.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.001ms !important;animation-duration:.001ms !important}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- HOME -->
+  <main class="screen" id="screen-home">
+    <header class="masthead">
+      <h1>Math flashcards</h1>
+      <p>Read the front, say the answer out loud, then sort the card into remembered or try again. Your progress saves on this device.</p>
+      <figure class="specimen" id="specimen" hidden>
+        <div class="math" id="specimen-math"></div>
+        <figcaption id="specimen-cap"></figcaption>
+      </figure>
+    </header>
+    <ul class="deck-list" id="deck-list"></ul>
+    <button class="reset" id="reset-btn" hidden>Reset saved progress</button>
+  </main>
+
+  <!-- DECK MENU -->
+  <main class="screen" id="screen-deck" hidden>
+    <button class="back-link" data-go="#/">← All decks</button>
+    <div class="deck-head">
+      <h2 id="deck-title"></h2>
+      <p class="sub" id="deck-sub"></p>
+    </div>
+    <div class="options" id="deck-options"></div>
+  </main>
+
+  <!-- STUDY -->
+  <main class="screen" id="screen-study" hidden>
+    <div class="study-head">
+      <button class="icon-btn" id="study-exit" aria-label="Leave this session">✕</button>
+      <span class="title" id="study-title"></span>
+      <span class="tag" id="study-level"></span>
+    </div>
+    <div class="track"><i id="study-bar"></i></div>
+    <div class="counter" id="study-counter"></div>
+    <div id="study-body"></div>
+  </main>
+
+  <!-- ALL CARDS GRID -->
+  <main class="screen" id="screen-grid" hidden>
+    <button class="back-link" id="grid-back">← Back</button>
+    <div class="deck-head">
+      <h2 id="grid-title"></h2>
+      <p class="sub" id="grid-sub"></p>
+    </div>
+    <div class="mini-grid" id="grid-body"></div>
+  </main>
+
+</div>
+
+<div id="tikz-stage" aria-hidden="true"></div>
+
+<!-- ============================================================
+     CARD DATA — this is the only block you need to edit.
+     ============================================================ -->
+<script>
+/*  HOW TO ADD OR EDIT CARDS
+ *  ------------------------
+ *  Every card is one object in the CARDS list below:
+ *
+ *    { topic: "Set", level: "sh",
+ *      front: String.raw`What is $A \cup B$?`,
+ *      back:  String.raw`Everything in $A$, in $B$, or in both.`,
+ *      tikzFront: String.raw`\begin{tikzpicture}...\end{tikzpicture}`,  // optional
+ *      tikzBack:  String.raw`\begin{tikzpicture}...\end{tikzpicture}`   // optional
+ *    }
+ *
+ *  topic  Any text. A new topic automatically becomes a new deck on the
+ *         home screen — no other change needed.
+ *  level  One of: "ps" (primary school), "jh" (junior high),
+ *         "sh" (senior high), "uni" (university). One level per card.
+ *  front / back
+ *         Math: $inline$ or $$display$$. HTML like <br> and <em> works too.
+ *         Always wrap the text in String.raw` ` (back-ticks) so LaTeX
+ *         backslashes survive. Avoid the characters ` and ${ inside.
+ *  tikzFront / tikzBack
+ *         Optional TikZ picture drawn under the text. Keep to plain TikZ
+ *         (\draw, \fill, \node); TikZJax does not load extra libraries.
+ *
+ *  Saved progress is keyed to topic + front text, so editing a card's
+ *  front resets that one card's status. Everything else is untouched.
+ */
+
+const CARDS = [
+
+  /* ── Set · senior high school ─────────────────────────────── */
+  {
+    topic: "Set", level: "sh",
+    front: String.raw`What does $A \cup B$ mean?`,
+    back: String.raw`$A \cup B = \{\, x : x \in A \ \text{or}\ x \in B \,\}$<br>
+                     Every element that lies in $A$, in $B$, or in both.`,
+    tikzBack: String.raw`\begin{tikzpicture}[scale=0.85]
+      \fill[black!10] (0,0) circle (1.15);
+      \fill[black!10] (1.3,0) circle (1.15);
+      \draw (0,0) circle (1.15);
+      \draw (1.3,0) circle (1.15);
+      \node at (-0.6,0) {$A$};
+      \node at (1.9,0) {$B$};
+    \end{tikzpicture}`
+  },
+  {
+    topic: "Set", level: "sh",
+    front: String.raw`State De Morgan's laws for two sets $A$ and $B$.`,
+    back: String.raw`$(A \cup B)^{c} = A^{c} \cap B^{c}$<br>
+                     $(A \cap B)^{c} = A^{c} \cup B^{c}$<br>
+                     Taking complements swaps union and intersection.`
+  },
+
+  /* ── Integer · junior high school ─────────────────────────── */
+  {
+    topic: "Integer", level: "jh",
+    front: String.raw`$(-a) \times (-b) = \;?$`,
+    back: String.raw`$(-a) \times (-b) = ab$<br>
+                     Two negative factors give a positive product,
+                     for example $(-4) \times (-5) = 20$.`
+  },
+  {
+    topic: "Integer", level: "jh",
+    front: String.raw`How do you add two integers with different signs, such as $-7 + 3$?`,
+    back: String.raw`Subtract the smaller absolute value from the larger, then keep the
+                     sign of the number with the larger absolute value.<br>
+                     $7 - 3 = 4$, and $-7$ is the larger in size, so $-7 + 3 = -4$.`,
+    tikzBack: String.raw`\begin{tikzpicture}[scale=0.55]
+      \draw[->] (-9,0) -- (5,0);
+      \draw (-8,0.2) -- (-8,-0.2) node[below] {$-8$};
+      \draw (-6,0.2) -- (-6,-0.2) node[below] {$-6$};
+      \draw (-4,0.2) -- (-4,-0.2) node[below] {$-4$};
+      \draw (-2,0.2) -- (-2,-0.2) node[below] {$-2$};
+      \draw (0,0.2) -- (0,-0.2) node[below] {$0$};
+      \draw (2,0.2) -- (2,-0.2) node[below] {$2$};
+      \draw (4,0.2) -- (4,-0.2) node[below] {$4$};
+      \draw[very thick,->] (-7,0.75) -- (-4,0.75);
+      \node at (-5.5,1.35) {$+3$};
+      \fill (-7,0) circle (0.14);
+      \fill (-4,0) circle (0.14);
+    \end{tikzpicture}`
+  },
+
+  /* ── Fraction · primary school ────────────────────────────── */
+  {
+    topic: "Fraction", level: "ps",
+    front: String.raw`$\dfrac{a}{b} + \dfrac{c}{d} = \;?$`,
+    back: String.raw`$\dfrac{a}{b} + \dfrac{c}{d} = \dfrac{ad + bc}{bd}$<br>
+                     Give both fractions the same bottom number, then add the tops.`
+  },
+  {
+    topic: "Fraction", level: "ps",
+    front: String.raw`What does $\dfrac{3}{4}$ of a bar mean?`,
+    back: String.raw`Cut the whole bar into $4$ equal parts and take $3$ of them.`,
+    tikzBack: String.raw`\begin{tikzpicture}[scale=0.8]
+      \fill[black!15] (0,0) rectangle (3,1.2);
+      \draw (0,0) rectangle (4,1.2);
+      \draw (1,0) -- (1,1.2);
+      \draw (2,0) -- (2,1.2);
+      \draw (3,0) -- (3,1.2);
+      \node at (1.5,-0.6) {$\tfrac{3}{4}$};
+    \end{tikzpicture}`
+  }
+
+];
+
+/* stage every TikZ picture so TikZJax can render them once, up front */
+(function stageTikz(){
+  const stage = document.getElementById('tikz-stage');
+  CARDS.forEach((c, i) => {
+    [['f', c.tikzFront], ['b', c.tikzBack]].forEach(([side, code]) => {
+      if (!code) return;
+      const slot = document.createElement('div');
+      slot.className = 'tikz-slot';
+      slot.dataset.key = i + side;
+      const s = document.createElement('script');
+      s.setAttribute('type', 'text/tikz');
+      s.textContent = code;
+      slot.appendChild(s);
+      stage.appendChild(slot);
+    });
+  });
+})();
+</script>
+
+<script src="https://tikzjax.com/v1/tikzjax.js"></script>
+
+<!-- ============================================================
+     APP — no need to edit below this line.
+     ============================================================ -->
+<script>
+(function () {
+  "use strict";
+
+  const STORE_KEY = "math-flashcards.progress.v1";
+  const LEVELS = {
+    ps:  "primary school",
+    jh:  "junior high",
+    sh:  "senior high",
+    uni: "university"
+  };
+
+  /* ---------- ids & storage ---------- */
+  function hash(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+  }
+  CARDS.forEach((c, i) => {
+    c._i = i;
+    c.id = hash(c.topic + "||" + c.front);
+  });
+
+  let progress = {};
+  try { progress = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { progress = {}; }
+  const save = () => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(progress)); } catch (e) {}
+  };
+
+  const statusOf = id => progress[id] || null;          // "remembered" | "review" | null
+  const hasProgress = () => Object.keys(progress).length > 0;
+
+  /* ---------- decks (grouped by topic, in the order they first appear) ---------- */
+  function decks() {
+    const out = [], seen = new Map();
+    CARDS.forEach(c => {
+      if (!seen.has(c.topic)) {
+        const d = { topic: c.topic, cards: [] };
+        seen.set(c.topic, d);
+        out.push(d);
+      }
+      seen.get(c.topic).cards.push(c);
+    });
+    out.forEach(d => {
+      d.levels = [...new Set(d.cards.map(c => c.level))];
+      d.yes = d.cards.filter(c => statusOf(c.id) === "remembered").length;
+      d.no  = d.cards.filter(c => statusOf(c.id) === "review").length;
+    });
+    return out;
+  }
+  const deckByTopic = t => decks().find(d => d.topic === t);
+
+  /* ---------- math + figure rendering ---------- */
+  function typesetMath(el) {
+    if (!window.renderMathInElement) return;
+    try {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "\\[", right: "\\]", display: true },
+          { left: "$", right: "$", display: false },
+          { left: "\\(", right: "\\)", display: false }
+        ],
+        throwOnError: false
+      });
+    } catch (e) {}
+  }
+
+  function figureFor(card, side) {
+    const code = side === "front" ? card.tikzFront : card.tikzBack;
+    if (!code) return "";
+    return '<div class="figure pending" data-tikz="' + card._i + (side === "front" ? "f" : "b") +
+           '">drawing figure…</div>';
+  }
+
+  function fillFigures(root) {
+    (root || document).querySelectorAll(".figure[data-tikz]").forEach(box => {
+      const slot = document.querySelector('#tikz-stage .tikz-slot[data-key="' + box.dataset.tikz + '"]');
+      const svg = slot && slot.querySelector("svg");
+      if (svg) {
+        box.innerHTML = "";
+        box.appendChild(svg.cloneNode(true));
+        box.classList.remove("pending");
+      }
+    });
+  }
+  // TikZJax renders asynchronously; poll until every staged picture is an SVG.
+  const stagedSlots = document.querySelectorAll("#tikz-stage .tikz-slot").length;
+  let tikzTicks = 0;
+  const tikzTimer = setInterval(() => {
+    fillFigures(document);
+    const ready = document.querySelectorAll("#tikz-stage .tikz-slot svg").length;
+    if (ready >= stagedSlots || ++tikzTicks > 240) clearInterval(tikzTimer);
+  }, 250);
+
+  function paint(el, html) {
+    el.innerHTML = html;
+    typesetMath(el);
+    fillFigures(el);
+    return el;
+  }
+
+  /* ---------- routing ---------- */
+  const screens = {
+    home:  document.getElementById("screen-home"),
+    deck:  document.getElementById("screen-deck"),
+    study: document.getElementById("screen-study"),
+    grid:  document.getElementById("screen-grid")
+  };
+  function show(name) {
+    Object.entries(screens).forEach(([k, el]) => { el.hidden = k !== name; });
+    window.scrollTo(0, 0);
+  }
+  const go = h => { if (location.hash === h) route(); else location.hash = h; };
+
+  function route() {
+    const parts = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("/");
+    endStudy();
+    if (parts[0] === "deck" && deckByTopic(parts[1])) return renderDeck(parts[1]);
+    if (parts[0] === "grid" && deckByTopic(parts[1])) return renderGrid(parts[1]);
+    if (parts[0] === "study" && deckByTopic(parts[1])) return startStudy(parts[1], parts[2] || "all");
+    renderHome();
+  }
+  window.addEventListener("hashchange", route);
+  document.querySelectorAll("[data-go]").forEach(b =>
+    b.addEventListener("click", () => go(b.dataset.go)));
+
+  /* ---------- home ---------- */
+  function renderHome() {
+    const list = document.getElementById("deck-list");
+    const all = decks();
+    list.innerHTML = "";
+
+    all.forEach(d => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.className = "deck";
+      b.setAttribute("aria-label", "Open the " + d.topic + " deck");
+
+      const studied = d.yes + d.no > 0;
+      const meta = studied
+        ? '<span class="count-yes">' + d.yes + " remembered</span>" +
+          '<span class="sep">·</span>' +
+          '<span class="count-no">' + d.no + " to review</span>" +
+          '<span class="sep">·</span><span>' + d.cards.length + " cards</span>"
+        : "<span>" + d.cards.length + (d.cards.length === 1 ? " card" : " cards") +
+          "</span><span class=\"sep\">·</span><span>not studied yet</span>";
+
+      const bar = studied
+        ? '<div class="bar">' +
+            '<i class="b-yes" style="width:' + (d.yes / d.cards.length * 100) + '%"></i>' +
+            '<i class="b-no" style="width:' + (d.no / d.cards.length * 100) + '%"></i>' +
+          "</div>"
+        : "";
+
+      b.innerHTML =
+        '<div class="deck-top"><span class="deck-name"></span>' +
+        d.levels.map(l => '<span class="tag ' + l + '">' + LEVELS[l] + "</span>").join("") +
+        "</div>" +
+        '<div class="deck-meta">' + meta + "</div>" + bar;
+      b.querySelector(".deck-name").textContent = d.topic;
+      b.addEventListener("click", () => go("#/deck/" + encodeURIComponent(d.topic)));
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+
+    if (!all.length) {
+      list.innerHTML = '<li class="sheet empty">No cards yet. Add one to the CARDS list in this file and the deck appears here.</li>';
+    }
+
+    // hero specimen: one real card front, picked at random
+    const spec = document.getElementById("specimen");
+    if (CARDS.length) {
+      const c = CARDS[Math.floor(Math.random() * CARDS.length)];
+      paint(document.getElementById("specimen-math"), c.front);
+      document.getElementById("specimen-cap").textContent =
+        "from the " + c.topic + " deck · " + LEVELS[c.level];
+      spec.hidden = false;
+    }
+
+    const reset = document.getElementById("reset-btn");
+    reset.hidden = !hasProgress();
+    reset.onclick = () => {
+      if (!confirm("Reset saved progress for every deck? This cannot be undone.")) return;
+      progress = {};
+      save();
+      renderHome();
+    };
+
+    show("home");
+  }
+
+  /* ---------- deck menu ---------- */
+  function renderDeck(topic) {
+    const d = deckByTopic(topic);
+    document.getElementById("deck-title").textContent = d.topic;
+    document.getElementById("deck-sub").innerHTML =
+      d.levels.map(l => '<span class="tag ' + l + '">' + LEVELS[l] + "</span>").join(" ") +
+      " &nbsp; " + d.cards.length + (d.cards.length === 1 ? " card" : " cards");
+
+    const left = d.cards.filter(c => statusOf(c.id) !== "remembered").length;
+    const box = document.getElementById("deck-options");
+    box.innerHTML = "";
+
+    const add = (title, note, count, action, disabled) => {
+      const b = document.createElement("button");
+      b.className = "option";
+      b.disabled = !!disabled;
+      b.innerHTML = "<span><b></b><small></small></span><span class=\"n\"></span>";
+      b.querySelector("b").textContent = title;
+      b.querySelector("small").textContent = note;
+      b.querySelector(".n").textContent = count;
+      if (!disabled) b.addEventListener("click", action);
+      box.appendChild(b);
+    };
+
+    add("Review all cards", "Every card in the deck, shuffled.", d.cards.length + " cards",
+        () => go("#/study/" + encodeURIComponent(topic) + "/all"));
+
+    add("Review what's left", "Cards you marked to review, plus any you haven't seen.",
+        left + " cards",
+        () => go("#/study/" + encodeURIComponent(topic) + "/left"),
+        left === 0);
+
+    add("View all cards", "Fronts only, side by side, nothing to flip.", "overview",
+        () => go("#/grid/" + encodeURIComponent(topic)));
+
+    if (left === 0 && d.cards.length) {
+      const p = document.createElement("p");
+      p.className = "empty";
+      p.textContent = "Everything in this deck is marked remembered. Review all cards to go again.";
+      box.appendChild(p);
+    }
+    show("deck");
+  }
+
+  /* ---------- grid view ---------- */
+  function renderGrid(topic) {
+    const d = deckByTopic(topic);
+    document.getElementById("grid-title").textContent = d.topic;
+    document.getElementById("grid-sub").textContent =
+      "All " + d.cards.length + " fronts at a glance.";
+    document.getElementById("grid-back").onclick = () => go("#/deck/" + encodeURIComponent(topic));
+
+    const body = document.getElementById("grid-body");
+    body.innerHTML = d.cards.map(c => {
+      const st = statusOf(c.id);
+      const cls = st === "remembered" ? "yes" : st === "review" ? "no" : "new";
+      const label = st === "remembered" ? "remembered" : st === "review" ? "to review" : "not seen yet";
+      return '<div class="mini"><div><div class="mini-front">' + c.front + "</div>" +
+             figureFor(c, "front") + "</div>" +
+             '<span class="state ' + cls + '">' + label + "</span></div>";
+    }).join("");
+    typesetMath(body);
+    fillFigures(body);
+    show("grid");
+  }
+
+  /* ---------- study ---------- */
+  let session = null;
+  let keyHandler = null;
+
+  function endStudy() {
+    if (keyHandler) { document.removeEventListener("keydown", keyHandler); keyHandler = null; }
+    session = null;
+  }
+
+  function shuffle(a) {
+    const r = a.slice();
+    for (let i = r.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [r[i], r[j]] = [r[j], r[i]];
+    }
+    return r;
+  }
+
+  function startStudy(topic, mode) {
+    const d = deckByTopic(topic);
+    const pool = mode === "left"
+      ? d.cards.filter(c => statusOf(c.id) !== "remembered")
+      : d.cards;
+
+    if (!pool.length) return go("#/deck/" + encodeURIComponent(topic));
+
+    session = {
+      topic, mode,
+      queue: shuffle(pool),
+      total: pool.length,
+      history: [],
+      yes: 0, no: 0
+    };
+
+    document.getElementById("study-title").textContent = d.topic;
+    const lv = document.getElementById("study-level");
+    lv.className = "tag " + d.levels[0];
+    lv.textContent = d.levels.length === 1 ? LEVELS[d.levels[0]] : "mixed levels";
+    document.getElementById("study-exit").onclick = () => go("#/deck/" + encodeURIComponent(topic));
+
+    keyHandler = e => {
+      if (!session) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); commit("remembered"); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); commit("review"); }
+      else if (e.key === " " || e.key === "Enter") {
+        const onButton = e.target && e.target.tagName === "BUTTON" && e.target.id !== "card";
+        const card = document.getElementById("card");
+        if (card && !onButton) { e.preventDefault(); card.classList.toggle("flipped"); }
+      } else if (e.key.toLowerCase() === "u") { undo(); }
+    };
+    document.addEventListener("keydown", keyHandler);
+
+    show("study");
+    renderStudy();
+  }
+
+  function renderStudy() {
+    const body = document.getElementById("study-body");
+    const done = session.total - session.queue.length;
+    document.getElementById("study-bar").style.width =
+      (session.total ? done / session.total * 100 : 100) + "%";
+
+    if (!session.queue.length) {
+      document.getElementById("study-counter").textContent = "finished";
+      const topic = session.topic;
+      const left = deckByTopic(topic).cards.filter(c => statusOf(c.id) !== "remembered").length;
+      body.innerHTML =
+        '<div class="sheet finish">' +
+          "<h3>Session finished</h3>" +
+          '<div class="tally">' +
+            '<div class="y"><b>' + session.yes + "</b><span>remembered</span></div>" +
+            '<div class="n"><b>' + session.no + "</b><span>to review</span></div>" +
+          "</div>" +
+          '<div class="acts">' +
+            (left ? '<button class="btn" id="again">Review the ' + left + " left</button>" : "") +
+            '<button class="btn ghost-btn" id="to-deck">Back to ' + topic + "</button>" +
+            '<button class="btn ghost-btn" id="to-home">All decks</button>' +
+          "</div>" +
+        "</div>";
+      const again = document.getElementById("again");
+      if (again) again.onclick = () => startStudy(topic, "left");
+      document.getElementById("to-deck").onclick = () => go("#/deck/" + encodeURIComponent(topic));
+      document.getElementById("to-home").onclick = () => go("#/");
+      return;
+    }
+
+    const card = session.queue[0];
+    document.getElementById("study-counter").textContent =
+      (done + 1) + " of " + session.total;
+
+    body.innerHTML =
+      '<div class="stage">' +
+        (session.queue.length > 1 ? '<div class="ghost"></div>' : "") +
+        '<div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard. Tap to reveal the answer.">' +
+          '<div class="face front">' +
+            '<span class="kind">front</span>' +
+            '<span class="tag lvl ' + card.level + '">' + LEVELS[card.level] + "</span>" +
+            '<div class="content">' + card.front + "</div>" +
+            figureFor(card, "front") +
+            '<div class="stamp s-yes">remembered</div><div class="stamp s-no">try again</div>' +
+          "</div>" +
+          '<div class="face back">' +
+            '<span class="kind">back</span>' +
+            '<div class="content">' + card.back + "</div>" +
+            figureFor(card, "back") +
+          "</div>" +
+        "</div>" +
+      "</div>" +
+      '<div class="hint">' +
+        '<button class="h-no" id="hint-no">← try again (swipe left)</button>' +
+        '<button class="h-yes" id="hint-yes">remembered (swipe right) →</button>' +
+      "</div>" +
+      '<div class="undo-row"><button class="undo" id="undo-btn">Undo last card</button></div>' +
+      '<p class="tap-note">Tap the card to reveal the back.</p>';
+
+    typesetMath(body);
+    fillFigures(body);
+
+    document.getElementById("hint-no").onclick = () => commit("review");
+    document.getElementById("hint-yes").onclick = () => commit("remembered");
+    const undoBtn = document.getElementById("undo-btn");
+    undoBtn.disabled = !session.history.length;
+    undoBtn.onclick = undo;
+
+    attachDrag(document.getElementById("card"));
+  }
+
+  /* ---------- drag / swipe ---------- */
+  function attachDrag(el) {
+    let id = null, sx = 0, sy = 0, dx = 0, moved = false;
+    const yes = el.querySelector(".s-yes");
+    const no  = el.querySelector(".s-no");
+    const width = () => el.getBoundingClientRect().width || 300;
+
+    const paintDrag = () => {
+      const t = Math.max(-1, Math.min(1, dx / (width() * 0.45)));
+      const flipped = el.classList.contains("flipped") ? 180 : 0;
+      el.style.transform =
+        "translateX(" + dx + "px) rotate(" + (t * 7) + "deg) rotateY(" + flipped + "deg)";
+      yes.style.opacity = Math.max(0, t);
+      no.style.opacity = Math.max(0, -t);
+    };
+    const reset = () => {
+      el.classList.remove("dragging");
+      el.style.transform = "";
+      yes.style.opacity = 0;
+      no.style.opacity = 0;
+    };
+
+    el.addEventListener("pointerdown", e => {
+      if (id !== null || e.button === 1 || e.button === 2) return;
+      id = e.pointerId; sx = e.clientX; sy = e.clientY; dx = 0; moved = false;
+      el.setPointerCapture(id);
+      el.classList.add("dragging");
+    });
+
+    el.addEventListener("pointermove", e => {
+      if (e.pointerId !== id) return;
+      dx = e.clientX - sx;
+      if (!moved && (Math.abs(dx) > 7 || Math.abs(e.clientY - sy) > 7)) moved = true;
+      if (moved) paintDrag();
+    });
+
+    const finish = e => {
+      if (e.pointerId !== id) return;
+      id = null;
+      const threshold = Math.max(70, width() * 0.26);
+      if (!moved) { reset(); el.classList.toggle("flipped"); return; }
+      if (dx > threshold)  return flyOut(el, "remembered");
+      if (dx < -threshold) return flyOut(el, "review");
+      reset();
+    };
+    el.addEventListener("pointerup", finish);
+    el.addEventListener("pointercancel", e => { if (e.pointerId === id) { id = null; reset(); } });
+  }
+
+  function flyOut(el, verdict) {
+    const dir = verdict === "remembered" ? 1 : -1;
+    el.classList.remove("dragging");
+    el.style.transition = "transform .3s ease-in, opacity .3s ease-in";
+    el.style.transform = "translateX(" + (dir * 140) + "%) rotate(" + (dir * 16) + "deg)";
+    el.style.opacity = "0";
+    setTimeout(() => commit(verdict), 210);
+  }
+
+  function commit(verdict) {
+    if (!session || !session.queue.length) return;
+    const card = session.queue.shift();
+    session.history.push({ card, prev: statusOf(card.id) });
+    progress[card.id] = verdict;
+    if (verdict === "remembered") session.yes++; else session.no++;
+    save();
+    renderStudy();
+  }
+
+  function undo() {
+    if (!session || !session.history.length) return;
+    const last = session.history.pop();
+    if (progress[last.card.id] === "remembered") session.yes--; else session.no--;
+    if (last.prev) progress[last.card.id] = last.prev; else delete progress[last.card.id];
+    save();
+    session.queue.unshift(last.card);
+    renderStudy();
+  }
+
+  /* ---------- start ---------- */
+  document.addEventListener("DOMContentLoaded", route);
+  if (document.readyState !== "loading") route();
+})();
+</script>
+</body>
+</html>
