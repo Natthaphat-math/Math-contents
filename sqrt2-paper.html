@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Paper Fold</title>
+<meta name="description" content="Why every sheet of A4 is built on the square root of 2 — an interactive walk from folding paper to the proof.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Noto+Serif+Thai:wght@300;400;500;600&display=swap">
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --paper:#ffffff;
+  --ground:#ECEFF3;
+  --panel:#F6F8FA;
+  --ink:#151A21;
+  --ink-2:#4B5462;
+  --ink-3:#7E8898;
+  --rule:#CDD5DE;
+  --rule-soft:#DFE4EA;
+  --accent:#0B6FA4;
+  --accent-2:#0E86C4;
+  --accent-soft:#DEEDF6;
+  --mark:#C2333F;
+  --grid:rgba(11,111,164,.07);
+  --grid-strong:rgba(11,111,164,.13);
+  --sheet-face:#FFFFFF;
+  --sheet-edge:#C3CCD6;
+  --shadow-sm:0 1px 2px rgba(18,32,48,.07);
+  --shadow-md:0 2px 4px rgba(18,32,48,.06),0 10px 28px rgba(18,32,48,.10);
+  --shadow-lift:0 10px 30px rgba(18,32,48,.20);
+  --on-accent:#FFFFFF;
+  --dur:1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A212A;
+    --ground:#0D1218;
+    --panel:#131A22;
+    --ink:#E7ECF3;
+    --ink-2:#A6B1C0;
+    --ink-3:#727E8D;
+    --rule:#2B3540;
+    --rule-soft:#222B35;
+    --accent:#5CB4E3;
+    --accent-2:#7FC8EE;
+    --accent-soft:#132D3C;
+    --mark:#EE6A70;
+    --grid:rgba(92,180,227,.07);
+    --grid-strong:rgba(92,180,227,.14);
+    --sheet-face:#EDF1F5;
+    --sheet-edge:#9AA6B3;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 2px 4px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.45);
+    --shadow-lift:0 10px 30px rgba(0,0,0,.55);
+    --on-accent:#08131B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A212A;
+  --ground:#0D1218;
+  --panel:#131A22;
+  --ink:#E7ECF3;
+  --ink-2:#A6B1C0;
+  --ink-3:#727E8D;
+  --rule:#2B3540;
+  --rule-soft:#222B35;
+  --accent:#5CB4E3;
+  --accent-2:#7FC8EE;
+  --accent-soft:#132D3C;
+  --mark:#EE6A70;
+  --grid:rgba(92,180,227,.07);
+  --grid-strong:rgba(92,180,227,.14);
+  --sheet-face:#EDF1F5;
+  --sheet-edge:#9AA6B3;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 2px 4px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.45);
+  --shadow-lift:0 10px 30px rgba(0,0,0,.55);
+  --on-accent:#08131B;
+}
+@media (prefers-reduced-motion: reduce){ :root{ --dur:0.001; } }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Newsreader","Noto Serif Thai",Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.62;
+  font-weight:400;
+}
+h1,h2,h3,.ui{font-family:"Archivo","IBM Plex Sans Thai",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+.mono{font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+/* ---------- shell ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;overflow:visible;
+  background:color-mix(in srgb,var(--ground) 88%,transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule-soft);
+}
+.topbar-in{
+  max-width:1080px;margin:0 auto;padding:10px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.brand{font-family:"Archivo","IBM Plex Sans Thai",sans-serif;font-weight:700;font-size:.95rem;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.topbar .meta{font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.col{max-width:64ch;margin-inline:auto}
+
+/* ---------- hero ---------- */
+.hero{padding:clamp(56px,9vw,110px) 0 clamp(40px,6vw,72px);position:relative;overflow:hidden}
+.hero .eyebrow{margin-bottom:22px}
+h1{
+  font-size:clamp(2.3rem,6.2vw,4rem);line-height:1.02;font-weight:700;
+  letter-spacing:-.035em;margin:0 0 22px;text-wrap:balance;
+}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:clamp(1.12rem,2.1vw,1.32rem);line-height:1.55;color:var(--ink-2);font-weight:300;max-width:56ch;margin:0}
+.hero-rule{margin-top:44px;height:1px;background:linear-gradient(90deg,var(--rule),transparent)}
+
+/* ---------- sections ---------- */
+section{padding:clamp(44px,6vw,78px) 0;border-top:1px solid var(--rule-soft)}
+section:first-of-type{border-top:none}
+.eyebrow{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.7rem;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);
+  display:flex;align-items:center;gap:12px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+.eyebrow b{color:var(--accent);font-weight:600}
+h2{
+  font-size:clamp(1.55rem,3.4vw,2.15rem);font-weight:600;letter-spacing:-.028em;
+  line-height:1.1;margin:18px 0 14px;text-wrap:balance;
+}
+h3{font-size:1rem;font-weight:600;letter-spacing:-.01em;margin:0 0 6px}
+p{margin:0 0 16px}
+p.tight{margin-bottom:10px}
+.dim{color:var(--ink-2)}
+
+/* ---------- panel / stage ---------- */
+.panel{
+  margin:32px 0 0;
+  background:var(--panel);
+  border:1px solid var(--rule-soft);
+  border-radius:3px;
+  box-shadow:var(--shadow-sm);
+  overflow:hidden;
+}
+.stage{
+  position:relative;
+  height:clamp(320px,52vw,440px);
+  background-color:var(--panel);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+    linear-gradient(var(--grid-strong) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-strong) 1px,transparent 1px);
+  background-size:10px 10px,10px 10px,50px 50px,50px 50px;
+  background-position:-1px -1px;
+  overflow:hidden;
+}
+.controls{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  padding:14px 16px;border-top:1px solid var(--rule-soft);
+  background:var(--paper);
+}
+.controls .spacer{flex:1}
+.readout{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.74rem;letter-spacing:.04em;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+}
+.readout b{color:var(--ink);font-weight:600}
+
+button{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.74rem;font-weight:500;
+  letter-spacing:.09em;text-transform:uppercase;
+  padding:9px 15px;border-radius:2px;cursor:pointer;
+  border:1px solid var(--rule);background:var(--paper);color:var(--ink);
+  transition:background .15s,border-color .15s,color .15s,transform .1s;
+}
+button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button:active:not(:disabled){transform:translateY(1px)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.38;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+button.primary:hover:not(:disabled){background:var(--accent-2);border-color:var(--accent-2);color:var(--on-accent)}
+
+/* ---------- sheets ---------- */
+.ghost-frame{
+  position:absolute;border:1px dashed var(--rule);border-radius:1px;
+  pointer-events:none;
+}
+.ghost-frame::after{
+  content:attr(data-label);
+  position:absolute;top:-9px;left:6px;padding:0 5px;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.6rem;letter-spacing:.14em;
+  color:var(--ink-3);background:var(--panel);
+}
+.sheet{
+  position:absolute;
+  transform-origin:50% 50%;
+  perspective:1500px;
+}
+.sheet .face,.sheet .flap{
+  position:absolute;left:0;
+  background:var(--sheet-face);
+  border:1px solid var(--sheet-edge);
+  border-radius:1px;
+}
+.sheet .face{top:0;width:100%;height:100%;box-shadow:var(--shadow-md)}
+.sheet .flap{
+  top:0;width:100%;height:50%;
+  transform-origin:50% 100%;
+  transform:rotateX(0deg);
+  backface-visibility:visible;
+  display:none;
+  box-shadow:var(--shadow-md);
+}
+.sheet .flap.on{display:block}
+.sheet .flap::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(21,32,48,.16),rgba(21,32,48,0) 65%);
+  opacity:0;transition:opacity .3s;
+}
+.sheet .flap.lift::before{opacity:1}
+.sheet .label{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:"Archivo","IBM Plex Sans Thai",sans-serif;font-weight:600;letter-spacing:-.02em;
+  color:#2A3543;pointer-events:none;
+  transform-origin:50% 50%;
+}
+.sheet .label span{display:block;text-align:center}
+.sheet .label .sz{font-size:clamp(15px,2.2vw,26px);line-height:1}
+.sheet .label .mm{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:9px;letter-spacing:.1em;
+  color:#6B7889;margin-top:6px;
+}
+.moving{transition:left calc(.62s*var(--dur)) cubic-bezier(.4,0,.2,1),top calc(.62s*var(--dur)) cubic-bezier(.4,0,.2,1),width calc(.62s*var(--dur)) cubic-bezier(.4,0,.2,1),height calc(.62s*var(--dur)) cubic-bezier(.4,0,.2,1),transform calc(.62s*var(--dur)) cubic-bezier(.4,0,.2,1)}
+.folding{transition:transform calc(.74s*var(--dur)) cubic-bezier(.45,.05,.25,1)}
+.lbl-move{transition:transform calc(.62s*var(--dur)) cubic-bezier(.4,0,.2,1),opacity .25s}
+
+/* ---------- ratio diagram (sec 2) ---------- */
+.ratio-fig{position:relative;margin:0 auto}
+.rf-box{
+  position:absolute;left:0;bottom:0;
+  border:1px solid var(--rule);
+  background:transparent;
+}
+.rf-box.n1{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 7%,transparent);
+}
+.rf-box .tag{
+  position:absolute;right:6px;bottom:5px;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.64rem;letter-spacing:.1em;color:var(--ink-3);
+}
+.rf-box.n1 .tag{color:var(--accent)}
+.rf-diag{
+  position:absolute;left:0;bottom:0;height:1px;background:var(--mark);
+  transform-origin:0 50%;opacity:.75;
+}
+.rf-dot{
+  position:absolute;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;
+  background:var(--mark);
+}
+.rf-note{
+  position:absolute;max-width:150px;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.66rem;line-height:1.5;
+  letter-spacing:.06em;color:var(--mark);
+}
+
+/* ---------- notes ---------- */
+.notes{display:grid;gap:1px;margin-top:28px;background:var(--rule-soft);border:1px solid var(--rule-soft);border-radius:3px;overflow:hidden}
+@media(min-width:620px){.notes{grid-template-columns:1fr 1fr}}
+.note{background:var(--paper);padding:18px 20px}
+.note .k{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px;
+}
+.note p{font-size:.95rem;margin:0;color:var(--ink-2)}
+
+/* ---------- spiral (sec 3) ---------- */
+.spiral-wrap{display:grid;place-items:center;padding:26px 16px}
+.spiral{
+  position:relative;height:clamp(300px,48vw,400px);
+  aspect-ratio:841/1189;
+  border:1px solid var(--sheet-edge);
+  background:var(--sheet-face);
+  box-shadow:var(--shadow-md);
+}
+.reg{
+  position:absolute;overflow:hidden;
+  transition:left calc(.5s*var(--dur)) cubic-bezier(.4,0,.2,1),top calc(.5s*var(--dur)) cubic-bezier(.4,0,.2,1),width calc(.5s*var(--dur)) cubic-bezier(.4,0,.2,1),height calc(.5s*var(--dur)) cubic-bezier(.4,0,.2,1),background-color .4s;
+  border:1px solid var(--sheet-edge);
+  display:grid;place-items:center;
+  background:transparent;
+}
+.reg.parked{background:transparent}
+.reg.parked .rl{color:#8A96A6}
+.reg.active{
+  background:color-mix(in srgb,#0B6FA4 11%,transparent);
+  border:1px solid #0B6FA4;
+  z-index:2;
+}
+.reg .rl{
+  font-family:"Archivo","IBM Plex Sans Thai",sans-serif;font-weight:600;font-size:clamp(10px,1.6vw,17px);
+  color:#2A3543;letter-spacing:-.01em;line-height:1;
+}
+.reg.active .rl{color:#0A5C89}
+.reg.tiny .rl{font-size:9px}
+@media (prefers-color-scheme: dark){ .reg.active{background:rgba(11,111,164,.20)} }
+
+/* ---------- section 4: ratio lab ---------- */
+[hidden]{display:none !important}
+.sheet .flap.vert{
+  width:50%;height:100%;
+  transform-origin:100% 50%;
+  transform:rotateY(0deg);
+}
+.sheet .flap.vert::before{
+  background:linear-gradient(to right,rgba(21,32,48,.16),rgba(21,32,48,0) 65%);
+}
+.sheet .label .sz-s{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:10px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;line-height:1.4;
+}
+.sheet.compare .face{
+  background:color-mix(in srgb,var(--accent) 20%,transparent);
+  border-color:var(--accent);box-shadow:none;
+}
+.sheet.compare .label{color:var(--accent)}
+.ghost-frame.orig{border-color:var(--ink-2);border-style:dashed}
+.ghost-frame.orig::after{color:var(--ink-2);top:auto;bottom:-9px}
+.gapband{
+  position:absolute;pointer-events:none;
+  border-top:1px solid var(--mark);border-bottom:1px solid var(--mark);
+  background:repeating-linear-gradient(45deg,
+    color-mix(in srgb,var(--mark) 22%,transparent) 0 1px,
+    transparent 1px 9px);
+}
+.gaplabel{
+  position:absolute;pointer-events:none;white-space:nowrap;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.66rem;letter-spacing:.08em;color:var(--mark);
+}
+.gaplabel.hit{color:var(--accent)}
+
+.sliderbar{
+  display:grid;gap:12px;padding:18px 22px 20px;
+  border-top:1px solid var(--rule-soft);background:var(--paper);
+}
+.sliderbar .top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sliderbar .defn{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.74rem;letter-spacing:.06em;
+  color:var(--ink-3);
+}
+.sliderbar .val{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:1.35rem;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--ink);
+}
+.sliderbar .val .zone{
+  font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin-left:12px;
+}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:22px;background:transparent;cursor:ew-resize;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:2px;background:var(--rule);border-radius:0;
+}
+input[type=range]::-moz-range-track{height:2px;background:var(--rule)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:12px;height:22px;margin-top:-10px;border-radius:1px;
+  background:var(--accent);border:none;
+}
+input[type=range]::-moz-range-thumb{
+  width:12px;height:22px;border-radius:1px;background:var(--accent);border:none;
+}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.ticks{
+  display:flex;justify-content:space-between;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin-top:-4px;
+}
+.ticks span:nth-child(2){color:var(--ink-2)}
+
+.verdict{
+  display:grid;grid-template-columns:auto 1fr;gap:0 20px;align-items:center;
+  padding:16px 22px;border-top:1px solid var(--rule-soft);
+  background:var(--panel);
+}
+.verdict .v-num{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:1.7rem;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--ink-3);
+}
+.verdict.close .v-num{color:var(--accent)}
+.verdict .v-word{font-family:"Archivo","IBM Plex Sans Thai",sans-serif;font-weight:600;font-size:.98rem;letter-spacing:-.01em}
+.verdict .v-hint{font-size:.92rem;color:var(--ink-2);margin:2px 0 0}
+.reveal{
+  margin-top:30px;padding:22px 24px;border-radius:3px;
+  border:1px solid var(--accent);
+  background:color-mix(in srgb,var(--accent) 6%,transparent);
+}
+.reveal .big{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:clamp(1.5rem,4.6vw,2.3rem);font-weight:500;
+  letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums;
+  margin-bottom:10px;
+}
+.reveal p{margin:0 0 10px}
+.reveal p:last-child{margin-bottom:0}
+
+/* ---------- section 5: the proof ---------- */
+.proofstrip{
+  display:flex;align-items:flex-end;justify-content:center;
+  gap:clamp(16px,4vw,46px);padding:40px 20px 44px;flex-wrap:wrap;
+}
+.pf{display:grid;justify-items:center;gap:26px}
+.pf-box{position:relative;border:1px solid var(--sheet-edge);background:var(--sheet-face)}
+.pf-box .crease{position:absolute;left:0;right:0;top:0;border-top:1px dashed var(--mark);opacity:.75;z-index:1}
+.pf-box .gone{
+  position:absolute;left:-1px;right:-1px;bottom:100%;height:100%;
+  border:1px dashed var(--rule);border-bottom:none;
+}
+.pf-dim{
+  position:absolute;font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.72rem;
+  color:var(--ink-2);white-space:nowrap;
+}
+.pf-dim.w{left:0;right:0;bottom:-22px;text-align:center}
+.pf-dim.h{right:calc(100% + 10px);top:50%;transform:translateY(-50%)}
+@media (max-width:720px){
+  /* no room beside the boxes — put the height label inside */
+  .pf-dim.h{right:auto;left:50%;transform:translate(-50%,-50%)}
+}
+.pf-cap{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.64rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.pf-arrow{display:grid;justify-items:center;gap:5px;color:var(--ink-3);align-self:center;padding-bottom:18px}
+.pf-arrow .a{font-size:1.1rem;line-height:1;color:var(--accent)}
+.pf-arrow .t{font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase}
+
+.steps{display:grid;gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);border-radius:3px;overflow:hidden;margin-top:32px}
+.step{
+  background:var(--paper);padding:20px 22px;
+  display:grid;grid-template-columns:30px 1fr;gap:0 16px;align-items:start;
+}
+.step .n{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.72rem;font-weight:600;letter-spacing:.06em;
+  color:var(--accent);padding-top:3px;
+}
+.step p{margin:0 0 12px;font-size:1rem}
+.step p:last-child{margin-bottom:0}
+.step .math{
+  margin:0;padding:12px 0 2px;overflow-x:auto;overflow-y:hidden;
+  font-size:1.06rem;color:var(--ink);
+}
+.step.finale{background:color-mix(in srgb,var(--accent) 7%,var(--paper))}
+.step.finale .math{font-size:1.2rem}
+.tex-fallback{font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.95rem}
+
+/* ---------- section 6: real sizes ---------- */
+.devgrid{display:grid;gap:26px}
+@media(min-width:900px){.devgrid{grid-template-columns:1.12fr .88fr;gap:34px}}
+.devpane{min-width:0}
+.paneh{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.66rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--rule-soft);
+}
+.devaxis{
+  display:grid;grid-template-columns:32px 1fr 74px;gap:10px;align-items:center;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.6rem;letter-spacing:.08em;color:var(--ink-3);
+  margin-bottom:6px;
+}
+.devaxis .scale{position:relative;height:12px}
+.devaxis .scale span{position:absolute;top:0;transform:translateX(-50%)}
+.devchart{display:grid;gap:2px}
+.devrow{
+  display:grid;grid-template-columns:32px 1fr 74px;gap:10px;align-items:center;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.7rem;
+}
+.devrow .lbl{color:var(--ink-2);letter-spacing:.04em}
+.devtrack{position:relative;height:15px}
+.devtrack::before{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:var(--rule);
+}
+.devtrack .tick{position:absolute;top:2px;bottom:2px;width:1px;background:var(--rule-soft)}
+.devbar{position:absolute;top:3px;bottom:3px;background:var(--accent);border-radius:1px}
+.devbar.neg{background:var(--mark)}
+.devval{
+  text-align:right;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+}
+.devrow.extra .lbl,.devrow.extra .devval{color:var(--ink-3)}
+.devrow.extra .devbar{opacity:.5}
+.devsplit{
+  display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;
+  margin:9px 0 7px;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.58rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.devsplit .rule{height:1px;background:var(--rule);position:relative}
+.devsplit .rule span{
+  position:absolute;left:0;top:-7px;background:var(--ground);padding-right:9px;
+}
+.sizetable{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.7rem}
+.sizetable th{
+  text-align:right;font-weight:500;color:var(--ink-3);
+  letter-spacing:.1em;text-transform:uppercase;font-size:.58rem;
+  padding:0 0 8px;border-bottom:1px solid var(--rule);
+}
+.sizetable th:first-child{text-align:left}
+.sizetable td{
+  text-align:right;padding:5px 0;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;border-bottom:1px solid var(--rule-soft);
+}
+.sizetable td:first-child{text-align:left;color:var(--ink)}
+.sizetable td+td{padding-left:12px}
+.sizetable tr.extra td{color:var(--ink-3)}
+.sizetable tr.extra td:first-child{color:var(--ink-3)}
+.sizetable td.pos{color:var(--accent)}
+.sizetable td.neg{color:var(--mark)}
+.tablewrap{overflow-x:auto}
+.footnote{
+  margin-top:26px;padding-left:16px;border-left:2px solid var(--rule);
+  font-size:.95rem;color:var(--ink-2);
+}
+.footnote strong{color:var(--ink)}
+
+/* ---------- section 7: facts ---------- */
+.facts{margin-top:8px;border-top:1px solid var(--rule)}
+.factrow{
+  display:grid;gap:8px 30px;padding:22px 2px;
+  border-bottom:1px solid var(--rule-soft);
+}
+@media(min-width:700px){
+  .factrow{grid-template-columns:132px 1fr;gap:0 32px;align-items:baseline}
+}
+@media(min-width:1040px){
+  /* hang the figures in the left margin so the prose keeps the page measure */
+  .facts{margin-left:-152px}
+  .factrow{grid-template-columns:120px 1fr;gap:0 32px}
+}
+.factrow .fnum{
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:1.02rem;font-weight:500;
+  color:var(--accent);letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.factrow p{margin:0;color:var(--ink-2)}
+.factrow p+p{margin-top:10px}
+.factrow strong{color:var(--ink);font-weight:500}
+
+/* ---------- section 8: closer ---------- */
+.closer{padding:clamp(48px,7vw,86px) 0 clamp(70px,10vw,120px)}
+.closer .q{
+  font-family:"Archivo","IBM Plex Sans Thai",sans-serif;font-weight:600;
+  font-size:clamp(1.5rem,3.7vw,2.25rem);line-height:1.14;letter-spacing:-.03em;
+  margin:14px 0 18px;max-width:20ch;text-wrap:balance;
+}
+.closer .q em{font-style:normal;color:var(--accent)}
+.closer p{max-width:52ch;color:var(--ink-2)}
+.cta{
+  display:inline-flex;align-items:center;gap:12px;margin-top:12px;
+  padding:14px 20px;border:1px solid var(--accent);border-radius:2px;
+  color:var(--accent);text-decoration:none;background:transparent;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.74rem;font-weight:500;
+  letter-spacing:.11em;text-transform:uppercase;
+  transition:background .16s,color .16s;
+}
+.cta:hover{background:var(--accent);color:var(--on-accent)}
+.cta:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.cta .arw{transition:transform .18s}
+.cta:hover .arw{transform:translateX(4px)}
+@media (prefers-reduced-motion: reduce){ .cta .arw{transition:none} }
+
+/* ---------- shared inline bits ---------- */
+.mono-i{font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,Menlo,monospace;font-size:.88em}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.prog{
+  position:absolute;left:0;bottom:-1px;height:2px;width:0;
+  background:var(--accent);transition:width .12s linear;
+}
+@media (prefers-reduced-motion: reduce){ .prog{transition:none} }
+.topbar{position:sticky}
+
+/* ---------- Thai typography + language switch ---------- */
+:root[lang="th"] body{line-height:1.9}
+:root[lang="th"] h1{line-height:1.28;letter-spacing:0}
+:root[lang="th"] h2,:root[lang="th"] .closer .q{line-height:1.42;letter-spacing:0}
+:root[lang="th"] .lede{line-height:1.7}
+:root[lang="th"] .eyebrow,:root[lang="th"] button,:root[lang="th"] .cta,
+:root[lang="th"] .paneh,:root[lang="th"] .note .k,:root[lang="th"] .ticks,
+:root[lang="th"] .pf-cap,:root[lang="th"] .pf-arrow .t,:root[lang="th"] .sliderbar .defn,
+:root[lang="th"] .sheet .label .sz-s,:root[lang="th"] .stage-cap,
+:root[lang="th"] .sizetable th,:root[lang="th"] .devsplit{letter-spacing:.02em}
+:root[lang="th"] .step p,:root[lang="th"] .factrow p,:root[lang="th"] .note p{line-height:1.85}
+:root[lang="th"] .verdict .v-hint{line-height:1.7}
+:root[lang="th"] .factrow .fnum{font-size:.95rem}
+
+.langsw{display:inline-flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;flex:none}
+.langsw button{
+  border:0;border-radius:0;background:var(--paper);color:var(--ink-3);
+  padding:5px 9px;font-size:.66rem;letter-spacing:.1em;
+}
+.langsw button+button{border-left:1px solid var(--rule)}
+.langsw button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.langsw button:hover:not([aria-pressed="true"]){color:var(--accent)}
+.topbar-in{gap:14px}
+.topbar .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:560px){ .topbar .meta{display:none} }
+
+/* ---------- misc ---------- */
+.figstage{background-image:none;background:var(--panel)}
+.stage-cap{
+  position:absolute;left:14px;bottom:12px;
+  font-family:"IBM Plex Mono","IBM Plex Sans Thai",ui-monospace,monospace;font-size:.66rem;letter-spacing:.1em;
+  color:var(--ink-3);text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand">The Paper <span>Fold</span></div>
+    <div class="meta" id="tbmeta">ISO 216 &middot; an interactive</div>
+    <div class="langsw" role="group" aria-label="Language / ภาษา">
+      <button type="button" id="langTh" class="ui" aria-pressed="true">TH</button>
+      <button type="button" id="langEn" class="ui" aria-pressed="false">EN</button>
+    </div>
+  </div>
+  <div class="prog" id="prog"></div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t01"><b>Start here</b></div>
+      <h1 data-i18n="t02">There is a number hiding in <em>every sheet of paper</em> you have ever used.</h1>
+      <p class="lede" data-i18n="t03">Not a metaphor. An actual number — one that had to be chosen before the first A4 page was ever cut, and one that cannot be written down completely. Let's fold our way to it.</p>
+    </div>
+    <div class="hero-rule"></div>
+  </header>
+
+  <!-- ============ 1 ============ -->
+  <section id="s1">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t04"><b>Sheet 01</b> Meet the A4</div>
+      <h2 data-i18n="t05">Fold it in half. Then look again.</h2>
+      <p data-i18n="t06">This is an A4 sheet — the one in every printer, notebook and photocopier outside of North America. Fold it top edge to bottom edge and cut along the crease, and you get A5.</p>
+      <p data-i18n="t07">Watch what happens to its <em>shape</em>. Not its size — everyone expects the size to change. Watch the shape.</p>
+    </div>
+
+    <div class="panel">
+      <div class="stage" id="stage1">
+        <div class="ghost-frame" id="ghost1" data-label="A4 · original"></div>
+        <div class="sheet" id="sheet1">
+          <div class="face" id="face1"></div>
+          <div class="flap" id="flap1"></div>
+          <div class="label lbl-move" id="label1">
+            <span><span class="sz" id="lblsz1">A4</span><span class="mm" id="lblmm1">210 &times; 297 mm</span></span>
+          </div>
+        </div>
+        <div class="stage-cap" data-i18n="t08">Dashed outline: the A4 you started with</div>
+      </div>
+      <div class="controls">
+        <button class="primary" id="btnFold" data-i18n="t09">Fold in half</button>
+        <button id="btnUnfold" data-i18n="t10">Unfold</button>
+        <button id="btnReset1" data-i18n="t11">Reset</button>
+        <div class="spacer"></div>
+        <div class="readout"><span data-i18n="t77">Now showing</span> <b id="ro1">A4</b> &nbsp;·&nbsp; <span id="ro1b">210 × 297 mm</span></div>
+      </div>
+    </div>
+
+    <div class="col" style="margin-top:26px">
+      <p class="dim" data-i18n="t12">Every fold produces a sheet that looks exactly like the one you started with, only smaller. A4, A5, A6, A8 — photograph them from far enough away and you could not tell them apart. That is not true of most rectangles.</p>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section id="s2">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t13"><b>Sheet 02</b> Why that is strange</div>
+      <h2 data-i18n="t14">Most rectangles do not survive being halved.</h2>
+      <p data-i18n="t15">Take a square: 100 by 100. Fold it in half and you get 100 by 50 — a long, thin rectangle. Nothing like a square. Take a 16:9 television screen and halve it, and you get something noticeably squarer.</p>
+      <p data-i18n="t16">The A series does not do this. Every A size has the <strong>same width-to-height ratio</strong> as every other A size. Stack A4, A5 and A6 into the same corner and their far corners all land on a single straight line through the origin — the signature of shapes that are exact scale copies of each other.</p>
+    </div>
+
+    <div class="panel">
+      <div class="stage figstage" style="height:auto;padding:34px 26px 30px">
+        <div class="ratio-fig" id="ratioFig">
+          <div class="rf-diag" id="rfDiag"></div>
+          <div class="rf-box" id="rfA6"><span class="tag">A6</span></div>
+          <div class="rf-box" id="rfA5"><span class="tag">A5</span></div>
+          <div class="rf-box n1" id="rfA4"><span class="tag">A4</span></div>
+          <div class="rf-dot" id="rfD4"></div><div class="rf-dot" id="rfD5"></div><div class="rf-dot" id="rfD6"></div>
+          <div class="rf-note" id="rfNote">every corner<br>on one line</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col" style="margin-top:30px">
+      <p data-i18n="t17">That shared ratio is the whole trick. It is why a photocopier has a single button marked <span class="mono-i">A4&rarr;A5</span> and the result never has awkward margins, and why enlarging a document is a clean scale-up rather than a re-layout.</p>
+    </div>
+
+    <div class="notes">
+      <div class="note">
+        <div class="k" data-i18n="t18">The B series</div>
+        <p data-i18n="t19">Sometimes the jump between two A sizes is too big. The B series sits in between — B4 falls between A3 and A4. Posters, passports and book printing use them. Same shape rule, different starting size.</p>
+      </div>
+      <div class="note">
+        <div class="k" data-i18n="t20">The C series</div>
+        <p data-i18n="t21">Envelopes. A C4 envelope is sized to swallow an A4 sheet unfolded; C5 takes an A4 folded once; C6 takes it folded twice. C sits between A and B, which is exactly the slack an envelope needs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section id="s3">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t22"><b>Sheet 03</b> The whole family</div>
+      <h2 data-i18n="t23">All of it comes from one big sheet.</h2>
+      <p data-i18n="t24">The series starts at A0 — a single large sheet about the size of a small tabletop. Every other A size is A0 cut in half, again and again. Cut A0 and you have two A1s. Cut an A1 and you have two A2s.</p>
+      <p data-i18n="t25">Press <strong>Split</strong> and follow the shrinking rectangle. Each cut alternates direction, because each new sheet has flipped between portrait and landscape.</p>
+    </div>
+
+    <div class="panel">
+      <div class="spiral-wrap">
+        <div class="spiral" id="spiral"></div>
+      </div>
+      <div class="controls">
+        <button class="primary" id="btnSplit" data-i18n="t26">Split in half</button>
+        <button id="btnMerge" data-i18n="t27">Merge back</button>
+        <button id="btnReset3" data-i18n="t28">Reset to A0</button>
+        <div class="spacer"></div>
+        <div class="readout"><span data-i18n="t78">Highlighted:</span> <b id="ro3">A0</b> &nbsp;·&nbsp; <span id="ro3b">841 × 1189 mm</span></div>
+      </div>
+    </div>
+
+    <div class="col" style="margin-top:26px">
+      <p class="dim" data-i18n="t29">Notice that the highlighted rectangle never changes shape as it shrinks — it only alternates between standing up and lying down. Whatever ratio A0 was built with, halving preserves it perfectly. That is a very particular demand to make of a number. In a moment, you get to try to find it.</p>
+    </div>
+  </section>
+
+
+  <!-- ============ 4 ============ -->
+  <section id="s4">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t30"><b>Sheet 04</b> Your turn</div>
+      <h2 data-i18n="t31">So which ratio does it?</h2>
+      <p data-i18n="t32">Only one shape survives being halved. Your job is to find it — by feel, not by formula.</p>
+      <p class="tight" data-i18n="t33">Call the ratio <strong class="mono-i">r = height ÷ width</strong>:</p>
+      <p class="dim" style="font-size:.96rem" data-i18n="t34">
+        <span class="mono-i">r &gt; 1</span> is a portrait rectangle, standing up.
+        <span class="mono-i">r &lt; 1</span> is a landscape one, lying down.
+        <span class="mono-i">r = 1</span> is a square.
+      </p>
+      <p data-i18n="t35">Drag the slider to pick a shape. Then press <strong>Test this ratio</strong>: the rectangle folds in half, turns a quarter turn, and is laid over the shape you started with. If your ratio is the right one, the two land on top of each other exactly.</p>
+    </div>
+
+    <div class="panel">
+      <div class="stage" id="stage4">
+        <div class="ghost-frame orig" id="ghost4" data-label="Original" hidden></div>
+        <div class="gapband" id="gap4" hidden></div>
+        <div class="gaplabel" id="gaplbl4" hidden></div>
+        <div class="sheet" id="sheet4">
+          <div class="face" id="face4"></div>
+          <div class="flap" id="flap4"></div>
+          <div class="label lbl-move" id="label4">
+            <span><span class="sz-s" id="lbltop4">Your rectangle</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sliderbar">
+        <div class="top">
+          <span class="defn" data-i18n="t36">r = height &divide; width</span>
+          <span class="val"><span id="rOut">1.00000</span><span class="zone" id="zoneOut">square</span></span>
+        </div>
+        <input type="range" id="rSlider" min="-1.401" max="1.4" step="0.003" value="0.24"
+               aria-label="ratio of height to width">
+        <div class="ticks" data-i18n="t37"><span>Flatter</span><span>Square</span><span>Taller</span></div>
+      </div>
+
+      <div class="verdict" id="verdict4" hidden>
+        <div class="v-num" id="vnum4">—</div>
+        <div>
+          <div class="v-word" id="vword4"></div>
+          <p class="v-hint" id="vhint4"></p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="btnTest" data-i18n="t38">Test this ratio</button>
+        <button id="btnExact" hidden data-i18n="t39">See the exact match</button>
+        <div class="spacer"></div>
+        <div class="readout" id="ro4">Pick a shape, then test it</div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="reveal" id="reveal4" hidden>
+        <div class="big" id="revealNum">1.41421356&hellip;</div>
+        <p id="revealP1"></p>
+        <p id="revealP2"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section id="s5">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t40"><b>Sheet 05</b> The proof</div>
+      <h2 data-i18n="t41">Why it has to be that number.</h2>
+      <p data-i18n="t42">The slider found it by trial. Six lines of algebra find it by force — and they explain where those endless digits come from.</p>
+    </div>
+
+    <div class="panel">
+      <div class="stage figstage" style="height:auto">
+        <div class="proofstrip">
+          <div class="pf">
+            <div class="pf-box" id="pfb1">
+              <span class="pf-dim w"><span class="tex" data-tex="w">w</span></span>
+              <span class="pf-dim h"><span class="tex" data-tex="h">h</span></span>
+            </div>
+            <span class="pf-cap" data-i18n="t43">The sheet</span>
+          </div>
+          <div class="pf-arrow"><span class="a">&rarr;</span><span class="t" data-i18n="t79">fold</span></div>
+          <div class="pf">
+            <div class="pf-box" id="pfb2">
+              <span class="gone"></span><span class="crease"></span>
+              <span class="pf-dim w"><span class="tex" data-tex="w">w</span></span>
+              <span class="pf-dim h"><span class="tex" data-tex="h/2">h/2</span></span>
+            </div>
+            <span class="pf-cap" data-i18n="t44">The half</span>
+          </div>
+          <div class="pf-arrow"><span class="a">&rarr;</span><span class="t" data-i18n="t80">turn</span></div>
+          <div class="pf">
+            <div class="pf-box" id="pfb3">
+              <span class="pf-dim w"><span class="tex" data-tex="h/2">h/2</span></span>
+              <span class="pf-dim h"><span class="tex" data-tex="w">w</span></span>
+            </div>
+            <span class="pf-cap" data-i18n="t45">Turned</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="steps">
+        <div class="step">
+          <div class="n">01</div>
+          <div>
+            <p data-i18n="t46">Give the sheet a width and a height, and call their ratio <em>r</em> — exactly the <em>r</em> from the slider.</p>
+            <div class="math tex-block" data-tex="r = \frac{h}{w}">r = h / w</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">02</div>
+          <div>
+            <p data-i18n="t47">Fold it across the long side. The width is untouched; the height is halved.</p>
+            <div class="math tex-block" data-tex="w \;\times\; \frac{h}{2}">w × h/2</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">03</div>
+          <div>
+            <p data-i18n="t48">Turn that half a quarter turn, so it stands the same way up as the original. What was the width is now the height, and what was half the height is now the width. Its ratio — call it <em>r&prime;</em> — is:</p>
+            <div class="math tex-block" data-tex="r' = \frac{w}{\,h/2\,} = \frac{2w}{h} = \frac{2}{r}">r&prime; = w / (h/2) = 2w/h = 2/r</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">04</div>
+          <div>
+            <p data-i18n="t49">Now make the demand the whole system rests on: the half must be the <em>same shape</em> as the sheet it came from. So its ratio must be the original ratio.</p>
+            <div class="math tex-block" data-tex="\frac{2}{r} = r">2/r = r</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">05</div>
+          <div>
+            <p data-i18n="t50">Multiply both sides by <em>r</em>. Everything collapses into one line.</p>
+            <div class="math tex-block" data-tex="r^{2} = 2">r² = 2</div>
+          </div>
+        </div>
+        <div class="step finale">
+          <div class="n">06</div>
+          <div>
+            <p data-i18n="t51"><em>r</em> is the number whose square is 2. That is what a square root <em>is</em> — and that is the name of this number: <strong>the square root of 2</strong>.</p>
+            <div class="math tex-block" data-tex="r = \sqrt{2} = 1.41421356\ldots">r = √2 = 1.41421356…</div>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top:26px" data-i18n="t52">So the digits you saw on the slider were not a coincidence and not an approximation someone chose. A4 is <span class="mono-i">1&nbsp;:&nbsp;&radic;2</span> because that is the only shape that can be halved forever without changing. Every other ratio drifts.</p>
+      <p class="dim" data-i18n="t53">And in the landscape zone: <span class="mono-i">0.70710678&hellip;</span> is <span class="mono-i">1 &divide; &radic;2</span>. The same demand, written for a sheet lying down.</p>
+    </div>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section id="s6">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t54"><b>Sheet 06</b> Reality check</div>
+      <h2 data-i18n="t55">Real paper misses. On purpose.</h2>
+      <p data-i18n="t56">&radic;2 never finishes, but a paper mill has to cut somewhere. So every ISO size is rounded to a whole number of millimetres, and every real sheet is a hair off the ideal shape.</p>
+      <p data-i18n="t57">Here is how far off, size by size. Positive means the sheet is slightly taller than &radic;2 demands; negative, slightly squatter.</p>
+    </div>
+
+    <div class="devgrid">
+      <div class="devpane">
+        <div class="paneh" data-i18n="t58">Deviation from &radic;2</div>
+        <div class="devaxis">
+          <span></span>
+          <span class="scale" id="devscale"></span>
+          <span></span>
+        </div>
+        <div class="devchart" id="devchart"></div>
+      </div>
+      <div class="devpane">
+        <div class="paneh" data-i18n="t59">Exact figures</div>
+        <div class="tablewrap">
+          <table class="sizes sizetable" id="sizetable">
+            <thead><tr><th data-i18n="t60">Size</th><th data-i18n="t61">W&times;H (mm)</th><th data-i18n="t62">h &divide; w</th><th data-i18n="t63">vs &radic;2</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="footnote">
+        <p data-i18n="t64"><strong>Why the small sheets are worse.</strong> You might expect the error to shrink along with the paper. It grows. The reason is the ruler, not the mathematics: every size is rounded to the nearest whole millimetre, and half a millimetre is a rounding error of about 0.06% on A0's 841&nbsp;mm side — but the same half millimetre is nearly 2% of A10's 26&nbsp;mm side. The shape is exact. The measuring is what is coarse.</p>
+        <p style="margin-bottom:0" data-i18n="t65">A0 through A10 are the real standard. A11 to A13 are shown here only as the halving pattern continued on paper — they are not ISO sizes, and you cannot buy them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 7 ============ -->
+  <section id="s7">
+    <div class="col">
+      <div class="eyebrow" data-i18n="t66"><b>Sheet 07</b> Five things worth knowing</div>
+      <h2 data-i18n="t67">Notes from the edges of the system.</h2>
+
+      <div class="facts">
+        <div class="factrow">
+          <div class="fnum" data-i18n="t81">1 m&sup2;</div>
+          <div>
+            <p data-i18n="t68"><strong>A0 is a size as well as a shape.</strong> Its area is defined as exactly one square metre, and there is only one pair of sides with the &radic;2 ratio that multiplies out to 1: 0.8409&hellip; m by 1.1892&hellip; m. Rounded to whole millimetres &mdash; 841 &times; 1189 &mdash; the real sheet lands at 0.99995 m&sup2;. Every other A size is that square metre halved again and again; A4 is one sixteenth of it.</p>
+          </div>
+        </div>
+        <div class="factrow">
+          <div class="fnum">1786</div>
+          <div>
+            <p data-i18n="t69"><strong>The idea is older than the standard.</strong> The physicist Georg Christoph Lichtenberg described the halving ratio in a letter in 1786. Turning it into a system took another 136 years: Walter Porstmann worked out the full family, and Germany published it as DIN&nbsp;476 in 1922. It went international as ISO&nbsp;216 in 1975, and is now the paper of nearly every country outside the United States and Canada.</p>
+          </div>
+        </div>
+        <div class="factrow">
+          <div class="fnum" data-i18n="t82">26 &times; 37 mm</div>
+          <div>
+            <p data-i18n="t70"><strong>Why the standard stops at A10.</strong> A8 is already down in business-card territory; A10 is a quarter of that again, roughly a postage stamp. Below it a sheet is too small to fold, print or handle, and the whole-millimetre rounding starts costing more than two percent of the shape. The halving pattern runs on for ever &mdash; that is what A11 to A13 in the chart above are &mdash; but the standard stops where paper stops being paper.</p>
+          </div>
+        </div>
+        <div class="factrow">
+          <div class="fnum">141%</div>
+          <div>
+            <p data-i18n="t71"><strong>The photocopier gives it away.</strong> Enlarging A4 to A3 means multiplying both sides by &radic;2, so the button says 141% &mdash; &radic;2 rounded off for a control panel. The reduce button says 71%, which is 1 &divide; &radic;2. Two buttons, one number, hiding in plain sight next to the paper tray.</p>
+          </div>
+        </div>
+        <div class="factrow">
+          <div class="fnum" data-i18n="t83">6 semitones</div>
+          <div>
+            <p data-i18n="t72"><strong>And one you can hear.</strong> Twelve equal semitones make an octave, which doubles the frequency &mdash; so six semitones multiply it by exactly &radic;2. That interval is the tritone. Draw a square and its diagonal is &radic;2 too. The number is not a paper thing; paper is just where it hides in your desk drawer.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8 ============ -->
+  <section id="s8">
+    <div class="col closer">
+      <div class="eyebrow" data-i18n="t73"><b>Sheet 08</b> Where next</div>
+      <div class="q" data-i18n="t74">Where did this strange number come from &mdash; and why does it <em>break the world of fractions?</em></div>
+      <p data-i18n="t75">&radic;2 does not just run on for ever. It cannot be written as a fraction at all: no two whole numbers, however enormous, have a ratio that lands on it exactly. That discovery is said to have shaken the school of Greek mathematics that found it.</p>
+      <a class="cta" href="https://natthaphat-math.github.io/Math-contents/irrational-numbers.html" target="_blank" rel="noopener noreferrer" data-i18n="t76">
+        Into the irrational numbers <span class="arw">&rarr;</span>
+      </a>
+    </div>
+  </section>
+
+
+</div>
+
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- shared paper data ---------- */
+var MM = {
+  0:[841,1189], 1:[594,841], 2:[420,594], 3:[297,420], 4:[210,297],
+  5:[148,210], 6:[105,148], 7:[74,105], 8:[52,74], 9:[37,52], 10:[26,37],
+  11:[18,26], 12:[13,18], 13:[9,13]
+};
+function mmText(o){ var d = MM[o]; return d ? d[0] + " \u00d7 " + d[1] + " " + t("mm") : ""; }
+var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function T(ms){ return RM ? 10 : ms; }
+function wait(ms){ return new Promise(function(r){ setTimeout(r, T(ms)); }); }
+function flush(el){ void (el || document.body).offsetWidth; }
+
+/* =======================================================================
+   SECTION 1 — fold engine
+   ======================================================================= */
+var stage = document.getElementById("stage1");
+var sheet = document.getElementById("sheet1");
+var face  = document.getElementById("face1");
+var flap  = document.getElementById("flap1");
+var label = document.getElementById("label1");
+var lblsz = document.getElementById("lblsz1");
+var lblmm = document.getElementById("lblmm1");
+var ghost = document.getElementById("ghost1");
+var ro1 = document.getElementById("ro1"), ro1b = document.getElementById("ro1b");
+var bFold = document.getElementById("btnFold"),
+    bUnfold = document.getElementById("btnUnfold"),
+    bReset = document.getElementById("btnReset1");
+
+var MINO = 8, BASEO = 4;
+var order = BASEO, busy = false;
+var baseH = 340, baseW = 0;   /* A4 render size, recomputed on resize */
+var curW = 0, curH = 0;
+
+function stageBox(){ return { w: stage.clientWidth, h: stage.clientHeight }; }
+
+function computeBase(){
+  var b = stageBox();
+  var h = Math.min(340, b.h - 56, (b.w - 60) * Math.SQRT2);
+  baseH = Math.max(150, h);
+  baseW = baseH / Math.SQRT2;
+}
+function dimsFor(o){
+  /* every A size settles portrait: same shape as A4, scaled by 1/sqrt(2) per step */
+  var k = Math.pow(Math.SQRT2, o - BASEO);
+  return [baseW / k, baseH / k];
+}
+function place(w, h, left, top, rot, counter){
+  sheet.style.width = w + "px";
+  sheet.style.height = h + "px";
+  sheet.style.left = left + "px";
+  sheet.style.top = top + "px";
+  sheet.style.transform = "rotate(" + rot + "deg)";
+  label.style.transform = "rotate(" + (counter || 0) + "deg)";
+}
+function centerFor(w, h){
+  var b = stageBox();
+  return [ (b.w - w) / 2, (b.h - h) / 2 ];
+}
+function settle(){
+  var d = dimsFor(order);
+  curW = d[0]; curH = d[1];
+  var c = centerFor(curW, curH);
+  sheet.classList.remove("moving");
+  label.classList.remove("lbl-move");
+  place(curW, curH, c[0], c[1], 0, 0);
+  face.style.clipPath = "none";
+  flap.classList.remove("on", "lift");
+  flap.style.transform = "rotateX(0deg)";
+  flap.classList.remove("folding");
+  syncLabel();
+  layoutGhost();
+  /* re-enable transitions once the jump-cut has been applied */
+  flush(sheet);
+  sheet.classList.add("moving");
+  label.classList.add("lbl-move");
+}
+function syncLabel(){
+  lblsz.textContent = "A" + order;
+  lblmm.textContent = mmText(order);
+  ro1.textContent = "A" + order;
+  ro1b.textContent = mmText(order);
+  lblmm.style.display = (curW < 92) ? "none" : "block";
+  bFold.disabled = busy || order >= MINO;
+  bUnfold.disabled = busy || order <= BASEO;
+  bReset.disabled = busy;
+}
+function layoutGhost(){
+  ghost.style.display = (order > BASEO) ? "block" : "none";
+  var c = centerFor(baseW, baseH);
+  ghost.style.width = baseW + "px";
+  ghost.style.height = baseH + "px";
+  ghost.style.left = c[0] + "px";
+  ghost.style.top = c[1] + "px";
+}
+
+async function doFold(){
+  if (busy || order >= MINO) return;
+  busy = true; syncLabel();
+
+  var w = curW, h = curH;
+  var c = centerFor(w, h);
+
+  /* 1 — flap covers the top half, face shows only the bottom half */
+  sheet.classList.remove("moving");
+  face.style.clipPath = "inset(50% 0 0 0)";
+  flap.classList.add("on");
+  flap.classList.remove("folding");
+  flap.style.transform = "rotateX(0deg)";
+  label.style.opacity = "0";
+  flush(sheet); await wait(24);
+
+  /* 2 — fold it over */
+  flap.classList.add("folding", "lift");
+  flap.style.transform = "rotateX(-180deg)";
+  await wait(760);
+
+  /* 3 — become the landscape half, exactly where it already sits */
+  face.style.clipPath = "none";
+  flap.classList.remove("on", "lift", "folding");
+  flap.style.transform = "rotateX(0deg)";
+  place(w, h / 2, c[0], c[1] + h / 2, 0, 0);
+  lblsz.textContent = "A" + (order + 1);
+  lblmm.textContent = mmText(order + 1);
+  lblmm.style.display = (Math.min(w, h / 2) < 92) ? "none" : "block";
+  label.style.opacity = "1";
+  await wait(360);
+
+  /* 4 — stand it upright */
+  flush(sheet); await wait(24);
+  sheet.classList.add("moving");
+  label.classList.add("lbl-move");
+  var b = stageBox();
+  place(w, h / 2, (b.w - w) / 2, (b.h - h / 2) / 2, -90, 90);
+  await wait(700);
+
+  /* 5 — normalise */
+  order++;
+  busy = false;
+  settle();
+}
+
+async function doUnfold(){
+  if (busy || order <= BASEO) return;
+  busy = true; syncLabel();
+
+  var w = curW, h = curH;              /* current portrait-or-landscape sheet */
+  var pw = h, ph = 2 * w;              /* the sheet it came from */
+  var b = stageBox();
+
+  /* 1 — snap to the equivalent rotated state (visually identical) */
+  sheet.classList.remove("moving");
+  label.classList.remove("lbl-move");
+  place(pw, ph / 2, (b.w - pw) / 2, (b.h - ph / 2) / 2, -90, 90);
+  flush(sheet); await wait(24);
+
+  /* 2 — lay it back down into the bottom-half position */
+  sheet.classList.add("moving");
+  label.classList.add("lbl-move");
+  var c = centerFor(pw, ph);
+  place(pw, ph / 2, c[0], c[1] + ph / 2, 0, 0);
+  await wait(700);
+
+  /* 3 — grow the box back to full size, hiding the top half under the flap */
+  sheet.classList.remove("moving");
+  label.style.opacity = "0";
+  place(pw, ph, c[0], c[1], 0, 0);
+  face.style.clipPath = "inset(50% 0 0 0)";
+  flap.classList.add("on", "lift");
+  flap.classList.remove("folding");
+  flap.style.transform = "rotateX(-180deg)";
+  flush(sheet); await wait(24);
+
+  /* 4 — unfold */
+  flap.classList.add("folding");
+  flap.style.transform = "rotateX(0deg)";
+  flap.classList.remove("lift");
+  await wait(780);
+
+  /* 5 — normalise */
+  order--;
+  label.style.opacity = "1";
+  busy = false;
+  settle();
+}
+
+bFold.addEventListener("click", doFold);
+bUnfold.addEventListener("click", doUnfold);
+bReset.addEventListener("click", function(){
+  if (busy) return;
+  order = BASEO;
+  label.style.opacity = "1";
+  settle();
+});
+
+/* =======================================================================
+   SECTION 2 — nested-ratio figure
+   ======================================================================= */
+var fig = document.getElementById("ratioFig");
+var rfDiag = document.getElementById("rfDiag");
+var rfNote = document.getElementById("rfNote");
+var rfBoxes = [
+  { el: document.getElementById("rfA4"), o: 4 },
+  { el: document.getElementById("rfA5"), o: 5 },
+  { el: document.getElementById("rfA6"), o: 6 }
+];
+function layoutRatioFig(){
+  var avail = fig.parentElement.clientWidth - 52;
+  var h4 = Math.min(300, avail * 0.62 * Math.SQRT2);
+  var w4 = h4 / Math.SQRT2;
+  fig.style.width = Math.min(avail, w4 + 172) + "px";
+  fig.style.height = h4 + "px";
+  var dots = [document.getElementById("rfD4"), document.getElementById("rfD5"), document.getElementById("rfD6")];
+  rfBoxes.forEach(function(b, i){
+    var k = Math.pow(Math.SQRT2, b.o - 4);
+    var w = w4 / k, h = h4 / k;
+    b.el.style.width = w + "px";
+    b.el.style.height = h + "px";
+    dots[i].style.left = w + "px";
+    dots[i].style.bottom = h + "px";
+  });
+  var len = Math.sqrt(w4 * w4 + h4 * h4);
+  rfDiag.style.width = len + "px";
+  rfDiag.style.transform = "rotate(" + (-Math.atan2(h4, w4) * 180 / Math.PI) + "deg)";
+  rfNote.style.left = (w4 + 16) + "px";
+  rfNote.style.bottom = (h4 - 20) + "px";
+}
+
+/* =======================================================================
+   SECTION 3 — A0 split spiral
+   ======================================================================= */
+var spiral = document.getElementById("spiral");
+var ro3 = document.getElementById("ro3"), ro3b = document.getElementById("ro3b");
+var bSplit = document.getElementById("btnSplit"),
+    bMerge = document.getElementById("btnMerge"),
+    bReset3 = document.getElementById("btnReset3");
+var MAXO3 = 7;
+var parked = [];                                   /* {o,x,y,w,h} in 0..1 */
+var active = { o: 0, x: 0, y: 0, w: 1, h: 1 };
+var A0W = 841, A0H = 1189;
+
+function regionIsPortrait(r){ return (r.h * A0H) > (r.w * A0W); }
+
+var activeEl = document.createElement("div");
+activeEl.className = "reg active";
+activeEl.innerHTML = '<span class="rl"></span>';
+spiral.appendChild(activeEl);
+
+function styleReg(el, r){
+  el.style.left = (r.x * 100) + "%";
+  el.style.top = (r.y * 100) + "%";
+  el.style.width = (r.w * 100) + "%";
+  el.style.height = (r.h * 100) + "%";
+  var pxw = r.w * spiral.clientWidth, pxh = r.h * spiral.clientHeight;
+  var small = Math.min(pxw, pxh);
+  el.classList.toggle("tiny", small < 34);
+  el.querySelector(".rl").textContent = (small < 17) ? "" : ("A" + r.o);
+}
+function renderSpiral(){
+  /* parked regions: one persistent node each, created on split */
+  var nodes = spiral.querySelectorAll(".reg.parked");
+  for (var i = nodes.length - 1; i >= parked.length; i--) nodes[i].remove();
+  parked.forEach(function(r, i){
+    var el = spiral.querySelectorAll(".reg.parked")[i];
+    if (!el){
+      el = document.createElement("div");
+      el.className = "reg parked";
+      el.innerHTML = '<span class="rl"></span>';
+      spiral.insertBefore(el, activeEl);
+    }
+    styleReg(el, r);
+  });
+  styleReg(activeEl, active);
+  ro3.textContent = "A" + active.o;
+  ro3b.textContent = mmText(active.o);
+  bSplit.disabled = active.o >= MAXO3;
+  bMerge.disabled = parked.length === 0;
+}
+function doSplit(){
+  if (active.o >= MAXO3) return;
+  var r = active, n = r.o + 1;
+  if (regionIsPortrait(r)){
+    parked.push({ o: n, x: r.x, y: r.y, w: r.w, h: r.h / 2 });
+    active = { o: n, x: r.x, y: r.y + r.h / 2, w: r.w, h: r.h / 2 };
+  } else {
+    parked.push({ o: n, x: r.x, y: r.y, w: r.w / 2, h: r.h });
+    active = { o: n, x: r.x + r.w / 2, y: r.y, w: r.w / 2, h: r.h };
+  }
+  renderSpiral();
+}
+function doMerge(){
+  if (!parked.length) return;
+  var p = parked.pop();
+  active = {
+    o: p.o - 1,
+    x: Math.min(p.x, active.x),
+    y: Math.min(p.y, active.y),
+    w: (p.y === active.y && p.x !== active.x) ? p.w + active.w : p.w,
+    h: (p.x === active.x && p.y !== active.y) ? p.h + active.h : p.h
+  };
+  renderSpiral();
+}
+bSplit.addEventListener("click", doSplit);
+bMerge.addEventListener("click", doMerge);
+bReset3.addEventListener("click", function(){
+  parked = [];
+  active = { o: 0, x: 0, y: 0, w: 1, h: 1 };
+  renderSpiral();
+});
+
+/* =======================================================================
+   SECTION 4 — guess the ratio
+   ======================================================================= */
+var stage4 = document.getElementById("stage4");
+var sheet4 = document.getElementById("sheet4");
+var face4  = document.getElementById("face4");
+var flap4  = document.getElementById("flap4");
+var label4 = document.getElementById("label4");
+var lbltop4 = document.getElementById("lbltop4");
+var ghost4 = document.getElementById("ghost4");
+var gap4 = document.getElementById("gap4");
+var gaplbl4 = document.getElementById("gaplbl4");
+var slider = document.getElementById("rSlider");
+var rOut = document.getElementById("rOut"), zoneOut = document.getElementById("zoneOut");
+var btnTest = document.getElementById("btnTest"), btnExact = document.getElementById("btnExact");
+var ro4 = document.getElementById("ro4");
+var verdict4 = document.getElementById("verdict4");
+var vnum4 = document.getElementById("vnum4"), vword4 = document.getElementById("vword4"), vhint4 = document.getElementById("vhint4");
+var reveal4 = document.getElementById("reveal4");
+var revealNum = document.getElementById("revealNum");
+var revealP1 = document.getElementById("revealP1"), revealP2 = document.getElementById("revealP2");
+
+var busy4 = false, tested4 = false, exactMode = false;
+var labelKey4 = "yours", lastTest = null, lastReveal = null;
+var TARGET_T = 0.5;                       /* r = 2^0.5, never spelled out yet */
+
+function stageBox4(){ return { w: stage4.clientWidth, h: stage4.clientHeight }; }
+function tVal(){ return parseFloat(slider.value); }
+function currentR(){ return Math.pow(2, tVal()); }
+
+/* the rectangle keeps a constant area as its shape changes */
+function baseSize(r){
+  var b = stageBox4();
+  var maxW = Math.max(120, b.w - 90), maxH = Math.max(120, b.h - 80);
+  var area = 0.30 * maxW * maxH;
+  var w = Math.sqrt(area / r), h = Math.sqrt(area * r);
+  var k = Math.min(1, maxW / w, maxH / h);
+  return [w * k, h * k];
+}
+function place4(w, h, left, top, rot, counter){
+  sheet4.style.width = w + "px";
+  sheet4.style.height = h + "px";
+  sheet4.style.left = left + "px";
+  sheet4.style.top = top + "px";
+  sheet4.style.transform = "rotate(" + rot + "deg)";
+  label4.style.transform = "rotate(" + (counter || 0) + "deg)";
+}
+function center4(w, h){
+  var b = stageBox4();
+  return [(b.w - w) / 2, (b.h - h) / 2];
+}
+function fmtR(r){ return r.toFixed(5); }
+function zoneName(r){
+  if (Math.abs(r - 1) < 0.0005) return t("sq");
+  return r > 1 ? t("portrait") : t("landscape");
+}
+
+function clearResult(){
+  lastTest = null;
+  ghost4.hidden = true; gap4.hidden = true; gaplbl4.hidden = true;
+  verdict4.hidden = true;
+  sheet4.classList.remove("compare");
+  face4.style.clipPath = "none";
+  flap4.className = "flap";
+  flap4.style.transform = "rotateX(0deg)";
+  label4.style.opacity = "1";
+  lbltop4.textContent = t("yours"); labelKey4 = "yours";
+}
+function drawIdle(){
+  var r = currentR(), d = baseSize(r), c = center4(d[0], d[1]);
+  sheet4.classList.remove("moving");
+  label4.classList.remove("lbl-move");
+  place4(d[0], d[1], c[0], c[1], 0, 0);
+  flush(sheet4);
+  sheet4.classList.add("moving");
+  label4.classList.add("lbl-move");
+  rOut.textContent = exactMode ? (tVal() > 0 ? "1.41421356\u2026" : "0.70710678\u2026") : fmtR(r);
+  zoneOut.textContent = zoneName(r);
+}
+function setBtns4(){
+  btnTest.disabled = busy4;
+  btnExact.disabled = busy4;
+}
+
+slider.addEventListener("input", function(){
+  if (busy4){ return; }
+  exactMode = false;
+  clearResult();
+  drawIdle();
+  ro4.textContent = t("ready");
+});
+
+function paintVerdict(){
+  if (!lastTest) return;
+  var L = lastTest, r = L.r, rp = L.rp;
+  var score = Math.min(r, rp) / Math.max(r, rp);
+  var off = (1 - score) * 100;
+  var gap = Math.abs(L.topA - L.topB);
+  if (gap > 1.5){
+    gap4.style.left = L.x0 + "px";
+    gap4.style.width = L.k + "px";
+    gap4.style.top = Math.min(L.topA, L.topB) + "px";
+    gap4.style.height = gap + "px";
+    gap4.hidden = false;
+    gaplbl4.className = "gaplabel";
+    gaplbl4.textContent = t("offby") + off.toFixed(1) + "%";
+    gaplbl4.style.left = (L.x0 + L.k + 12) + "px";
+    gaplbl4.style.top = (Math.min(L.topA, L.topB) + gap / 2 - 8) + "px";
+  } else {
+    gap4.hidden = true;
+    gaplbl4.className = "gaplabel hit";
+    gaplbl4.textContent = t("hit");
+    gaplbl4.style.left = (L.x0 + L.k + 12) + "px";
+    gaplbl4.style.top = (L.topA - 8) + "px";
+  }
+  gaplbl4.hidden = false;
+
+  var e = Math.max(r, 1 / r), ep = Math.max(rp, 1 / rp);
+  var dev = Math.abs(rp - r) / r, word, hint;
+  if (dev < 0.0005) word = t("w0");
+  else if (dev < 0.004) word = t("w1");
+  else if (dev < 0.015) word = t("w2");
+  else if (dev < 0.06) word = t("w3");
+  else if (dev < 0.16) word = t("w4");
+  else if (dev < 0.4) word = t("w5");
+  else word = t("w6");
+
+  if (dev < 0.0005) hint = t("hExact");
+  else if (ep > e) hint = L.portrait ? t("hTaller") : t("hFlatter");
+  else hint = L.portrait ? t("hShorter") : t("hSquarer");
+
+  vnum4.textContent = (score * 100).toFixed(2) + "%";
+  verdict4.classList.toggle("close", dev < 0.015);
+  vword4.textContent = word;
+  vhint4.textContent = hint;
+  verdict4.hidden = false;
+}
+function paintReveal(){
+  if (!lastReveal) return;
+  var pz = lastReveal.portraitZone;
+  revealNum.textContent = "r = " + (pz ? "1.41421356\u2026" : "0.70710678\u2026");
+  revealP1.textContent = pz ? t("rev1P") : t("rev1L");
+  revealP2.textContent = pz ? t("rev2P") : t("rev2L");
+  reveal4.hidden = false;
+}
+
+async function runTest4(){
+  if (busy4) return;
+  busy4 = true; setBtns4();
+  clearResult();
+
+  var r = currentR();
+  var portrait = r >= 1;
+  var d = baseSize(r), W = d[0], H = d[1];
+  var c = center4(W, H);
+  sheet4.classList.remove("moving");
+  label4.classList.remove("lbl-move");
+  place4(W, H, c[0], c[1], 0, 0);
+  ro4.textContent = t("folding");
+
+  /* 1 — fold the long side in half */
+  if (portrait){
+    face4.style.clipPath = "inset(50% 0 0 0)";
+    flap4.className = "flap on";
+    flap4.style.transform = "rotateX(0deg)";
+  } else {
+    face4.style.clipPath = "inset(0 0 0 50%)";
+    flap4.className = "flap vert on";
+    flap4.style.transform = "rotateY(0deg)";
+  }
+  label4.style.opacity = "0";
+  flush(sheet4); await wait(30);
+  flap4.classList.add("folding", "lift");
+  flap4.style.transform = portrait ? "rotateX(-180deg)" : "rotateY(180deg)";
+  await wait(740);
+
+  /* 2 — keep only the folded half, exactly where it sits */
+  face4.style.clipPath = "none";
+  flap4.className = "flap";
+  flap4.style.transform = "rotateX(0deg)";
+  var hw = portrait ? W : W / 2, hh = portrait ? H / 2 : H;
+  var hl = portrait ? c[0] : c[0] + W / 2, ht = portrait ? c[1] + H / 2 : c[1];
+  place4(hw, hh, hl, ht, 0, 0);
+  lbltop4.textContent = t("half"); labelKey4 = "half";
+  label4.style.opacity = "1";
+  await wait(400);
+
+  /* 3 — a quarter turn */
+  ro4.textContent = t("turning");
+  flush(sheet4);
+  sheet4.classList.add("moving"); label4.classList.add("lbl-move");
+  var b = stageBox4();
+  place4(hw, hh, (b.w - hw) / 2, (b.h - hh) / 2, -90, 90);
+  await wait(700);
+  sheet4.classList.remove("moving"); label4.classList.remove("lbl-move");
+  var rw = hh, rh = hw;                    /* the turned half, upright again */
+  place4(rw, rh, (b.w - rw) / 2, (b.h - rh) / 2, 0, 0);
+  await wait(240);
+
+  /* 4 — scale it onto the original */
+  ro4.textContent = t("laying");
+  var rp = rh / rw;                        /* ratio of the folded, turned copy */
+  var tall = Math.max(r, rp);
+  var k = Math.max(60, Math.min((b.w - 150) * 0.72, (b.h - 70) / tall));
+  var x0 = (b.w - k) / 2 - 34;
+  var yB = (b.h + k * tall) / 2;
+
+  ghost4.style.width = k + "px";
+  ghost4.style.height = (k * r) + "px";
+  ghost4.style.left = x0 + "px";
+  ghost4.style.top = (yB - k * r) + "px";
+  ghost4.hidden = false;
+
+  flush(sheet4);
+  sheet4.classList.add("moving", "compare");
+  label4.classList.add("lbl-move");
+  lbltop4.innerHTML = t("turned"); labelKey4 = "turned";
+  place4(k, k * rp, x0, yB - k * rp, 0, 0);
+  await wait(760);
+
+  /* 5 — the verdict */
+  lastTest = { r: r, rp: rp, portrait: portrait, x0: x0, k: k, topA: yB - k * r, topB: yB - k * rp };
+  paintVerdict();
+  ro4.textContent = t("match");
+
+  if (!tested4){
+    tested4 = true;
+    btnExact.hidden = false;
+  }
+  busy4 = false; setBtns4();
+}
+
+async function runExact4(){
+  if (busy4) return;
+  var portraitZone = currentR() >= 1;
+  exactMode = true;
+  slider.step = "any";                     /* the exact value sits off the step grid */
+  slider.value = String(portraitZone ? TARGET_T : -TARGET_T);
+  clearResult();
+  drawIdle();
+  ro4.textContent = t("snapping");
+  await wait(720);
+  await runTest4();
+
+  lastReveal = { portraitZone: portraitZone };
+  paintReveal();
+}
+
+btnTest.addEventListener("click", runTest4);
+btnExact.addEventListener("click", runExact4);
+
+/* =======================================================================
+   SECTION 5 — proof: math typesetting + the little fold diagram
+   ======================================================================= */
+function renderMath(){
+  if (!window.katex) return;                 /* falls back to the plain text already there */
+  document.querySelectorAll("[data-tex]").forEach(function(el){
+    if (el.dataset.done) return;
+    try {
+      katex.render(el.getAttribute("data-tex"), el, {
+        displayMode: el.classList.contains("tex-block"),
+        throwOnError: false
+      });
+      el.dataset.done = "1";
+    } catch (err){ el.classList.add("tex-fallback"); }
+  });
+}
+function layoutProofFig(){
+  var b1 = document.getElementById("pfb1");
+  var strip = document.querySelector(".proofstrip");
+  if (!b1 || !strip || !strip.clientWidth) return;
+  var avail = strip.clientWidth;
+  var u = Math.max(44, Math.min(112, (avail - 230) / 3.1));  /* width of the full sheet */
+  var boxes = [[u, u * Math.SQRT2], [u, u * Math.SQRT2 / 2], [u * Math.SQRT2 / 2, u]];
+  ["pfb1", "pfb2", "pfb3"].forEach(function(id, i){
+    var el = document.getElementById(id);
+    el.style.width = boxes[i][0] + "px";
+    el.style.height = boxes[i][1] + "px";
+  });
+}
+
+/* =======================================================================
+   SECTION 6 — real sizes against sqrt(2)
+   ======================================================================= */
+var ROOT2 = Math.SQRT2;
+var LAST_ISO = 10;                          /* ISO 216 standardises A0-A10 only */
+var DEV_MAX = 2.5;                          /* chart half-width, in percent */
+
+function devRows(){
+  var out = [];
+  for (var o = 0; o <= 13; o++){
+    var d = MM[o], ratio = d[1] / d[0];
+    out.push({
+      o: o, w: d[0], h: d[1], ratio: ratio,
+      dev: (ratio - ROOT2) / ROOT2 * 100,
+      extra: o > LAST_ISO
+    });
+  }
+  return out;
+}
+function signed(v, dp){
+  var t = Math.abs(v).toFixed(dp);
+  return (v < 0 ? "\u2212" : "+") + t + "%";
+}
+function buildSizes(){
+  var rows = devRows();
+  var chart = document.getElementById("devchart");
+  var tbody = document.querySelector("#sizetable tbody");
+  var scale = document.getElementById("devscale");
+  if (!chart) return;
+
+  scale.innerHTML = [-2, -1, 0, 1, 2].map(function(v){
+    var pct = 50 + v / DEV_MAX * 50;
+    return '<span style="left:' + pct + '%">' + (v === 0 ? "0" : (v > 0 ? "+" : "\u2212") + Math.abs(v) + "%") + "</span>";
+  }).join("");
+
+  var chtml = "", thtml = "";
+  rows.forEach(function(r){
+    if (r.o === LAST_ISO + 1){
+      chtml += '<div class="devsplit"><span></span><span class="rule">' +
+               '<span>' + t("beyond") + '</span></span></div>';
+    }
+    var len = Math.max(1.5, Math.abs(r.dev) / DEV_MAX * 50);   /* % of track width */
+    var bar = r.dev < 0
+      ? '<span class="devbar neg" style="right:50%;width:' + len + '%"></span>'
+      : '<span class="devbar" style="left:50%;width:' + len + '%"></span>';
+    var ticks = [-2, -1, 1, 2].map(function(v){
+      return '<span class="tick" style="left:' + (50 + v / DEV_MAX * 50) + '%"></span>';
+    }).join("");
+    chtml += '<div class="devrow' + (r.extra ? " extra" : "") + '">' +
+               '<span class="lbl">A' + r.o + '</span>' +
+               '<span class="devtrack">' + ticks + bar + '</span>' +
+               '<span class="devval">' + signed(r.dev, 3) + '</span>' +
+             '</div>';
+    thtml += '<tr' + (r.extra ? ' class="extra"' : '') + '>' +
+               '<td>A' + r.o + '</td>' +
+               '<td>' + r.w + " \u00d7 " + r.h + '</td>' +
+               '<td>' + r.ratio.toFixed(5) + '</td>' +
+               '<td class="' + (r.dev < 0 ? "neg" : "pos") + '">' + signed(r.dev, 3) + '</td>' +
+             '</tr>';
+  });
+  chart.innerHTML = chtml;
+  tbody.innerHTML = thtml;
+}
+
+/* =======================================================================
+   Reading progress + current sheet
+   ======================================================================= */
+(function(){
+  var bar = document.getElementById("prog");
+  var meta = document.getElementById("tbmeta");
+  var secs = Array.prototype.slice.call(document.querySelectorAll("section[id^='s']"));
+  var total = secs.length;
+  var ticking = false;
+  function paint(){
+    ticking = false;
+    var doc = document.documentElement;
+    var span = doc.scrollHeight - window.innerHeight;
+    bar.style.width = (span > 0 ? Math.min(100, Math.max(0, window.scrollY / span * 100)) : 0) + "%";
+    var mark = window.innerHeight * 0.34, cur = null;
+    secs.forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.top <= mark && r.bottom > mark) cur = el;
+    });
+    var label = cur
+      ? t("sheet") + ("0" + cur.id.slice(1)) + " / 0" + total
+      : t("meta");
+    if (meta.textContent !== label) meta.textContent = label;
+  }
+  window.addEventListener("scroll", function(){
+    if (!ticking){ ticking = true; requestAnimationFrame(paint); }
+  }, { passive: true });
+  window.addEventListener("resize", paint);
+  window.__paintMeta = paint;
+  paint();
+})();
+
+/* =======================================================================
+   Language: Thai (default) / English
+   ======================================================================= */
+var EN_SNAP = {};
+document.querySelectorAll("[data-i18n]").forEach(function(el){
+  EN_SNAP[el.getAttribute("data-i18n")] = el.innerHTML;
+});
+
+var TH = {
+t01:'<b>เริ่มตรงนี้</b>',
+t02:'มีตัวเลขตัวหนึ่งซ่อนอยู่ใน<em>กระดาษทุกแผ่น</em>ที่คุณเคยใช้',
+t03:'ไม่ใช่การเปรียบเปรย แต่เป็นตัวเลขจริง ๆ ตัวเลขที่ต้องถูกเลือกไว้ก่อนที่กระดาษ A4 แผ่นแรกจะถูกตัดออกมา และเป็นตัวเลขที่เขียนให้จบไม่ได้ มาลองพับกระดาษหามันไปด้วยกัน',
+t04:'<b>แผ่นที่ 01</b> รู้จักกระดาษ A4',
+t05:'พับครึ่งดู แล้วมองมันอีกครั้ง',
+t06:'นี่คือกระดาษ A4 กระดาษที่อยู่ในเครื่องพิมพ์ สมุด และเครื่องถ่ายเอกสารเกือบทุกที่นอกทวีปอเมริกาเหนือ พับขอบบนลงมาชนขอบล่างแล้วตัดตามรอยพับ คุณจะได้กระดาษ A5',
+t07:'ลองสังเกต<em>รูปทรง</em>ของมัน ไม่ใช่ขนาด เพราะทุกคนรู้อยู่แล้วว่าขนาดต้องเล็กลง แต่ให้ดูที่รูปทรง',
+t08:'เส้นประ คือขนาด A4 ที่เริ่มต้น',
+t09:'พับครึ่ง',
+t10:'คลี่กลับ',
+t11:'เริ่มใหม่',
+t12:'ทุกครั้งที่พับ กระดาษที่ได้จะหน้าตาเหมือนแผ่นเดิมทุกประการ เพียงแต่เล็กลง A4 A5 A6 A8 ถ้ามองจากไกลพอ คุณจะแยกไม่ออกเลยว่าแผ่นไหนเป็นแผ่นไหน สี่เหลี่ยมผืนผ้าส่วนใหญ่ไม่เป็นแบบนี้',
+t13:'<b>แผ่นที่ 02</b> ทำไมถึงแปลก',
+t14:'สี่เหลี่ยมผืนผ้าส่วนใหญ่ทนการถูกแบ่งครึ่งไม่ได้',
+t15:'ลองนึกถึงสี่เหลี่ยมจัตุรัสขนาด 100 คูณ 100 พับครึ่งแล้วจะได้ 100 คูณ 50 เป็นแท่งยาว ๆ ที่ไม่เหมือนจัตุรัสเลย หรือลองเอาจอทีวีอัตราส่วน 16:9 มาแบ่งครึ่ง สิ่งที่ได้จะจัตุรัสขึ้นอย่างเห็นได้ชัด',
+t16:'กระดาษชุด A ไม่เป็นแบบนั้น ทุกขนาดในชุด A มี<strong>อัตราส่วนกว้างต่อสูงเท่ากันหมด</strong> ถ้าวาง A4 A5 และ A6 ให้ชิดมุมเดียวกัน มุมตรงข้ามของทั้งสามแผ่นจะเรียงอยู่บนเส้นตรงเส้นเดียวที่ลากผ่านจุดกำเนิด ซึ่งเป็นลายเซ็นของรูปที่ย่อขยายมาจากกันพอดี',
+t17:'อัตราส่วนที่เท่ากันนี้คือหัวใจทั้งหมด มันคือเหตุผลที่เครื่องถ่ายเอกสารมีปุ่มเดียวเขียนว่า <span class="mono-i">A4&rarr;A5</span> แล้วผลลัพธ์ไม่เคยมีขอบเหลือแปลก ๆ และเป็นเหตุผลที่การขยายเอกสารเป็นแค่การขยายตรง ๆ ไม่ต้องจัดหน้าใหม่',
+t18:'กระดาษชุด B',
+t19:'บางครั้งขนาดสองขนาดในชุด A ห่างกันเกินไป ชุด B จึงมาแทรกตรงกลาง เช่น B4 อยู่ระหว่าง A3 กับ A4 โปสเตอร์ หนังสือเดินทาง และงานพิมพ์หนังสือใช้ขนาดชุดนี้ กฎเรื่องรูปทรงเหมือนกัน ต่างกันแค่จุดเริ่มต้น',
+t20:'กระดาษชุด C',
+t21:'ซองจดหมาย ซอง C4 ทำมาให้ใส่กระดาษ A4 แบบไม่ต้องพับ ซอง C5 รับ A4 ที่พับหนึ่งครั้ง ส่วน C6 รับที่พับสองครั้ง ชุด C อยู่ระหว่าง A กับ B พอดี ซึ่งก็คือพื้นที่เผื่อที่ซองจำเป็นต้องมี',
+t22:'<b>แผ่นที่ 03</b> ทั้งตระกูล',
+t23:'ทั้งหมดมาจากกระดาษแผ่นใหญ่แผ่นเดียว',
+t24:'ชุดนี้เริ่มที่ A0 กระดาษแผ่นใหญ่ขนาดราว ๆ โต๊ะตัวเล็ก ขนาดอื่นในชุด A คือ A0 ที่ถูกตัดครึ่งซ้ำไปเรื่อย ๆ ตัด A0 หนึ่งครั้งได้ A1 สองแผ่น ตัด A1 หนึ่งแผ่นได้ A2 สองแผ่น',
+t25:'กด <strong>แบ่งครึ่ง</strong> แล้วตามดูสี่เหลี่ยมที่เล็กลงเรื่อย ๆ รอยตัดจะสลับทิศทุกครั้ง เพราะกระดาษแผ่นใหม่สลับระหว่างแนวตั้งกับแนวนอน',
+t26:'แบ่งครึ่ง',
+t27:'รวมกลับ',
+t28:'กลับไป A0',
+t29:'สังเกตว่าสี่เหลี่ยมที่ถูกไฮไลต์ไม่เคยเปลี่ยนรูปทรงเลยขณะที่เล็กลง มันแค่สลับระหว่างการตั้งขึ้นกับการนอนลง ไม่ว่า A0 จะถูกสร้างด้วยอัตราส่วนอะไร การแบ่งครึ่งก็รักษาอัตราส่วนนั้นไว้ได้เป๊ะ นั่นเป็นข้อเรียกร้องที่พิเศษมากสำหรับตัวเลขตัวหนึ่ง และเดี๋ยวคุณจะได้ลองหามันเอง',
+t30:'<b>แผ่นที่ 04</b> ตาคุณแล้ว',
+t31:'แล้วอัตราส่วนไหนกันที่ทำได้',
+t32:'มีรูปทรงเดียวเท่านั้นที่รอดจากการถูกแบ่งครึ่ง หน้าที่ของคุณคือหามันให้เจอ ด้วยความรู้สึก ไม่ใช่ด้วยสูตร',
+t33:'เรียกอัตราส่วนนี้ว่า <strong class="mono-i">r = ความสูง ÷ ความกว้าง</strong>:',
+t34:'<span class="mono-i">r &gt; 1</span> คือสี่เหลี่ยมแนวตั้ง ตั้งขึ้น <span class="mono-i">r &lt; 1</span> คือแนวนอน นอนลง <span class="mono-i">r = 1</span> คือสี่เหลี่ยมจัตุรัส',
+t35:'ลากแถบเลื่อนเพื่อเลือกรูปทรง แล้วกด <strong>ทดสอบอัตราส่วนนี้</strong> กระดาษจะพับครึ่ง หมุนไปหนึ่งในสี่รอบ แล้วถูกวางทับลงบนรูปทรงที่คุณเริ่มไว้ ถ้าอัตราส่วนของคุณถูกต้อง ทั้งสองจะทับกันพอดีเป๊ะ',
+t36:'r = ความสูง &divide; ความกว้าง',
+t37:'<span>แบนลง</span><span>จัตุรัส</span><span>สูงขึ้น</span>',
+t38:'ทดสอบอัตราส่วนนี้',
+t39:'ดูค่าที่ทับกันพอดี',
+t40:'<b>แผ่นที่ 05</b> บทพิสูจน์',
+t41:'ทำไมต้องเป็นตัวเลขตัวนั้น',
+t42:'แถบเลื่อนหามันเจอด้วยการลองผิดลองถูก พีชคณิตหกบรรทัดหามันเจอด้วยเหตุผล และอธิบายด้วยว่าทศนิยมที่ไม่รู้จบพวกนั้นมาจากไหน',
+t43:'กระดาษ',
+t44:'ครึ่งหนึ่ง',
+t45:'หมุนแล้ว',
+t46:'ให้กระดาษมีความกว้างและความสูง แล้วเรียกอัตราส่วนของมันว่า <em>r</em> ซึ่งก็คือ <em>r</em> ตัวเดียวกับที่อยู่บนแถบเลื่อน',
+t47:'พับตามด้านยาว ความกว้างไม่เปลี่ยน ส่วนความสูงลดลงครึ่งหนึ่ง',
+t48:'หมุนครึ่งแผ่นนั้นไปหนึ่งในสี่รอบ ให้มันตั้งในแนวเดียวกับแผ่นเดิม สิ่งที่เคยเป็นความกว้างกลายเป็นความสูง และสิ่งที่เคยเป็นครึ่งหนึ่งของความสูงกลายเป็นความกว้าง อัตราส่วนของมัน เรียกว่า <em>r&prime;</em> จึงเป็น',
+t49:'ทีนี้ใส่เงื่อนไขที่ทั้งระบบตั้งอยู่บนมัน ครึ่งแผ่นต้องมี<em>รูปทรงเหมือนเดิม</em>กับแผ่นที่มันถูกตัดมา อัตราส่วนของมันจึงต้องเท่ากับอัตราส่วนเดิม',
+t50:'คูณทั้งสองข้างด้วย <em>r</em> ทุกอย่างยุบรวมเหลือบรรทัดเดียว',
+t51:'<em>r</em> คือตัวเลขที่ยกกำลังสองแล้วได้ 2 และนั่นคือความหมายของ<em>รากที่สอง</em>พอดี ชื่อของตัวเลขตัวนี้จึงเป็น <strong>รากที่สองของ 2</strong>',
+t52:'ทศนิยมที่คุณเห็นบนแถบเลื่อนจึงไม่ใช่เรื่องบังเอิญ และไม่ใช่ค่าประมาณที่ใครสักคนเลือกขึ้นมา A4 มีอัตราส่วน <span class="mono-i">1 : &radic;2</span> เพราะนั่นคือรูปทรงเดียวที่ถูกแบ่งครึ่งต่อไปได้ไม่รู้จบโดยไม่เปลี่ยนรูป อัตราส่วนอื่นเพี้ยนหมด',
+t53:'ส่วนในฝั่งแนวนอน <span class="mono-i">0.70710678&hellip;</span> ก็คือ <span class="mono-i">1 &divide; &radic;2</span> เงื่อนไขเดียวกัน เพียงแต่เขียนสำหรับกระดาษที่นอนอยู่',
+t54:'<b>แผ่นที่ 06</b> เทียบกับของจริง',
+t55:'กระดาษจริงพลาดเป้า และตั้งใจให้พลาด',
+t56:'&radic;2 ไม่มีวันจบ แต่โรงงานกระดาษต้องตัดที่ตัวเลขใดตัวเลขหนึ่ง ทุกขนาดของ ISO จึงถูกปัดให้เป็นจำนวนเต็มมิลลิเมตร และกระดาษจริงทุกแผ่นจึงเพี้ยนจากรูปทรงในอุดมคติไปนิดหนึ่ง',
+t57:'นี่คือค่าที่เพี้ยนไปของแต่ละขนาด ค่าบวกหมายถึงแผ่นนั้นสูงกว่าที่ &radic;2 กำหนดเล็กน้อย ค่าลบคือเตี้ยกว่าเล็กน้อย',
+t58:'ค่าที่เพี้ยนไปจาก &radic;2',
+t59:'ตัวเลขจริง',
+t60:'ขนาด',
+t61:'กว้าง&times;สูง (มม.)',
+t62:'สูง &divide; กว้าง',
+t63:'เทียบ &radic;2',
+t64:'<strong>ทำไมแผ่นเล็กยิ่งเพี้ยนมาก</strong> หลายคนคาดว่าความคลาดเคลื่อนน่าจะเล็กลงตามขนาดกระดาษ แต่มันกลับใหญ่ขึ้น สาเหตุอยู่ที่ไม้บรรทัด ไม่ใช่ที่คณิตศาสตร์ ทุกขนาดถูกปัดให้ลงตัวเป็นมิลลิเมตร ครึ่งมิลลิเมตรคิดเป็นความคลาดเคลื่อนราว 0.06% บนด้าน 841 มม. ของ A0 แต่ครึ่งมิลลิเมตรเท่ากันนั้นคิดเป็นเกือบ 2% ของด้าน 26 มม. ของ A10 รูปทรงแม่นยำเป๊ะ สิ่งที่หยาบคือการวัด',
+t65:'A0 ถึง A10 คือมาตรฐานจริง ส่วน A11 ถึง A13 แสดงไว้เพียงเพื่อให้เห็นว่าถ้าแบ่งครึ่งต่อไปเรื่อย ๆ จะได้อะไร ทั้งสามขนาดไม่ใช่ขนาดตามมาตรฐาน ISO และหาซื้อไม่ได้',
+t66:'<b>แผ่นที่ 07</b> ห้าเรื่องที่น่ารู้',
+t67:'บันทึกจากขอบ ๆ ของระบบนี้',
+t68:'<strong>A0 เป็นทั้งขนาดและรูปทรง</strong> พื้นที่ของมันถูกกำหนดให้เท่ากับหนึ่งตารางเมตรพอดี และมีด้านอยู่คู่เดียวเท่านั้นที่มีอัตราส่วน &radic;2 แล้วคูณกันได้ 1 คือ 0.8409&hellip; ม. คูณ 1.1892&hellip; ม. เมื่อปัดเป็นจำนวนเต็มมิลลิเมตรเป็น 841 &times; 1189 แผ่นจริงจึงมีพื้นที่ 0.99995 ตร.ม. ขนาดอื่นในชุด A คือหนึ่งตารางเมตรนั้นที่ถูกแบ่งครึ่งซ้ำแล้วซ้ำอีก โดย A4 คือหนึ่งในสิบหกของมัน',
+t69:'<strong>ความคิดนี้เก่ากว่ามาตรฐาน</strong> นักฟิสิกส์ชื่อ เกออร์ก คริสท็อฟ ลิชเทินแบร์ค เขียนถึงอัตราส่วนที่แบ่งครึ่งได้นี้ไว้ในจดหมายเมื่อปี 1786 กว่าจะกลายเป็นระบบจริงก็ผ่านไปอีก 136 ปี วัลเทอร์ พอร์สท์มัน เป็นคนวางระบบทั้งตระกูล และเยอรมนีประกาศใช้เป็นมาตรฐาน DIN 476 ในปี 1922 ก่อนจะกลายเป็นมาตรฐานสากล ISO 216 ในปี 1975 ทุกวันนี้เกือบทุกประเทศใช้ระบบนี้ ยกเว้นสหรัฐอเมริกาและแคนาดา',
+t70:'<strong>ทำไมมาตรฐานหยุดที่ A10</strong> A8 ก็เล็กราว ๆ นามบัตรแล้ว ส่วน A10 เล็กลงไปอีกสี่เท่า ประมาณแสตมป์ดวงหนึ่ง เล็กกว่านั้นกระดาษก็พับ พิมพ์ หรือหยิบจับไม่ไหว แถมการปัดเศษเป็นมิลลิเมตรยังกินรูปทรงไปเกินสองเปอร์เซ็นต์ รูปแบบการแบ่งครึ่งดำเนินต่อไปได้ไม่รู้จบ ซึ่งก็คือ A11 ถึง A13 ในแผนภูมิด้านบน แต่มาตรฐานหยุดตรงที่กระดาษเลิกเป็นกระดาษ',
+t71:'<strong>เครื่องถ่ายเอกสารแอบบอกใบ้</strong> การขยาย A4 เป็น A3 คือการคูณด้านทั้งสองด้วย &radic;2 ปุ่มบนเครื่องจึงเขียนว่า 141% ซึ่งก็คือ &radic;2 ที่ปัดเศษให้พอใส่หน้าปัดได้ ส่วนปุ่มย่อเขียนว่า 71% ซึ่งก็คือ 1 &divide; &radic;2 สองปุ่ม ตัวเลขเดียวกัน ซ่อนอยู่ข้างถาดกระดาษ',
+t72:'<strong>และอีกที่หนึ่งที่ได้ยินเสียงมัน</strong> สิบสองครึ่งเสียงรวมกันเป็นหนึ่งออกเทฟ ซึ่งทำให้ความถี่เพิ่มเป็นสองเท่า ดังนั้นหกครึ่งเสียงจึงคูณความถี่ด้วย &radic;2 พอดี ช่วงเสียงนั้นเรียกว่าไทรโทน ลองวาดสี่เหลี่ยมจัตุรัสดู เส้นทแยงมุมของมันก็คือ &radic;2 เช่นกัน ตัวเลขนี้ไม่ใช่เรื่องของกระดาษ กระดาษเป็นแค่ที่ที่มันซ่อนตัวอยู่ในลิ้นชักโต๊ะคุณ',
+t73:'<b>แผ่นที่ 08</b> ไปต่อที่ไหน',
+t74:'ตัวเลขประหลาดตัวนี้มาจากไหน &mdash; และทำไมมันถึง<em>ทำให้โลกของเศษส่วนพัง</em>',
+t75:'&radic;2 ไม่ได้แค่ยาวไม่รู้จบ แต่มันเขียนเป็นเศษส่วนไม่ได้เลย ไม่มีจำนวนเต็มคู่ไหน ไม่ว่าจะใหญ่แค่ไหน ที่หารกันแล้วได้ค่านี้พอดี การค้นพบนั้นเล่ากันว่าสั่นสะเทือนสำนักคณิตศาสตร์กรีกที่ค้นพบมันเอง',
+t76:'เข้าสู่โลกจำนวนอตรรกยะ <span class="arw">&rarr;</span>',
+t77:'กำลังแสดง',
+t78:'ไฮไลต์อยู่:',
+t79:'พับ',
+t80:'หมุน',
+t81:'1 ตร.ม.',
+t82:'26 &times; 37 มม.',
+t83:'6 ครึ่งเสียง'
+};
+
+var DYN = {
+  en: {
+    mm:"mm", sq:"square", portrait:"portrait", landscape:"landscape",
+    pick:"Pick a shape, then test it", ready:"Ready — press test",
+    folding:"Folding along the long side…", turning:"Turning it a quarter turn…",
+    laying:"Laying it over the original…", match:"Match between the two shapes",
+    snapping:"Snapping to the exact ratio…",
+    yours:"Your rectangle", half:"The half", turned:"Folded &amp; turned",
+    offby:"off by ", hit:"exact overlap", beyond:"Beyond the standard",
+    meta:"ISO 216 · an interactive", sheet:"Sheet ",
+    w0:"Exact.", w1:"A hair off.", w2:"Red hot.", w3:"Very warm.", w4:"Warm.", w5:"Cool.", w6:"Cold.",
+    hExact:"The folded half is the same shape as the sheet it came from. This is the only ratio that does it.",
+    hTaller:"The folded copy came out taller and narrower than the original. Your rectangle needs to be taller.",
+    hShorter:"The folded copy came out squatter than the original. Your rectangle needs to be less tall.",
+    hFlatter:"The folded copy came out flatter than the original. Your rectangle needs to be flatter.",
+    hSquarer:"The folded copy came out closer to square than the original. Your rectangle needs to be less flat.",
+    rev1P:"That is the ratio. The three dots are doing real work: the digits carry on forever without ever falling into a repeating pattern, so no decimal you could finish writing is exactly right. 1.41 is close. 1.414 is closer. Neither is it.",
+    rev1L:"That is the ratio. The three dots are doing real work: the digits carry on forever without ever falling into a repeating pattern, so no decimal you could finish writing is exactly right. 0.707 is close. 0.7071 is closer. Neither is it.",
+    rev2P:"Down in the landscape zone the answer looks different — 0.70710678… — but it is the very same rectangle lying on its side. One number is exactly 1 divided by the other. Portrait or landscape, it is one shape.",
+    rev2L:"Up in the portrait zone the answer looks different — 1.41421356… — but it is the very same rectangle standing up. One number is exactly 1 divided by the other. Portrait or landscape, it is one shape."
+  },
+  th: {
+    mm:"มม.", sq:"จัตุรัส", portrait:"แนวตั้ง", landscape:"แนวนอน",
+    pick:"เลือกรูปทรง แล้วกดทดสอบ", ready:"พร้อมแล้ว กดทดสอบได้เลย",
+    folding:"กำลังพับตามด้านยาว…", turning:"กำลังหมุนไปหนึ่งในสี่รอบ…",
+    laying:"กำลังวางทับแผ่นเดิม…", match:"ความเหมือนของรูปทรงทั้งสอง",
+    snapping:"กำลังปรับไปที่อัตราส่วนพอดี…",
+    yours:"สี่เหลี่ยมของคุณ", half:"ครึ่งแผ่น", turned:"พับแล้วหมุน",
+    offby:"ต่างกัน ", hit:"ทับกันพอดี", beyond:"เกินมาตรฐาน",
+    meta:"ISO 216 · สื่อโต้ตอบ", sheet:"แผ่นที่ ",
+    w0:"พอดีเป๊ะ", w1:"เฉียดนิดเดียว", w2:"ร้อนมาก", w3:"อุ่นมาก", w4:"เริ่มอุ่น", w5:"เย็น", w6:"หนาว",
+    hExact:"ครึ่งที่พับได้มีรูปทรงเหมือนแผ่นที่มันถูกตัดมาทุกประการ มีอัตราส่วนเดียวเท่านั้นที่ทำแบบนี้ได้",
+    hTaller:"แผ่นที่พับแล้วออกมาสูงและแคบกว่าแผ่นเดิม ลองทำสี่เหลี่ยมของคุณให้สูงขึ้น",
+    hShorter:"แผ่นที่พับแล้วออกมาเตี้ยกว่าแผ่นเดิม ลองทำสี่เหลี่ยมของคุณให้เตี้ยลง",
+    hFlatter:"แผ่นที่พับแล้วออกมาแบนกว่าแผ่นเดิม ลองทำสี่เหลี่ยมของคุณให้แบนลง",
+    hSquarer:"แผ่นที่พับแล้วออกมาใกล้จัตุรัสกว่าแผ่นเดิม ลองทำสี่เหลี่ยมของคุณให้แบนน้อยลง",
+    rev1P:"นี่คืออัตราส่วนนั้น จุดสามจุดข้างท้ายมีความหมายจริง ๆ ตัวเลขหลังจุดทศนิยมเดินต่อไปไม่มีวันจบ และไม่เคยวนซ้ำเป็นแบบแผน จึงไม่มีทศนิยมชุดไหนที่เขียนจบแล้วตรงพอดี 1.41 ก็ใกล้แล้ว 1.414 ใกล้ขึ้นอีก แต่ทั้งคู่ก็ยังไม่ใช่",
+    rev1L:"นี่คืออัตราส่วนนั้น จุดสามจุดข้างท้ายมีความหมายจริง ๆ ตัวเลขหลังจุดทศนิยมเดินต่อไปไม่มีวันจบ และไม่เคยวนซ้ำเป็นแบบแผน จึงไม่มีทศนิยมชุดไหนที่เขียนจบแล้วตรงพอดี 0.707 ก็ใกล้แล้ว 0.7071 ใกล้ขึ้นอีก แต่ทั้งคู่ก็ยังไม่ใช่",
+    rev2P:"ส่วนในฝั่งแนวนอน คำตอบหน้าตาต่างออกไป คือ 0.70710678… แต่มันคือสี่เหลี่ยมผืนเดียวกันที่นอนตะแคงอยู่ ตัวเลขหนึ่งคือ 1 หารด้วยอีกตัวหนึ่งพอดี ไม่ว่าจะตั้งขึ้นหรือนอนลง มันคือรูปทรงเดียวกัน",
+    rev2L:"ส่วนในฝั่งแนวตั้ง คำตอบหน้าตาต่างออกไป คือ 1.41421356… แต่มันคือสี่เหลี่ยมผืนเดียวกันที่ตั้งขึ้น ตัวเลขหนึ่งคือ 1 หารด้วยอีกตัวหนึ่งพอดี ไม่ว่าจะตั้งขึ้นหรือนอนลง มันคือรูปทรงเดียวกัน"
+  }
+};
+
+var LANG = "th";
+try { var saved = localStorage.getItem("sqrt2-lang"); if (saved === "en" || saved === "th") LANG = saved; } catch(e){}
+function t(k){
+  /* callable before the dictionaries are assigned (the progress bar paints early) */
+  var d = (typeof DYN !== "undefined" && DYN) ? (DYN[LANG] || DYN.en) : null;
+  if (d && d[k] !== undefined) return d[k];
+  return (typeof DYN !== "undefined" && DYN && DYN.en && DYN.en[k] !== undefined) ? DYN.en[k] : "";
+}
+
+var btnTh = document.getElementById("langTh"), btnEn = document.getElementById("langEn");
+function applyLang(l){
+  LANG = (l === "en") ? "en" : "th";
+  try { localStorage.setItem("sqrt2-lang", LANG); } catch(e){}
+  document.documentElement.setAttribute("lang", LANG);
+  btnTh.setAttribute("aria-pressed", LANG === "th" ? "true" : "false");
+  btnEn.setAttribute("aria-pressed", LANG === "en" ? "true" : "false");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var k = el.getAttribute("data-i18n");
+    var v = (LANG === "th" && TH[k] !== undefined) ? TH[k] : EN_SNAP[k];
+    if (v !== undefined) el.innerHTML = v;
+  });
+  refreshDynamic();
+}
+btnTh.addEventListener("click", function(){ applyLang("th"); });
+btnEn.addEventListener("click", function(){ applyLang("en"); });
+
+function refreshDynamic(){
+  syncLabel();
+  renderSpiral();
+  buildSizes();
+  lbltop4.textContent = t(labelKey4);
+  zoneOut.textContent = zoneName(currentR());
+  if (lastTest) paintVerdict(); else if (!busy4) ro4.textContent = t("pick");
+  if (lastReveal) paintReveal();
+  if (window.__paintMeta) window.__paintMeta();
+}
+
+/* ---------- boot / resize ---------- */
+function layoutAll(){
+  if (!stage.clientWidth) return;          /* not laid out yet — nothing to size against */
+  computeBase();
+  if (!busy) settle();
+  layoutRatioFig();
+  renderSpiral();
+  if (!busy4){ clearResult(); drawIdle(); }
+  layoutProofFig();
+}
+window.addEventListener("resize", function(){
+  clearTimeout(window.__rt);
+  window.__rt = setTimeout(layoutAll, 120);
+});
+buildSizes();
+applyLang(LANG);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutAll);
+layoutAll();
+renderMath();
+window.addEventListener("load", function(){ renderMath(); layoutProofFig(); });
+
+})();
+</script>
+</body>
+</html>
