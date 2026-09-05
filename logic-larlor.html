@@ -1,0 +1,3289 @@
+<!DOCTYPE html>
+<html lang="th" class="lang-th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title id="pageTitle">Logic Parlor — ดวลตัวเชื่อมตรรกะ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,440;0,9..144,600;0,9..144,700;1,9..144,600&family=Karla:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Kalam:wght@400;700&family=Trirong:wght@400;600;700&family=Mitr:wght@400;500;600;700&family=Mali:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================= TOKENS ============================= */
+  :root{
+    --board:        #1e3932;
+    --board-deep:   #12241f;
+    --board-high:   #274a41;
+    --paper:        #f4ecdb;
+    --paper-shade:  #e3d6b6;
+    --paper-edge:   #cbb989;
+    --ink:          #1c2a20;
+    --ink-soft:     #4b5c4f;
+    --chalk:        #ece7da;
+    --chalk-dim:    #b9c2b6;
+    --brass:        #c99a46;
+    --brass-soft:   #e6c983;
+    --brass-deep:   #8a6a2e;
+    --correct:      #7fe0b0;
+    --correct-deep: #2f8a63;
+    --wrong:        #e2664a;
+    --wrong-deep:   #9c3823;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body:    'Karla', system-ui, sans-serif;
+    --font-mono:    'Space Mono', 'Courier New', monospace;
+    --font-chalk:   'Kalam', cursive;
+    --radius-card:  10px;
+    --shadow-card:  0 2px 3px rgba(10,18,14,.28), 0 8px 18px -6px rgba(10,18,14,.45);
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    color:var(--chalk);
+    background:
+      radial-gradient(ellipse 120% 70% at 50% 0%, var(--board-high) 0%, var(--board) 46%, var(--board-deep) 100%);
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* faint chalk-dust / chalkboard grain, restrained */
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.018) 0 2px, transparent 2px 5px),
+      repeating-linear-gradient(25deg, rgba(255,255,255,.012) 0 2px, transparent 2px 6px);
+    mix-blend-mode:overlay;
+  }
+
+  h1,h2{ font-family:var(--font-display); margin:0; }
+  button{ font-family:var(--font-body); }
+  button:focus-visible, .card:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--brass-soft);
+    outline-offset:2px;
+  }
+
+  .app{ position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* ============================= TOPBAR ============================= */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding: clamp(10px,2.4vw,18px) clamp(12px,3vw,26px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    font-family:var(--font-mono); font-weight:700; letter-spacing:.02em;
+    font-size:clamp(14px,2.6vw,18px);
+    color:var(--board-deep); background:linear-gradient(155deg,var(--brass-soft),var(--brass));
+    border-radius:8px; padding:6px 8px; box-shadow:var(--shadow-card);
+  }
+  .brand-text h1{ font-size:clamp(18px,3.4vw,24px); font-weight:700; line-height:1.05; letter-spacing:.01em; }
+  .brand-text p{ margin:2px 0 0; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--chalk-dim); }
+  .topbar-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip-btn{
+    background:rgba(244,236,219,.06);
+    border:1px solid rgba(244,236,219,.22);
+    color:var(--chalk);
+    padding:8px 13px; border-radius:999px; font-size:12.5px; font-weight:600;
+    letter-spacing:.02em; cursor:pointer; transition:background .18s ease, transform .12s ease, border-color .18s ease;
+  }
+  .chip-btn:hover{ background:rgba(244,236,219,.13); border-color:var(--brass-soft); }
+  .chip-btn:active{ transform:scale(.96); }
+
+  /* ============================= TABLE ============================= */
+  .table{ flex:1; display:flex; flex-direction:column; min-height:0; padding: 4px clamp(8px,2vw,20px) clamp(10px,2vw,20px); gap:4px; }
+
+  .bot-zone, .player-zone{ flex:0 0 auto; }
+  .center-zone{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+
+  .opponent-tag, .player-tag{
+    display:flex; align-items:center; gap:8px; justify-content:center;
+    font-family:var(--font-mono); font-size:11.5px; color:var(--chalk-dim);
+    letter-spacing:.06em; margin: 2px 0;
+  }
+  .opponent-avatar{
+    width:20px; height:20px; border-radius:50%; display:grid; place-items:center;
+    background:var(--board-deep); border:1px solid var(--brass-deep); color:var(--brass-soft);
+    font-family:var(--font-mono); font-size:11px;
+  }
+  .opponent-name, .player-name{ color:var(--chalk); font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:.12em; }
+  #botCount,#playerCount{ background:rgba(0,0,0,.18); padding:2px 8px; border-radius:999px; }
+
+  .bot-hand{ position:relative; height:clamp(52px,11vh,74px); }
+  .player-hand{ position:relative; height:clamp(108px,20vh,168px); transition:opacity .2s ease; }
+  .player-hand.disabled{ opacity:.62; }
+  .player-hand.disabled .card{ cursor:default; }
+
+  /* ============================= CENTER FELT ============================= */
+  .turn-banner{
+    text-align:center; font-family:var(--font-mono); font-size:12px; letter-spacing:.08em;
+    color:var(--brass-soft); padding:4px 0 8px; min-height:1.4em;
+  }
+  .turn-banner.bot-thinking{ color:var(--chalk-dim); }
+  .turn-banner .dots::after{
+    content:''; display:inline-block; width:1.2em; text-align:left;
+    animation:dots 1.1s steps(4,end) infinite;
+  }
+  @keyframes dots{ 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
+
+  .turn-actions{
+    display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+    gap:10px; margin: 2px 0 6px;
+  }
+  .pass-btn{
+    display:block; margin:0; background:linear-gradient(160deg,var(--brass-soft),var(--brass));
+    color:var(--board-deep); border:none; font-weight:700;
+    padding:7px 20px; border-radius:999px; cursor:pointer; font-size:12.5px; letter-spacing:.05em;
+    box-shadow:var(--shadow-card); transition:filter .15s ease, transform .12s ease;
+  }
+  .pass-btn:hover{ filter:brightness(1.06); }
+  .pass-btn:active{ transform:scale(.96); }
+  .pass-btn[hidden]{ display:none; }
+
+  /* ============================= CHALLENGE ============================= */
+  .challenge-btn{
+    position:relative; display:block; margin:0;
+    overflow:hidden; isolation:isolate;
+    background:linear-gradient(160deg,#ef8266,var(--wrong));
+    color:#2c0e06; border:none; font-weight:700;
+    padding:8px 24px; border-radius:999px; cursor:pointer;
+    font-size:12.5px; letter-spacing:.08em; text-transform:uppercase;
+    box-shadow:var(--shadow-card), 0 0 0 2px rgba(226,102,74,.3);
+    animation: challengePulse 1.1s ease-in-out infinite;
+  }
+  .challenge-btn[hidden]{ display:none; }
+  .challenge-btn::after{
+    content:""; position:absolute; top:0; right:0; bottom:0; width:0%;
+    background:rgba(8,10,6,.68); pointer-events:none;
+  }
+  .challenge-btn.dimming::after{ animation: challengeDim 3s linear forwards; }
+  .challenge-btn.bot-mode{
+    cursor:default; animation:none;
+    background:linear-gradient(160deg,var(--board-high),var(--board));
+    color:var(--chalk-dim); font-weight:600; font-style:italic;
+    text-transform:none; letter-spacing:.02em;
+    box-shadow:var(--shadow-card);
+  }
+  .challenge-btn:disabled{ pointer-events:none; }
+  @keyframes challengeDim{ from{ width:0%; } to{ width:100%; } }
+  @keyframes challengePulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.045); } }
+
+  .felt{
+    position:relative; flex:1; min-height:0;
+    border-radius:26px;
+    background:
+      radial-gradient(ellipse 78% 82% at 50% 45%, rgba(0,0,0,.18), transparent 70%),
+      var(--board-deep);
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.02);
+    display:flex; align-items:center; justify-content:center; gap:clamp(10px,4vw,34px);
+    padding: clamp(10px,3vw,20px);
+    overflow:visible;
+  }
+  /* faint truth-table grid ghosted on the felt */
+  .felt::before{
+    content:""; position:absolute; inset:14px; border-radius:20px; pointer-events:none;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(201,154,70,.05) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, rgba(201,154,70,.05) 0 1px, transparent 1px 34px);
+    -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 78%);
+            mask-image:radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 78%);
+  }
+
+  .pile-wrap{ position:relative; z-index:2; flex:0 0 auto; }
+  .draw-pile{
+    position:relative; width:clamp(46px,11vw,64px); height:clamp(66px,16vw,90px);
+    background:none; border:none; padding:0; cursor:pointer;
+  }
+  .draw-pile:disabled{ cursor:default; opacity:.5; }
+  .pile-card{
+    position:absolute; inset:0; border-radius:9px;
+    background: repeating-linear-gradient(45deg, var(--board-high) 0 6px, var(--board-deep) 6px 12px);
+    border:1.5px solid var(--brass-deep);
+    box-shadow:var(--shadow-card);
+  }
+  .pile-card::after{
+    content:"~"; position:absolute; inset:0; display:grid; place-items:center;
+    font-family:var(--font-mono); font-size:1.3em; color:rgba(230,201,131,.35);
+  }
+  .pile-card:nth-child(1){ transform:translate(3px,4px) rotate(-4deg); }
+  .pile-card:nth-child(2){ transform:translate(-2px,1px) rotate(3deg); }
+  .pile-card.top{ transform:none; transition:transform .15s ease; }
+  .draw-pile:hover .pile-card.top{ transform:translateY(-4px); }
+  .pile-label{
+    position:absolute; left:50%; bottom:-20px; transform:translateX(-50%);
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.14em; color:var(--chalk-dim);
+    white-space:nowrap;
+  }
+
+  .center-stage{
+    position:relative; z-index:2; display:flex; flex-direction:column; align-items:center;
+    padding: 6px 4px;
+    border-radius:18px;
+  }
+  /* stage-core (the "value" label + the card row) is the only thing that
+     determines center-stage's own box height, and therefore where felt
+     vertically centers it. stage-footer (the proof/claim line + the select
+     hint) is deliberately taken out of flow — position:absolute — and
+     anchored right below stage-core, so however many lines that turn's
+     claim/proof text needs, it grows straight down without ever nudging
+     the cards themselves up or down. */
+  .stage-core{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .stage-footer{
+    position:absolute; top:100%; left:4px; right:4px; margin-top:6px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .stage-cards-row{
+    display:flex; align-items:center; justify-content:center;
+    gap:clamp(8px,2.6vw,18px);
+  }
+  .center-stage.drop-hover{ box-shadow:0 0 0 2px var(--brass-soft) inset; background:rgba(230,201,131,.06); }
+  .center-stage.awaiting-drop{ animation:awaitPulse 1.4s ease-in-out infinite; cursor:pointer; }
+  @keyframes awaitPulse{
+    0%,100%{ box-shadow:0 0 0 2px rgba(230,201,131,.35) inset; }
+    50%{ box-shadow:0 0 0 2px rgba(230,201,131,.85) inset; }
+  }
+  .select-hint{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--brass-soft); opacity:0; height:0; overflow:hidden; transition:opacity .2s ease;
+  }
+  .center-stage.awaiting-drop .select-hint{ opacity:1; height:auto; }
+  .active-value{
+    font-family:var(--font-display); font-weight:700; font-size:clamp(13px,2.6vw,15px);
+    color:var(--chalk-dim); letter-spacing:.16em; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+  }
+  .active-value b{
+    font-family:var(--font-mono); color:var(--brass-soft); font-size:1.3em; letter-spacing:0;
+  }
+  .center-card-slot{ position:relative; width:clamp(90px,30vw,132px); height:calc(clamp(90px,30vw,132px) * 1.42); display:grid; place-items:center; }
+
+  /* Play area: where the freshly played card lands, at hand-card size — kept
+     visibly smaller than the center card so the two are never confused. */
+  .play-area-slot{
+    position:relative;
+    width:clamp(56px,19vw,88px); height:calc(clamp(56px,19vw,88px) * 1.42);
+    display:grid; place-items:center;
+    border:1.5px dashed rgba(230,201,131,.32);
+    border-radius:calc(clamp(56px,19vw,88px) * .13);
+    background:rgba(230,201,131,.045);
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .play-area-slot.has-card{ border-color:transparent; background:transparent; }
+  .play-area-hint{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--chalk-dim); text-align:center; padding:0 5px; line-height:1.35;
+  }
+  .play-area-slot.has-card .play-area-hint{ display:none; }
+  .lang-th .play-area-hint{ font-family:var(--font-body); letter-spacing:0; text-transform:none; }
+
+  .stage-glow{
+    position:absolute; inset:-14px; border-radius:20px; pointer-events:none; opacity:0;
+  }
+  .stage-glow.glow-correct{ animation:pulseCorrect .75s ease-out; }
+  .stage-glow.glow-wrong{ animation:pulseWrong .5s ease-out; }
+  @keyframes pulseCorrect{
+    0%{ box-shadow:0 0 0 0 rgba(127,224,176,.55); opacity:1; }
+    100%{ box-shadow:0 0 0 28px rgba(127,224,176,0); opacity:0; }
+  }
+  @keyframes pulseWrong{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-6px); }
+    40%{ transform:translateX(5px); }
+    60%{ transform:translateX(-4px); }
+    80%{ transform:translateX(3px); }
+    0%{ box-shadow:0 0 0 0 rgba(226,102,74,.5); opacity:1;}
+    100%{ box-shadow:0 0 0 20px rgba(226,102,74,0); opacity:0; }
+  }
+  .proof-line{
+    font-family:var(--font-chalk); color:var(--chalk); font-size:clamp(12.5px,2.6vw,15px);
+    min-height:1.6em; text-align:center;
+    white-space:normal; overflow-wrap:break-word; word-break:break-word;
+    padding-bottom:2px; max-width:88vw;
+    /* center-stage centers its children by shrinking each one to its own
+       preferred width (align-items:center) — for most children (the fixed
+       card sizes) that's fine, but proof-line's text length varies turn to
+       turn. Without these two rules a long claim/proof string, especially
+       unbroken by wrapping, would size proof-line (and therefore
+       center-stage, and therefore the on-screen position of everything
+       centered inside it, including the card slot) to fit however long
+       that turn's text happens to be. align-self:stretch + min-width:0
+       instead let proof-line's width follow center-stage's own width
+       (which is set by the fixed-size card row), with the text wrapping
+       to more/shorter lines as needed rather than ever pushing the
+       container wider. */
+    align-self:stretch; min-width:0; border-bottom:1px dashed transparent;
+  }
+  .proof-line.tone-correct{ color:var(--correct); }
+  .proof-line.tone-wrong{ color:var(--wrong); }
+  .proof-line.tone-neutral{ color:var(--brass-soft); }
+
+  /* ============================= CARDS ============================= */
+  .card{
+    position:absolute; left:50%;
+    width:var(--cw); height:calc(var(--cw) * 1.42);
+    margin-left:calc(var(--cw) / -2);
+    border-radius:calc(var(--cw) * .13);
+    background:linear-gradient(160deg, var(--paper) 0%, var(--paper-shade) 100%);
+    border:1px solid var(--paper-edge);
+    box-shadow:var(--shadow-card);
+    display:flex; flex-direction:column; justify-content:space-between;
+    padding:calc(var(--cw)*.08);
+    color:var(--ink);
+    overflow:hidden;
+    transition:transform .38s cubic-bezier(.16,1,.3,1), opacity .28s ease, box-shadow .18s ease;
+    user-select:none; -webkit-user-select:none;
+    cursor:grab;
+  }
+  .card.interactive{ touch-action:none; cursor:grab; }
+  .card.interactive:active{ cursor:grabbing; }
+  .card.facedown{
+    background:
+      repeating-linear-gradient(45deg, var(--board-high) 0 7px, var(--board-deep) 7px 14px);
+    border:1.5px solid var(--brass-deep);
+    display:grid; place-items:center;
+  }
+  .card.facedown .backmark{
+    font-family:var(--font-mono); color:rgba(230,201,131,.4); font-size:calc(var(--cw)*.34);
+    letter-spacing:-.05em;
+  }
+  .card.dragging{ transition:none; box-shadow:0 14px 26px -6px rgba(0,0,0,.5); cursor:grabbing; }
+  /* While a card is picked up, its hand-mates glide out of the way on a
+     softer, slightly longer curve than the default fan transition (which is
+     tuned snappy for dealing/selecting) — this reads as a smooth slide
+     instead of a jump. Applied only for the duration of a drag; see JS. */
+  .card.reorder-glide{ transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .28s ease, box-shadow .18s ease; }
+  .card.selected{ box-shadow:0 0 0 2.5px var(--brass-soft), var(--shadow-card); }
+  .card.rare{ border:1.5px solid var(--brass); background:linear-gradient(160deg,#f7edd4,var(--paper-shade) 90%); }
+  .card.rare::before{
+    content:""; position:absolute; inset:4px; border-radius:calc(var(--cw)*.1);
+    border:1px dashed var(--brass); pointer-events:none; opacity:.7;
+  }
+  .corner{ font-family:var(--font-mono); font-size:calc(var(--cw)*.155); line-height:1; color:var(--ink-soft); font-weight:700; }
+  .corner.br{ align-self:flex-end; transform:rotate(180deg); }
+  .card-face{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:calc(var(--cw)*.05); text-align:center; }
+  .symbols{
+    font-family:var(--font-mono); font-weight:700;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:calc(var(--cw)*.05); width:100%; line-height:1.05;
+  }
+  .symbols .op-line{ font-size:calc(var(--cw)*.19); letter-spacing:0; white-space:nowrap; color:var(--ink-soft); }
+  .symbols .result-line{
+    font-family:var(--font-display); font-weight:700;
+    font-size:calc(var(--cw)*.46); letter-spacing:0; line-height:1;
+    color:var(--ink); white-space:nowrap;
+  }
+  .card.rare .symbols{ font-size:calc(var(--cw)*.5); font-family:var(--font-display); white-space:nowrap; }
+  .caption{ font-family:var(--font-body); font-size:calc(var(--cw)*.115); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); font-weight:700; }
+
+  /* ============================= MODALS ============================= */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(10,18,14,.62); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; z-index:50; padding:18px;
+  }
+  .modal-backdrop[hidden]{ display:none; }
+  .modal{
+    background:linear-gradient(165deg,#25443b,#1a3128);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px; padding:22px clamp(18px,4vw,30px); max-width:520px; width:100%;
+    max-height:82vh; overflow-y:auto;
+    box-shadow:0 30px 60px -12px rgba(0,0,0,.55);
+  }
+  .modal h2{ font-size:22px; margin-bottom:4px; color:var(--chalk); }
+  .modal p, .modal li{ color:var(--chalk-dim); font-size:14px; line-height:1.55; }
+  .modal .legend{ list-style:none; padding:0; margin:14px 0; display:grid; gap:8px; }
+  .modal .legend li{ display:flex; gap:10px; align-items:baseline; background:rgba(0,0,0,.18); border-radius:10px; padding:8px 12px; }
+  .modal .legend b{ font-family:var(--font-mono); color:var(--brass-soft); min-width:2.4em; font-size:15px; }
+  .modal ol{ padding-left:20px; margin:10px 0; display:grid; gap:6px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+  .btn-primary{
+    background:linear-gradient(160deg,var(--brass-soft),var(--brass));
+    color:var(--board-deep); border:none; font-weight:700; padding:10px 20px;
+    border-radius:999px; cursor:pointer; font-size:14px; letter-spacing:.02em;
+  }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-ghost{
+    background:transparent; border:1px solid rgba(255,255,255,.25); color:var(--chalk);
+    padding:10px 18px; border-radius:999px; cursor:pointer; font-size:14px;
+  }
+
+  #logList{ list-style:none; margin:12px 0 0; padding:0; display:flex; flex-direction:column-reverse; gap:6px; max-height:46vh; overflow-y:auto; }
+  #logList li{ font-family:var(--font-mono); font-size:12px; background:rgba(0,0,0,.18); border-radius:8px; padding:7px 10px; }
+  #logList li.who-player{ border-left:3px solid var(--brass-soft); }
+  #logList li.who-bot{ border-left:3px solid var(--chalk-dim); }
+  #logList li.res-wrong{ color:var(--wrong); }
+  #logList li.res-correct{ color:var(--correct); }
+
+  .win-modal{ text-align:center; max-width:400px; }
+  .win-modal h2{ font-size:30px; margin-bottom:6px; }
+  .confetti-wrap{ position:relative; height:0; }
+  .confetti{ position:absolute; top:0; width:6px; height:10px; opacity:0; }
+
+  @media (prefers-reduced-motion: reduce){
+    .card, .stage-glow, .proof-line, .turn-banner .dots::after{ animation:none !important; transition:opacity .15s linear !important; }
+    .challenge-btn{ animation:none !important; }
+    .challenge-btn::after{ animation:none !important; }
+  }
+
+  @media (max-width:480px){
+    .brand-text p{ display:none; }
+    .topbar{ padding:10px 12px; }
+  }
+
+  /* ============================= THAI LANGUAGE ADAPTATIONS ============================= */
+  /* Thai-Latin sibling faces to each English role, so the identity holds across languages. */
+  html.lang-th{
+    --font-display: 'Trirong', 'Fraunces', Georgia, serif;
+    --font-body:    'Mitr', 'Karla', system-ui, sans-serif;
+    --font-chalk:   'Mali', 'Kalam', cursive;
+  }
+  /* Thai vowel/tone marks stack on the base consonant; wide letter-spacing pulls them
+     apart, so tracked "eyebrow" labels lose their tracking once real Thai text lands. */
+  .lang-th .brand-text p,
+  .lang-th .opponent-name,
+  .lang-th .player-name,
+  .lang-th .turn-banner,
+  .lang-th .pile-label,
+  .lang-th .select-hint,
+  .lang-th .caption,
+  .lang-th .active-value,
+  .lang-th .chip-btn,
+  .lang-th .pass-btn,
+  .lang-th .challenge-btn,
+  .lang-th .btn-primary,
+  .lang-th .btn-ghost,
+  .lang-th #logList li{
+    letter-spacing:0;
+  }
+  /* These roles carry prose in --font-mono (fine for Latin/notation); Thai prose needs
+     the Thai-capable body face instead. */
+  .lang-th .turn-banner,
+  .lang-th .pile-label,
+  .lang-th .select-hint,
+  .lang-th #logList li,
+  .lang-th .opponent-tag,
+  .lang-th .player-tag{
+    font-family:var(--font-body);
+  }
+
+  .lang-switch{
+    display:flex; align-items:center; gap:2px;
+    background:rgba(244,236,219,.06); border:1px solid rgba(244,236,219,.22);
+    border-radius:999px; padding:3px;
+  }
+  .lang-switch button{
+    border:none; background:transparent; color:var(--chalk-dim);
+    font-family:var(--font-mono); font-size:11.5px; font-weight:700;
+    letter-spacing:.03em; padding:6px 13px; border-radius:999px; cursor:pointer;
+    transition:background .18s ease, color .18s ease;
+  }
+  .lang-switch button.active{
+    background:linear-gradient(160deg,var(--brass-soft),var(--brass));
+    color:var(--board-deep); box-shadow:var(--shadow-card);
+  }
+  .lang-switch button:not(.active):hover{ color:var(--chalk); }
+
+  /* ============================= MODE SCREEN / LOBBY ============================= */
+  .mode-modal{ max-width:580px; }
+  .mode-grid{ display:grid; gap:12px; margin:16px 0 4px; }
+  @media (min-width:520px){ .mode-grid{ grid-template-columns:1fr 1fr; } }
+  .mode-card{
+    display:flex; flex-direction:column; gap:6px; text-align:left;
+    background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.12);
+    border-radius:14px; padding:16px; cursor:pointer; color:var(--chalk);
+    font-family:var(--font-body);
+    transition:border-color .18s ease, background .18s ease, transform .12s ease;
+  }
+  .mode-card:hover{ border-color:var(--brass-soft); background:rgba(230,201,131,.08); }
+  .mode-card:active{ transform:scale(.985); }
+  .mode-card.active{ border-color:var(--brass); background:rgba(230,201,131,.1); }
+  .mc-icon{ font-family:var(--font-mono); font-size:22px; color:var(--brass-soft); line-height:1; }
+  .mc-title{ font-family:var(--font-display); font-weight:700; font-size:17px; }
+  .mc-desc{ font-size:12.5px; color:var(--chalk-dim); line-height:1.5; }
+
+  .online-panel{ margin-top:16px; display:grid; gap:10px; border-top:1px solid rgba(255,255,255,.08); padding-top:16px; }
+  .online-panel[hidden]{ display:none; }
+  .field-label{ font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--chalk-dim); display:block; margin-bottom:5px; }
+  .lang-th .field-label{ letter-spacing:0; text-transform:none; font-size:12.5px; }
+  .text-input{
+    width:100%; background:rgba(0,0,0,.26); border:1px solid rgba(255,255,255,.18);
+    color:var(--chalk); border-radius:10px; padding:10px 12px;
+    font-family:var(--font-body); font-size:14px;
+  }
+  .text-input::placeholder{ color:rgba(185,194,182,.55); }
+  .text-input:focus{ outline:2px solid var(--brass-soft); outline-offset:1px; }
+  .code-input{ font-family:var(--font-mono); letter-spacing:.26em; text-transform:uppercase; font-size:17px; text-align:center; }
+  .join-row{ display:flex; gap:8px; align-items:stretch; }
+  .join-row .text-input{ flex:1; min-width:0; }
+  .join-row .btn-primary{ white-space:nowrap; }
+  .or-line{
+    text-align:center; font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--chalk-dim); display:flex; align-items:center; gap:10px;
+  }
+  .or-line::before, .or-line::after{ content:""; flex:1; height:1px; background:rgba(255,255,255,.1); }
+  .lang-th .or-line{ letter-spacing:0; text-transform:none; }
+  .room-code-box{
+    text-align:center; background:rgba(0,0,0,.26); border:1px dashed var(--brass-deep);
+    border-radius:14px; padding:14px 12px; display:grid; gap:8px;
+  }
+  .room-code-box[hidden]{ display:none; }
+  .rc-code{ font-family:var(--font-mono); font-size:clamp(26px,8vw,36px); letter-spacing:.2em; color:var(--brass-soft); font-weight:700; }
+  .rc-hint{ font-size:12.5px; color:var(--chalk-dim); }
+  .lobby-status{ font-size:13px; color:var(--chalk-dim); min-height:1.3em; text-align:center; line-height:1.5; }
+  .lobby-status.err{ color:var(--wrong); }
+  .lobby-status.ok{ color:var(--correct); }
+  .link-btn{
+    background:none; border:none; color:var(--brass-soft); text-decoration:underline;
+    cursor:pointer; font-size:12.5px; padding:2px; font-family:var(--font-body);
+  }
+  .row-between{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+
+  .room-badge{
+    display:none; align-items:center; gap:7px; font-family:var(--font-mono); font-size:11.5px;
+    background:rgba(0,0,0,.22); border:1px solid rgba(244,236,219,.18); color:var(--chalk-dim);
+    border-radius:999px; padding:7px 12px;
+  }
+  .room-badge.on{ display:inline-flex; }
+  .room-badge b{ color:var(--brass-soft); letter-spacing:.16em; font-weight:700; }
+  .conn-dot{ width:7px; height:7px; border-radius:50%; background:var(--chalk-dim); flex:0 0 auto; }
+  .conn-dot.live{ background:var(--correct); box-shadow:0 0 0 3px rgba(127,224,176,.16); }
+
+  /* ============================= FIREBASE SETUP ============================= */
+  .setup-modal{ max-width:660px; }
+  .setup-modal h3{ font-family:var(--font-display); font-size:15px; margin:18px 0 6px; color:var(--chalk); }
+  .setup-modal ol{ padding-left:20px; }
+  .setup-modal code{ font-family:var(--font-mono); font-size:.92em; background:rgba(0,0,0,.28); padding:1px 5px; border-radius:4px; color:var(--brass-soft); }
+  .setup-modal pre{
+    background:rgba(0,0,0,.34); border:1px solid rgba(255,255,255,.08); border-radius:10px;
+    padding:12px; overflow-x:auto; margin:8px 0 0;
+    font-family:var(--font-mono); font-size:11px; line-height:1.55; color:var(--chalk);
+    max-height:280px; overflow-y:auto; white-space:pre;
+  }
+  .setup-modal textarea.text-input{ min-height:110px; resize:vertical; font-family:var(--font-mono); font-size:11.5px; line-height:1.5; }
+  .note{
+    border-left:3px solid var(--brass); background:rgba(201,154,70,.1);
+    border-radius:0 8px 8px 0; padding:9px 12px; font-size:12.5px; color:var(--chalk-dim);
+    margin:8px 0; line-height:1.55;
+  }
+  .note.warn{ border-left-color:var(--wrong); background:rgba(226,102,74,.1); }
+  .note b{ color:var(--chalk); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">∧∨¬</span>
+      <div class="brand-text">
+        <h1>Logic Parlor</h1>
+        <p id="brandTagline">ดวลตัวเชื่อมตรรกะ</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="lang-switch" role="group" aria-label="Language / ภาษา">
+        <button type="button" class="lang-opt active" data-lang="th" aria-pressed="true">TH</button>
+        <button type="button" class="lang-opt" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <span class="room-badge" id="roomBadge"><span class="conn-dot" id="roomDot"></span><b id="roomBadgeCode"></b></span>
+      <button class="chip-btn" id="modeBtn" type="button">โหมด</button>
+      <button class="chip-btn" id="logBtn" type="button">บันทึกการพิสูจน์</button>
+      <button class="chip-btn" id="rulesBtn" type="button">วิธีเล่น</button>
+      <button class="chip-btn" id="restartBtn" type="button">เกมใหม่</button>
+    </div>
+  </header>
+
+  <main class="table">
+    <section class="bot-zone">
+      <div class="opponent-tag">
+        <span class="opponent-avatar">∑</span>
+        <span class="opponent-name" id="opponentName">บอท</span>
+        <span id="botCount">5 ใบ</span>
+      </div>
+      <div class="bot-hand" id="botHand"></div>
+    </section>
+
+    <section class="center-zone">
+      <div class="felt">
+        <div class="pile-wrap">
+          <button class="draw-pile" id="drawPile" type="button" aria-label="จั่วไพ่">
+            <div class="pile-card"></div>
+            <div class="pile-card"></div>
+            <div class="pile-card top"></div>
+          </button>
+          <span class="pile-label">กองจั่ว · ∞</span>
+        </div>
+
+        <div class="center-stage" id="centerStage" aria-label="วางไพ่ที่เลือกที่นี่">
+          <div class="stage-core">
+            <div class="active-value" id="activeValueWrap"><span id="tableValueLabel">ค่าบนโต๊ะ</span> <b id="activeValue">–</b></div>
+            <div class="stage-cards-row">
+              <div class="center-card-slot" id="centerCardSlot"></div>
+              <div class="play-area-slot" id="playAreaSlot" aria-label="วางไพ่ที่นี่">
+                <div class="stage-glow" id="stageGlow"></div>
+                <span class="play-area-hint" id="playAreaHint">วางไพ่ที่นี่</span>
+              </div>
+            </div>
+          </div>
+          <div class="stage-footer">
+            <div class="proof-line tone-neutral" id="proofLine"></div>
+            <div class="select-hint">แตะที่นี่เพื่อเล่นไพ่ที่ยกขึ้น</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="player-zone">
+      <div class="player-tag">
+        <span class="player-name" id="playerName">คุณ</span>
+        <span id="playerCount">5 ใบ</span>
+      </div>
+      <div class="turn-actions">
+        <button class="pass-btn" id="passBtn" type="button" hidden>ผ่านตา</button>
+        <button class="challenge-btn" id="challengeBtn" type="button" hidden>ท้าพิสูจน์!</button>
+      </div>
+      <div class="turn-banner" id="turnBanner">กำลังแจกไพ่…</div>
+      <div class="player-hand" id="playerHand"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Rules modal -->
+<div class="modal-backdrop" id="rulesBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <h2 id="rulesTitle">วิธีเล่น</h2>
+    <p id="rulesIntro">ไพ่แต่ละใบคือข้อความเกี่ยวกับค่าปัจจุบันบนโต๊ะ เขียนในรูปแบบ <em>ค่า → ตัวเชื่อม → ผลลัพธ์</em> หน้าที่ของคุณคือต้องบอกได้ว่าข้อความนั้นเป็นจริงหรือไม่</p>
+    <ul class="legend" id="rulesLegend">
+      <li><b>∧</b> และ — จริงเฉพาะเมื่อทั้งสองฝั่งเป็นจริง</li>
+      <li><b>∨</b> หรือ — จริงเมื่ออย่างน้อยฝั่งใดฝั่งหนึ่งเป็นจริง</li>
+      <li><b>→</b> ถ้า…แล้ว… — เป็นเท็จเฉพาะเมื่อฝั่งหน้าจริงแต่ฝั่งหลังเท็จ</li>
+      <li><b>↔</b> ก็ต่อเมื่อ — จริงเมื่อทั้งสองฝั่งมีค่าตรงกัน</li>
+      <li><b>~</b> นิเสธ — สลับค่าบนโต๊ะ</li>
+      <li><b>T / F</b> — พบได้ยาก ขอบทอง เล่นได้ทุกเมื่อ กำหนดค่าบนโต๊ะได้โดยตรง</li>
+    </ul>
+    <ol id="rulesSteps">
+      <li>โต๊ะเริ่มต้นด้วยค่า T หรือ F</li>
+      <li>ในตาของคุณ ลากไพ่ไปวางบนสักหลาด หรือแตะไพ่เพื่อยกขึ้นแล้วแตะสักหลาดเพื่อเล่น โต๊ะจะเปลี่ยนเป็นผลลัพธ์ที่ไพ่ระบุทันที</li>
+      <li>ไพ่ของคุณจะถูกอ่านว่า "ค่าบนโต๊ะ ตัวเชื่อมของคุณ ≡ ผลลัพธ์ของคุณ" ซึ่งเป็นคำกล่าวอ้างที่อาจจริงหรือเท็จ จากนั้นจะเปิดหน้าต่าง "ท้าพิสูจน์!" สามวินาที และผลจะไม่เปิดเผยจนกว่าหน้าต่างนี้จะปิด</li>
+      <li>เมื่อบอทเล่นคำกล่าวอ้าง ให้แตะ <b>ท้าพิสูจน์!</b> ก่อนปุ่มจะจางหายไป หากคุณคิดว่ามันเป็นเท็จ ถ้าท้าพิสูจน์คำกล่าวอ้างที่จริง คุณต้องจั่วไพ่ลงโทษสองใบ แต่ถ้าจับได้ว่าเป็นเท็จ บอทต้องจั่วแทน</li>
+      <li>เมื่อคุณเล่นคำกล่าวอ้าง บอทก็มีหน้าต่างสามวินาทีของตัวเองในการท้าพิสูจน์คุณเช่นกัน ถ้าบอทจับได้ว่าคำกล่าวอ้างเป็นเท็จ คุณต้องจั่วไพ่ลงโทษสองใบ แต่ถ้าบอทท้าพิสูจน์ผิดทั้งที่คำกล่าวอ้างเป็นจริง บอทต้องจั่วแทน</li>
+      <li>ไม่มีใครท้าพิสูจน์ทันเวลา? คำกล่าวอ้างจะมีผลไม่ว่าจริงหรือเท็จ และไม่มีใครต้องจั่วไพ่ลงโทษ แม้จะเป็นการบลัฟก็ตาม</li>
+      <li>ไพ่ T และ F ไม่ต้องพิสูจน์และท้าพิสูจน์ไม่ได้ เล่นได้ทุกเมื่อเพื่อกำหนดค่าบนโต๊ะโดยตรง</li>
+      <li>ไม่ถูกใจไพ่ในมือ? แตะกองจั่วเพื่อจั่วไพ่เพิ่ม จากนั้นจะเล่นไพ่ จั่วต่อ หรือแตะ <b>ผ่านตา</b> เพื่อจบตาของคุณก็ได้</li>
+      <li>ใครใช้ไพ่ในมือหมดก่อนเป็นผู้ชนะ แม้จะเป็นบลัฟที่ไม่มีใครจับได้ก็ตาม</li>
+    </ol>
+    <div class="modal-actions">
+      <button class="btn-primary" id="closeRules" type="button">เข้าใจแล้ว</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log modal -->
+<div class="modal-backdrop" id="logBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <h2 id="logTitle">บันทึกการพิสูจน์</h2>
+    <p id="logIntroP">การเล่นทั้งหมดในเกมนี้ เรียงจากล่าสุดไปเก่าสุด</p>
+    <ol id="logList" style="list-style:none; padding-left:0;"></ol>
+    <div class="modal-actions">
+      <button class="btn-primary" id="closeLog" type="button">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Win modal -->
+<div class="modal-backdrop" id="winBackdrop" hidden>
+  <div class="modal win-modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <h2 id="winTitle">คุณชนะ!</h2>
+    <p id="winSub">คุณใช้ไพ่หมดก่อน</p>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn-primary" id="playAgainBtn" type="button">เล่นอีกครั้ง</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mode / lobby modal -->
+<div class="modal-backdrop" id="modeBackdrop" hidden>
+  <div class="modal mode-modal" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
+    <h2 id="modeTitle">เลือกโหมด</h2>
+    <p id="modeSubtitle">ดวลกับบอทประจำร้าน หรือเล่นกับเพื่อนแบบเรียลไทม์ผ่าน Firebase</p>
+
+    <div class="mode-grid">
+      <button class="mode-card" id="modeBotBtn" type="button">
+        <span class="mc-icon">∑</span>
+        <span class="mc-title" id="modeBotTitle">เล่นกับบอท</span>
+        <span class="mc-desc" id="modeBotDesc">ดวลกับบอททันที ทำงานในเบราว์เซอร์นี้ทั้งหมด</span>
+      </button>
+      <button class="mode-card" id="modeOnlineBtn" type="button">
+        <span class="mc-icon">⇄</span>
+        <span class="mc-title" id="modeOnlineTitle">2 ผู้เล่นออนไลน์</span>
+        <span class="mc-desc" id="modeOnlineDesc">สร้างห้อง แชร์รหัส แล้วดวลกับเพื่อนแบบสด</span>
+      </button>
+    </div>
+
+    <div class="online-panel" id="onlinePanel" hidden>
+      <div>
+        <label class="field-label" for="playerNameInput" id="yourNameLabel">ชื่อของคุณ</label>
+        <input class="text-input" id="playerNameInput" type="text" maxlength="20" autocomplete="nickname">
+      </div>
+
+      <button class="btn-primary" id="createRoomBtn" type="button">สร้างห้อง</button>
+
+      <div class="or-line" id="orDivider">หรือ</div>
+
+      <div class="join-row">
+        <input class="text-input code-input" id="roomCodeInput" type="text" maxlength="5" inputmode="latin" autocomplete="off" spellcheck="false">
+        <button class="btn-primary" id="joinRoomBtn" type="button">เข้าร่วม</button>
+      </div>
+
+      <div class="room-code-box" id="roomCodeBox" hidden>
+        <div class="rc-code" id="roomCodeText"></div>
+        <div class="rc-hint" id="roomCodeHint"></div>
+        <div><button class="btn-ghost" id="copyCodeBtn" type="button">คัดลอกรหัส</button></div>
+      </div>
+
+      <div class="lobby-status" id="lobbyStatus"></div>
+
+      <div class="row-between">
+        <button class="link-btn" id="fbSetupLink" type="button">คู่มือตั้งค่า Firebase</button>
+        <button class="link-btn" id="cancelOnlineBtn" type="button">ย้อนกลับ</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="closeModeBtn" type="button" hidden>ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase setup modal -->
+<div class="modal-backdrop" id="setupBackdrop" hidden>
+  <div class="modal setup-modal" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
+    <h2 id="fbTitle">ตั้งค่า Firebase</h2>
+    <p id="fbIntro"></p>
+
+    <h3 id="fbStepsTitle"></h3>
+    <ol id="fbStepsList"></ol>
+
+    <h3 id="fbConfigTitle"></h3>
+    <textarea class="text-input" id="fbConfigInput" spellcheck="false"></textarea>
+    <div class="modal-actions" style="justify-content:flex-start; margin-top:10px;">
+      <button class="btn-primary" id="fbSaveBtn" type="button">บันทึก</button>
+      <button class="btn-ghost" id="fbClearBtn" type="button">ล้าง</button>
+    </div>
+    <div class="lobby-status" id="fbConfigStatus" style="text-align:left;"></div>
+
+    <h3 id="fbRulesTitle"></h3>
+    <div><button class="btn-ghost" id="fbCopyRulesBtn" type="button">คัดลอกกฎ</button></div>
+    <pre id="rulesCode"></pre>
+
+    <h3 id="fbNotesTitle"></h3>
+    <div id="fbNotesList"></div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="closeSetupBtn" type="button">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== i18n ===================== */
+  var LANG = {
+    en: {
+      pageTitle: 'Logic Parlor — a duel of connectives',
+      tagline: 'a duel of connectives',
+      proofLog: 'Proof Log', howToPlay: 'How to Play', newGame: 'New Game',
+      bot: 'Bot', you: 'You',
+      cardsCount: function(n){ return n + (n===1 ? ' card' : ' cards'); },
+      dealing: 'Dealing…',
+      turnPlayerDrag: 'Your turn — drag a card to the felt, or draw',
+      turnPlayerPass: 'Play a card, or pass your turn',
+      botThinking: 'Bot is thinking',
+      passTurn: 'Pass Turn',
+      challenge: 'Challenge!',
+      botDeciding: 'Bot is deciding…',
+      claimOnTableBotMode: 'Your claim is on the table — Bot may still call it…',
+      claimOnTablePlayerMode: 'Bot played a card — tap Challenge! if you think it\u2019s wrong.',
+      challenged: 'Challenged!',
+      unchallengedStands: 'Unchallenged — claim stands.',
+      tableValueLabel: 'table value',
+      drawPileLabel: 'draw pile · ∞',
+      selectHint: 'tap here to play the raised card',
+      playAreaHint: 'place your card here',
+      ariaDrawPile: 'Draw a card',
+      ariaCenterStage: 'Play a selected card here',
+      ariaPlayArea: 'Played card appears here',
+      ariaCard: function(sym){ return 'Card ' + sym; },
+      captions: {AND:'AND', OR:'OR', IFTHEN:'IF…THEN', IFF:'IFF', NOT:'NOT', ALWAYS_TRUE:'ALWAYS TRUE', ALWAYS_FALSE:'ALWAYS FALSE'},
+      rulesTitle: 'How to Play',
+      rulesIntroHTML: 'Every card is a claim about the table&rsquo;s current value, written as <em>value → connective → result</em>. Your job is to know whether the claim is true.',
+      legend: [
+        {sym:'∧', word:'AND', desc:'true only when both sides are true'},
+        {sym:'∨', word:'OR', desc:'true when at least one side is true'},
+        {sym:'→', word:'IF…THEN', desc:'false only when the front is true and the back is false'},
+        {sym:'↔', word:'IFF', desc:'true when both sides match'},
+        {sym:'~', word:'NOT', desc:'flips the table&rsquo;s value'},
+        {sym:'T / F', word:'', desc:'rare, gold-edged. Always playable, sets the table directly.'}
+      ],
+      stepsHTML: [
+        'The table starts showing a value, T or F.',
+        'On your turn, drag a card onto the felt — or tap a card to lift it, then tap the felt to play it. The table updates to your card&rsquo;s stated result right away.',
+        'Your card is read as "table value, your connective, ≡ your result" — a claim, true or false. A three-second <b>Challenge!</b> window opens next, and the verdict stays hidden until it closes.',
+        'When Bot plays a claim, tap <b>Challenge!</b> before it dims out if you think it&rsquo;s false. Call a true claim and you draw two penalty cards; catch a false one and Bot draws two instead.',
+        'When you play a claim, Bot gets its own three-second window to call you out. If Bot catches a false claim, you draw two penalty cards; if Bot wrongly challenges a true one, Bot draws two instead.',
+        'Nobody challenge in time? The claim stands, right or wrong, and no one draws penalty cards — bluffs included.',
+        'T and F cards need no justification and can&rsquo;t be challenged: play them anytime to set the table directly.',
+        'Don&rsquo;t like your hand? Tap the draw pile to draw a card. You may then play a card, draw again, or tap <b>Pass Turn</b> to end your turn.',
+        'First to empty their hand wins the duel — even on an uncaught bluff.'
+      ],
+      gotIt: 'Got it',
+      logTitle: 'Proof Log',
+      logIntro: 'Every play this game, most recent first.',
+      close: 'Close',
+      winTitle: function(who){ return who==='player' ? 'You Win!' : (opponentLabel() + ' wins!'); },
+      winSub: function(who){ return who==='player' ? 'You emptied your hand first. Well played.' : (opponentLabel() + ' emptied their hand first. Run it back?'); },
+      playAgain: 'Play Again',
+      gameOnGoodLuck: 'Game on — good luck.',
+      /* ---- modes / online lobby ---- */
+      modeChip: 'Mode',
+      modeTitle: 'Choose a mode',
+      modeSubtitle: 'Duel the house bot offline, or play a friend in real time over Firebase.',
+      modeBotTitle: 'Play with Bot',
+      modeBotDesc: 'An instant duel against the parlor bot. Runs entirely in this browser — no account, no network.',
+      modeOnlineTitle: '2 Players Online',
+      modeOnlineDesc: 'Create a room, share the 5-character code, and duel a friend live. Needs your own free Firebase project.',
+      yourNameLabel: 'Your name',
+      namePlaceholder: 'up to 20 characters',
+      createRoom: 'Create a room',
+      orDivider: 'or',
+      joinPlaceholder: 'CODE',
+      joinRoom: 'Join',
+      leaveRoom: 'Leave room',
+      backToModes: 'Back to modes',
+      backBtn: 'Back',
+      closeWord: 'Close',
+      copyCode: 'Copy code',
+      copied: 'Copied!',
+      copyFailed: 'Copy failed — select the text instead.',
+      shareCode: 'Share this code with your friend, then keep this tab open.',
+      waitingForOpponent: 'Waiting for an opponent to join…',
+      connecting: 'Connecting…',
+      opponent: 'Opponent',
+      opponentTurn: 'Opponent is thinking',
+      oppDeciding: 'Opponent is deciding…',
+      challengeSent: 'Challenge sent…',
+      claimOnTableOnline: 'Your claim is on the table — your opponent may still call it…',
+      opponentLeftMsg: 'Your opponent left the room. The duel ends here.',
+      onlineHint: 'Online mode needs this page served over http(s) — GitHub Pages or a local server. Opening the file directly (file://) works for Bot mode only.',
+      errNoConfig: 'Firebase is not set up yet — open the setup guide below and paste your config.',
+      errRoomNotFound: 'No room with that code.',
+      errRoomFull: 'That room already has two players.',
+      errOwnRoom: 'That is your own room — share the code with a friend instead.',
+      errBadCode: 'A room code is 5 letters or digits.',
+      errNoName: 'Enter a name first.',
+      errConnect: 'Could not reach Firebase. Check the config, the Firestore rules, and that Anonymous sign-in is enabled.',
+      errGeneric: 'Something went wrong — try again.',
+      /* ---- firebase setup guide ---- */
+      fbSetupLink: 'Firebase setup guide',
+      fbTitle: 'Firebase setup',
+      fbIntro: 'Online play runs on your own free Firebase project — about five minutes to set up, once.',
+      fbStepsTitle: 'Steps',
+      fbSteps: [
+        'Open <code>console.firebase.google.com</code> and click <b>Add project</b>. Analytics is optional — skip it.',
+        'In the project, go to <b>Build → Firestore Database → Create database</b>. Choose <b>production mode</b> (never test mode) and a region near you.',
+        'Go to <b>Build → Authentication → Get started → Sign-in method</b> and enable <b>Anonymous</b>. That is all this game needs — no emails, no passwords.',
+        'Open <b>Project settings (⚙) → Your apps → Web (&lt;/&gt;)</b>, register an app, and copy the <code>firebaseConfig</code> object it shows you.',
+        'This file already carries a config for the <code>logic-parlor</code> project — to point it at a different one, paste that config into the box below and press Save. A pasted config overrides the built-in one and is kept in this browser only (<code>localStorage</code>); Clear returns to the built-in one. To change what is built in, edit the <code>FIREBASE_CONFIG</code> constant near the top of the script.',
+        'Go to <b>Firestore Database → Rules</b>, replace everything with the rules below, and press <b>Publish</b>.',
+        'Go to <b>Authentication → Settings → Authorized domains</b> and add the domain you host this page on (for example <code>yourname.github.io</code>). <code>localhost</code> is already allowed.',
+        'Serve the page over http(s) — GitHub Pages, Netlify, or <code>python3 -m http.server</code>. Both players open the same URL; one creates a room, the other joins with the code.'
+      ],
+      fbConfigTitle: 'Your firebaseConfig',
+      fbConfigPlaceholder: '{\n  "apiKey": "…",\n  "authDomain": "your-project.firebaseapp.com",\n  "projectId": "your-project",\n  "appId": "1:…:web:…"\n}',
+      fbSave: 'Save config',
+      fbClear: 'Clear',
+      fbSaved: 'Saved in this browser.',
+      fbCleared: 'Config cleared from this browser.',
+      fbFellBack: 'Override cleared — back to the config built into this file.',
+      fbInvalid: 'Could not read that — it needs at least apiKey, projectId and appId.',
+      fbRulesTitle: 'Firestore security rules — paste these in and publish',
+      fbCopyRules: 'Copy rules',
+      fbNotesTitle: 'Before you share the link',
+      fbNotes: [
+        {warn:false, html:'<b>Restrict your API key.</b> In <b>Google Cloud Console → APIs &amp; Services → Credentials</b>, open the auto-created <i>Browser key (auto created by Firebase)</i>. Under <b>Application restrictions</b> pick <b>Websites</b> and list only your domains (e.g. <code>yourname.github.io/*</code>, <code>localhost:*</code>). Under <b>API restrictions</b> allow only <b>Identity Toolkit API</b> and <b>Cloud Firestore API</b>. A Firebase web API key is not a secret, but restricting it stops other sites from spending your quota.'},
+        {warn:false, html:'<b>The rules are the real lock.</b> They accept exactly the fields this game writes, with type and value checks on every one, and deny everything else in the database. Never publish open test-mode rules (<code>allow read, write: if true</code>) on a project anyone can reach.'},
+        {warn:false, html:'<b>Hands never leave your browser.</b> Only the room code, the two display names, and each move (a card that is already face-up on the table) are written to Firestore. Your hand is local, so your opponent cannot read it out of the database.'},
+        {warn:true, html:'<b>Public GitHub repo?</b> Fine for this game — a Firebase web config is meant to be shipped to browsers, and this room data holds nothing personal beyond a display name you choose. But do not reuse this project (or commit its config) for anything holding real user data, and never commit a service-account key or an admin SDK JSON file to a public repo.'},
+        {warn:true, html:'<b>Anyone with a room code can read that room.</b> Codes are random 5-character strings and rooms only accept two players, but treat a code like a party invite, not a password. A room is finished when someone leaves — refreshing mid-duel ends the game.'}
+      ],
+      logPassed: function(w){ return this.who(w) + ' passed.'; },
+      who: function(w){ return w==='player' ? this.you : opponentLabel(); },
+      proofDeclared: function(v){ return 'Declared ' + v + ' — T/F cards are always playable.'; },
+      proofClaimedWord: 'claimed',
+      proofCorrect: '✓ correct',
+      proofWrong: function(result){ return '✗ wrong — table still moves to ' + result; },
+      claimOnTable: 'claim on the table…',
+      claimHeld: 'claim held',
+      claimBusted: 'claim busted',
+      unchallengedSuffix: 'unchallenged',
+      challengedBy: function(who){ return who + ' challenged'; },
+      logDrew: function(w){ return this.who(w) + ' drew a card.'; },
+      logDeclared: function(w, v){ return this.who(w) + ' declared ' + v + '.'; },
+      logPlayed: function(w, sym, correct, unchallenged){ return this.who(w) + ' played ' + sym + (correct ? ' — correct' : ' — wrong') + (unchallenged ? ', unchallenged.' : '.'); },
+      logChallenge: function(claimant, opponent, sym, correct, loser){
+        return this.who(claimant) + ' played ' + sym + '. ' + this.who(opponent) + ' challenged it — claim was ' + (correct ? 'true' : 'false') + ', ' + this.who(loser) + ' drew two penalty cards.';
+      }
+    },
+    th: {
+      pageTitle: 'Logic Parlor — ดวลตัวเชื่อมตรรกะ',
+      tagline: 'ดวลตัวเชื่อมตรรกะ',
+      proofLog: 'บันทึกการพิสูจน์', howToPlay: 'วิธีเล่น', newGame: 'เกมใหม่',
+      bot: 'บอท', you: 'คุณ',
+      cardsCount: function(n){ return n + ' ใบ'; },
+      dealing: 'กำลังแจกไพ่…',
+      turnPlayerDrag: 'ตาคุณ — ลากไพ่ไปวางบนสักหลาด หรือจั่วไพ่',
+      turnPlayerPass: 'เล่นไพ่ หรือผ่านตา',
+      botThinking: 'บอทกำลังคิด',
+      passTurn: 'ผ่านตา',
+      challenge: 'ท้าพิสูจน์!',
+      botDeciding: 'บอทกำลังตัดสินใจ…',
+      claimOnTableBotMode: 'คำกล่าวอ้างของคุณอยู่บนโต๊ะ — บอทอาจท้าพิสูจน์ได้…',
+      claimOnTablePlayerMode: 'บอทเล่นไพ่ — แตะ "ท้าพิสูจน์!" ถ้าคุณคิดว่าไพ่นี้ผิด',
+      challenged: 'ถูกท้าพิสูจน์!',
+      unchallengedStands: 'ไม่มีใครท้าพิสูจน์ — คำกล่าวอ้างมีผล',
+      tableValueLabel: 'ค่าบนโต๊ะ',
+      drawPileLabel: 'กองจั่ว · ∞',
+      selectHint: 'แตะที่นี่เพื่อเล่นไพ่ที่ยกขึ้น',
+      playAreaHint: 'วางไพ่ของคุณที่นี่',
+      ariaDrawPile: 'จั่วไพ่',
+      ariaCenterStage: 'วางไพ่ที่เลือกที่นี่',
+      ariaPlayArea: 'ไพ่ที่เล่นจะปรากฏที่นี่',
+      ariaCard: function(sym){ return 'ไพ่ ' + sym; },
+      captions: {AND:'และ', OR:'หรือ', IFTHEN:'ถ้า…แล้ว…', IFF:'ก็ต่อเมื่อ', NOT:'นิเสธ', ALWAYS_TRUE:'จริงเสมอ', ALWAYS_FALSE:'เท็จเสมอ'},
+      rulesTitle: 'วิธีเล่น',
+      rulesIntroHTML: 'ไพ่แต่ละใบคือข้อความเกี่ยวกับค่าปัจจุบันบนโต๊ะ เขียนในรูปแบบ <em>ค่า → ตัวเชื่อม → ผลลัพธ์</em> หน้าที่ของคุณคือต้องบอกได้ว่าข้อความนั้นเป็นจริงหรือไม่',
+      legend: [
+        {sym:'∧', word:'และ', desc:'จริงเฉพาะเมื่อทั้งสองฝั่งเป็นจริง'},
+        {sym:'∨', word:'หรือ', desc:'จริงเมื่ออย่างน้อยฝั่งใดฝั่งหนึ่งเป็นจริง'},
+        {sym:'→', word:'ถ้า…แล้ว…', desc:'เป็นเท็จเฉพาะเมื่อฝั่งหน้าจริงแต่ฝั่งหลังเท็จ'},
+        {sym:'↔', word:'ก็ต่อเมื่อ', desc:'จริงเมื่อทั้งสองฝั่งมีค่าตรงกัน'},
+        {sym:'~', word:'นิเสธ', desc:'สลับค่าบนโต๊ะ'},
+        {sym:'T / F', word:'', desc:'พบได้ยาก ขอบทอง เล่นได้ทุกเมื่อ กำหนดค่าบนโต๊ะได้โดยตรง'}
+      ],
+      stepsHTML: [
+        'โต๊ะเริ่มต้นด้วยค่า T หรือ F',
+        'ในตาของคุณ ลากไพ่ไปวางบนสักหลาด หรือแตะไพ่เพื่อยกขึ้นแล้วแตะสักหลาดเพื่อเล่น โต๊ะจะเปลี่ยนเป็นผลลัพธ์ที่ไพ่ระบุทันที',
+        'ไพ่ของคุณจะถูกอ่านว่า "ค่าบนโต๊ะ ตัวเชื่อมของคุณ ≡ ผลลัพธ์ของคุณ" ซึ่งเป็นคำกล่าวอ้างที่อาจจริงหรือเท็จ จากนั้นจะเปิดหน้าต่าง "ท้าพิสูจน์!" สามวินาที และผลจะไม่เปิดเผยจนกว่าหน้าต่างนี้จะปิด',
+        'เมื่อบอทเล่นคำกล่าวอ้าง ให้แตะ <b>ท้าพิสูจน์!</b> ก่อนปุ่มจะจางหายไป หากคุณคิดว่ามันเป็นเท็จ ถ้าท้าพิสูจน์คำกล่าวอ้างที่จริง คุณต้องจั่วไพ่ลงโทษสองใบ แต่ถ้าจับได้ว่าเป็นเท็จ บอทต้องจั่วแทน',
+        'เมื่อคุณเล่นคำกล่าวอ้าง บอทก็มีหน้าต่างสามวินาทีของตัวเองในการท้าพิสูจน์คุณเช่นกัน ถ้าบอทจับได้ว่าคำกล่าวอ้างเป็นเท็จ คุณต้องจั่วไพ่ลงโทษสองใบ แต่ถ้าบอทท้าพิสูจน์ผิดทั้งที่คำกล่าวอ้างเป็นจริง บอทต้องจั่วแทน',
+        'ไม่มีใครท้าพิสูจน์ทันเวลา? คำกล่าวอ้างจะมีผลไม่ว่าจริงหรือเท็จ และไม่มีใครต้องจั่วไพ่ลงโทษ แม้จะเป็นการบลัฟก็ตาม',
+        'ไพ่ T และ F ไม่ต้องพิสูจน์และท้าพิสูจน์ไม่ได้ เล่นได้ทุกเมื่อเพื่อกำหนดค่าบนโต๊ะโดยตรง',
+        'ไม่ถูกใจไพ่ในมือ? แตะกองจั่วเพื่อจั่วไพ่เพิ่ม จากนั้นจะเล่นไพ่ จั่วต่อ หรือแตะ <b>ผ่านตา</b> เพื่อจบตาของคุณก็ได้',
+        'ใครใช้ไพ่ในมือหมดก่อนเป็นผู้ชนะ แม้จะเป็นบลัฟที่ไม่มีใครจับได้ก็ตาม'
+      ],
+      gotIt: 'เข้าใจแล้ว',
+      logTitle: 'บันทึกการพิสูจน์',
+      logIntro: 'การเล่นทั้งหมดในเกมนี้ เรียงจากล่าสุดไปเก่าสุด',
+      close: 'ปิด',
+      winTitle: function(who){ return who==='player' ? 'คุณชนะ!' : (opponentLabel() + 'ชนะ!'); },
+      winSub: function(who){ return who==='player' ? 'คุณใช้ไพ่หมดก่อน เล่นได้ยอดเยี่ยม' : (opponentLabel() + 'ใช้ไพ่หมดก่อน ลองใหม่อีกครั้งไหม?'); },
+      playAgain: 'เล่นอีกครั้ง',
+      gameOnGoodLuck: 'เริ่มเกม — ขอให้โชคดี',
+      /* ---- modes / online lobby ---- */
+      modeChip: 'โหมด',
+      modeTitle: 'เลือกโหมด',
+      modeSubtitle: 'ดวลกับบอทประจำร้านแบบออฟไลน์ หรือเล่นกับเพื่อนแบบเรียลไทม์ผ่าน Firebase',
+      modeBotTitle: 'เล่นกับบอท',
+      modeBotDesc: 'ดวลกับบอทได้ทันที ทำงานในเบราว์เซอร์นี้ทั้งหมด ไม่ต้องสมัคร ไม่ต้องต่อเน็ต',
+      modeOnlineTitle: '2 ผู้เล่นออนไลน์',
+      modeOnlineDesc: 'สร้างห้อง แชร์รหัส 5 ตัวอักษร แล้วดวลกับเพื่อนแบบสด ต้องมีโปรเจกต์ Firebase ของคุณเอง (ฟรี)',
+      yourNameLabel: 'ชื่อของคุณ',
+      namePlaceholder: 'ไม่เกิน 20 ตัวอักษร',
+      createRoom: 'สร้างห้อง',
+      orDivider: 'หรือ',
+      joinPlaceholder: 'รหัสห้อง',
+      joinRoom: 'เข้าร่วม',
+      leaveRoom: 'ออกจากห้อง',
+      backToModes: 'กลับไปเลือกโหมด',
+      backBtn: 'ย้อนกลับ',
+      closeWord: 'ปิด',
+      copyCode: 'คัดลอกรหัส',
+      copied: 'คัดลอกแล้ว!',
+      copyFailed: 'คัดลอกไม่สำเร็จ — ลองเลือกข้อความเอง',
+      shareCode: 'ส่งรหัสนี้ให้เพื่อน แล้วเปิดแท็บนี้ค้างไว้',
+      waitingForOpponent: 'กำลังรอคู่แข่งเข้าห้อง…',
+      connecting: 'กำลังเชื่อมต่อ…',
+      opponent: 'คู่แข่ง',
+      opponentTurn: 'คู่แข่งกำลังคิด',
+      oppDeciding: 'คู่แข่งกำลังตัดสินใจ…',
+      challengeSent: 'ส่งคำท้าแล้ว…',
+      claimOnTableOnline: 'คำกล่าวอ้างของคุณอยู่บนโต๊ะ — คู่แข่งอาจท้าพิสูจน์ได้…',
+      opponentLeftMsg: 'คู่แข่งออกจากห้องแล้ว เกมจบเพียงเท่านี้',
+      onlineHint: 'โหมดออนไลน์ต้องเปิดหน้านี้ผ่าน http(s) เช่น GitHub Pages หรือเซิร์ฟเวอร์ในเครื่อง หากเปิดไฟล์ตรง ๆ (file://) จะเล่นได้เฉพาะโหมดบอท',
+      errNoConfig: 'ยังไม่ได้ตั้งค่า Firebase — เปิดคู่มือด้านล่างแล้ววาง config ของคุณ',
+      errRoomNotFound: 'ไม่พบห้องที่ใช้รหัสนี้',
+      errRoomFull: 'ห้องนี้มีผู้เล่นครบสองคนแล้ว',
+      errOwnRoom: 'นี่คือห้องของคุณเอง — ส่งรหัสให้เพื่อนแทน',
+      errBadCode: 'รหัสห้องคือตัวอักษรหรือตัวเลข 5 ตัว',
+      errNoName: 'กรุณากรอกชื่อก่อน',
+      errConnect: 'เชื่อมต่อ Firebase ไม่สำเร็จ ตรวจสอบ config, กฎของ Firestore และเปิดใช้ Anonymous sign-in แล้วหรือยัง',
+      errGeneric: 'เกิดข้อผิดพลาด — ลองอีกครั้ง',
+      /* ---- firebase setup guide ---- */
+      fbSetupLink: 'คู่มือตั้งค่า Firebase',
+      fbTitle: 'ตั้งค่า Firebase',
+      fbIntro: 'โหมดออนไลน์ใช้โปรเจกต์ Firebase ฟรีของคุณเอง ตั้งค่าครั้งเดียว ใช้เวลาประมาณห้านาที',
+      fbStepsTitle: 'ขั้นตอน',
+      fbSteps: [
+        'เปิด <code>console.firebase.google.com</code> แล้วกด <b>Add project</b> ส่วน Analytics จะข้ามไปก็ได้',
+        'ในโปรเจกต์ ไปที่ <b>Build → Firestore Database → Create database</b> เลือก <b>production mode</b> (ห้ามเลือก test mode) และเลือกภูมิภาคที่ใกล้คุณ',
+        'ไปที่ <b>Build → Authentication → Get started → Sign-in method</b> แล้วเปิด <b>Anonymous</b> เกมนี้ใช้เพียงเท่านี้ ไม่ต้องใช้อีเมลหรือรหัสผ่าน',
+        'เปิด <b>Project settings (⚙) → Your apps → Web (&lt;/&gt;)</b> ลงทะเบียนแอป แล้วคัดลอกอ็อบเจกต์ <code>firebaseConfig</code> ที่ได้',
+        'ไฟล์นี้มี config ของโปรเจกต์ <code>logic-parlor</code> ฝังมาแล้ว หากต้องการชี้ไปโปรเจกต์อื่น ให้วาง config นั้นในช่องด้านล่างแล้วกดบันทึก ค่าที่วางจะทับค่าที่ฝังไว้ และเก็บอยู่ในเบราว์เซอร์นี้เท่านั้น (<code>localStorage</code>) กดล้างเพื่อกลับไปใช้ค่าที่ฝังมา หากต้องการเปลี่ยนค่าที่ฝัง ให้แก้ค่าคงที่ <code>FIREBASE_CONFIG</code> ที่ต้นสคริปต์',
+        'ไปที่ <b>Firestore Database → Rules</b> แทนที่ทั้งหมดด้วยกฎด้านล่าง แล้วกด <b>Publish</b>',
+        'ไปที่ <b>Authentication → Settings → Authorized domains</b> แล้วเพิ่มโดเมนที่คุณใช้โฮสต์หน้านี้ (เช่น <code>yourname.github.io</code>) ส่วน <code>localhost</code> อนุญาตอยู่แล้ว',
+        'เปิดหน้านี้ผ่าน http(s) เช่น GitHub Pages, Netlify หรือ <code>python3 -m http.server</code> ผู้เล่นทั้งสองเปิด URL เดียวกัน คนหนึ่งสร้างห้อง อีกคนใส่รหัสเข้าร่วม'
+      ],
+      fbConfigTitle: 'firebaseConfig ของคุณ',
+      fbConfigPlaceholder: '{\n  "apiKey": "…",\n  "authDomain": "your-project.firebaseapp.com",\n  "projectId": "your-project",\n  "appId": "1:…:web:…"\n}',
+      fbSave: 'บันทึก config',
+      fbClear: 'ล้าง',
+      fbSaved: 'บันทึกไว้ในเบราว์เซอร์นี้แล้ว',
+      fbCleared: 'ล้าง config ออกจากเบราว์เซอร์นี้แล้ว',
+      fbFellBack: 'ล้างค่าที่ตั้งทับแล้ว — กลับไปใช้ config ที่ฝังมากับไฟล์นี้',
+      fbInvalid: 'อ่านค่าไม่ได้ — ต้องมีอย่างน้อย apiKey, projectId และ appId',
+      fbRulesTitle: 'กฎความปลอดภัยของ Firestore — วางแล้วกด Publish',
+      fbCopyRules: 'คัดลอกกฎ',
+      fbNotesTitle: 'ก่อนแชร์ลิงก์ให้คนอื่น',
+      fbNotes: [
+        {warn:false, html:'<b>จำกัดการใช้งาน API key ของคุณ</b> ไปที่ <b>Google Cloud Console → APIs &amp; Services → Credentials</b> เปิดคีย์ <i>Browser key (auto created by Firebase)</i> ที่ระบบสร้างให้ ในหัวข้อ <b>Application restrictions</b> เลือก <b>Websites</b> แล้วใส่เฉพาะโดเมนของคุณ (เช่น <code>yourname.github.io/*</code>, <code>localhost:*</code>) และในหัวข้อ <b>API restrictions</b> อนุญาตเฉพาะ <b>Identity Toolkit API</b> กับ <b>Cloud Firestore API</b> คีย์เว็บของ Firebase ไม่ใช่ความลับ แต่การจำกัดช่วยกันไม่ให้เว็บอื่นมาใช้โควตาของคุณ'},
+        {warn:false, html:'<b>กฎคือกุญแจตัวจริง</b> กฎด้านล่างรับเฉพาะฟิลด์ที่เกมนี้เขียนจริง พร้อมตรวจชนิดและค่าทุกฟิลด์ และปฏิเสธทุกอย่างที่เหลือในฐานข้อมูล อย่าใช้กฎแบบเปิด (<code>allow read, write: if true</code>) กับโปรเจกต์ที่คนอื่นเข้าถึงได้'},
+        {warn:false, html:'<b>ไพ่ในมือไม่เคยออกจากเบราว์เซอร์</b> สิ่งที่เขียนลง Firestore มีเพียงรหัสห้อง ชื่อที่แสดงของผู้เล่นสองคน และการเดินแต่ละครั้ง (ซึ่งเป็นไพ่ที่หงายอยู่บนโต๊ะแล้ว) ไพ่ในมือเก็บไว้ในเครื่อง คู่แข่งจึงอ่านจากฐานข้อมูลไม่ได้'},
+        {warn:true, html:'<b>ใช้ repo สาธารณะบน GitHub?</b> สำหรับเกมนี้ถือว่าโอเค — config เว็บของ Firebase ถูกออกแบบมาให้ส่งถึงเบราว์เซอร์อยู่แล้ว และข้อมูลห้องไม่มีอะไรเป็นข้อมูลส่วนบุคคลนอกจากชื่อที่คุณตั้งเอง แต่อย่านำโปรเจกต์นี้ (หรือ config นี้) ไปใช้กับงานที่มีข้อมูลผู้ใช้จริง และห้ามคอมมิต service-account key หรือไฟล์ JSON ของ Admin SDK ลง repo สาธารณะเด็ดขาด'},
+        {warn:true, html:'<b>ใครมีรหัสห้องก็อ่านห้องนั้นได้</b> รหัสเป็นตัวอักษรสุ่ม 5 ตัวและห้องรับผู้เล่นได้แค่สองคน แต่ให้มองรหัสเป็นบัตรเชิญ ไม่ใช่รหัสผ่าน ห้องจะจบเมื่อมีคนออก และการรีเฟรชกลางเกมเท่ากับจบเกม'}
+      ],
+      logPassed: function(w){ return this.who(w) + 'ผ่านตา'; },
+      who: function(w){ return w==='player' ? this.you : opponentLabel(); },
+      proofDeclared: function(v){ return 'ประกาศค่า ' + v + ' — ไพ่ T/F เล่นได้ทุกเมื่อ'; },
+      proofClaimedWord: 'อ้างว่า',
+      proofCorrect: '✓ ถูกต้อง',
+      proofWrong: function(result){ return '✗ ผิด — โต๊ะยังคงเปลี่ยนเป็น ' + result; },
+      claimOnTable: 'คำกล่าวอ้างอยู่บนโต๊ะ…',
+      claimHeld: 'คำกล่าวอ้างรอด',
+      claimBusted: 'คำกล่าวอ้างพัง',
+      unchallengedSuffix: 'ไม่มีใครท้าพิสูจน์',
+      challengedBy: function(who){ return who + 'ท้าพิสูจน์'; },
+      logDrew: function(w){ return this.who(w) + 'จั่วไพ่'; },
+      logDeclared: function(w, v){ return this.who(w) + 'ประกาศค่า ' + v; },
+      logPlayed: function(w, sym, correct, unchallenged){ return this.who(w) + 'เล่น ' + sym + (correct ? ' — ถูกต้อง' : ' — ผิด') + (unchallenged ? ' ไม่มีใครท้าพิสูจน์' : ''); },
+      logChallenge: function(claimant, opponent, sym, correct, loser){
+        return this.who(claimant) + 'เล่น ' + sym + ' ' + this.who(opponent) + 'ท้าพิสูจน์ — คำกล่าวอ้างเป็น' + (correct ? 'จริง' : 'เท็จ') + ' ' + this.who(loser) + 'จั่วไพ่ลงโทษสองใบ';
+      }
+    }
+  };
+
+  /* ===================== CARD DEFINITIONS ===================== */
+  // ---------------------------------------------------------------------------
+  // TERMINOLOGY — read this before adding, removing, or reweighting any card.
+  //
+  //   "ends with T" / "ends with F"
+  //     The value the TABLE becomes AFTER the card is played (its `result`,
+  //     or `value` for the T/F cards). The T card counts as "ends with T";
+  //     the F card counts as "ends with F".
+  //
+  //   "starts with T" / "starts with F"
+  //     A card is only a TRUE claim when the table's CURRENT value —
+  //     i.e. the value BEFORE this card is played — is T (or F,
+  //     respectively). This EXCLUDES any card whose claim is true no
+  //     matter what the current value is, i.e. cards that can correctly
+  //     be played to "start with anything":
+  //       - T card, F card   (they don't reference the current value at all)
+  //       - ∨ T ≡ T          (current ∨ T is always T)
+  //       - → T ≡ T          (current → T is always T)
+  //       - ∧ F ≡ F          (current ∧ F is always F)
+  //     These four are tagged `start:any` below and are NOT counted in
+  //     either the start-T or the start-F total.
+  //
+  // INVARIANTS — must remain true after ANY future edit to these decks
+  // (add/remove/reweight a card → re-derive both sums and confirm):
+  //
+  //   Σ weight(end:T cards)   ===  Σ weight(end:F cards)
+  //   Σ weight(start:T cards) ===  Σ weight(start:F cards)     [start:any excluded from this sum]
+  //
+  // Every card object below carries a trailing `// end:_ start:_` tag plus
+  // a short reason, so both totals can be re-derived by eye. The running
+  // arithmetic is re-verified in the "Balance check" comment by POOL below —
+  // keep that comment in sync with any change here.
+  // ---------------------------------------------------------------------------
+  var CONN_DEFS = [
+    {type:'conn', op:'∧', operand:'T', result:'T', capKey:'AND'},            // end:T start:T   (current∧T≡T only when current=T)
+    {type:'conn', op:'∧', operand:'T', result:'F', capKey:'AND'},            // end:F start:F   (current∧T≡F only when current=F)
+    // weight:12 — this card is "always correct" (current∧F is always F), so it is
+    // start:any, the same class as ∨T≡T and →T≡T below — but unlike those two it
+    // ENDS the table on F, not T. Doubling its weight is what balances the overall
+    // end-T vs end-F totals (see POOL construction + Balance check below) without
+    // touching the start-T/start-F totals, since start:any cards sit outside that sum.
+    {type:'conn', op:'∧', operand:'F', result:'F', capKey:'AND', weight:12}, // end:F start:any (current∧F is always F, regardless of current)
+    {type:'conn', op:'∨', operand:'T', result:'T', capKey:'OR'},             // end:T start:any (current∨T is always T, regardless of current)
+    {type:'conn', op:'∨', operand:'F', result:'T', capKey:'OR'},             // end:T start:T   (current∨F≡T only when current=T)
+    {type:'conn', op:'∨', operand:'F', result:'F', capKey:'OR'},             // end:F start:F   (current∨F≡F only when current=F)
+    {type:'conn', op:'→', operand:'T', result:'T', capKey:'IFTHEN'},         // end:T start:any (current→T is always T, regardless of current)
+    {type:'conn', op:'→', operand:'F', result:'T', capKey:'IFTHEN'},         // end:T start:F   (current→F≡T only when current=F)
+    {type:'conn', op:'→', operand:'F', result:'F', capKey:'IFTHEN'},         // end:F start:T   (current→F≡F only when current=T)
+    {type:'conn', op:'↔', operand:'T', result:'T', capKey:'IFF'},            // end:T start:T   (current↔T≡T only when current=T)
+    {type:'conn', op:'↔', operand:'F', result:'T', capKey:'IFF'},            // end:T start:F   (current↔F≡T only when current=F)
+    {type:'conn', op:'↔', operand:'T', result:'F', capKey:'IFF'},            // end:F start:F   (current↔T≡F only when current=F)
+    {type:'conn', op:'↔', operand:'F', result:'F', capKey:'IFF'},            // end:F start:T   (current↔F≡F only when current=T)
+    {type:'neg', result:'F', capKey:'NOT'},                                  // end:F start:T   (~current≡F only when current=T)
+    {type:'neg', result:'T', capKey:'NOT'}                                   // end:T start:F   (~current≡T only when current=F)
+  ];
+  var VALUE_DEFS = [
+    {type:'value', value:'T', capKey:'ALWAYS_TRUE'},                         // end:T start:any (declares the value directly; no dependency on current)
+    {type:'value', value:'F', capKey:'ALWAYS_FALSE'}                         // end:F start:any
+  ];
+
+  var POOL = [];
+  CONN_DEFS.forEach(function(d){ POOL.push({def:d, weight: d.weight || 6}); });
+  VALUE_DEFS.forEach(function(d){ POOL.push({def:d, weight:5}); });
+  var TOTAL_WEIGHT = POOL.reduce(function(s,p){ return s+p.weight; }, 0); // = 106
+  // ---------------------------------------------------------------------------
+  // Balance check — this must keep holding true (see INVARIANTS above).
+  // Recompute this comment whenever a card above is added, removed, or
+  // reweighted:
+  //
+  //   end:T  → ∧T≡T(6) + ∨T≡T(6) + ∨F≡T(6) + →T≡T(6) + →F≡T(6)
+  //            + ↔T≡T(6) + ↔F≡T(6) + neg→T(6) + T-card(5)        = 53
+  //   end:F  → ∧T≡F(6) + ∧F≡F(12) + ∨F≡F(6) + →F≡F(6)
+  //            + ↔T≡F(6) + ↔F≡F(6) + neg→F(6) + F-card(5)        = 53
+  //     ⇒ end:T (53) === end:F (53) ✓
+  //
+  //   start:T → ∧T≡T(6) + ∨F≡T(6) + →F≡F(6) + ↔T≡T(6) + ↔F≡F(6) + neg→F(6) = 36
+  //   start:F → ∧T≡F(6) + ∨F≡F(6) + →F≡T(6) + ↔F≡T(6) + ↔T≡F(6) + neg→T(6) = 36
+  //     ⇒ start:T (36) === start:F (36) ✓
+  //   (start:any cards — T, F, ∧F≡F, ∨T≡T, →T≡T — are excluded from this sum by definition)
+  // ---------------------------------------------------------------------------
+
+  var uidCounter = 1;
+  function instantiate(def){
+    var c = {};
+    for (var k in def) c[k]=def[k];
+    c.uid = 'c' + (uidCounter++);
+    return c;
+  }
+  function weightedDraw(){
+    var r = Math.random()*TOTAL_WEIGHT;
+    for (var i=0;i<POOL.length;i++){
+      if (r < POOL[i].weight) return instantiate(POOL[i].def);
+      r -= POOL[i].weight;
+    }
+    return instantiate(POOL[POOL.length-1].def);
+  }
+  function drawN(n){ var a=[]; for(var i=0;i<n;i++) a.push(weightedDraw()); return a; }
+  // The one place cards enter a hand mid-game. Online, the opponent's hand is
+  // only ever a mirror — their real cards are drawn in their own browser, so
+  // this side pushes face-down placeholders and keeps the count honest.
+  function drawIntoHand(who, n){
+    var hand = who==='player' ? state.playerHand : state.botHand;
+    var mirrored = (state.mode==='online' && who==='bot');
+    for (var i=0;i<n;i++) hand.push(mirrored ? hiddenCard() : weightedDraw());
+  }
+
+  /* ===================== LOGIC ===================== */
+  function actualResult(currentBool, card){
+    if (card.type==='neg') return !currentBool;
+    var operandBool = card.operand === 'T';
+    switch(card.op){
+      case '∧': return currentBool && operandBool;
+      case '∨': return currentBool || operandBool;
+      case '→': return (!currentBool) || operandBool;
+      case '↔': return currentBool === operandBool;
+    }
+    return false;
+  }
+  function isCorrectPlay(currentBool, card){
+    if (card.type==='value') return true;
+    var claimed = card.result === 'T';
+    return actualResult(currentBool, card) === claimed;
+  }
+  function newCenterAfterPlay(card){
+    return card.type==='value' ? card.value : card.result;
+  }
+  function symbolText(card){
+    if (card.type==='value') return card.value;
+    if (card.type==='neg') return '~ ▢ ≡ ' + card.result;
+    return card.op + ' ' + card.operand + ' ≡ ' + card.result;
+  }
+  function cornerText(card){
+    if (card.type==='value') return card.value;
+    if (card.type==='neg') return '~' + card.result;
+    return card.op + card.operand;
+  }
+  function T(){ return LANG[state.lang]; }
+  function captionText(card){ return T().captions[card.capKey]; }
+
+  /* ===================== STATE ===================== */
+  var state = {
+    playerHand: [], botHand: [], centerValue:'T', initialCenterValue:'T', lastCard:null, playAreaCard:null,
+    turn:'player', busy:false, gameOver:false, winner:null,
+    selectedUid:null, log:[], awaitingPass:false, challenge:null,
+    lang:'th', lastProof:null,
+    // 'bot'    — everything local, the parlor bot plays the other hand.
+    // 'online' — the other hand belongs to a person, mirrored through Firestore.
+    mode:'bot', everStarted:false
+  };
+  var EFFECT_DELAY = 950;
+  var CHALLENGE_MS = 3000;
+  var playerNodes = new Map();
+  var botNodes = new Map();
+  var typeInterval = null;
+
+  /* ===================== DOM REFS ===================== */
+  var el = {
+    botHand: document.getElementById('botHand'),
+    playerHand: document.getElementById('playerHand'),
+    botCount: document.getElementById('botCount'),
+    playerCount: document.getElementById('playerCount'),
+    turnBanner: document.getElementById('turnBanner'),
+    passBtn: document.getElementById('passBtn'),
+    challengeBtn: document.getElementById('challengeBtn'),
+    activeValue: document.getElementById('activeValue'),
+    centerCardSlot: document.getElementById('centerCardSlot'),
+    playAreaSlot: document.getElementById('playAreaSlot'),
+    playAreaHint: document.getElementById('playAreaHint'),
+    stageGlow: document.getElementById('stageGlow'),
+    proofLine: document.getElementById('proofLine'),
+    centerStage: document.getElementById('centerStage'),
+    drawPile: document.getElementById('drawPile'),
+    logList: document.getElementById('logList'),
+    rulesBackdrop: document.getElementById('rulesBackdrop'),
+    logBackdrop: document.getElementById('logBackdrop'),
+    winBackdrop: document.getElementById('winBackdrop'),
+    winTitle: document.getElementById('winTitle'),
+    winSub: document.getElementById('winSub'),
+    opponentName: document.getElementById('opponentName'),
+    playerName: document.getElementById('playerName'),
+    brandTagline: document.getElementById('brandTagline'),
+    pageTitleTag: document.getElementById('pageTitle'),
+    pileLabel: document.querySelector('.pile-label'),
+    selectHint: document.querySelector('.select-hint'),
+    tableValueLabel: document.getElementById('tableValueLabel'),
+    logBtn: document.getElementById('logBtn'),
+    rulesBtn: document.getElementById('rulesBtn'),
+    restartBtn: document.getElementById('restartBtn'),
+    rulesTitle: document.getElementById('rulesTitle'),
+    rulesIntro: document.getElementById('rulesIntro'),
+    rulesLegend: document.getElementById('rulesLegend'),
+    rulesSteps: document.getElementById('rulesSteps'),
+    closeRules: document.getElementById('closeRules'),
+    logTitle: document.getElementById('logTitle'),
+    logIntroP: document.getElementById('logIntroP'),
+    closeLog: document.getElementById('closeLog'),
+    playAgainBtn: document.getElementById('playAgainBtn'),
+    langOpts: document.querySelectorAll('.lang-opt'),
+    modeBtn: document.getElementById('modeBtn'),
+    roomBadge: document.getElementById('roomBadge'),
+    roomBadgeCode: document.getElementById('roomBadgeCode'),
+    roomDot: document.getElementById('roomDot'),
+    modeBackdrop: document.getElementById('modeBackdrop'),
+    modeTitle: document.getElementById('modeTitle'),
+    modeSubtitle: document.getElementById('modeSubtitle'),
+    modeBotBtn: document.getElementById('modeBotBtn'),
+    modeBotTitle: document.getElementById('modeBotTitle'),
+    modeBotDesc: document.getElementById('modeBotDesc'),
+    modeOnlineBtn: document.getElementById('modeOnlineBtn'),
+    modeOnlineTitle: document.getElementById('modeOnlineTitle'),
+    modeOnlineDesc: document.getElementById('modeOnlineDesc'),
+    onlinePanel: document.getElementById('onlinePanel'),
+    yourNameLabel: document.getElementById('yourNameLabel'),
+    playerNameInput: document.getElementById('playerNameInput'),
+    createRoomBtn: document.getElementById('createRoomBtn'),
+    orDivider: document.getElementById('orDivider'),
+    roomCodeInput: document.getElementById('roomCodeInput'),
+    joinRoomBtn: document.getElementById('joinRoomBtn'),
+    roomCodeBox: document.getElementById('roomCodeBox'),
+    roomCodeText: document.getElementById('roomCodeText'),
+    roomCodeHint: document.getElementById('roomCodeHint'),
+    copyCodeBtn: document.getElementById('copyCodeBtn'),
+    lobbyStatus: document.getElementById('lobbyStatus'),
+    fbSetupLink: document.getElementById('fbSetupLink'),
+    cancelOnlineBtn: document.getElementById('cancelOnlineBtn'),
+    closeModeBtn: document.getElementById('closeModeBtn'),
+    setupBackdrop: document.getElementById('setupBackdrop'),
+    fbTitle: document.getElementById('fbTitle'),
+    fbIntro: document.getElementById('fbIntro'),
+    fbStepsTitle: document.getElementById('fbStepsTitle'),
+    fbStepsList: document.getElementById('fbStepsList'),
+    fbConfigTitle: document.getElementById('fbConfigTitle'),
+    fbConfigInput: document.getElementById('fbConfigInput'),
+    fbSaveBtn: document.getElementById('fbSaveBtn'),
+    fbClearBtn: document.getElementById('fbClearBtn'),
+    fbConfigStatus: document.getElementById('fbConfigStatus'),
+    fbRulesTitle: document.getElementById('fbRulesTitle'),
+    fbCopyRulesBtn: document.getElementById('fbCopyRulesBtn'),
+    rulesCode: document.getElementById('rulesCode'),
+    fbNotesTitle: document.getElementById('fbNotesTitle'),
+    fbNotesList: document.getElementById('fbNotesList'),
+    closeSetupBtn: document.getElementById('closeSetupBtn')
+  };
+
+  /* ===================== CARD DOM BUILD ===================== */
+  function buildSymbolBlock(card){
+    var sym = document.createElement('div');
+    sym.className = 'symbols';
+    if (card.type === 'value'){
+      sym.textContent = card.value;
+    } else {
+      var opLine = document.createElement('div');
+      opLine.className = 'op-line';
+      opLine.textContent = (card.type === 'neg' ? '~ ▢' : (card.op + ' ' + card.operand)) + ' ≡';
+      var resultLine = document.createElement('div');
+      resultLine.className = 'result-line';
+      resultLine.textContent = card.result;
+      sym.appendChild(opLine);
+      sym.appendChild(resultLine);
+    }
+    return sym;
+  }
+
+  function buildCardEl(card, opts){
+    var d = document.createElement('div');
+    d.className = 'card' + (card.type==='value' ? ' rare' : '') + (opts.faceDown ? ' facedown' : '') + (opts.interactive ? ' interactive' : '');
+    d.dataset.uid = card.uid;
+    d.style.setProperty('--cw', opts.cardWidth + 'px');
+    d.style.opacity = '0';
+
+    if (opts.faceDown){
+      var back = document.createElement('div');
+      back.className='backmark';
+      back.textContent='~';
+      d.appendChild(back);
+    } else {
+      var tl = document.createElement('div'); tl.className='corner tl'; tl.textContent=cornerText(card);
+      var face = document.createElement('div'); face.className='card-face';
+      var sym = buildSymbolBlock(card);
+      var cap = document.createElement('div'); cap.className='caption'; cap.textContent=captionText(card);
+      face.appendChild(sym); face.appendChild(cap);
+      var br = document.createElement('div'); br.className='corner br'; br.textContent=cornerText(card);
+      d.appendChild(tl); d.appendChild(face); d.appendChild(br);
+
+      if (opts.interactive){
+        d.tabIndex = 0;
+        d.setAttribute('role','button');
+        d.setAttribute('aria-label', T().ariaCard(symbolText(card)));
+        attachDragHandlers(d, card, opts);
+        d.addEventListener('keydown', function(e){
+          if (e.key==='Enter' || e.key===' '){
+            e.preventDefault();
+            if (state.selectedUid === card.uid){
+              tryPlayerPlay(card);
+            } else {
+              toggleSelect(card.uid);
+            }
+          }
+        });
+      }
+    }
+    return d;
+  }
+
+  /* ===================== FAN LAYOUT ===================== */
+  function computeFan(n, containerWidth, cardWidth){
+    var angleStep = n<=1 ? 0 : Math.min(9, 58/(n-1));
+    var spacing = Math.min(cardWidth*0.60, (containerWidth*0.88)/Math.max(n,1));
+    var mid = (n-1)/2;
+    var arr = [];
+    for (var i=0;i<n;i++){
+      var offset = i-mid;
+      arr.push({
+        tx: offset*spacing,
+        ty: Math.pow(Math.abs(offset),1.6)*(cardWidth*0.085),
+        rot: offset*angleStep
+      });
+    }
+    return arr;
+  }
+
+  function syncHand(containerEl, nodesMap, hand, opts){
+    var rect = containerEl.getBoundingClientRect();
+    var containerWidth = rect.width || containerEl.offsetWidth || 320;
+
+    // While a held card is hovering over the drop zone, ready to be played,
+    // lay the fan out as if it were already gone from the hand — the same
+    // slots it'll actually occupy once it's played — so no gap sits waiting
+    // for it there. Its own transform/dataset are untouched either way (the
+    // drag loop owns those); this only changes how everyone ELSE lays out.
+    // The moment it drifts back over the hand (hoveringDrop goes false), it
+    // re-enters the count below and the fan spreads back out to make room,
+    // ready for normal reordering again.
+    var hoveringUid = (containerEl === el.playerHand && dragState && dragState.hoveringDrop) ? dragState.uid : null;
+    var layoutHand = hoveringUid ? hand.filter(function(c){ return c.uid !== hoveringUid; }) : hand;
+    var fan = computeFan(layoutHand.length, containerWidth, opts.cardWidth);
+    var seen = {};
+
+    layoutHand.forEach(function(card, i){
+      seen[card.uid] = true;
+      var node = nodesMap.get(card.uid);
+      var isNew = false;
+      if (!node){
+        node = buildCardEl(card, opts);
+        nodesMap.set(card.uid, node);
+        containerEl.appendChild(node);
+        isNew = true;
+      }
+      // NOTE: existing nodes are deliberately left at their current DOM
+      // position. Every .card is position:absolute with its visual slot set
+      // entirely by transform (see computeFan/base below) and its stacking
+      // set entirely by z-index (right below) — DOM order has no effect on
+      // either, so there is nothing to gain by re-appending an existing node
+      // here. There IS something to lose: re-inserting a node that's already
+      // in the document (even back into the same parent) invalidates the
+      // browser's "previous style" snapshot for that node, so the transform
+      // change made a few lines below would have no baseline to transition
+      // from and would jump instantly instead of easing — which is exactly
+      // what was breaking the smooth reorder-glide animation. Confirmed by
+      // isolated repro: identical transition, identical style change, the
+      // only difference being an appendChild of an existing child right
+      // before it — with it, the transition never animates a single frame;
+      // without it, it eases normally over its full duration.
+      var f = fan[i];
+      var base = 'translate(' + f.tx.toFixed(1) + 'px, ' + f.ty.toFixed(1) + 'px) rotate(' + f.rot.toFixed(1) + 'deg)';
+      node.dataset.fanTx = f.tx.toFixed(1);
+      node.dataset.fanTy = f.ty.toFixed(1);
+      node.dataset.fanRot = f.rot.toFixed(1);
+      // A card actively being dragged owns its own transform/z-index via the
+      // drag loop (see attachDragHandlers) — leave it alone here so a live
+      // reorder pass doesn't fight the pointer. Its fan dataset above is
+      // still kept current so it snaps into the right slot on release.
+      var isDragging = node.classList.contains('dragging');
+      if (!isDragging){
+        node.style.zIndex = String(100+i);
+      }
+      node.classList.toggle('selected', card.uid === state.selectedUid);
+      if (isNew){
+        requestAnimationFrame(function(){
+          node.style.transform = base;
+          requestAnimationFrame(function(){ node.style.opacity = '1'; });
+        });
+      } else if (!isDragging){
+        node.style.transform = base;
+        node.style.opacity = '1';
+      }
+    });
+
+    if (hoveringUid){
+      seen[hoveringUid] = true; // still genuinely in the hand — just skipped in this layout pass
+    }
+
+    nodesMap.forEach(function(node, uid){
+      if (!seen[uid]){
+        node.style.pointerEvents = 'none';
+        node.style.opacity = '0';
+        node.style.transform = node.style.transform + ' translateY(-26px) scale(.85)';
+        setTimeout(function(){ node.remove(); }, 340);
+        nodesMap.delete(uid);
+      }
+    });
+  }
+
+  function renderHands(){
+    syncHand(el.playerHand, playerNodes, state.playerHand, {cardWidth: playerCardWidth(), interactive:true, faceDown:false});
+    syncHand(el.botHand, botNodes, state.botHand, {cardWidth: botCardWidth(), interactive:false, faceDown:true});
+    el.playerHand.classList.toggle('disabled', state.turn!=='player' || state.busy || state.gameOver);
+    el.playerCount.textContent = T().cardsCount(state.playerHand.length);
+    el.botCount.textContent = T().cardsCount(state.botHand.length);
+    el.centerStage.classList.toggle('awaiting-drop', !!state.selectedUid && state.turn==='player' && !state.busy && !state.gameOver);
+  }
+  function playerCardWidth(){
+    var w = window.innerWidth;
+    return Math.max(56, Math.min(88, w*0.19));
+  }
+  function botCardWidth(){
+    var w = window.innerWidth;
+    return Math.max(32, Math.min(50, w*0.11));
+  }
+
+  /* ===================== CENTER STAGE ===================== */
+  function renderCenterCard(animate){
+    var card = state.lastCard;
+    var existing = el.centerCardSlot.querySelector('.card');
+    var cw = Math.max(90, Math.min(132, window.innerWidth*0.30));
+
+    function place(newNode){
+      newNode.style.setProperty('--cw', cw+'px');
+      newNode.style.position='static';
+      newNode.style.margin='0';
+      newNode.style.left='auto';
+      if (animate){
+        newNode.style.opacity='0';
+        newNode.style.transform='scale(.8)';
+        el.centerCardSlot.appendChild(newNode);
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            newNode.style.transition='transform .36s cubic-bezier(.16,1,.3,1), opacity .3s ease';
+            newNode.style.opacity='1';
+            newNode.style.transform='scale(1)';
+          });
+        });
+      } else {
+        newNode.style.opacity='1';
+        el.centerCardSlot.appendChild(newNode);
+      }
+    }
+
+    var fallbackValue = state.initialCenterValue;
+    var node = buildCardEl(card || {type:'value', value: fallbackValue, capKey: fallbackValue==='T'?'ALWAYS_TRUE':'ALWAYS_FALSE'}, {cardWidth:cw, interactive:false, faceDown:false});
+    node.style.opacity='1';
+
+    if (existing){
+      existing.style.transition='transform .18s ease, opacity .18s ease';
+      existing.style.opacity='0';
+      existing.style.transform='scale(.82) translateY(-6px)';
+      setTimeout(function(){
+        existing.remove();
+        place(node);
+      }, animate ? 150 : 0);
+    } else {
+      place(node);
+    }
+  }
+
+  /* The play area: shows only the single most-recently-played card, at
+     hand-card size. When a new card lands here, whatever was here before
+     has already been promoted into the center slot by the caller — so this
+     never needs to keep more than one card around. Empty state shows the
+     dashed placeholder + hint text (see CSS .play-area-slot .play-area-hint). */
+  function renderPlayAreaCard(animate){
+    var card = state.playAreaCard;
+    var existing = el.playAreaSlot.querySelector('.card');
+
+    if (!card){
+      if (existing) existing.remove();
+      el.playAreaSlot.classList.remove('has-card');
+      return;
+    }
+    el.playAreaSlot.classList.add('has-card');
+    var cw = playerCardWidth();
+
+    function place(newNode){
+      newNode.style.setProperty('--cw', cw+'px');
+      newNode.style.position='static';
+      newNode.style.margin='0';
+      newNode.style.left='auto';
+      if (animate){
+        newNode.style.opacity='0';
+        newNode.style.transform='scale(.8)';
+        el.playAreaSlot.appendChild(newNode);
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            newNode.style.transition='transform .36s cubic-bezier(.16,1,.3,1), opacity .3s ease';
+            newNode.style.opacity='1';
+            newNode.style.transform='scale(1)';
+          });
+        });
+      } else {
+        newNode.style.opacity='1';
+        el.playAreaSlot.appendChild(newNode);
+      }
+    }
+
+    var node = buildCardEl(card, {cardWidth:cw, interactive:false, faceDown:false});
+    node.style.opacity='1';
+
+    if (existing){
+      existing.style.transition='transform .18s ease, opacity .18s ease';
+      existing.style.opacity='0';
+      existing.style.transform='scale(.82) translateY(-6px)';
+      setTimeout(function(){
+        existing.remove();
+        place(node);
+      }, animate ? 150 : 0);
+    } else {
+      place(node);
+    }
+  }
+
+  /* Called when a turn ends. The card sitting in the play area is the new
+     reference card — instead of fading it out and building a fresh, bigger
+     one in its place, we detach the very same card from the play area and
+     fly it across the felt as a free-floating overlay: it grows and glides
+     left in one continuous motion until it lands exactly on the center
+     slot. The card that was previously in the center stays put, untouched,
+     for the whole flight — only right at the moment the new card arrives
+     (and fully covers it) do we swap it out, so there's never a gap where
+     the center looks empty. Once settled, the play area is empty again and
+     ready for the next play. */
+  /* Tracks the card currently flying from the play area to the center slot
+     (see promotePlayAreaToCenter below), if any. Anything elsewhere that
+     might reflow the felt mid-flight (a window resize, a language switch
+     rebuilding the cards) should call resyncActiveFlightTarget() instead of
+     just yanking the center card out from under the animation — otherwise
+     the flight's endpoint, computed once at the start, goes stale and the
+     card visibly overshoots the slot before snapping into place once things
+     resettle. */
+  var activeFlight = null;
+  function resyncActiveFlightTarget(){
+    if (!activeFlight) return;
+    var stageRect = el.centerStage.getBoundingClientRect();
+    var targetRect = el.centerCardSlot.getBoundingClientRect();
+    var cw = targetRect.width;
+    activeFlight.node.style.setProperty('--cw', cw + 'px');
+    var endX = targetRect.left - stageRect.left;
+    var endY = targetRect.top - stageRect.top;
+    // Re-issuing the transform while its transition is already running just
+    // redirects it — the card glides smoothly to wherever the slot now
+    // actually is instead of arriving at a stale target and overshooting.
+    activeFlight.node.style.transform = 'translate(' + endX.toFixed(1) + 'px,' + endY.toFixed(1) + 'px) scale(1)';
+  }
+
+  function promotePlayAreaToCenter(){
+    var node = el.playAreaSlot.querySelector('.card');
+
+    state.lastCard = state.playAreaCard;
+    state.playAreaCard = null;
+
+    if (!node){
+      // Nothing to animate (shouldn't normally happen) — fall back to a
+      // plain re-render so state and DOM stay in sync.
+      var stale = el.centerCardSlot.querySelector('.card');
+      if (stale) stale.remove();
+      renderCenterCard(false);
+      renderPlayAreaCard(false);
+      return;
+    }
+
+    var stageRect  = el.centerStage.getBoundingClientRect();
+    var startRect  = node.getBoundingClientRect();
+    var targetRect = el.centerCardSlot.getBoundingClientRect();
+    var cw = targetRect.width;
+
+    // Pull the card out of the play area now — the play area is free for
+    // the next play immediately, while this card continues on as a
+    // free-floating overlay flying toward the center.
+    node.remove();
+    el.playAreaSlot.classList.remove('has-card');
+
+    node.style.transition = 'none';
+    node.style.setProperty('--cw', cw + 'px');
+    node.style.position = 'absolute';
+    node.style.left = '0';
+    node.style.top = '0';
+    node.style.margin = '0';
+    node.style.zIndex = '6';
+    node.style.transformOrigin = '0 0';
+
+    // With transform-origin pinned to the top-left corner, translate+scale
+    // maps this element's own (0,0) corner directly onto any pixel — so we
+    // can go straight from "exactly where the small card was" to "exactly
+    // where the big card belongs" with no center-point math to get subtly
+    // wrong.
+    var startScale = startRect.width / cw;
+    var startX = startRect.left - stageRect.left;
+    var startY = startRect.top - stageRect.top;
+    var endX = targetRect.left - stageRect.left;
+    var endY = targetRect.top - stageRect.top;
+
+    node.style.transform = 'translate(' + startX.toFixed(1) + 'px,' + startY.toFixed(1) + 'px) scale(' + startScale.toFixed(3) + ')';
+    el.centerStage.appendChild(node);
+    void node.offsetWidth;
+    activeFlight = { node: node };
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        node.style.transition = 'transform .58s cubic-bezier(.16,1,.3,1)';
+        node.style.transform = 'translate(' + endX.toFixed(1) + 'px,' + endY.toFixed(1) + 'px) scale(1)';
+      });
+    });
+
+    setTimeout(function(){
+      // The flying card has now landed exactly on top of the old center
+      // card, at the same size and position a freshly-rendered one would
+      // occupy — so the handoff below is invisible.
+      activeFlight = null;
+      node.remove();
+      var oldCenter = el.centerCardSlot.querySelector('.card');
+      if (oldCenter) oldCenter.remove();
+      renderCenterCard(false);
+    }, 590);
+  }
+
+  function flashGlow(kind){
+    el.stageGlow.classList.remove('glow-correct','glow-wrong');
+    void el.stageGlow.offsetWidth;
+    el.stageGlow.classList.add(kind==='correct' ? 'glow-correct' : 'glow-wrong');
+  }
+
+  function typeProof(text, tone){
+    el.proofLine.className = 'proof-line tone-' + tone;
+    clearInterval(typeInterval);
+    el.proofLine.textContent = '';
+    var i = 0;
+    typeInterval = setInterval(function(){
+      i++;
+      el.proofLine.textContent = text.slice(0, i);
+      if (i >= text.length) clearInterval(typeInterval);
+    }, 15);
+  }
+
+  function buildProofText(card, currentBool, correct, actual){
+    var Lx = T();
+    var cur = currentBool ? 'T' : 'F';
+    if (card.type === 'value'){
+      return Lx.proofDeclared(card.value);
+    }
+    var actualStr = actual ? 'T' : 'F';
+    var left = card.type==='neg' ? ('~' + cur) : (cur + ' ' + card.op + ' ' + card.operand);
+    var verdict = correct ? Lx.proofCorrect : Lx.proofWrong(card.result);
+    return left + ' = ' + actualStr + '  ·  ' + Lx.proofClaimedWord + ' ≡ ' + card.result + '  ' + verdict;
+  }
+  function buildClaimOnlyText(card, currentBool){
+    var Lx = T();
+    var cur = currentBool ? 'T' : 'F';
+    var left = card.type==='neg' ? ('~' + cur) : (cur + ' ' + card.op + ' ' + card.operand);
+    return left + ' ≡ ' + card.result + '  ·  ' + Lx.claimOnTable;
+  }
+  function buildChallengeProofText(claimant, opponent, card, currentBool, correct, actual, loser){
+    var Lx = T();
+    var cur = currentBool ? 'T' : 'F';
+    var left = card.type==='neg' ? ('~' + cur) : (cur + ' ' + card.op + ' ' + card.operand);
+    var actualStr = actual ? 'T' : 'F';
+    var challenger = Lx.who(opponent);
+    var loserLabel = Lx.who(loser);
+    var verdict = correct ? Lx.claimHeld : Lx.claimBusted;
+    return left + ' = ' + actualStr + '  ·  ' + Lx.challengedBy(challenger) + ' — ' + verdict + ', ' + loserLabel + ' +2';
+  }
+
+  /* ===================== LOG ===================== */
+  function pushLog(who, card, correct, drewOnly, unchallenged){
+    var kind = drewOnly ? 'draw' : (card.type==='value' ? 'declare' : 'play');
+    state.log.unshift({who:who, kind:kind, card:card, correct:correct, unchallenged:!!unchallenged});
+    if (state.log.length>60) state.log.length=60;
+    renderLog();
+  }
+  function pushSimpleLog(who, kind){
+    state.log.unshift({who:who, kind:kind, card:null, correct:null});
+    if (state.log.length>60) state.log.length=60;
+    renderLog();
+  }
+  function pushChallengeLog(claimant, opponent, card, correct, loser){
+    state.log.unshift({who:claimant, kind:'challenge', card:card, correct:correct, opponent:opponent, loser:loser});
+    if (state.log.length>60) state.log.length=60;
+    renderLog();
+  }
+  function logEntryText(entry){
+    var Lx = T();
+    if (entry.kind==='draw') return Lx.logDrew(entry.who);
+    if (entry.kind==='pass') return Lx.logPassed(entry.who);
+    if (entry.kind==='declare') return Lx.logDeclared(entry.who, entry.card.value);
+    if (entry.kind==='challenge') return Lx.logChallenge(entry.who, entry.opponent, symbolText(entry.card), entry.correct, entry.loser);
+    return Lx.logPlayed(entry.who, symbolText(entry.card), entry.correct, entry.unchallenged);
+  }
+  function renderLog(){
+    el.logList.innerHTML='';
+    state.log.forEach(function(entry){
+      var li=document.createElement('li');
+      var resultClass = (entry.kind==='play' || entry.kind==='challenge') ? (entry.correct?'correct':'wrong') : 'neutral';
+      li.className='who-'+entry.who+' res-'+resultClass;
+      li.textContent=logEntryText(entry);
+      el.logList.appendChild(li);
+    });
+  }
+
+  /* ===================== CHALLENGE WINDOW ===================== */
+  function botDecidesToChallenge(correct){
+    // Bot catches a bluff most of the time, and only rarely cries wolf on a true claim.
+    return correct ? Math.random() < 0.15 : Math.random() < 0.72;
+  }
+
+  function startChallengeWindow(claimant, card, currentBool, correct, actual){
+    var opponent = claimant === 'player' ? 'bot' : 'player';
+    var botMode = claimant === 'player'; // bot is the one who may challenge
+
+    state.challenge = {
+      claimant: claimant, opponent: opponent, card: card,
+      currentBool: currentBool, correct: correct, actual: actual,
+      active: true, timeoutId: null, botTimer: null
+    };
+
+    el.challengeBtn.hidden = false;
+    el.challengeBtn.disabled = botMode;
+    el.challengeBtn.classList.toggle('bot-mode', botMode);
+    el.challengeBtn.textContent = botMode
+      ? (state.mode==='online' ? T().oppDeciding : T().botDeciding)
+      : T().challenge;
+    el.challengeBtn.onclick = botMode ? null : onChallengePressed;
+
+    el.challengeBtn.classList.remove('dimming');
+    void el.challengeBtn.offsetWidth; // restart the dim animation cleanly
+    requestAnimationFrame(function(){ el.challengeBtn.classList.add('dimming'); });
+
+    el.turnBanner.classList.remove('bot-thinking');
+    el.turnBanner.textContent = botMode
+      ? (state.mode==='online' ? T().claimOnTableOnline : T().claimOnTableBotMode)
+      : T().claimOnTablePlayerMode;
+
+    if (state.mode === 'online'){
+      // The verdict itself is still computed locally on BOTH sides — each
+      // browser already knows the card and the table value, so nobody has to
+      // be trusted to report the outcome. The only thing that needs agreeing
+      // on is WHETHER a challenge landed, so exactly one move settles it:
+      // the claimant owns the clock and publishes `timeout`, the opponent
+      // publishes `challengeCall` if they press in time. Both may fire on a
+      // close race; they arrive in `seq` order and the second one is a no-op,
+      // because resolveChallengeWindow() has already cleared state.challenge.
+      if (botMode){
+        state.challenge.timeoutId = setTimeout(function(){ publishMove('timeout'); }, CHALLENGE_MS + 350);
+      } else {
+        // Stop accepting presses a beat before the claimant's clock expires,
+        // so a press can't be sent after the window everyone believes closed.
+        state.challenge.timeoutId = setTimeout(function(){ el.challengeBtn.disabled = true; }, CHALLENGE_MS);
+      }
+      return;
+    }
+
+    state.challenge.timeoutId = setTimeout(function(){ resolveChallengeWindow(false); }, CHALLENGE_MS);
+
+    if (botMode && botDecidesToChallenge(correct)){
+      var decideAt = 900 + Math.random() * (CHALLENGE_MS - 1300);
+      state.challenge.botTimer = setTimeout(function(){ resolveChallengeWindow(true); }, decideAt);
+    }
+  }
+
+  function onChallengePressed(){
+    if (!state.challenge || !state.challenge.active) return;
+    if (state.mode === 'online'){
+      el.challengeBtn.disabled = true;
+      el.challengeBtn.classList.remove('dimming');
+      el.challengeBtn.textContent = T().challengeSent;
+      publishMove('challengeCall');
+      return;
+    }
+    resolveChallengeWindow(true);
+  }
+
+  function resolveChallengeWindow(challenged){
+    if (!state.challenge || !state.challenge.active) return;
+    var ch = state.challenge;
+    ch.active = false;
+    clearTimeout(ch.timeoutId);
+    clearTimeout(ch.botTimer);
+
+    el.challengeBtn.onclick = null;
+    el.challengeBtn.disabled = true;
+    el.challengeBtn.hidden = true;
+    el.challengeBtn.classList.remove('dimming','bot-mode');
+
+    var claimant = ch.claimant, opponent = ch.opponent, card = ch.card;
+    var currentBool = ch.currentBool, correct = ch.correct, actual = ch.actual;
+    var claimantHand = claimant==='player' ? state.playerHand : state.botHand;
+
+    el.turnBanner.classList.remove('bot-thinking');
+    el.turnBanner.textContent = challenged ? T().challenged : T().unchallengedStands;
+
+    if (challenged){
+      var loser = correct ? opponent : claimant;
+      drawIntoHand(loser, 2);
+      renderHands();
+      updateCounts();
+      flashGlow(correct ? 'wrong' : 'correct');
+      state.lastProof = {kind:'challenge', claimant:claimant, opponent:opponent, card:card, currentBool:currentBool, correct:correct, actual:actual, loser:loser, tone: correct ? 'correct' : 'wrong'};
+      typeProof(buildChallengeProofText(claimant, opponent, card, currentBool, correct, actual, loser), correct ? 'correct' : 'wrong');
+      pushChallengeLog(claimant, opponent, card, correct, loser);
+    } else {
+      flashGlow(correct ? 'correct' : 'wrong');
+      state.lastProof = {kind:'unchallenged', card:card, currentBool:currentBool, correct:correct, actual:actual, tone: correct ? 'correct' : 'wrong'};
+      typeProof(buildProofText(card, currentBool, correct, actual) + '  ·  ' + T().unchallengedSuffix, correct ? 'correct' : 'wrong');
+      pushLog(claimant, card, correct, false, true);
+    }
+
+    state.challenge = null;
+
+    if (claimantHand.length===0){
+      setTimeout(function(){
+        endGame(claimant);
+        promotePlayAreaToCenter();
+      }, EFFECT_DELAY);
+      return;
+    }
+
+    setTimeout(function(){
+      state.turn = claimant==='player' ? 'bot' : 'player';
+      state.busy = false;
+      renderTurnBanner();
+      renderHands();
+      promotePlayAreaToCenter();
+      if (state.turn==='bot') scheduleBotTurn();
+    }, EFFECT_DELAY);
+  }
+
+  /* ===================== TURN / EFFECTS ===================== */
+  function renderTurnBanner(){
+    el.turnBanner.classList.remove('bot-thinking');
+    if (state.gameOver){
+      el.turnBanner.textContent='';
+      el.passBtn.hidden = true;
+      el.drawPile.disabled = true;
+      return;
+    }
+    if (state.turn==='player'){
+      el.turnBanner.textContent = state.awaitingPass
+        ? T().turnPlayerPass
+        : T().turnPlayerDrag;
+    } else {
+      el.turnBanner.classList.add('bot-thinking');
+      el.turnBanner.textContent = '';
+      el.turnBanner.appendChild(document.createTextNode(state.mode==='online' ? T().opponentTurn : T().botThinking));
+      var dotsSpan = document.createElement('span');
+      dotsSpan.className='dots';
+      el.turnBanner.appendChild(dotsSpan);
+    }
+    el.drawPile.disabled = state.turn!=='player' || state.busy || state.gameOver;
+    el.passBtn.hidden = !(state.awaitingPass && state.turn==='player' && !state.busy && !state.gameOver);
+  }
+  function renderActiveValue(){
+    el.activeValue.textContent = state.centerValue;
+  }
+  function updateCounts(){
+    el.playerCount.textContent = T().cardsCount(state.playerHand.length);
+    el.botCount.textContent = T().cardsCount(state.botHand.length);
+  }
+
+  function toggleSelect(uid){
+    state.selectedUid = (state.selectedUid===uid) ? null : uid;
+    renderHands();
+  }
+
+  function tryPlayerPlay(card){
+    if (state.turn!=='player' || state.busy || state.gameOver) return;
+    state.selectedUid=null;
+    if (state.mode === 'online'){
+      // Nothing happens locally yet: the play is published, and BOTH boards
+      // animate it when it comes back down the move stream, so the two
+      // browsers never drift out of step. Lock the hand meanwhile.
+      state.busy = true;
+      Online.pendingPlayUid = card.uid;
+      renderTurnBanner();
+      renderHands();
+      publishMove('play', cardWire(card));
+      return;
+    }
+    performPlay('player', card);
+  }
+
+  function performPlay(who, card){
+    if (state.busy || state.gameOver) return;
+    state.busy = true;
+    var hand = who==='player' ? state.playerHand : state.botHand;
+    var idx = -1;
+    for (var i=0;i<hand.length;i++){ if (hand[i].uid===card.uid){ idx=i; break; } }
+    if (idx===-1){ state.busy=false; return; }
+
+    state.awaitingPass = false;
+    renderTurnBanner();
+
+    var currentBool = state.centerValue === 'T';
+    var correct = isCorrectPlay(currentBool, card);
+    var actual = card.type==='neg' || card.type==='conn' ? actualResult(currentBool, card) : null;
+
+    hand.splice(idx,1);
+    // The play area is always empty when a new play begins — the previous
+    // play, if any, was already promoted into the center slot at the end of
+    // the last turn (see promotePlayAreaToCenter). So the freshly played
+    // card simply lands in the play area on its own.
+    state.playAreaCard = card;
+    state.centerValue = newCenterAfterPlay(card);
+
+    renderHands();
+    renderPlayAreaCard(true);
+    renderActiveValue();
+    updateCounts();
+
+    if (card.type === 'value'){
+      // T/F cards are undeniable — no claim to challenge, resolves immediately.
+      flashGlow('correct');
+      state.lastProof = {kind:'value', card:card, currentBool:currentBool, correct:correct, actual:actual, tone:'neutral'};
+      typeProof(buildProofText(card, currentBool, correct, actual), 'neutral');
+      pushLog(who, card, correct, false);
+
+      if (hand.length===0){
+        setTimeout(function(){
+          endGame(who);
+          promotePlayAreaToCenter();
+        }, EFFECT_DELAY);
+        return;
+      }
+      setTimeout(function(){
+        state.turn = who==='player' ? 'bot' : 'player';
+        state.busy = false;
+        renderTurnBanner();
+        renderHands();
+        promotePlayAreaToCenter();
+        if (state.turn==='bot') scheduleBotTurn();
+      }, EFFECT_DELAY);
+      return;
+    }
+
+    // Connective/negation claim — the verdict stays hidden until the challenge window closes.
+    state.lastProof = {kind:'claimOnly', card:card, currentBool:currentBool, tone:'neutral'};
+    typeProof(buildClaimOnlyText(card, currentBool), 'neutral');
+    startChallengeWindow(who, card, currentBool, correct, actual);
+  }
+
+  function performDraw(who){
+    if (state.busy || state.gameOver) return;
+    state.busy = true;
+    el.drawPile.disabled = true;
+    state.selectedUid = null;
+    drawIntoHand(who, 1);
+    renderHands();
+    updateCounts();
+    pushLog(who, null, null, true);
+
+    if (who === 'player'){
+      setTimeout(function(){
+        state.awaitingPass = true;
+        state.busy = false;
+        renderTurnBanner();
+        renderHands();
+      }, 380);
+      return;
+    }
+
+    if (state.mode === 'online'){
+      // Drawing doesn't end a turn — the opponent still gets to play or pass.
+      setTimeout(function(){
+        state.busy = false;
+        renderTurnBanner();
+        renderHands();
+      }, 380);
+      return;
+    }
+
+    setTimeout(function(){
+      state.turn = who==='player' ? 'bot' : 'player';
+      state.busy = false;
+      renderTurnBanner();
+      renderHands();
+      if (state.turn==='bot') scheduleBotTurn();
+    }, 550);
+  }
+
+  // Online only — the bot never passes, it always has something to play.
+  function applyPass(who){
+    state.awaitingPass = false;
+    state.selectedUid = null;
+    state.busy = false;
+    state.turn = who==='player' ? 'bot' : 'player';
+    pushSimpleLog(who, 'pass');
+    renderTurnBanner();
+    renderHands();
+  }
+
+  function scheduleBotTurn(){
+    if (state.mode !== 'bot') return; // online, the other hand belongs to a person
+    var thinkTime = 850 + Math.random()*950;
+    setTimeout(function(){
+      if (state.gameOver) return;
+      var currentBool = state.centerValue === 'T';
+      var correctCards = state.botHand.filter(function(c){ return isCorrectPlay(currentBool, c); });
+      var pool = correctCards.length ? correctCards : state.botHand;
+      var chosen = pool[Math.floor(Math.random()*pool.length)];
+      performPlay('bot', chosen);
+    }, thinkTime);
+  }
+
+  /* ===================== DRAG & DROP ===================== */
+  var dragState = null;
+  var ROT_SETTLE_MS = 600;
+  function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+
+  // While a card is being dragged sideways through the hand, figure out
+  // whether it has crossed past a neighbor and, if so, splice the hand
+  // array into its new order. syncHand() (called via renderHands) then
+  // eases every other card into its fresh fan slot while the dragged card
+  // keeps riding the pointer untouched.
+  function maybeReorderHand(card, opts){
+    if (!dragState || dragState.uid !== card.uid) return;
+    var rect = el.playerHand.getBoundingClientRect();
+    if (!rect.width) return;
+    var hand = state.playerHand;
+    var n = hand.length;
+    if (n < 2) return;
+    var currentIndex = -1;
+    for (var k=0;k<n;k++){ if (hand[k].uid===card.uid){ currentIndex=k; break; } }
+    if (currentIndex === -1) return;
+    var fan = computeFan(n, rect.width, opts.cardWidth);
+    var draggedCenterX = rect.width/2 + dragState.baseTx + dragState.dx;
+    var newIndex = 0;
+    for (var i=0;i<n;i++){
+      if (i === currentIndex) continue;
+      var slotCenterX = rect.width/2 + fan[i].tx;
+      if (draggedCenterX > slotCenterX) newIndex++;
+    }
+    if (newIndex !== currentIndex){
+      var item = hand.splice(currentIndex,1)[0];
+      hand.splice(newIndex,0,item);
+      renderHands();
+    }
+  }
+  function clearReorderGlide(){
+    playerNodes.forEach(function(n){ n.classList.remove('reorder-glide'); });
+  }
+
+  function attachDragHandlers(node, card, opts){
+    function renderTransform(){
+      if (!dragState || dragState.uid!==card.uid) return;
+      var now = performance.now();
+      var t = Math.min(1, (now - dragState.rotStart) / ROT_SETTLE_MS);
+      var rot = dragState.fromRot * (1 - easeOutCubic(t));
+      var tx = dragState.baseTx + dragState.dx;
+      var ty = dragState.baseTy + dragState.dy;
+      var scale = dragState.moved ? 1.06 : 1.04;
+      node.style.transform = 'translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) rotate(' + rot.toFixed(2) + 'deg) scale(' + scale + ')';
+      if (t < 1){
+        dragState.rafId = requestAnimationFrame(renderTransform);
+      } else {
+        dragState.rafId = null;
+      }
+    }
+    node.addEventListener('pointerdown', function(e){
+      if (state.turn!=='player' || state.busy || state.gameOver) return;
+      if (e.button!==undefined && e.button!==0) return;
+      e.preventDefault();
+      try{ node.setPointerCapture(e.pointerId); }catch(err){}
+      var baseTx = parseFloat(node.dataset.fanTx) || 0;
+      var baseTy = parseFloat(node.dataset.fanTy) || 0;
+      var fromRot = parseFloat(node.dataset.fanRot) || 0;
+      dragState = {
+        uid: card.uid, node: node,
+        startX: e.clientX, startY: e.clientY,
+        baseTx: baseTx, baseTy: baseTy, dx: 0, dy: 0,
+        fromRot: fromRot, rotStart: performance.now(), rafId: null,
+        moved: false, hoveringDrop: false
+      };
+      node.classList.add('dragging');
+      node.style.zIndex = 999;
+      // The rest of the hand glides smoothly out of the way while this card
+      // is held — a softer transition than the default fan motion, which is
+      // tuned snappier for moments like dealing or selecting.
+      playerNodes.forEach(function(n){
+        if (n !== node) n.classList.add('reorder-glide');
+      });
+      // Untilt eases in over ROT_SETTLE_MS instead of snapping — it keeps
+      // animating on its own even if the pointer holds still, and runs
+      // independently of position so live dragging never lags behind it.
+      renderTransform();
+    });
+    node.addEventListener('pointermove', function(e){
+      if (!dragState || dragState.uid!==card.uid) return;
+      var dx = e.clientX - dragState.startX;
+      var dy = e.clientY - dragState.startY;
+      if (Math.hypot(dx,dy) > 6) dragState.moved = true;
+      dragState.dx = dx;
+      dragState.dy = dy;
+      // Pure, unrotated translate — the card's on-screen position tracks
+      // the pointer 1:1 no matter where it started in the fan, regardless
+      // of how far the untilt tween has progressed.
+      renderTransform();
+      var hover = isOverDropZone(e.clientX, e.clientY);
+      el.centerStage.classList.toggle('drop-hover', hover);
+      // Only reorder while the card is still travelling through the hand —
+      // once it's raised toward the felt to be played, leave the hand order alone.
+      if (dragState.moved && !hover){
+        maybeReorderHand(card, opts);
+      }
+      // The instant the held card crosses into (or back out of) the drop
+      // zone, re-sync the hand: syncHand() checks dragState.hoveringDrop and
+      // lays the OTHER cards out as if this one were already gone while it's
+      // hovering there, so no gap sits waiting for it — then restores its
+      // slot the moment it drifts back over the hand, ready to reorder again.
+      if (dragState.hoveringDrop !== hover){
+        dragState.hoveringDrop = hover;
+        renderHands();
+      }
+    });
+    function endDrag(e){
+      if (!dragState || dragState.uid!==card.uid) return;
+      var moved = dragState.moved;
+      var overDrop = isOverDropZone(e.clientX, e.clientY);
+      if (dragState.rafId) cancelAnimationFrame(dragState.rafId);
+      node.classList.remove('dragging');
+      el.centerStage.classList.remove('drop-hover');
+      node.style.zIndex = '';
+      dragState = null;
+      if (moved && overDrop){
+        tryPlayerPlay(card);
+        setTimeout(clearReorderGlide, 420);
+        return;
+      }
+      if (moved){
+        // Settle into its (possibly new) fan slot — dragging class is
+        // already gone, so the card's normal transition eases it into
+        // place, and z-index/order are reassigned to match the new hand.
+        renderHands();
+      } else {
+        toggleSelect(card.uid);
+      }
+      setTimeout(clearReorderGlide, 420);
+    }
+    node.addEventListener('pointerup', endDrag);
+    node.addEventListener('pointercancel', endDrag);
+  }
+  function isOverDropZone(x,y){
+    var r = el.centerStage.getBoundingClientRect();
+    return x>=r.left && x<=r.right && y>=r.top && y<=r.bottom;
+  }
+
+  el.centerStage.addEventListener('click', function(){
+    if (state.turn!=='player' || state.busy || state.gameOver) return;
+    if (!state.selectedUid) return;
+    var card = null;
+    for (var i=0;i<state.playerHand.length;i++){ if (state.playerHand[i].uid===state.selectedUid){ card=state.playerHand[i]; break; } }
+    if (card) tryPlayerPlay(card);
+  });
+  el.drawPile.addEventListener('click', function(){
+    if (state.turn!=='player' || state.busy || state.gameOver) return;
+    if (state.mode === 'online'){
+      state.busy = true;
+      el.drawPile.disabled = true;
+      publishMove('draw');
+      return;
+    }
+    performDraw('player');
+  });
+  el.passBtn.addEventListener('click', function(){
+    if (state.turn!=='player' || state.busy || state.gameOver || !state.awaitingPass) return;
+    if (state.mode === 'online'){
+      state.busy = true;
+      state.awaitingPass = false;
+      renderTurnBanner();
+      renderHands();
+      publishMove('pass');
+      return;
+    }
+    state.busy = true;
+    state.awaitingPass = false;
+    state.selectedUid = null;
+    renderTurnBanner();
+    renderHands();
+    setTimeout(function(){
+      state.turn = 'bot';
+      state.busy = false;
+      renderTurnBanner();
+      renderHands();
+      scheduleBotTurn();
+    }, 300);
+  });
+
+  /* ===================== WIN / RESTART ===================== */
+  function endGame(who){
+    if (state.gameOver) return; // already ended — e.g. the room closed first
+    state.gameOver = true;
+    state.winner = who;
+    state.busy = true;
+    el.challengeBtn.hidden = true;
+    el.challengeBtn.classList.remove('dimming','bot-mode');
+    renderTurnBanner();
+    el.winTitle.textContent = T().winTitle(who);
+    el.winSub.textContent = T().winSub(who);
+    el.winBackdrop.hidden = false;
+    spawnConfetti();
+    if (state.mode === 'online') closeRoomWithWinner(who);
+  }
+  function spawnConfetti(){
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var modal = el.winBackdrop.querySelector('.modal');
+    var colors = ['var(--brass-soft)','var(--correct)','var(--chalk)'];
+    for (var i=0;i<20;i++){
+      (function(i){
+        var s = document.createElement('span');
+        s.style.position='absolute';
+        s.style.left = (5 + Math.random()*90) + '%';
+        s.style.top = '-10px';
+        s.style.width='6px'; s.style.height='10px';
+        s.style.background = colors[i%colors.length];
+        s.style.opacity='.9';
+        s.style.borderRadius='2px';
+        s.style.pointerEvents='none';
+        s.style.transition='transform 1.1s ease-in, opacity 1.1s ease-in';
+        modal.appendChild(s);
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            s.style.transform = 'translateY(' + (160+Math.random()*140) + 'px) rotate(' + (Math.random()*360) + 'deg)';
+            s.style.opacity='0';
+          });
+        });
+        setTimeout(function(){ s.remove(); }, 1300);
+      })(i);
+    }
+  }
+
+  function initGame(opts){
+    opts = opts || {};
+    if (state.challenge){
+      clearTimeout(state.challenge.timeoutId);
+      clearTimeout(state.challenge.botTimer);
+    }
+    state.challenge = null;
+    el.challengeBtn.hidden = true;
+    el.challengeBtn.disabled = false;
+    el.challengeBtn.onclick = null;
+    el.challengeBtn.classList.remove('dimming','bot-mode');
+
+    state.playerHand = drawN(5);
+    // Online, both players deal their own five locally from the same weighted
+    // pool; this side only mirrors the opponent's count.
+    state.botHand = state.mode==='online' ? hiddenHand(5) : drawN(5);
+    state.centerValue = isTF(opts.centerValue) ? opts.centerValue : (Math.random()<0.5 ? 'T' : 'F');
+    state.initialCenterValue = state.centerValue;
+    state.lastCard = null;
+    state.playAreaCard = null;
+    state.turn = opts.turn || (Math.random()<0.5 ? 'player' : 'bot');
+    state.busy = false;
+    state.gameOver = false;
+    state.winner = null;
+    state.awaitingPass = false;
+    state.selectedUid = null;
+    state.log = [];
+    state.lastProof = null;
+    state.everStarted = true;
+    playerNodes.forEach(function(n){ n.remove(); }); playerNodes.clear();
+    botNodes.forEach(function(n){ n.remove(); }); botNodes.clear();
+    el.centerCardSlot.innerHTML='';
+    el.proofLine.textContent=T().gameOnGoodLuck;
+    el.proofLine.className='proof-line tone-neutral';
+    renderLog();
+    renderHands();
+    renderCenterCard(false);
+    renderPlayAreaCard(false);
+    renderActiveValue();
+    renderTurnBanner();
+    if (state.turn==='bot') scheduleBotTurn();
+  }
+
+  /* ===================== i18n RENDERING ===================== */
+  function renderLegend(){
+    var Lx = T();
+    el.rulesLegend.innerHTML = '';
+    Lx.legend.forEach(function(item){
+      var li = document.createElement('li');
+      var html = '<b>' + item.sym + '</b> ';
+      if (item.word) html += item.word + ' — ';
+      else html += '— ';
+      li.innerHTML = html + item.desc;
+      el.rulesLegend.appendChild(li);
+    });
+  }
+  function renderSteps(){
+    var Lx = T();
+    el.rulesSteps.innerHTML = '';
+    Lx.stepsHTML.forEach(function(html){
+      var li = document.createElement('li');
+      li.innerHTML = html;
+      el.rulesSteps.appendChild(li);
+    });
+  }
+  function applyStaticText(){
+    var Lx = T();
+    if (el.pageTitleTag) el.pageTitleTag.textContent = Lx.pageTitle;
+    document.title = Lx.pageTitle;
+    if (el.brandTagline) el.brandTagline.textContent = Lx.tagline;
+    el.logBtn.textContent = Lx.proofLog;
+    el.rulesBtn.textContent = Lx.howToPlay;
+    el.modeBtn.textContent = Lx.modeChip;
+    el.restartBtn.textContent = state.mode==='online' ? Lx.leaveRoom : Lx.newGame;
+    el.passBtn.textContent = Lx.passTurn;
+    if (el.opponentName) el.opponentName.textContent = opponentLabel();
+    if (el.playerName) el.playerName.textContent = Lx.you;
+    el.drawPile.setAttribute('aria-label', Lx.ariaDrawPile);
+    if (el.pileLabel) el.pileLabel.textContent = Lx.drawPileLabel;
+    el.centerStage.setAttribute('aria-label', Lx.ariaCenterStage);
+    if (el.selectHint) el.selectHint.textContent = Lx.selectHint;
+    if (el.playAreaHint) el.playAreaHint.textContent = Lx.playAreaHint;
+    if (el.playAreaSlot) el.playAreaSlot.setAttribute('aria-label', Lx.ariaPlayArea);
+    if (el.tableValueLabel) el.tableValueLabel.textContent = Lx.tableValueLabel;
+    el.rulesTitle.textContent = Lx.rulesTitle;
+    el.rulesIntro.innerHTML = Lx.rulesIntroHTML;
+    renderLegend();
+    renderSteps();
+    el.closeRules.textContent = Lx.gotIt;
+    el.logTitle.textContent = Lx.logTitle;
+    el.logIntroP.textContent = Lx.logIntro;
+    el.closeLog.textContent = Lx.close;
+    el.playAgainBtn.textContent = state.mode==='online' ? Lx.backToModes : Lx.playAgain;
+    applyModeScreenText();
+    updateCounts();
+    // If a challenge window is currently open, retranslate its live button/banner too.
+    if (state.challenge && state.challenge.active){
+      var claimIsMine = state.challenge.claimant === 'player';
+      el.challengeBtn.textContent = claimIsMine
+        ? (state.mode==='online' ? Lx.oppDeciding : Lx.botDeciding)
+        : Lx.challenge;
+      el.turnBanner.textContent = claimIsMine
+        ? (state.mode==='online' ? Lx.claimOnTableOnline : Lx.claimOnTableBotMode)
+        : Lx.claimOnTablePlayerMode;
+    }
+  }
+  function rebuildAllCards(){
+    playerNodes.forEach(function(n){ n.remove(); }); playerNodes.clear();
+    botNodes.forEach(function(n){ n.remove(); }); botNodes.clear();
+    renderHands();
+    // Same reasoning as the resize handler above: don't tear out the center
+    // card mid-flight. It'll pick up the new language automatically once
+    // the flight lands and does its own renderCenterCard() call.
+    if (activeFlight){
+      resyncActiveFlightTarget();
+    } else {
+      var existing = el.centerCardSlot.querySelector('.card');
+      if (existing) existing.remove();
+      renderCenterCard(false);
+    }
+    var existingPlayArea = el.playAreaSlot.querySelector('.card');
+    if (existingPlayArea) existingPlayArea.remove();
+    renderPlayAreaCard(false);
+  }
+  function renderProofLineFromState(){
+    clearInterval(typeInterval);
+    var lp = state.lastProof;
+    if (!lp){
+      el.proofLine.className = 'proof-line tone-neutral';
+      el.proofLine.textContent = T().gameOnGoodLuck;
+      return;
+    }
+    el.proofLine.className = 'proof-line tone-' + lp.tone;
+    if (lp.kind === 'value' || lp.kind === 'unchallenged'){
+      var text = buildProofText(lp.card, lp.currentBool, lp.correct, lp.actual);
+      if (lp.kind === 'unchallenged') text += '  ·  ' + T().unchallengedSuffix;
+      el.proofLine.textContent = text;
+    } else if (lp.kind === 'claimOnly'){
+      el.proofLine.textContent = buildClaimOnlyText(lp.card, lp.currentBool);
+    } else if (lp.kind === 'challenge'){
+      el.proofLine.textContent = buildChallengeProofText(lp.claimant, lp.opponent, lp.card, lp.currentBool, lp.correct, lp.actual, lp.loser);
+    }
+  }
+  function updateLangSwitchUI(){
+    el.langOpts.forEach(function(btn){
+      var active = btn.dataset.lang === state.lang;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+  function setLanguage(lang){
+    if (lang !== 'en' && lang !== 'th') return;
+    if (lang === state.lang) return;
+    state.lang = lang;
+    document.documentElement.lang = lang;
+    document.documentElement.classList.toggle('lang-th', lang === 'th');
+    updateLangSwitchUI();
+    applyStaticText();
+    rebuildAllCards();
+    if (!state.gameOver && !(state.challenge && state.challenge.active)) renderTurnBanner();
+    renderLog();
+    renderProofLineFromState();
+  }
+  el.langOpts.forEach(function(btn){
+    btn.addEventListener('click', function(){ setLanguage(btn.dataset.lang); });
+  });
+
+  /* ===================== MODALS WIRING ===================== */
+  function openModal(bd){ bd.hidden=false; }
+  function closeModal(bd){ bd.hidden=true; }
+  document.getElementById('rulesBtn').addEventListener('click', function(){ openModal(el.rulesBackdrop); });
+  document.getElementById('closeRules').addEventListener('click', function(){ closeModal(el.rulesBackdrop); });
+  document.getElementById('logBtn').addEventListener('click', function(){ openModal(el.logBackdrop); });
+  document.getElementById('closeLog').addEventListener('click', function(){ closeModal(el.logBackdrop); });
+  document.getElementById('restartBtn').addEventListener('click', function(){
+    closeModal(el.winBackdrop);
+    // A room can't be re-dealt from one side, so online this is "leave" —
+    // it drops the room and comes back to the mode screen for a fresh one.
+    if (state.mode === 'online'){ leaveOnline(); openModeScreen(); return; }
+    initGame();
+  });
+  document.getElementById('playAgainBtn').addEventListener('click', function(){
+    closeModal(el.winBackdrop);
+    if (state.mode === 'online'){ leaveOnline(); openModeScreen(); return; }
+    initGame();
+  });
+  [el.rulesBackdrop, el.logBackdrop, el.setupBackdrop].forEach(function(bd){
+    bd.addEventListener('click', function(e){ if (e.target===bd) closeModal(bd); });
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key==='Escape'){
+      closeModal(el.rulesBackdrop);
+      closeModal(el.logBackdrop);
+      closeModal(el.setupBackdrop);
+      // The mode screen is a gate on a first visit, so it only dismisses
+      // once there's a game behind it to go back to.
+      if (state.everStarted) closeModeScreen();
+    }
+  });
+
+  window.addEventListener('resize', function(){
+    renderHands();
+    renderPlayAreaCard(false);
+    // A resize mid-flight (e.g. a mobile browser's toolbar showing/hiding)
+    // shouldn't rip out the center card the flight is about to land on —
+    // just redirect the flight to the freshly-resized target instead.
+    if (activeFlight) resyncActiveFlightTarget();
+    else renderCenterCard(false);
+  });
+
+
+  /* =========================================================================
+     ONLINE MODE (Firebase)
+     -------------------------------------------------------------------------
+     What actually travels over the wire, and what does not:
+
+       rooms/{CODE}              a code, two display names, whose turn it is,
+                                 the starting table value, a move counter.
+       rooms/{CODE}/moves/{id}   one document per action: play / draw / pass /
+                                 challengeCall / timeout. A "play" carries the
+                                 card, which is face-up on the table anyway.
+
+     HANDS ARE NEVER UPLOADED. Each browser deals and draws its own hand
+     locally from the same weighted pool; the opponent's hand is mirrored as
+     face-down placeholders whose count is derived from the move stream. So
+     there is nothing in Firestore for an opponent to peek at.
+
+     Every move is applied from the move stream on BOTH clients, in `seq`
+     order, through the same local functions the bot game uses — so the two
+     browsers stay in lockstep without a server. Challenge verdicts are
+     recomputed locally on each side (both know the card and the table value),
+     so no one has to be trusted to report the outcome.
+
+     Everything read back out of Firestore is treated as hostile input: cards
+     are rebuilt from scratch by sanitizeCard() from a whitelist, names are
+     clamped by sanitizeName(), and every value that reaches the DOM goes in
+     through textContent — never innerHTML.
+     ========================================================================= */
+
+  // The Firebase web config for the `logic-parlor` project. This is meant to
+  // ship to browsers — it identifies the project, it does not authorise
+  // anything on its own. What actually guards the data is the Firestore rules
+  // (see the setup panel, or firestore.rules next to this file) plus the key
+  // restrictions set in Google Cloud Console.
+  //
+  // Set this to null to fall back to whatever config is pasted into the in-app
+  // setup panel, which is stored in that browser's localStorage only.
+  var FIREBASE_CONFIG = {
+    apiKey:            "AIzaSyAjLQbW3653N-cU1KDg6oCIha8ZD0oC7fM",
+    authDomain:        "logic-parlor.firebaseapp.com",
+    projectId:         "logic-parlor",
+    storageBucket:     "logic-parlor.firebasestorage.app",
+    messagingSenderId: "752200134032",
+    appId:             "1:752200134032:web:fa810b1b1549dc49661715"
+  };
+
+  var FIREBASE_VERSION = '10.12.5';
+  var CFG_KEY  = 'logicParlor.firebaseConfig';
+  var NAME_KEY = 'logicParlor.playerName';
+  var ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var CODE_RE = /^[A-Z2-9]{5}$/;
+
+  var FIRESTORE_RULES = [
+    "rules_version = '2';",
+    "service cloud.firestore {",
+    "  match /databases/{database}/documents {",
+    "",
+    "    function signedIn()   { return request.auth != null; }",
+    "    function code(id)     { return id is string && id.matches('^[A-Z2-9]{5}$'); }",
+    "    function name(v)      { return v is string && v.size() > 0 && v.size() <= 20; }",
+    "    function tf(v)        { return v == 'T' || v == 'F'; }",
+    "    function side(v)      { return v == 'host' || v == 'guest'; }",
+    "    function player(room) {",
+    "      return signedIn() &&",
+    "        (request.auth.uid == room.hostUid || request.auth.uid == room.guestUid);",
+    "    }",
+    "    function card(c) {",
+    "      return c is map",
+    "        && c.keys().hasOnly(['type', 'op', 'operand', 'result', 'value'])",
+    "        && (c.type == 'conn' || c.type == 'neg' || c.type == 'value')",
+    "        && (c.keys().hasAny(['op'])      ? c.op in ['∧', '∨', '→', '↔'] : true)",
+    "        && (c.keys().hasAny(['operand']) ? tf(c.operand) : true)",
+    "        && (c.keys().hasAny(['result'])  ? tf(c.result)  : true)",
+    "        && (c.keys().hasAny(['value'])   ? tf(c.value)   : true);",
+    "    }",
+    "",
+    "    match /rooms/{roomId} {",
+    "      // A room holds only a code, two display names and turn bookkeeping.",
+    "      // Player hands never leave the browser, so they cannot leak from here.",
+    "      allow read: if signedIn() && code(roomId);",
+    "",
+    "      // The host opens a room. Exactly these fields, exactly these values.",
+    "      allow create: if signedIn() && code(roomId)",
+    "        && request.resource.data.keys().hasOnly(['v', 'status', 'hostUid', 'guestUid',",
+    "             'hostName', 'guestName', 'centerValue', 'turn', 'winner', 'seq',",
+    "             'createdAt', 'updatedAt'])",
+    "        && request.resource.data.v == 1",
+    "        && request.resource.data.status == 'waiting'",
+    "        && request.resource.data.hostUid == request.auth.uid",
+    "        && request.resource.data.guestUid == null",
+    "        && name(request.resource.data.hostName)",
+    "        && request.resource.data.guestName == null",
+    "        && tf(request.resource.data.centerValue)",
+    "        && side(request.resource.data.turn)",
+    "        && request.resource.data.winner == null",
+    "        && request.resource.data.seq == 0",
+    "        && request.resource.data.createdAt == request.time",
+    "        && request.resource.data.updatedAt == request.time;",
+    "",
+    "      // 1. A second player joins an open room — and may touch nothing else.",
+    "      allow update: if signedIn() && code(roomId)",
+    "        && resource.data.status == 'waiting'",
+    "        && resource.data.guestUid == null",
+    "        && request.auth.uid != resource.data.hostUid",
+    "        && request.resource.data.diff(resource.data).affectedKeys()",
+    "             .hasOnly(['guestUid', 'guestName', 'status', 'updatedAt'])",
+    "        && request.resource.data.guestUid == request.auth.uid",
+    "        && name(request.resource.data.guestName)",
+    "        && request.resource.data.status == 'playing'",
+    "        && request.resource.data.updatedAt == request.time;",
+    "",
+    "      // 2. Either player bumps the move counter, one step at a time.",
+    "      allow update: if player(resource.data)",
+    "        && resource.data.status == 'playing'",
+    "        && request.resource.data.diff(resource.data).affectedKeys()",
+    "             .hasOnly(['seq', 'updatedAt'])",
+    "        && request.resource.data.seq is int",
+    "        && request.resource.data.seq == resource.data.seq + 1",
+    "        && request.resource.data.updatedAt == request.time;",
+    "",
+    "      // 3. Either player closes the room when the duel ends.",
+    "      allow update: if player(resource.data)",
+    "        && request.resource.data.diff(resource.data).affectedKeys()",
+    "             .hasOnly(['status', 'winner', 'updatedAt'])",
+    "        && request.resource.data.status == 'over'",
+    "        && (request.resource.data.winner == null || side(request.resource.data.winner))",
+    "        && request.resource.data.updatedAt == request.time;",
+    "",
+    "      allow delete: if false;",
+    "",
+    "      match /moves/{moveId} {",
+    "        function room() {",
+    "          return get(/databases/$(database)/documents/rooms/$(roomId)).data;",
+    "        }",
+    "        allow read: if signedIn() && code(roomId);",
+    "",
+    "        // Append-only, one shape, and you may only move as your own side.",
+    "        allow create: if player(room())",
+    "          && room().status == 'playing'",
+    "          && request.resource.data.keys().hasOnly(['seq', 'by', 'type', 'card', 'ts'])",
+    "          && request.resource.data.seq is int",
+    "          && request.resource.data.seq > 0",
+    "          && side(request.resource.data.by)",
+    "          && (request.resource.data.by == 'host')",
+    "               == (request.auth.uid == room().hostUid)",
+    "          && request.resource.data.type in",
+    "               ['play', 'draw', 'pass', 'challengeCall', 'timeout']",
+    "          && (request.resource.data.card == null || card(request.resource.data.card))",
+    "          && request.resource.data.ts == request.time;",
+    "",
+    "        allow update, delete: if false;",
+    "      }",
+    "    }",
+    "",
+    "    // Everything else in the database stays unreachable.",
+    "    match /{document=**} { allow read, write: if false; }",
+    "  }",
+    "}"
+  ].join('\n');
+
+  /* ---------- config plumbing ---------- */
+  function normalizeConfig(obj){
+    if (!obj || typeof obj !== 'object') return null;
+    var out = {};
+    ['apiKey','authDomain','projectId','appId','storageBucket','messagingSenderId','databaseURL','measurementId']
+      .forEach(function(k){ if (typeof obj[k] === 'string' && obj[k]) out[k] = obj[k]; });
+    if (!out.apiKey || !out.projectId || !out.appId) return null;
+    return out;
+  }
+  // Accepts either raw JSON or a pasted `const firebaseConfig = {…};` block.
+  // Deliberately regex-scraped rather than eval'd — nothing here is executed.
+  function parsePastedConfig(text){
+    if (!text) return null;
+    var obj = {}, re = /["']?([A-Za-z][A-Za-z0-9_]*)["']?\s*:\s*["']([^"']*)["']/g, m;
+    while ((m = re.exec(text))) obj[m[1]] = m[2];
+    return normalizeConfig(obj);
+  }
+  function readStoredConfig(){
+    try{
+      var raw = window.localStorage.getItem(CFG_KEY);
+      return raw ? normalizeConfig(JSON.parse(raw)) : null;
+    }catch(e){ return null; }
+  }
+  // A config pasted into the setup panel is a deliberate override, so it wins
+  // over the one baked in above — otherwise Save would silently do nothing on
+  // a build that ships a config. Clearing it falls back to the built-in one.
+  function getConfig(){ return readStoredConfig() || normalizeConfig(FIREBASE_CONFIG); }
+
+  /* ---------- sanitising anything that came back from Firestore ---------- */
+  var OP_CAPS = {'∧':'AND','∨':'OR','→':'IFTHEN','↔':'IFF'};
+  function isTF(v){ return v === 'T' || v === 'F'; }
+  // Rebuilds a card from scratch from whitelisted primitives — the object that
+  // arrives over the wire is never used directly, and capKey/uid are derived
+  // here rather than trusted, so nothing unexpected can reach the card DOM.
+  function sanitizeCard(raw){
+    if (!raw || typeof raw !== 'object') return null;
+    if (raw.type === 'value' && isTF(raw.value)){
+      return instantiate({type:'value', value:raw.value, capKey: raw.value==='T' ? 'ALWAYS_TRUE' : 'ALWAYS_FALSE'});
+    }
+    if (raw.type === 'neg' && isTF(raw.result)){
+      return instantiate({type:'neg', result:raw.result, capKey:'NOT'});
+    }
+    if (raw.type === 'conn' && OP_CAPS[raw.op] && isTF(raw.operand) && isTF(raw.result)){
+      return instantiate({type:'conn', op:raw.op, operand:raw.operand, result:raw.result, capKey:OP_CAPS[raw.op]});
+    }
+    return null;
+  }
+  function cardWire(card){
+    if (card.type === 'value') return {type:'value', value:card.value};
+    if (card.type === 'neg')   return {type:'neg', result:card.result};
+    return {type:'conn', op:card.op, operand:card.operand, result:card.result};
+  }
+  function sanitizeName(v, fallback){
+    if (typeof v !== 'string') return fallback;
+    var s = v.replace(/\s+/g,' ').trim().slice(0,20);
+    return s || fallback;
+  }
+  var hiddenCounter = 1;
+  function hiddenCard(){ return {type:'hidden', uid:'h'+(hiddenCounter++)}; }
+  function hiddenHand(n){ var a=[]; for (var i=0;i<n;i++) a.push(hiddenCard()); return a; }
+
+  /* ---------- online session ---------- */
+  var Online = {
+    lib:null, app:null, db:null, uid:null,
+    roomId:null, role:null, opponentName:null, myName:null,
+    unsubRoom:null, unsubMoves:null,
+    seqApplied:0, pendingPlayUid:null, started:false
+  };
+
+  function opponentLabel(){
+    if (state.mode === 'online' && Online && Online.opponentName) return Online.opponentName;
+    return T().bot;
+  }
+
+  function loadFirebase(){
+    if (Online.lib) return Promise.resolve(Online.lib);
+    var base = 'https://www.gstatic.com/firebasejs/' + FIREBASE_VERSION + '/';
+    return Promise.all([
+      import(base + 'firebase-app.js'),
+      import(base + 'firebase-auth.js'),
+      import(base + 'firebase-firestore.js')
+    ]).then(function(mods){
+      Online.lib = { app: mods[0], auth: mods[1], fs: mods[2] };
+      return Online.lib;
+    });
+  }
+
+  function connect(){
+    var cfg = getConfig();
+    if (!cfg) return Promise.reject(new Error('no-config'));
+    if (Online.db && Online.uid) return Promise.resolve();
+    return loadFirebase().then(function(lib){
+      if (!Online.app) Online.app = lib.app.initializeApp(cfg);
+      Online.db = lib.fs.getFirestore(Online.app);
+      return lib.auth.signInAnonymously(lib.auth.getAuth(Online.app));
+    }).then(function(cred){
+      if (cred && cred.user) Online.uid = cred.user.uid;
+      if (!Online.uid) throw new Error('auth-failed');
+    });
+  }
+
+  function makeCode(){
+    var s = '';
+    for (var i=0;i<5;i++) s += ROOM_ALPHABET.charAt(Math.floor(Math.random()*ROOM_ALPHABET.length));
+    return s;
+  }
+
+  function createRoom(name){
+    var fs = Online.lib.fs;
+    var centerValue = Math.random() < 0.5 ? 'T' : 'F';
+    var firstTurn   = Math.random() < 0.5 ? 'host' : 'guest';
+    var attempts = 0;
+    function tryOnce(){
+      var codeStr = makeCode();
+      var ref = fs.doc(Online.db, 'rooms', codeStr);
+      return fs.getDoc(ref).then(function(snap){
+        if (snap.exists()){
+          if (++attempts > 5) throw new Error('code-collision');
+          return tryOnce();
+        }
+        return fs.setDoc(ref, {
+          v:1, status:'waiting',
+          hostUid: Online.uid, guestUid: null,
+          hostName: name, guestName: null,
+          centerValue: centerValue, turn: firstTurn,
+          winner: null, seq: 0,
+          createdAt: fs.serverTimestamp(), updatedAt: fs.serverTimestamp()
+        }).then(function(){ return codeStr; });
+      });
+    }
+    return tryOnce();
+  }
+
+  function joinRoom(codeStr, name){
+    var fs = Online.lib.fs;
+    var ref = fs.doc(Online.db, 'rooms', codeStr);
+    return fs.getDoc(ref).then(function(snap){
+      if (!snap.exists()) throw new Error('room-not-found');
+      var d = snap.data() || {};
+      if (d.hostUid === Online.uid) throw new Error('own-room');
+      if (d.guestUid || d.status !== 'waiting') throw new Error('room-full');
+      return fs.updateDoc(ref, {
+        guestUid: Online.uid, guestName: name,
+        status: 'playing', updatedAt: fs.serverTimestamp()
+      }).then(function(){
+        Online.roomId = codeStr;
+        Online.role = 'guest';
+        watchRoom();
+      });
+    });
+  }
+
+  function watchRoom(){
+    var fs = Online.lib.fs;
+    var ref = fs.doc(Online.db, 'rooms', Online.roomId);
+    Online.unsubRoom = fs.onSnapshot(ref, function(snap){
+      if (!snap.exists()){ handleRoomEnded(); return; }
+      var d = snap.data() || {};
+      var raw = Online.role === 'host' ? d.guestName : d.hostName;
+      if (d.guestUid || d.status !== 'waiting') Online.opponentName = sanitizeName(raw, T().opponent);
+      if (el.opponentName) el.opponentName.textContent = opponentLabel();
+
+      if (d.status === 'playing' && !Online.started){
+        Online.started = true;
+        startOnlineGame(d);
+      } else if (d.status === 'over' && Online.started && !state.gameOver && !d.winner){
+        // A room closed WITHOUT a winner means someone walked away. When a
+        // winner is set the duel simply finished, and this side's own endGame
+        // is still a beat behind (EFFECT_DELAY) — let it arrive rather than
+        // announcing a departure that didn't happen.
+        handleRoomEnded();
+      }
+      updateRoomBadge(d.status === 'playing');
+    }, function(){ setLobbyStatus(T().errConnect, 'err'); setLobbyBusy(false); });
+  }
+
+  function watchMoves(){
+    if (Online.unsubMoves) return;
+    var fs = Online.lib.fs;
+    var col = fs.collection(fs.doc(Online.db, 'rooms', Online.roomId), 'moves');
+    Online.unsubMoves = fs.onSnapshot(fs.query(col, fs.orderBy('seq')), function(snap){
+      var batch = [];
+      snap.docChanges().forEach(function(ch){ if (ch.type === 'added') batch.push(ch.doc.data()); });
+      batch.sort(function(a,b){ return (a.seq||0) - (b.seq||0); });
+      batch.forEach(function(mv){
+        if (!mv || typeof mv.seq !== 'number' || mv.seq <= Online.seqApplied) return;
+        Online.seqApplied = mv.seq;
+        applyRemoteMove(mv);
+      });
+    }, function(){ /* transient listener errors resolve on reconnect */ });
+  }
+
+  // One atomic step: claim the next `seq` on the room and append the move
+  // that carries it. The transaction is what stops the two players from ever
+  // landing on the same sequence number.
+  function publishMove(type, card){
+    if (state.mode !== 'online' || !Online.roomId || !Online.lib) return;
+    var fs = Online.lib.fs;
+    var roomRef = fs.doc(Online.db, 'rooms', Online.roomId);
+    var moveRef = fs.doc(fs.collection(roomRef, 'moves'));
+    fs.runTransaction(Online.db, function(tx){
+      return tx.get(roomRef).then(function(snap){
+        if (!snap.exists()) throw new Error('room-gone');
+        var seq = (snap.data().seq || 0) + 1;
+        tx.update(roomRef, { seq: seq, updatedAt: fs.serverTimestamp() });
+        tx.set(moveRef, {
+          seq: seq, by: Online.role, type: type,
+          card: card || null, ts: fs.serverTimestamp()
+        });
+      });
+    }).catch(function(){
+      // Nothing was written, so unwind the optimistic lock and let them retry.
+      state.busy = false;
+      Online.pendingPlayUid = null;
+      renderTurnBanner();
+      renderHands();
+      el.turnBanner.textContent = T().errGeneric;
+    });
+  }
+
+  function applyRemoteMove(mv){
+    if (state.mode !== 'online' || state.gameOver) return;
+    var who = (mv.by === Online.role) ? 'player' : 'bot';
+    if (mv.type === 'play'){
+      state.busy = false;
+      var card = who === 'player' ? reclaimOwnCard(mv.card) : adoptRemoteCard(mv.card);
+      if (!card) return;
+      performPlay(who, card);
+    } else if (mv.type === 'draw'){
+      state.busy = false;
+      performDraw(who);
+    } else if (mv.type === 'pass'){
+      state.busy = false;
+      applyPass(who);
+    } else if (mv.type === 'challengeCall'){
+      resolveChallengeWindow(true);
+    } else if (mv.type === 'timeout'){
+      resolveChallengeWindow(false);
+    }
+  }
+
+  // My own play echoing back: find the very card object I sent, so its uid
+  // (and therefore its DOM node and fan slot) survives the round trip.
+  function reclaimOwnCard(raw){
+    var hand = state.playerHand, i;
+    if (Online.pendingPlayUid){
+      for (i=0;i<hand.length;i++){
+        if (hand[i].uid === Online.pendingPlayUid){ Online.pendingPlayUid = null; return hand[i]; }
+      }
+      Online.pendingPlayUid = null;
+    }
+    var c = sanitizeCard(raw);
+    if (!c) return null;
+    for (i=0;i<hand.length;i++){
+      var h = hand[i];
+      if (h.type===c.type && h.op===c.op && h.operand===c.operand && h.result===c.result && h.value===c.value) return h;
+    }
+    return null;
+  }
+  // The opponent's play: swap one face-down placeholder for the real card so
+  // performPlay() can spend it exactly like a local one.
+  function adoptRemoteCard(raw){
+    var c = sanitizeCard(raw);
+    if (!c) return null;
+    if (state.botHand.length) state.botHand.pop();
+    state.botHand.push(c);
+    return c;
+  }
+
+  function startOnlineGame(d){
+    state.mode = 'online';
+    var centerValue = isTF(d.centerValue) ? d.centerValue : 'T';
+    var firstSide = (d.turn === 'host' || d.turn === 'guest') ? d.turn : 'host';
+    setLobbyBusy(false);
+    closeModeScreen();
+    applyStaticText();
+    updateRoomBadge(true);
+    initGame({ centerValue: centerValue, turn: firstSide === Online.role ? 'player' : 'bot' });
+    watchMoves();
+  }
+
+  function handleRoomEnded(){
+    if (state.mode !== 'online' || state.gameOver) return;
+    state.gameOver = true;
+    state.busy = true;
+    el.challengeBtn.hidden = true;
+    renderTurnBanner();
+    el.turnBanner.textContent = T().opponentLeftMsg;
+    el.winTitle.textContent = T().opponentLeftMsg;
+    el.winSub.textContent = '';
+    el.winBackdrop.hidden = false;
+    teardownOnline(false);
+  }
+
+  function teardownOnline(announceLeave){
+    if (Online.unsubMoves){ Online.unsubMoves(); Online.unsubMoves = null; }
+    if (Online.unsubRoom){ Online.unsubRoom(); Online.unsubRoom = null; }
+    if (announceLeave && Online.roomId && Online.lib && Online.db){
+      var fs = Online.lib.fs;
+      fs.updateDoc(fs.doc(Online.db, 'rooms', Online.roomId), {
+        status: 'over', updatedAt: fs.serverTimestamp()
+      }).catch(function(){});
+    }
+    // opponentName deliberately survives: the win modal still names them, and
+    // opponentLabel() ignores it outside online mode anyway. It is reset when
+    // the next online session starts.
+    Online.roomId = null; Online.role = null;
+    Online.seqApplied = 0; Online.pendingPlayUid = null; Online.started = false;
+    updateRoomBadge(false);
+  }
+
+  function closeRoomWithWinner(localWinner){
+    if (!Online.roomId || !Online.lib || !Online.db) return;
+    var winnerSide = localWinner === 'player'
+      ? Online.role
+      : (Online.role === 'host' ? 'guest' : 'host');
+    var fs = Online.lib.fs;
+    fs.updateDoc(fs.doc(Online.db, 'rooms', Online.roomId), {
+      status: 'over', winner: winnerSide, updatedAt: fs.serverTimestamp()
+    }).catch(function(){});
+  }
+
+  function leaveOnline(){
+    if (state.mode !== 'online' && !Online.roomId) return;
+    teardownOnline(true);
+    state.mode = 'bot';
+  }
+
+  /* ===================== MODE SCREEN / LOBBY UI ===================== */
+  function updateRoomBadge(live){
+    if (Online.roomId){
+      el.roomBadge.classList.add('on');
+      el.roomBadgeCode.textContent = Online.roomId;
+      el.roomDot.classList.toggle('live', !!live);
+    } else {
+      el.roomBadge.classList.remove('on');
+      el.roomBadgeCode.textContent = '';
+      el.roomDot.classList.remove('live');
+    }
+  }
+  function setLobbyStatus(msg, tone){
+    el.lobbyStatus.textContent = msg || '';
+    el.lobbyStatus.className = 'lobby-status' + (tone ? ' ' + tone : '');
+  }
+  function setLobbyBusy(busy){
+    el.createRoomBtn.disabled = !!busy;
+    el.joinRoomBtn.disabled = !!busy;
+  }
+  function showOnlinePanel(show){
+    el.onlinePanel.hidden = !show;
+    el.modeOnlineBtn.classList.toggle('active', !!show);
+    if (show){
+      el.roomCodeBox.hidden = true;
+      setLobbyBusy(false);
+      if (!el.playerNameInput.value){
+        var saved = '';
+        try{ saved = window.localStorage.getItem(NAME_KEY) || ''; }catch(e){}
+        el.playerNameInput.value = sanitizeName(saved, '');
+      }
+      setLobbyStatus(getConfig() ? T().onlineHint : T().errNoConfig, getConfig() ? '' : 'err');
+    }
+  }
+  function applyModeScreenText(){
+    var Lx = T();
+    el.modeTitle.textContent = Lx.modeTitle;
+    el.modeSubtitle.textContent = Lx.modeSubtitle;
+    el.modeBotTitle.textContent = Lx.modeBotTitle;
+    el.modeBotDesc.textContent = Lx.modeBotDesc;
+    el.modeOnlineTitle.textContent = Lx.modeOnlineTitle;
+    el.modeOnlineDesc.textContent = Lx.modeOnlineDesc;
+    el.yourNameLabel.textContent = Lx.yourNameLabel;
+    el.playerNameInput.placeholder = Lx.namePlaceholder;
+    el.createRoomBtn.textContent = Lx.createRoom;
+    el.orDivider.textContent = Lx.orDivider;
+    el.roomCodeInput.placeholder = Lx.joinPlaceholder;
+    el.joinRoomBtn.textContent = Lx.joinRoom;
+    el.copyCodeBtn.textContent = Lx.copyCode;
+    el.fbSetupLink.textContent = Lx.fbSetupLink;
+    el.cancelOnlineBtn.textContent = Lx.backBtn;
+    el.closeModeBtn.textContent = Lx.closeWord;
+    if (Online.roomId && Online.role === 'host') el.roomCodeHint.textContent = Lx.shareCode;
+    if (!el.onlinePanel.hidden && !el.lobbyStatus.classList.contains('err')) {
+      // Re-say the standing hint in the new language; a live error or a
+      // "waiting for an opponent" line is left alone so it isn't lost.
+      if (!Online.roomId) setLobbyStatus(getConfig() ? Lx.onlineHint : Lx.errNoConfig, getConfig() ? '' : 'err');
+      else if (!Online.started) setLobbyStatus(Lx.waitingForOpponent, '');
+    }
+    if (!el.setupBackdrop.hidden) renderSetupPanel();
+  }
+
+  // The mode screen freezes whatever is on the felt behind it. Backing out of
+  // it (only possible once a game exists) has to hand those exact flags back,
+  // not guess at them — a live challenge window in particular must not be
+  // silently unlocked.
+  var pausedFlags = null;
+  function openModeScreen(){
+    if (!pausedFlags) pausedFlags = { gameOver: state.gameOver, busy: state.busy };
+    state.gameOver = true;
+    state.busy = true;
+    state.selectedUid = null;
+    el.challengeBtn.hidden = true;
+    el.passBtn.hidden = true;
+    renderTurnBanner();
+    showOnlinePanel(false);
+    el.closeModeBtn.hidden = !state.everStarted;
+    el.modeBackdrop.hidden = false;
+  }
+  function closeModeScreen(){ el.modeBackdrop.hidden = true; pausedFlags = null; }
+
+  function startBotGame(){
+    leaveOnline();
+    state.mode = 'bot';
+    state.everStarted = true;
+    updateRoomBadge(false);
+    applyStaticText();
+    closeModeScreen();
+    initGame();
+  }
+
+  function lobbyErrorText(err){
+    var key = (err && err.message) || '';
+    var Lx = T();
+    if (key === 'no-config') return Lx.errNoConfig;
+    if (key === 'room-not-found') return Lx.errRoomNotFound;
+    if (key === 'room-full') return Lx.errRoomFull;
+    if (key === 'own-room') return Lx.errOwnRoom;
+    if (err && (err.code === 'permission-denied' || err.code === 'auth/operation-not-allowed')) return Lx.errConnect;
+    if (err && typeof err.code === 'string' && err.code.indexOf('auth/') === 0) return Lx.errConnect;
+    return Lx.errConnect;
+  }
+
+  function beginOnline(kind){
+    var name = sanitizeName(el.playerNameInput.value, '');
+    if (!name){ setLobbyStatus(T().errNoName, 'err'); el.playerNameInput.focus(); return; }
+    try{ window.localStorage.setItem(NAME_KEY, name); }catch(e){}
+
+    var codeStr = (el.roomCodeInput.value || '').toUpperCase().replace(/[^A-Z2-9]/g, '');
+    if (kind === 'join' && !CODE_RE.test(codeStr)){ setLobbyStatus(T().errBadCode, 'err'); el.roomCodeInput.focus(); return; }
+    if (!getConfig()){ setLobbyStatus(T().errNoConfig, 'err'); return; }
+
+    setLobbyBusy(true);
+    setLobbyStatus(T().connecting, '');
+    Online.opponentName = null;
+    connect().then(function(){
+      Online.myName = name;
+      if (kind === 'create'){
+        return createRoom(name).then(function(rid){
+          Online.roomId = rid;
+          Online.role = 'host';
+          el.roomCodeText.textContent = rid;
+          el.roomCodeHint.textContent = T().shareCode;
+          el.roomCodeBox.hidden = false;
+          updateRoomBadge(false);
+          setLobbyStatus(T().waitingForOpponent, '');
+          watchRoom();
+        });
+      }
+      return joinRoom(codeStr, name);
+    }).catch(function(err){
+      setLobbyBusy(false);
+      setLobbyStatus(lobbyErrorText(err), 'err');
+    });
+  }
+
+  el.modeBotBtn.addEventListener('click', startBotGame);
+  el.modeOnlineBtn.addEventListener('click', function(){ showOnlinePanel(true); });
+  el.cancelOnlineBtn.addEventListener('click', function(){
+    teardownOnline(true);
+    showOnlinePanel(false);
+  });
+  el.closeModeBtn.addEventListener('click', function(){
+    if (!state.everStarted) return;
+    var restore = pausedFlags;
+    closeModeScreen();
+    if (restore){
+      state.gameOver = restore.gameOver;
+      state.busy = restore.busy;
+    }
+    if (state.challenge && state.challenge.active) el.challengeBtn.hidden = false;
+    renderTurnBanner();
+    renderHands();
+  });
+  el.createRoomBtn.addEventListener('click', function(){ beginOnline('create'); });
+  el.joinRoomBtn.addEventListener('click', function(){ beginOnline('join'); });
+  el.roomCodeInput.addEventListener('input', function(){
+    el.roomCodeInput.value = el.roomCodeInput.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0,5);
+  });
+  el.roomCodeInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') beginOnline('join'); });
+  el.playerNameInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') beginOnline('create'); });
+  el.copyCodeBtn.addEventListener('click', function(){
+    copyText(Online.roomId || el.roomCodeText.textContent, el.copyCodeBtn, T().copyCode);
+  });
+  el.modeBtn.addEventListener('click', openModeScreen);
+
+  function copyText(text, btn, restoreLabel){
+    function done(ok){
+      btn.textContent = ok ? T().copied : T().copyFailed;
+      setTimeout(function(){ btn.textContent = restoreLabel; }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+    } else {
+      done(false);
+    }
+  }
+
+  /* ===================== FIREBASE SETUP PANEL ===================== */
+  function renderSetupPanel(){
+    var Lx = T();
+    el.fbTitle.textContent = Lx.fbTitle;
+    el.fbIntro.textContent = Lx.fbIntro;
+    el.fbStepsTitle.textContent = Lx.fbStepsTitle;
+    el.fbStepsList.innerHTML = '';
+    // These strings are our own constants above, never anything from Firestore.
+    Lx.fbSteps.forEach(function(html){
+      var li = document.createElement('li');
+      li.innerHTML = html;
+      el.fbStepsList.appendChild(li);
+    });
+    el.fbConfigTitle.textContent = Lx.fbConfigTitle;
+    el.fbConfigInput.placeholder = Lx.fbConfigPlaceholder;
+    el.fbSaveBtn.textContent = Lx.fbSave;
+    el.fbClearBtn.textContent = Lx.fbClear;
+    el.fbRulesTitle.textContent = Lx.fbRulesTitle;
+    el.fbCopyRulesBtn.textContent = Lx.fbCopyRules;
+    el.rulesCode.textContent = FIRESTORE_RULES;
+    el.fbNotesTitle.textContent = Lx.fbNotesTitle;
+    el.fbNotesList.innerHTML = '';
+    Lx.fbNotes.forEach(function(note){
+      var div = document.createElement('div');
+      div.className = 'note' + (note.warn ? ' warn' : '');
+      div.innerHTML = note.html;
+      el.fbNotesList.appendChild(div);
+    });
+    el.closeSetupBtn.textContent = Lx.closeWord;
+  }
+  function openSetup(){
+    renderSetupPanel();
+    // Show whichever config is actually in effect, baked-in one included, so
+    // the panel never looks empty on a build that already has one.
+    var current = getConfig();
+    el.fbConfigInput.value = current ? JSON.stringify(current, null, 2) : '';
+    el.fbConfigStatus.textContent = '';
+    el.fbConfigStatus.className = 'lobby-status';
+    el.setupBackdrop.hidden = false;
+  }
+  el.fbSetupLink.addEventListener('click', openSetup);
+  el.closeSetupBtn.addEventListener('click', function(){
+    el.setupBackdrop.hidden = true;
+    if (!el.onlinePanel.hidden) setLobbyStatus(getConfig() ? T().onlineHint : T().errNoConfig, getConfig() ? '' : 'err');
+  });
+  el.fbSaveBtn.addEventListener('click', function(){
+    var cfg = parsePastedConfig(el.fbConfigInput.value);
+    if (!cfg){
+      el.fbConfigStatus.textContent = T().fbInvalid;
+      el.fbConfigStatus.className = 'lobby-status err';
+      return;
+    }
+    try{ window.localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }catch(e){}
+    el.fbConfigInput.value = JSON.stringify(cfg, null, 2);
+    el.fbConfigStatus.textContent = T().fbSaved;
+    el.fbConfigStatus.className = 'lobby-status ok';
+  });
+  el.fbClearBtn.addEventListener('click', function(){
+    try{ window.localStorage.removeItem(CFG_KEY); }catch(e){}
+    var fallback = normalizeConfig(FIREBASE_CONFIG);
+    el.fbConfigInput.value = fallback ? JSON.stringify(fallback, null, 2) : '';
+    el.fbConfigStatus.textContent = fallback ? T().fbFellBack : T().fbCleared;
+    el.fbConfigStatus.className = 'lobby-status';
+  });
+  el.fbCopyRulesBtn.addEventListener('click', function(){
+    copyText(FIRESTORE_RULES, el.fbCopyRulesBtn, T().fbCopyRules);
+  });
+
+  /* ===================== BOOT ===================== */
+  // No cards are dealt until a mode is picked — the felt sits dressed but
+  // empty behind the mode screen.
+  function renderIdleBoard(){
+    state.playerHand = [];
+    state.botHand = [];
+    renderHands();
+    renderCenterCard(false);
+    renderPlayAreaCard(false);
+    renderActiveValue();
+    el.proofLine.textContent = '';
+    el.turnBanner.textContent = '';
+  }
+
+  updateLangSwitchUI();
+  applyStaticText();
+  renderIdleBoard();
+  openModeScreen();
+})();
+</script>
+</body>
+</html>
