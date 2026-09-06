@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ที่มาของพื้นที่ — ทำไมสูตรพื้นที่ถึงใช้ได้</title>
+<style>
+:root{
+  --paper:#e7e9e4;
+  --paper-2:#dee1da;
+  --ink:#16241f;
+  --ink-2:#4a5a53;
+  --ink-3:#6f7d76;
+  --rule:#c6cbc2;
+  --mat:#123029;
+  --mat-2:#0d231e;
+  --mat-ink:#e6efe9;
+  --mat-ink-2:#9fb4ab;
+  --gold:#f0b429;
+  --gold-deep:#8a5d0c;
+  --rasp:#e4557a;
+  --rasp-deep:#a32b4c;
+  --turq:#56c7c1;
+  --mint:#9fd8c8;
+  --serif:"Palatino Linotype","Book Antiqua",Palatino,"Iowan Old Style","Hoefler Text",Georgia,serif;
+  --sans:"Avenir Next",Avenir,"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --thai:"Noto Sans Thai","IBM Plex Sans Thai",Sarabun,"Sukhumvit Set","Leelawadee UI",Leelawadee,
+    Thonburi,"Noto Serif Thai",Tahoma,sans-serif;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:17px;
+  line-height:1.62;
+}
+h1,h2,h3{font-weight:600;letter-spacing:-.01em;margin:0}
+p{margin:0 0 .9em}
+p:last-child{margin-bottom:0}
+em{font-style:italic}
+b,strong{font-weight:700}
+:focus-visible{outline:2px solid var(--gold-deep);outline-offset:3px;border-radius:2px}
+.mat-panel :focus-visible,.hero :focus-visible{outline-color:var(--gold)}
+
+.shell{max-width:1140px;margin:0 auto;padding:0 24px}
+
+/* ---------------------------------------------------------- navigation */
+.nav{
+  position:sticky;top:0;z-index:30;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule);
+}
+.nav-in{display:flex;align-items:baseline;gap:28px;height:56px;overflow:hidden}
+.wordmark{font-size:1.02rem;font-weight:700;letter-spacing:.01em;white-space:nowrap;flex:0 0 auto}
+.wordmark span{color:var(--ink-3);font-weight:400}
+.nav-links{
+  display:flex;gap:22px;flex:1 1 auto;min-width:0;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-links{padding-right:10px}
+.nav-links a{
+  font-family:var(--sans);font-size:.8rem;color:var(--ink-2);
+  text-decoration:none;white-space:nowrap;padding:4px 0 5px;
+  border-bottom:2px solid transparent;transition:color .18s,border-color .18s;
+}
+.nav-links a i{font-style:normal;color:var(--ink-3);margin-right:.45em}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a.on{color:var(--ink);border-bottom-color:var(--gold-deep)}
+.nav-links a.on i{color:var(--gold-deep)}
+.lang{
+  display:flex;flex:0 0 auto;align-items:center;margin-left:auto;
+  padding-left:14px;border-left:1px solid var(--rule);background:var(--paper);
+}
+.lang button{
+  appearance:none;background:none;border:0;cursor:pointer;
+  font-family:var(--sans);font-size:.78rem;color:var(--ink-3);
+  padding:4px 10px 5px;border-bottom:2px solid transparent;
+  transition:color .18s,border-color .18s;
+}
+.lang button:hover{color:var(--ink)}
+.lang button+button{border-left:1px solid var(--rule)}
+.lang button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--gold-deep);font-weight:600}
+
+/* ---------------------------------------------------------------- hero */
+.hero{background:var(--mat);color:var(--mat-ink);padding:76px 0 0;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.02fr);gap:56px;align-items:center}
+.hero h1{
+  font-size:clamp(2.6rem,6.2vw,4.35rem);
+  line-height:1.02;
+  letter-spacing:-.028em;
+  margin:0 0 26px;
+  text-wrap:balance;
+}
+.hero-lead{font-size:1.13rem;line-height:1.6;color:#c8d8d0;max-width:34ch}
+.hero-lead+.hero-lead{margin-top:.85em}
+.hero-fig{margin:0}
+.hero-cap{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  margin-top:14px;font-family:var(--sans);font-size:.82rem;color:var(--mat-ink-2);
+}
+.hero-cap b{color:var(--mat-ink);font-weight:600}
+.hero-rule{border:0;border-top:1px solid rgba(255,255,255,.14);margin:66px 0 0}
+.hero-foot{
+  display:flex;gap:10px;align-items:baseline;
+  padding:18px 0 22px;font-family:var(--sans);font-size:.78rem;color:var(--mat-ink-2);
+}
+
+/* ------------------------------------------------------------- lessons */
+.lesson{padding:78px 0 0}
+.lesson-head{
+  display:flex;align-items:baseline;gap:18px;
+  padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:34px;
+}
+.lesson-head .n{
+  font-size:2.5rem;line-height:1;color:var(--ink);flex:0 0 auto;
+  font-variant-numeric:lining-nums;
+}
+.lesson-head h2{font-size:clamp(1.55rem,3.2vw,2.05rem);letter-spacing:-.02em}
+.lesson-head .tag{
+  margin-left:auto;font-family:var(--sans);font-size:.74rem;color:var(--ink-3);
+  text-align:right;max-width:24ch;line-height:1.4;
+}
+.lesson-body{
+  display:grid;grid-template-columns:minmax(0,25rem) minmax(0,1fr);
+  column-gap:52px;align-items:start;
+}
+.prose.rest{margin-top:.9em}
+.prose{font-size:1.02rem}
+.prose h3{font-size:1.02rem;margin:1.6em 0 .35em}
+.prose h3:first-child{margin-top:0}
+.prose .formula{
+  font-size:1.14rem;margin:1.15em 0;padding:.55em 0;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.prose .aside{font-size:.93rem;color:var(--ink-2);margin-top:1.3em}
+
+/* ---------------------------------------------------------- mat panels */
+.mat-panel{position:sticky;top:76px}
+.mat-shell{
+  background:var(--mat);border-radius:16px;padding:10px;
+  box-shadow:0 18px 40px -30px rgba(18,48,41,.75);
+}
+.mat-shell svg{display:block;width:100%;height:auto;border-radius:8px}
+svg text{font-family:var(--sans)}
+.mat-note{
+  font-family:var(--sans);font-size:.86rem;line-height:1.5;color:var(--ink-2);
+  margin:16px 0 0;min-height:3em;
+}
+.mat-note b{color:var(--ink);font-weight:600}
+
+/* stage track */
+.steps{display:flex;gap:0;margin:16px 0 0;border-top:1px solid var(--rule);flex-wrap:wrap}
+.steps button{
+  appearance:none;background:none;border:0;border-top:2px solid transparent;margin-top:-1px;
+  font-family:var(--sans);font-size:.76rem;color:var(--ink-3);
+  padding:9px 14px 9px 0;cursor:pointer;transition:color .18s,border-color .18s;
+}
+.steps button:first-child{padding-left:0}
+.steps button:hover{color:var(--ink)}
+.steps button.done{color:var(--ink-2);border-top-color:var(--rule)}
+.steps button.on{color:var(--ink);border-top-color:var(--gold-deep);font-weight:600}
+
+.run{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{
+  appearance:none;font-family:var(--sans);font-size:.82rem;
+  padding:9px 16px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--mat);background:none;color:var(--mat);
+  transition:background .16s,color .16s,opacity .16s;
+}
+.btn:hover{background:rgba(18,48,41,.08)}
+.btn.key{background:var(--mat);color:var(--paper)}
+.btn.key:hover{background:#1b463c}
+.btn[disabled]{opacity:.35;cursor:default}
+.btn[disabled]:hover{background:none}
+
+/* controls */
+.controls{margin-top:26px;display:grid;gap:16px}
+.ctl label{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  font-family:var(--sans);font-size:.8rem;color:var(--ink-2);margin-bottom:5px;
+}
+.ctl label b{
+  font-weight:600;color:var(--ink);
+  font-variant-numeric:tabular-nums;font-size:.86rem;
+}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:22px;
+  background:none;cursor:pointer;display:block;
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--rule);border-radius:2px}
+input[type=range]::-moz-range-track{height:2px;background:var(--rule);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--mat);border:0;margin-top:-7px;
+}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--mat);border:0}
+.ctl.threshold input[type=range]::-webkit-slider-thumb{background:var(--rasp-deep)}
+.ctl.threshold input[type=range]::-moz-range-thumb{background:var(--rasp-deep)}
+
+/* readouts */
+.stats{display:flex;flex-wrap:wrap;gap:0 28px;margin:24px 0 0}
+.stats div{padding-top:7px;border-top:1px solid var(--rule);min-width:76px;flex:0 0 auto}
+.stats dt{font-family:var(--sans);font-size:.72rem;color:var(--ink-3);margin:0}
+.stats dd{
+  margin:1px 0 0;font-family:var(--sans);font-size:1.02rem;font-weight:600;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+}
+.stats dd.hero-stat{color:var(--gold-deep)}
+
+.legend{
+  display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:20px;
+  font-family:var(--sans);font-size:.75rem;color:var(--ink-2);
+}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:11px;height:11px;border-radius:2px;display:block}
+
+/* ------------------------------------------------------------- closing */
+.chain{padding:86px 0 90px;margin-top:78px;border-top:1px solid var(--rule)}
+.chain h2{font-size:1.5rem;margin-bottom:8px}
+.chain p.intro{color:var(--ink-2);max-width:58ch;margin-bottom:30px}
+.chain ol{list-style:none;margin:0;padding:0;max-width:62ch}
+.chain li{padding:14px 0 14px 30px;border-top:1px solid var(--rule);position:relative}
+.chain li:last-child{border-bottom:1px solid var(--rule)}
+.chain li::before{
+  content:attr(data-n);position:absolute;left:0;top:14px;
+  font-family:var(--sans);font-size:.76rem;color:var(--ink-3);
+}
+.chain li b{display:block;font-weight:600}
+.chain li span{color:var(--ink-2);font-size:.95rem}
+.colophon{
+  font-family:var(--sans);font-size:.76rem;color:var(--ink-3);line-height:1.55;
+  max-width:62ch;padding:20px 0 40px;border-top:1px solid var(--rule);
+}
+
+/* -------------------------------------------------------------- Thai */
+html[lang="th"] body{font-family:var(--thai);font-size:16.5px;line-height:1.95}
+html[lang="th"] h1,html[lang="th"] h2,html[lang="th"] h3,
+html[lang="th"] .wordmark,html[lang="th"] .chain li b{
+  font-family:var(--thai);letter-spacing:0;line-height:1.4;
+}
+html[lang="th"] .hero h1{font-size:clamp(2rem,4.9vw,3.35rem);line-height:1.3}
+html[lang="th"] .lesson-head h2{font-size:clamp(1.35rem,2.8vw,1.8rem)}
+html[lang="th"] .prose{font-size:.99rem}
+html[lang="th"] .prose .formula{font-size:1.06rem}
+html[lang="th"] .hero-lead{font-size:1.04rem;line-height:1.85;max-width:38ch}
+html[lang="th"] .nav-links a,html[lang="th"] .lang button,html[lang="th"] .btn,
+html[lang="th"] .steps button,html[lang="th"] .ctl label,html[lang="th"] .stats dt,
+html[lang="th"] .mat-note,html[lang="th"] .legend,html[lang="th"] .hero-cap,
+html[lang="th"] .hero-foot,html[lang="th"] .colophon,html[lang="th"] .lesson-head .tag,
+html[lang="th"] .chain li span,html[lang="th"] .chain p.intro,
+html[lang="th"] svg text{font-family:var(--thai)}
+html[lang="th"] .mat-note{line-height:1.75}
+html[lang="th"] .chain li::before{font-family:var(--sans)}
+html[lang="th"] .lesson-head .n{font-family:var(--serif)}
+
+/* ---------------------------------------------------------- responsive */
+@media (max-width:940px){
+  .hero{padding-top:44px}
+  .hero-grid{grid-template-columns:minmax(0,1fr);gap:34px}
+  .hero-lead{max-width:56ch}
+  .hero-rule{margin-top:40px}
+  .lesson-body{grid-template-columns:minmax(0,1fr);row-gap:28px}
+  .prose-col{display:contents}
+  .prose.lead{order:1}
+  .mat-panel{order:2;position:static}
+  .prose.rest{order:3;margin-top:0}
+  .lesson{padding-top:56px}
+  .lesson-head .tag{display:none}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .wordmark{display:none}
+  .lang button{padding:4px 8px 5px}
+  .shell{padding:0 16px}
+  .lesson-head{gap:12px}
+  .lesson-head .n{font-size:1.9rem}
+  .steps button{padding-right:11px}
+  .stats{gap:0 20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="shell nav-in">
+    <div class="wordmark" data-t="brand">ที่มาของ<span>พื้นที่</span></div>
+    <div class="nav-links">
+      <a href="#l1"><i>1</i><span data-t="nav1">การนับ</span></a>
+      <a href="#l2"><i>2</i><span data-t="nav2">สี่เหลี่ยมผืนผ้า</span></a>
+      <a href="#l3"><i>3</i><span data-t="nav3">สี่เหลี่ยมด้านขนาน</span></a>
+      <a href="#l4"><i>4</i><span data-t="nav4">สามเหลี่ยมมุมฉาก</span></a>
+      <a href="#l5"><i>5</i><span data-t="nav5">สามเหลี่ยมใดก็ได้</span></a>
+    </div>
+    <div class="lang" role="group" aria-label="ภาษา / Language">
+      <button type="button" data-lang="th" aria-pressed="true">ไทย</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="shell">
+    <div class="hero-grid">
+      <div>
+        <h1 data-t="h.title">ทุกสูตรพื้นที่ ล้วนใช้กลเดียวกัน</h1>
+        <p class="hero-lead" data-t="h.p1">ตัดรูปออกเป็นชิ้น ย้ายชิ้นส่วน แล้วประกอบกลับให้เป็นรูปที่เรารู้วิธีวัดพื้นที่อยู่แล้ว</p>
+        <p class="hero-lead" data-t="h.p2">ไม่มีอะไรเพิ่มเข้ามา และไม่มีอะไรหายไป พื้นที่จึงเปลี่ยนไม่ได้ แนวคิดเดียวนี้เองคือที่มาของ
+        <em>ฐาน&nbsp;×&nbsp;สูง</em> และ <em>½&nbsp;×&nbsp;ฐาน&nbsp;×&nbsp;สูง</em> และคุณดูมันเกิดขึ้นได้ทีละขั้น</p>
+      </div>
+      <figure class="hero-fig">
+        <div class="mat-shell">
+          <svg id="fig0" role="img" data-ta="a.fig0" aria-label="สี่เหลี่ยมด้านขนานถูกตัดตามแนวดิ่ง แล้วสามเหลี่ยมเลื่อนข้ามไปประกอบเป็นสี่เหลี่ยมผืนผ้า"></svg>
+        </div>
+        <figcaption class="hero-cap">
+          <span id="cap0"></span>
+          <button class="btn" id="replay0" data-t="h.replay" style="border-color:rgba(255,255,255,.35);color:var(--mat-ink)">ดูอีกครั้ง</button>
+        </figcaption>
+      </figure>
+    </div>
+    <hr class="hero-rule">
+    <p class="hero-foot" data-t="h.foot">บทพิสูจน์ห้าบท แต่ละบทสร้างต่อจากบทก่อนหน้า ลองเลื่อนแถบปรับค่าทุกอันที่เจอ เพราะบทพิสูจน์เหล่านี้ต้องยังใช้ได้เสมอ</p>
+  </div>
+</header>
+
+<main class="shell">
+
+<!-- ===================================================== 1. counting -->
+<section class="lesson" id="l1">
+  <div class="lesson-head">
+    <span class="n">1</span>
+    <h2 data-t="l1.h">พื้นที่คืออะไรกันแน่</h2>
+    <span class="tag" data-t="l1.tag">แตะช่องสี่เหลี่ยมเพื่อนับ</span>
+  </div>
+  <div class="lesson-body">
+    <div class="prose-col">
+    <div class="prose lead">
+      <p data-t="l1.p1">พื้นที่คือปริมาณผิวหน้าที่รูปหนึ่งปกคลุมอยู่ ถ้าจะบอกออกมาเป็นตัวเลข เราต้องมีอะไรสักอย่างไว้ใช้วัด
+      สิ่งนั้นคือ<strong>สี่เหลี่ยมจัตุรัสหนึ่งหน่วย</strong> คือสี่เหลี่ยมจัตุรัสที่กว้างหนึ่งหน่วยและสูงหนึ่งหน่วยพอดี</p>
+      <p data-t="l1.p2">สี่เหลี่ยมแบบนั้นหนึ่งช่องปกคลุมพื้นที่ <strong>หนึ่งตารางหน่วย</strong> ดังนั้นพื้นที่ของรูปใดก็ตาม
+      จึงเป็นเพียงคำตอบของคำถามเรื่องการนับ นั่นคือ ต้องใช้สี่เหลี่ยมหนึ่งหน่วยกี่ช่องจึงจะปูเต็มรูปนั้น</p>
+      <p data-t="l1.p3">เส้นตารางจาง ๆ ที่อยู่หลังภาพทุกภาพในหน้านี้ประกอบขึ้นจากสี่เหลี่ยมหนึ่งหน่วย ขนาดของมันไม่เคยเปลี่ยน
+      คุณจึงตรวจคำตอบด้วยการนับได้เสมอ</p>
+    </div>
+    <div class="prose rest">
+      <h3 data-t="l1.h3">ลองดู</h3>
+      <p data-t="l1.p4">แตะสี่เหลี่ยมทีละช่องในรูป ตัวนับจะคอยบอกจำนวนให้ เมื่อเติมครบทุกช่องคุณก็ได้พื้นที่แล้ว
+      โดยไม่ต้องใช้สูตรเลย เพราะการนับ<em>คือ</em>นิยามของพื้นที่</p>
+      <p class="aside" data-t="l1.p5">การนับใช้ได้กับทุกรูปที่สร้างจากสี่เหลี่ยมเต็มช่อง ส่วนที่เหลือของหน้านี้พูดถึงรูปที่ทำแบบนั้นไม่ได้
+      คือรูปที่มีด้านเอียง ซึ่งสี่เหลี่ยมเต็มช่องวางลงไม่พอดี และการนับก็ใช้ไม่ได้อีกต่อไป</p>
+    </div>
+    </div>
+    <div class="mat-panel">
+      <div class="mat-shell">
+        <svg id="fig1" role="img" data-ta="a.fig1" aria-label="รูปที่วาดอยู่บนตารางสี่เหลี่ยมหนึ่งหน่วย แตะทีละช่องเพื่อนับได้"></svg>
+      </div>
+      <p class="mat-note" id="note1" aria-live="polite"></p>
+      <div class="run">
+        <button class="btn key" data-fig="1" data-act="shape" data-t="b.shape">เปลี่ยนรูป</button>
+        <button class="btn" data-fig="1" data-act="all" data-t="b.all">เติมให้ครบ</button>
+        <button class="btn" data-fig="1" data-act="clear" data-t="b.clear">ล้าง</button>
+      </div>
+      <dl class="stats" id="stats1">
+        <div><dt data-t="s1.a">ช่องที่นับแล้ว</dt><dd id="s1-count">0</dd></div>
+        <div><dt data-t="s1.b">ช่องทั้งหมดในรูป</dt><dd id="s1-total">0</dd></div>
+        <div><dt data-t="s.area">พื้นที่</dt><dd class="hero-stat" id="s1-area">&mdash;</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================== 2. rectangle -->
+<section class="lesson" id="l2">
+  <div class="lesson-head">
+    <span class="n">2</span>
+    <h2 data-t="l2.h">สี่เหลี่ยมผืนผ้า และสี่เหลี่ยมจัตุรัส</h2>
+    <span class="tag" data-t="l2.tag">การนับที่จัดระเบียบแล้ว</span>
+  </div>
+  <div class="lesson-body">
+    <div class="prose-col">
+    <div class="prose lead">
+      <p data-t="l2.p1">สี่เหลี่ยมผืนผ้าเป็นรูปเดียวที่สี่เหลี่ยมหนึ่งหน่วยวางลงได้พอดีเป๊ะ ไม่มีเศษเหลือ
+      เราจึงยังนับได้อยู่ แต่นับให้ฉลาดขึ้นได้</p>
+      <p data-t="l2.p2">สี่เหลี่ยมเรียงกันเป็น<strong>แถว</strong>อย่างเป็นระเบียบ ทุกแถวเหมือนกันหมด คือทอดยาวตลอดแนวฐาน
+      แต่ละแถวจึงมีสี่เหลี่ยมเท่ากับ <em>ฐาน</em> ช่อง และแถวเหล่านี้ก็ซ้อนขึ้นไปจนสุด จึงมีทั้งหมด <em>สูง</em> แถว</p>
+    </div>
+    <div class="prose rest">
+      <p data-t="l2.p3">การนับทีละ <em>ฐาน</em> ช่อง เป็นจำนวน <em>สูง</em> ครั้ง ก็คือการคูณ สูตรนี้มีความหมายแค่นั้นเอง
+      คือทางลัดของการนับสี่เหลี่ยมที่คุณมองเห็นอยู่แล้ว</p>
+      <p class="formula" data-t="l2.f">พื้นที่สี่เหลี่ยมผืนผ้า = ฐาน × สูง</p>
+      <h3 data-t="l2.h3">สี่เหลี่ยมจัตุรัสไม่ใช่กฎใหม่</h3>
+      <p data-t="l2.p4">สี่เหลี่ยมจัตุรัสก็คือสี่เหลี่ยมผืนผ้าที่ฐานกับสูงบังเอิญเท่ากัน วิธีนับไม่เปลี่ยนเลย
+      เพราะตัวเลขสองตัวเท่ากัน <em>ฐาน&nbsp;×&nbsp;สูง</em> จึงกลายเป็น <em>ด้าน&nbsp;×&nbsp;ด้าน</em>
+      ลองตั้งแถบปรับค่าทั้งสองให้เท่ากัน แล้วดูรูปกลายเป็นสี่เหลี่ยมจัตุรัสโดยที่เหตุผลไม่ขยับเลยแม้แต่นิดเดียว</p>
+    </div>
+    </div>
+    <div class="mat-panel">
+      <div class="mat-shell">
+        <svg id="fig2" role="img" data-ta="a.fig2" aria-label="สี่เหลี่ยมผืนผ้าที่ค่อย ๆ เติมด้วยสี่เหลี่ยมหนึ่งหน่วยทีละแถว"></svg>
+      </div>
+      <p class="mat-note" id="note2" aria-live="polite"></p>
+      <div class="steps" id="steps2"></div>
+      <div class="run">
+        <button class="btn key" data-fig="2" data-act="next" data-t="b.next">ขั้นต่อไป</button>
+        <button class="btn" data-fig="2" data-act="play" data-t="b.play">เล่นทั้งหมด</button>
+        <button class="btn" data-fig="2" data-act="reset" data-t="b.reset">เริ่มใหม่</button>
+        <button class="btn" data-fig="2" data-act="square" data-t="b.square">ทำให้เป็นจัตุรัส</button>
+      </div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="c2b"><span data-t="c.base">ฐาน</span> <b><span id="v2b">6</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c2b" min="1" max="12" step="1" value="6">
+        </div>
+        <div class="ctl">
+          <label for="c2h"><span data-t="c.height">สูง</span> <b><span id="v2h">4</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c2h" min="1" max="8" step="1" value="4">
+        </div>
+      </div>
+      <dl class="stats" id="stats2">
+        <div><dt data-t="s.base">ฐาน</dt><dd id="s2-b">6</dd></div>
+        <div><dt data-t="s.height">สูง</dt><dd id="s2-h">4</dd></div>
+        <div><dt data-t="s2.n">ช่องที่แสดง</dt><dd id="s2-n">0</dd></div>
+        <div><dt data-t="s.area">พื้นที่</dt><dd class="hero-stat" id="s2-a">24</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================== 3. parallelogram -->
+<section class="lesson" id="l3">
+  <div class="lesson-head">
+    <span class="n">3</span>
+    <h2 data-t="l3.h">สี่เหลี่ยมด้านขนาน</h2>
+    <span class="tag" data-t="l3.tag">การตัดจริงครั้งแรก</span>
+  </div>
+  <div class="lesson-body">
+    <div class="prose-col">
+    <div class="prose lead">
+      <p data-t="l3.p1">สี่เหลี่ยมด้านขนานก็คือสี่เหลี่ยมผืนผ้าที่ถูกผลักให้เอียงไป ด้านบนเลื่อนไปทางข้าง
+      แต่ยังยาวเท่าฐานเดิม และยังอยู่สูงจากฐานเท่าเดิม</p>
+      <p data-t="l3.p2">ระยะนั้นคือ<strong>ความสูง</strong> ซึ่งวัดตั้งฉากขึ้นจากฐาน ไม่ใช่วัดตามด้านเอียง
+      ด้านเอียงยาวกว่า ถ้าใช้ด้านเอียงก็เท่ากับวัดผิดสิ่ง</p>
+    </div>
+    <div class="prose rest">
+      <h3 data-t="l3.h3a">การตัด</h3>
+      <p data-t="l3.p3">ตัดลงตรง ๆ จากมุมบนซ้ายมาถึงฐาน รอยตัดนี้เฉือนสามเหลี่ยมมุมฉากออกมาหนึ่งชิ้น
+      และเพราะด้านเอียงทั้งสองของสี่เหลี่ยมด้านขนานเหมือนกันทุกประการ สามเหลี่ยมชิ้นนั้นจึงมีรูปร่างพอดีกับช่องว่างที่ปลายอีกด้าน ยกมันข้ามไปวาง แล้วมันจะลงล็อกพอดี</p>
+      <p data-t="l3.p4">สิ่งที่เหลืออยู่คือสี่เหลี่ยมผืนผ้า ฐานเท่าเดิม สูงเท่าเดิม และเพราะเราแค่ย้ายชิ้นส่วน
+      พื้นที่จึงเท่าเดิมด้วย</p>
+      <p class="formula" data-t="l3.f">พื้นที่สี่เหลี่ยมด้านขนาน = ฐาน × สูง</p>
+      <h3 data-t="l3.h3b">เมื่อระยะเยื้องมากเกินไป</h3>
+      <p data-t="l3.p5">ถ้าผลักด้านบนไปไกลเกินหนึ่งช่วงฐานเต็ม ๆ วิธีตัดแบบเดิมจะใช้ไม่ได้
+      เพราะสามเหลี่ยมที่เฉือนออกมากว้างกว่าช่องว่างที่ต้องเติม จึงวางลงไม่พอดี</p>
+      <p data-t="l3.p6">วิธีแก้คือเพิ่มขั้นตอนอีกหนึ่งขั้นก่อน ตัดตามเส้นทแยงมุมจากมุมล่างขวาขึ้นไปยังมุมบนซ้าย
+      ครึ่งทั้งสองใช้ขอบนั้นร่วมกันทั้งเส้น จากนั้นเลื่อนครึ่งที่มีด้านบนติดอยู่ถอยกลับไปหนึ่งช่วงฐานพอดี
+      ในทิศตรงข้ามกับความเอียง ทั้งสองครึ่งยังต่อกันได้สนิท และสี่เหลี่ยมด้านขนานที่ได้มี<em>ฐานเท่าเดิม สูงเท่าเดิม และพื้นที่เท่าเดิม</em> แต่เยื้องน้อยลง ตอนนี้วิธีตัดแบบปกติก็ใช้ได้แล้ว</p>
+      <p class="aside" data-t="l3.p7">ลองลากแถบระยะเยื้องผ่านจุดที่ <em>ระยะเยื้อง&nbsp;=&nbsp;ฐาน</em> แล้วภาพจะสลับวิธีให้เอง
+      ระหว่างนั้นให้จับตาดูค่าพื้นที่ไว้ มันไม่เคยกระโดดเลย</p>
+    </div>
+    </div>
+    <div class="mat-panel">
+      <div class="mat-shell">
+        <svg id="fig3" role="img" data-ta="a.fig3" aria-label="สี่เหลี่ยมด้านขนานถูกตัดและจัดใหม่เป็นสี่เหลี่ยมผืนผ้าที่มีฐานและความสูงเท่าเดิม"></svg>
+      </div>
+      <p class="mat-note" id="note3" aria-live="polite"></p>
+      <div class="steps" id="steps3"></div>
+      <div class="run">
+        <button class="btn key" data-fig="3" data-act="next" data-t="b.next">ขั้นต่อไป</button>
+        <button class="btn" data-fig="3" data-act="play" data-t="b.play">เล่นทั้งหมด</button>
+        <button class="btn" data-fig="3" data-act="reset" data-t="b.reset">เริ่มใหม่</button>
+      </div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="c3b"><span data-t="c.base">ฐาน</span> <b><span id="v3b">5</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c3b" min="2" max="6" step="0.5" value="5">
+        </div>
+        <div class="ctl">
+          <label for="c3h"><span data-t="c.height">สูง</span> <b><span id="v3h">3</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c3h" min="1" max="5" step="0.5" value="3">
+        </div>
+        <div class="ctl threshold">
+          <label for="c3l"><span data-t="c.lean">ระยะเยื้อง คิดเป็นกี่เท่าของฐาน</span> <b>×<span id="v3l">0.60</span></b></label>
+          <input type="range" id="c3l" min="0" max="2" step="0.05" value="0.6">
+        </div>
+      </div>
+      <dl class="stats" id="stats3">
+        <div><dt data-t="s.base">ฐาน</dt><dd id="s3-b">5</dd></div>
+        <div><dt data-t="s.height">สูง</dt><dd id="s3-h">3</dd></div>
+        <div><dt data-t="s3.d">ระยะเยื้อง</dt><dd id="s3-d">3</dd></div>
+        <div><dt data-t="s3.s">ด้านเอียง</dt><dd id="s3-s">4.24</dd></div>
+        <div><dt data-t="s.area">พื้นที่</dt><dd class="hero-stat" id="s3-a">15</dd></div>
+      </dl>
+      <div class="legend">
+        <span><i style="background:#f0b429"></i><span data-t="lg.stay">ชิ้นที่อยู่กับที่</span></span>
+        <span><i style="background:#e4557a"></i><span data-t="lg.move">ชิ้นที่ถูกย้าย</span></span>
+        <span><i style="background:#9fd8c8"></i><span data-t="lg.dim">เส้นบอกขนาด</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================== 4. right triangle -->
+<section class="lesson" id="l4">
+  <div class="lesson-head">
+    <span class="n">4</span>
+    <h2 data-t="l4.h">สามเหลี่ยมมุมฉาก</h2>
+    <span class="tag" data-t="l4.tag">ครึ่งหนึ่งของรูปที่รู้จักอยู่แล้ว</span>
+  </div>
+  <div class="lesson-body">
+    <div class="prose-col">
+    <div class="prose lead">
+      <p data-t="l4.p1">เอาสี่เหลี่ยมผืนผ้ามาตัดตามเส้นทแยงมุม จากมุมหนึ่งไปยังอีกมุมหนึ่ง จะได้สามเหลี่ยมมุมฉากสองรูป</p>
+      <p data-t="l4.p2">สองรูปนี้ไม่ได้แค่ดูคล้ายกัน แต่<strong>เท่ากันทุกประการ</strong> พิสูจน์ได้ด้วยการขยับ
+      ลองหมุนรูปหนึ่งไปครึ่งรอบรอบจุดกึ่งกลางของสี่เหลี่ยมผืนผ้า มันจะไปทับอีกรูปหนึ่งพอดี มุมต่อมุม</p>
+    </div>
+    <div class="prose rest">
+      <p data-t="l4.p3">ดังนั้นสี่เหลี่ยมผืนผ้าจึงประกอบขึ้นจากสามเหลี่ยมรูปเดียวกันสองชิ้น สามเหลี่ยมหนึ่งรูปจึงต้องเป็นครึ่งหนึ่งของมัน</p>
+      <p class="formula" data-t="l4.f">พื้นที่สามเหลี่ยมมุมฉาก = ½ × ฐาน × สูง</p>
+      <p data-t="l4.p4">ฐานกับสูงของสามเหลี่ยมคือด้านสองด้านที่มาบรรจบกันที่มุมฉาก ซึ่งก็คือฐานกับสูงของสี่เหลี่ยมผืนผ้าต้นทางนั่นเอง
+      เพราะอย่างนี้ ตัวเลขสองตัวเดียวกันจึงปรากฏอยู่ในสูตรทั้งสอง</p>
+      <p class="aside" data-t="l4.p5">กดไปที่ขั้น <em>หมุน</em> แล้วดูสามเหลี่ยมที่เคลื่อนที่ค่อย ๆ ลงไปทับเส้นประของรูปที่อยู่กับที่
+      ถ้ามันทับได้พอดีเป๊ะ ก็แปลว่าสองครึ่งนั้นเหมือนกันจริง</p>
+    </div>
+    </div>
+    <div class="mat-panel">
+      <div class="mat-shell">
+        <svg id="fig4" role="img" data-ta="a.fig4" aria-label="สี่เหลี่ยมผืนผ้าถูกตัดตามเส้นทแยงมุมเป็นสามเหลี่ยมมุมฉากสองรูปที่เท่ากัน แล้วหมุนรูปหนึ่งไปทับอีกรูป"></svg>
+      </div>
+      <p class="mat-note" id="note4" aria-live="polite"></p>
+      <div class="steps" id="steps4"></div>
+      <div class="run">
+        <button class="btn key" data-fig="4" data-act="next" data-t="b.next">ขั้นต่อไป</button>
+        <button class="btn" data-fig="4" data-act="play" data-t="b.play">เล่นทั้งหมด</button>
+        <button class="btn" data-fig="4" data-act="reset" data-t="b.reset">เริ่มใหม่</button>
+      </div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="c4b"><span data-t="c.base">ฐาน</span> <b><span id="v4b">6</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c4b" min="2" max="8" step="0.5" value="6">
+        </div>
+        <div class="ctl">
+          <label for="c4h"><span data-t="c.height">สูง</span> <b><span id="v4h">4</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c4h" min="1" max="6" step="0.5" value="4">
+        </div>
+      </div>
+      <dl class="stats" id="stats4">
+        <div><dt data-t="s.base">ฐาน</dt><dd id="s4-b">6</dd></div>
+        <div><dt data-t="s.height">สูง</dt><dd id="s4-h">4</dd></div>
+        <div><dt data-t="s.rect">สี่เหลี่ยมผืนผ้า</dt><dd id="s4-r">24</dd></div>
+        <div><dt data-t="s.tri">สามเหลี่ยม</dt><dd class="hero-stat" id="s4-a">12</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================= 5. any triangle -->
+<section class="lesson" id="l5">
+  <div class="lesson-head">
+    <span class="n">5</span>
+    <h2 data-t="l5.h">สามเหลี่ยมรูปใดก็ได้</h2>
+    <span class="tag" data-t="l5.tag">รวมถึงรูปที่เบี้ยวมาก ๆ</span>
+  </div>
+  <div class="lesson-body">
+    <div class="prose-col">
+    <div class="prose lead">
+      <p data-t="l5.p1">สามเหลี่ยมส่วนใหญ่ไม่มีมุมฉาก บทที่ 4 จึงใช้กับมันไม่ได้ พวกมันต้องมีวิธีของตัวเอง
+      และวิธีนั้นเป็นวิธีที่สวยที่สุดในหน้านี้</p>
+      <p data-t="l5.p2">สร้าง<strong>สำเนา</strong>ของสามเหลี่ยมขึ้นมาหนึ่งรูป หมุนสำเนาไปครึ่งรอบ
+      แล้วนำไปต่อกับรูปเดิมตามด้านเอียงด้านหนึ่ง สามเหลี่ยมสองรูปจะประกบกันเป็น<strong>สี่เหลี่ยมด้านขนาน</strong>พอดี</p>
+    </div>
+    <div class="prose rest">
+      <p data-t="l5.p3">ลองดูว่าสี่เหลี่ยมด้านขนานรูปนั้นคืออะไร ฐานของมันคือฐานของสามเหลี่ยม และความสูงของมันคือความสูงของสามเหลี่ยม
+      บทที่ 3 บอกไว้แล้วว่าพื้นที่ของมันคือ <em>ฐาน&nbsp;×&nbsp;สูง</em> ส่วนสามเหลี่ยมคือหนึ่งในสองครึ่งที่เท่ากันทุกประการ
+      จึงเป็นครึ่งหนึ่งของพื้นที่นั้น</p>
+      <p class="formula" data-t="l5.f">พื้นที่สามเหลี่ยม = ½ × ฐาน × สูง</p>
+      <h3 data-t="l5.h3">จุดยอดจะอยู่ตรงไหนก็ไม่สำคัญ</h3>
+      <p data-t="l5.p4">ลองเลื่อนจุดยอดไปมา ดันให้เลยปลายฐานออกไป จนสามเหลี่ยมเอียงพ้นฐานของตัวเอง
+      สำเนาสองรูปก็ยังประกบกันเป็นสี่เหลี่ยมด้านขนานได้เหมือนเดิม และฐานกับสูงก็ยังเป็นตัวเลขสองตัวเดิม</p>
+      <p data-t="l5.p5">เมื่อจุดยอดยื่นออกไปนอกฐาน ความสูงก็ยังวัดดิ่งลงมาที่<em>เส้น</em>ฐานเหมือนเดิม
+      โดยต่อเส้นฐานออกไปพ้นมุมถ้าจำเป็น เส้นประในภาพแสดงให้เห็นว่ามันลงตรงไหน</p>
+      <p class="aside" data-t="l5.p6">นี่คือเหตุผลที่สูตรเดียวใช้ได้กับสามเหลี่ยมทุกรูป จุดยอดจะอยู่ที่ไหนก็ได้บนเส้นนั้นโดยความสูงไม่เปลี่ยน
+      สามเหลี่ยมทุกรูปที่มีฐานนี้และสูงนี้จึงมีพื้นที่เท่ากันเป๊ะ</p>
+    </div>
+    </div>
+    <div class="mat-panel">
+      <div class="mat-shell">
+        <svg id="fig5" role="img" data-ta="a.fig5" aria-label="สามเหลี่ยมถูกคัดลอก หมุนครึ่งรอบ แล้วนำไปต่อกันเป็นสี่เหลี่ยมด้านขนาน"></svg>
+      </div>
+      <p class="mat-note" id="note5" aria-live="polite"></p>
+      <div class="steps" id="steps5"></div>
+      <div class="run">
+        <button class="btn key" data-fig="5" data-act="next" data-t="b.next">ขั้นต่อไป</button>
+        <button class="btn" data-fig="5" data-act="play" data-t="b.play">เล่นทั้งหมด</button>
+        <button class="btn" data-fig="5" data-act="reset" data-t="b.reset">เริ่มใหม่</button>
+      </div>
+      <div class="controls">
+        <div class="ctl">
+          <label for="c5b"><span data-t="c.base">ฐาน</span> <b><span id="v5b">5</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c5b" min="2" max="7" step="0.5" value="5">
+        </div>
+        <div class="ctl">
+          <label for="c5h"><span data-t="c.height">สูง</span> <b><span id="v5h">3.5</span> <span data-t="c.unit">หน่วย</span></b></label>
+          <input type="range" id="c5h" min="1" max="5" step="0.5" value="3.5">
+        </div>
+        <div class="ctl">
+          <label for="c5a"><span data-t="c.apex">จุดยอด เลื่อนไปตามแนวนอน</span> <b><span id="v5a">+1.5</span></b></label>
+          <input type="range" id="c5a" min="-4" max="10" step="0.25" value="1.5">
+        </div>
+      </div>
+      <dl class="stats" id="stats5">
+        <div><dt data-t="s.base">ฐาน</dt><dd id="s5-b">5</dd></div>
+        <div><dt data-t="s.height">สูง</dt><dd id="s5-h">3.5</dd></div>
+        <div><dt data-t="s5.p">จุดยอดอยู่</dt><dd id="s5-p">เหนือฐาน</dd></div>
+        <div><dt data-t="s.para">สี่เหลี่ยมด้านขนาน</dt><dd id="s5-r">17.5</dd></div>
+        <div><dt data-t="s.tri">สามเหลี่ยม</dt><dd class="hero-stat" id="s5-a">8.75</dd></div>
+      </dl>
+      <div class="legend">
+        <span><i style="background:#f0b429"></i><span data-t="lg.orig">รูปต้นฉบับ</span></span>
+        <span><i style="background:#56c7c1"></i><span data-t="lg.copy">รูปสำเนา</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="chain">
+  <h2 data-t="ch.h">ลำดับเหตุผลทั้งหมด</h2>
+  <p class="intro" data-t="ch.p">บทพิสูจน์แต่ละบทใช้ได้เฉพาะบทที่อยู่ก่อนหน้าเท่านั้น ไม่ใช้อย่างอื่นเลย
+  นี่คือสิ่งที่ทำให้มันเป็นลูกโซ่ของเหตุผล ไม่ใช่รายการสูตรที่ต้องท่องจำ</p>
+  <ol>
+    <li data-n="1"><b data-t="ch.1a">สี่เหลี่ยมจัตุรัสหนึ่งหน่วยปกคลุมพื้นที่หนึ่งตารางหน่วย</b><span data-t="ch.1b">พื้นที่คือการนับสิ่งนี้
+    ข้อนี้เป็นนิยาม จึงไม่ต้องพิสูจน์</span></li>
+    <li data-n="2"><b data-t="ch.2a">สี่เหลี่ยมผืนผ้าบรรจุสี่เหลี่ยมหนึ่งหน่วยได้ สูง แถว แถวละ ฐาน ช่อง</b><span data-t="ch.2b">นับเป็นแถวก็จะได้
+    ฐาน × สูง</span></li>
+    <li data-n="3"><b data-t="ch.3a">สี่เหลี่ยมด้านขนานตัดแล้วประกอบเป็นสี่เหลี่ยมผืนผ้าได้</b><span data-t="ch.3b">ฐานเท่าเดิม สูงเท่าเดิม
+    ไม่มีเนื้อที่เพิ่มขึ้นหรือหายไป จึงได้ ฐาน × สูง อีกครั้ง</span></li>
+    <li data-n="4"><b data-t="ch.4a">สี่เหลี่ยมผืนผ้าแบ่งได้เป็นสามเหลี่ยมมุมฉากสองรูปที่เท่ากันทุกประการ</b><span data-t="ch.4b">แต่ละรูปเป็นครึ่งหนึ่ง
+    คือ ½ × ฐาน × สูง</span></li>
+    <li data-n="5"><b data-t="ch.5a">สามเหลี่ยมรูปใดก็ตาม สองสำเนาประกอบกันเป็นสี่เหลี่ยมด้านขนาน</b><span data-t="ch.5b">จากข้อ 3 พื้นที่นั้นคือ
+    ฐาน × สูง สามเหลี่ยมจึงเป็น ½ × ฐาน × สูง ไม่ว่าจุดยอดจะอยู่ตรงไหน</span></li>
+  </ol>
+  <p class="colophon" data-t="ch.col">ภาพทุกภาพวาดขึ้นจากตัวเลขบนแถบปรับค่าโดยตรง ไม่มีภาพเคลื่อนไหวที่อัดไว้ล่วงหน้า
+  ถ้าบทพิสูจน์ดูเหมือนใช้ได้ ก็เพราะมันใช้ได้จริง</p>
+</section>
+
+</main>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================ toolkit */
+var NS='http://www.w3.org/2000/svg';
+var COL={
+  mat:'#123029', gold:'#f0b429', goldEdge:'#ffd977',
+  rasp:'#e4557a', raspEdge:'#ff9db6', turq:'#56c7c1', turqEdge:'#a7ecE8',
+  mint:'#9fd8c8', ink:'#e6efe9', ghost:'#5d7d72'
+};
+var reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+var TS=1;
+function textScale(){
+  var w=window.innerWidth||1024;
+  return w<=430?1.72:(w<=700?1.45:(w<=940?1.15:1));
+}
+
+function el(n,a){var e=document.createElementNS(NS,n),k;if(a)for(k in a)e.setAttribute(k,a[k]);return e;}
+function wipe(n){while(n.firstChild)n.removeChild(n.firstChild);}
+function ease(p){return p<0.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;}
+function sleep(ms,alive){return new Promise(function(r){setTimeout(function(){r(alive&&!alive()?false:true);},reduceMotion.matches?0:ms);});}
+function num(n){var r=Math.round(n*100)/100;return String(r);}
+function plural(n,one,many){return n===1?one:many;}
+
+function tween(dur,onFrame,alive){
+  return new Promise(function(resolve){
+    if(reduceMotion.matches||dur<=0){onFrame(1);resolve();return;}
+    var t0=performance.now();
+    requestAnimationFrame(function step(t){
+      if(alive&&!alive()){resolve();return;}
+      var p=Math.min(1,(t-t0)/dur);
+      onFrame(ease(p));
+      if(p<1)requestAnimationFrame(step);else resolve();
+    });
+  });
+}
+
+/* ============================================================== scene */
+function Scene(id,w,h){
+  this.svg=document.getElementById(id);
+  this.w=w;this.h=h;
+  this.svg.setAttribute('viewBox','0 0 '+w+' '+h);
+  this.gGrid=el('g');this.gCells=el('g');this.gShape=el('g');this.gGuide=el('g');this.gTop=el('g');
+  this.svg.appendChild(this.gGrid);
+  this.svg.appendChild(this.gCells);
+  this.svg.appendChild(this.gShape);
+  this.svg.appendChild(this.gGuide);
+  this.svg.appendChild(this.gTop);
+  this.nodes={};
+  this.u=40;this.ox=0;this.oy=h;
+}
+Scene.prototype.fit=function(x0,x1,y0,y1,padX,padY,extraL,extraR){
+  padX=padX==null?1:padX;padY=padY==null?0.9:padY;
+  x0-=padX+(extraL||0);x1+=padX+(extraR||0);y0-=padY;y1+=padY;
+  var wW=Math.max(0.001,x1-x0),wH=Math.max(0.001,y1-y0);
+  this.u=Math.min((this.w-24)/wW,(this.h-24)/wH);
+  this.ox=(this.w-this.u*wW)/2-this.u*x0;
+  this.oy=(this.h+this.u*wH)/2+this.u*y0;
+  this.grid();
+};
+Scene.prototype.X=function(x){return this.ox+this.u*x;};
+Scene.prototype.Y=function(y){return this.oy-this.u*y;};
+Scene.prototype.P=function(pts){
+  var s=[],i;
+  for(i=0;i<pts.length;i++)s.push(this.X(pts[i][0]).toFixed(2)+','+this.Y(pts[i][1]).toFixed(2));
+  return s.join(' ');
+};
+Scene.prototype.grid=function(){
+  wipe(this.gGrid);
+  this.gGrid.appendChild(el('rect',{x:0,y:0,width:this.w,height:this.h,fill:COL.mat}));
+  var i,i0=Math.ceil((0-this.ox)/this.u),i1=Math.floor((this.w-this.ox)/this.u);
+  for(i=i0;i<=i1;i++)this.gGrid.appendChild(el('line',{
+    x1:this.X(i).toFixed(2),y1:0,x2:this.X(i).toFixed(2),y2:this.h,
+    stroke:'#ffffff','stroke-opacity':(i%5===0?0.17:0.07),'stroke-width':1}));
+  var j,j0=Math.ceil((this.oy-this.h)/this.u),j1=Math.floor(this.oy/this.u);
+  for(j=j0;j<=j1;j++)this.gGrid.appendChild(el('line',{
+    x1:0,y1:this.Y(j).toFixed(2),x2:this.w,y2:this.Y(j).toFixed(2),
+    stroke:'#ffffff','stroke-opacity':(j%5===0?0.17:0.07),'stroke-width':1}));
+};
+
+/* pieces: [{id,pts,fill,stroke,sw,dash,tx,ty,rot,cx,cy,op,enter}] */
+Scene.prototype.setPieces=function(list){
+  var keep={},i,p,rec,id;
+  for(i=0;i<list.length;i++){
+    p=list[i];keep[p.id]=1;rec=this.nodes[p.id];
+    if(!rec){
+      rec=this.nodes[p.id]={node:el('polygon'),st:{
+        tx:p.tx||0,ty:p.ty||0,rot:p.rot||0,op:p.enter?0:(p.op==null?1:p.op)}};
+    }
+    rec.def=p;
+    rec.node.setAttribute('points',this.P(p.pts));
+    rec.node.setAttribute('fill',p.fill||'none');
+    rec.node.setAttribute('stroke',p.stroke||'none');
+    rec.node.setAttribute('stroke-width',p.sw==null?2.5:p.sw);
+    rec.node.setAttribute('stroke-linejoin','round');
+    if(p.dash)rec.node.setAttribute('stroke-dasharray',p.dash);
+    else rec.node.removeAttribute('stroke-dasharray');
+    this.gShape.appendChild(rec.node);
+    this.applyTf(p.id,rec.st);
+  }
+  for(id in this.nodes)if(!keep[id]){
+    if(this.nodes[id].node.parentNode)this.gShape.removeChild(this.nodes[id].node);
+    delete this.nodes[id];
+  }
+};
+Scene.prototype.applyTf=function(id,st){
+  var rec=this.nodes[id];if(!rec)return;
+  rec.st=st;
+  var t='translate('+(st.tx*this.u).toFixed(2)+','+(-st.ty*this.u).toFixed(2)+')';
+  if(st.rot)t+=' rotate('+st.rot.toFixed(2)+','+this.X(rec.def.cx||0).toFixed(2)+','+this.Y(rec.def.cy||0).toFixed(2)+')';
+  rec.node.setAttribute('transform',t);
+  rec.node.setAttribute('opacity',st.op==null?1:st.op);
+};
+Scene.prototype.targetsOf=function(list){
+  var t={},i,p;
+  for(i=0;i<list.length;i++){p=list[i];t[p.id]={tx:p.tx||0,ty:p.ty||0,rot:p.rot||0,op:p.op==null?1:p.op};}
+  return t;
+};
+Scene.prototype.animateTo=function(list,dur,alive){
+  var targets=this.targetsOf(list),from={},id,self=this;
+  for(id in targets)if(this.nodes[id])from[id]={
+    tx:this.nodes[id].st.tx,ty:this.nodes[id].st.ty,
+    rot:this.nodes[id].st.rot,op:this.nodes[id].st.op};
+  return tween(dur,function(p){
+    for(var k in targets){
+      var a=from[k],b=targets[k];if(!a)continue;
+      self.applyTf(k,{
+        tx:a.tx+(b.tx-a.tx)*p, ty:a.ty+(b.ty-a.ty)*p,
+        rot:a.rot+(b.rot-a.rot)*p, op:a.op+(b.op-a.op)*p});
+    }
+  },alive);
+};
+
+/* guides */
+Scene.prototype.clearGuides=function(){wipe(this.gGuide);wipe(this.gTop);};
+Scene.prototype.gAdd=function(name,a,top){
+  var e=el(name,a);(top?this.gTop:this.gGuide).appendChild(e);return e;
+};
+Scene.prototype.label=function(sx,sy,str,a){
+  var o={x:sx,y:sy,fill:COL.mint,'font-size':16,'text-anchor':'middle',
+    stroke:COL.mat,'stroke-width':4.5,'paint-order':'stroke','stroke-linejoin':'round'},k;
+  if(a)for(k in a)o[k]=a[k];
+  o['font-size']=(+o['font-size'])*TS;
+  var t=this.gAdd('text',o,true);t.textContent=str;
+  try{
+    var len=t.getComputedTextLength();
+    if(len){
+      var an=t.getAttribute('text-anchor'),x=+t.getAttribute('x'),m=8;
+      var l=an==='end'?x-len:(an==='start'?x:x-len/2),dx=0;
+      if(l<m)dx=m-l;else if(l+len>this.w-m)dx=(this.w-m)-(l+len);
+      if(dx)t.setAttribute('x',x+dx);
+    }
+  }catch(e){}
+  return t;
+};
+Scene.prototype.wline=function(x1,y1,x2,y2,a){
+  var o={x1:this.X(x1),y1:this.Y(y1),x2:this.X(x2),y2:this.Y(y2),
+    stroke:COL.mint,'stroke-width':1.6,'stroke-linecap':'round'},k;
+  if(a)for(k in a)o[k]=a[k];
+  return this.gAdd('line',o);
+};
+/* dimension line below (off>0) or above (off<0) a horizontal span */
+Scene.prototype.dimH=function(x1,x2,y,text,off){
+  var Y=this.Y(y)+off,A=this.X(x1),B=this.X(x2);
+  if(Math.abs(B-A)<1)return;
+  this.gAdd('line',{x1:A,y1:Y,x2:B,y2:Y,stroke:COL.mint,'stroke-width':1.6});
+  this.gAdd('line',{x1:A,y1:Y-5,x2:A,y2:Y+5,stroke:COL.mint,'stroke-width':1.6});
+  this.gAdd('line',{x1:B,y1:Y-5,x2:B,y2:Y+5,stroke:COL.mint,'stroke-width':1.6});
+  if(text)this.label((A+B)/2,Y+(off>0?20:-9),text);
+};
+Scene.prototype.dimV=function(x,y1,y2,text,off){
+  var X=this.X(x)+off,A=this.Y(y1),B=this.Y(y2);
+  if(Math.abs(B-A)<1)return;
+  this.gAdd('line',{x1:X,y1:A,x2:X,y2:B,stroke:COL.mint,'stroke-width':1.6});
+  this.gAdd('line',{x1:X-5,y1:A,x2:X+5,y2:A,stroke:COL.mint,'stroke-width':1.6});
+  this.gAdd('line',{x1:X-5,y1:B,x2:X+5,y2:B,stroke:COL.mint,'stroke-width':1.6});
+  if(text)this.label(X+(off>0?10:-10),(A+B)/2+5,text,{'text-anchor':off>0?'start':'end'});
+};
+/* a cut line that draws itself on */
+Scene.prototype.cut=function(x1,y1,x2,y2,animate){
+  var ln=this.wline(x1,y1,x2,y2,{stroke:COL.raspEdge,'stroke-width':2.4,'stroke-dasharray':'7 6'});
+  if(animate&&!reduceMotion.matches){
+    var len=Math.hypot(this.X(x2)-this.X(x1),this.Y(y2)-this.Y(y1));
+    ln.style.strokeDasharray=len+' '+len;
+    ln.style.strokeDashoffset=len;
+    ln.style.transition='stroke-dashoffset .45s ease-out';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      ln.style.strokeDashoffset='0';
+      setTimeout(function(){
+        ln.style.transition='';ln.style.strokeDasharray='';ln.style.strokeDashoffset='';
+        ln.setAttribute('stroke-dasharray','7 6');
+      },520);
+    });});
+  }
+  return ln;
+};
+/* right-angle tick at corner (cx,cy), pointing along unit dirs */
+Scene.prototype.rightAngle=function(cx,cy,dx,dy,s){
+  s=s||0.42;
+  var p=[[cx+dx*s,cy],[cx+dx*s,cy+dy*s],[cx,cy+dy*s]];
+  this.gAdd('polyline',{points:this.P(p),fill:'none',stroke:COL.mint,'stroke-width':1.4,'stroke-opacity':.9});
+};
+
+/* ============================================================= player */
+function Player(fig,scene,buildFn){
+  this.fig=fig;this.scene=scene;this.buildFn=buildFn;
+  this.stepsEl=document.getElementById('steps'+fig);
+  this.noteEl=document.getElementById('note'+fig);
+  this.cur=0;this.tok=0;this.stages=[];
+  var self=this,btns=document.querySelectorAll('[data-fig="'+fig+'"]'),i;
+  this.btnNext=null;
+  for(i=0;i<btns.length;i++)(function(b){
+    var act=b.getAttribute('data-act');
+    if(act==='next')self.btnNext=b;
+    if(act==='next'||act==='play'||act==='reset')
+      b.addEventListener('click',function(){
+        if(act==='next')self.next();
+        else if(act==='play')self.play();
+        else self.reset();
+      });
+  })(btns[i]);
+}
+Player.prototype.alive=function(tok){var self=this;return function(){return self.tok===tok;};};
+Player.prototype.refresh=function(){
+  this.tok++;
+  this.stages=this.buildFn();
+  if(this.cur>=this.stages.length)this.cur=this.stages.length-1;
+  if(this.cur<0)this.cur=0;
+  this.mount();
+  this.show(this.cur,false);
+};
+Player.prototype.mount=function(){
+  var self=this;
+  wipe(this.stepsEl);
+  this.stages.forEach(function(st,i){
+    var b=document.createElement('button');
+    b.type='button';b.textContent=st.name;
+    b.addEventListener('click',function(){self.jump(i);});
+    self.stepsEl.appendChild(b);
+  });
+};
+Player.prototype.paint=function(){
+  var kids=this.stepsEl.children,i;
+  for(i=0;i<kids.length;i++){
+    kids[i].className=i===this.cur?'on':(i<this.cur?'done':'');
+    if(i===this.cur)kids[i].setAttribute('aria-current','step');
+    else kids[i].removeAttribute('aria-current');
+  }
+  if(this.btnNext)this.btnNext.disabled=(this.cur>=this.stages.length-1);
+};
+Player.prototype.show=function(i,animate){
+  var st=this.stages[i];if(!st)return Promise.resolve();
+  this.cur=i;this.paint();
+  this.noteEl.innerHTML=st.note;
+  wipe(this.scene.gCells);
+  this.scene.setPieces(st.pieces||[]);
+  this.scene.clearGuides();
+  if(st.guides)st.guides(this.scene,animate);
+  var tok=this.tok,self=this,dur=animate?(st.dur==null?720:st.dur):0;
+  if(st.custom)return tween(dur,function(p){st.custom(self.scene,p);},this.alive(tok));
+  return this.scene.animateTo(st.pieces||[],dur,this.alive(tok));
+};
+Player.prototype.jump=function(i){
+  this.tok++;
+  var animate=(i===this.cur+1);
+  if(!animate&&i>this.cur){ /* skipping ahead: land without motion */ }
+  this.show(i,animate);
+};
+Player.prototype.next=function(){
+  if(this.cur>=this.stages.length-1)return;
+  this.tok++;this.show(this.cur+1,true);
+};
+Player.prototype.reset=function(){this.tok++;this.show(0,false);};
+Player.prototype.play=function(){
+  var self=this;this.tok++;
+  var tok=this.tok,alive=this.alive(tok);
+  this.show(0,false);
+  (function run(i){
+    if(!alive()||i>=self.stages.length)return;
+    sleep(i===1?420:560,alive).then(function(){
+      if(!alive())return;
+      self.show(i,true).then(function(){run(i+1);});
+    });
+  })(1);
+};
+
+/* ============================================================== i18n */
+var LANG='th',TH={},ARIA_TH={};
+
+var EN={
+'brand':'Origin: <span>Area</span>',
+'nav1':'Counting','nav2':'Rectangle','nav3':'Parallelogram','nav4':'Right triangle','nav5':'Any triangle',
+'h.title':'Every area formula is the same trick',
+'h.p1':'Cut the shape apart. Move the pieces. Put them back together as a shape you already know how to measure.',
+'h.p2':'Nothing is added and nothing is thrown away, so the area cannot change. That one idea is where <em>base&nbsp;×&nbsp;height</em> and <em>½&nbsp;×&nbsp;base&nbsp;×&nbsp;height</em> both come from &mdash; and you can watch it happen.',
+'h.replay':'Watch again',
+'h.foot':'Five proofs, each one built out of the one before it. Move every slider you find &mdash; the proofs are supposed to survive it.',
+'a.fig0':'A parallelogram is cut along a vertical line and the triangle slides across to make a rectangle',
+'a.fig1':'A shape drawn on a grid of unit squares, which can be tapped one at a time to count them',
+'a.fig2':'A rectangle filling with unit squares, one row at a time',
+'a.fig3':'A parallelogram being cut and rearranged into a rectangle of the same base and height',
+'a.fig4':'A rectangle cut along its diagonal into two identical right triangles, one turned onto the other',
+'a.fig5':'A triangle copied, turned half a turn and attached to make a parallelogram',
+
+'l1.h':'What area actually is','l1.tag':'Tap the squares to count them',
+'l1.p1':'Area is the amount of surface a shape covers. To put a number on it you need something to measure with, and the thing we use is the <strong>unit square</strong>: a square exactly one unit wide and one unit tall.',
+'l1.p2':'One of those squares covers <strong>one square unit</strong>. So the area of any shape is just the answer to a counting question: how many unit squares does it take to cover it?',
+'l1.p3':'The faint grid behind every diagram on this page is made of unit squares. It never changes size, so you can always check an answer by counting.',
+'l1.h3':'Try it',
+'l1.p4':'Tap each square in the shape. The counter keeps track. When every square is filled you have the area &mdash; no formula needed, because counting <em>is</em> the definition.',
+'l1.p5':'Counting works for any shape you can build out of whole squares. The rest of this page is about the shapes you can&rsquo;t &mdash; the ones with slanted edges, where whole squares don&rsquo;t fit and counting stops being possible.',
+
+'l2.h':'Rectangle, and the square','l2.tag':'Counting, but organised',
+'l2.p1':'A rectangle is the one shape where the unit squares fit perfectly, with nothing left over. So you can still count &mdash; but you can be clever about how.',
+'l2.p2':'The squares come in tidy <strong>rows</strong>. Every row is the same: it stretches the whole way along the base, so it holds exactly <em>base</em> squares. And the rows stack the whole way up, so there are exactly <em>height</em> of them.',
+'l2.p3':'Counting <em>base</em> squares, <em>height</em> times over, is multiplication. That is all the formula is &mdash; a shortcut for counting the squares you can already see.',
+'l2.f':'Area of a rectangle = base × height',
+'l2.h3':'The square is not a new rule',
+'l2.p4':'A square is just a rectangle whose base and height happen to match. Nothing about the counting changes; both numbers are the same, so <em>base&nbsp;×&nbsp;height</em> turns into <em>side&nbsp;×&nbsp;side</em>. Set the two sliders equal and watch the shape become a square without the reasoning shifting at all.',
+
+'l3.h':'Parallelogram','l3.tag':'The first real cut',
+'l3.p1':'A parallelogram is a rectangle that has been pushed over. The top edge slides sideways, but it stays the same length as the base and stays the same distance above it.',
+'l3.p2':'That distance is the <strong>height</strong>, and it is measured straight up from the base &mdash; not along the slanted side. The slanted side is longer, and using it would be measuring the wrong thing.',
+'l3.h3a':'The cut',
+'l3.p3':'Cut straight down from the top-left corner to the base. That cut slices off a right triangle, and because the two slanted sides of a parallelogram are identical, that triangle is exactly the shape of the notch at the far end. Carry it across and it drops in perfectly.',
+'l3.p4':'What is left is a rectangle. Same base, same height, and &mdash; since you only moved a piece &mdash; the same area.',
+'l3.f':'Area of a parallelogram = base × height',
+'l3.h3b':'When the lean gets too big',
+'l3.p5':'Push the top over more than one whole base length and the cut breaks: the triangle you slice off is now wider than the notch it is meant to fill, so it cannot fit.',
+'l3.p6':'The repair is one extra move first. Cut along the diagonal from the bottom-right corner up to the top-left corner &mdash; the two halves share that whole edge &mdash; and slide the half holding the top edge back by exactly one base length, against the lean. The halves still fit together, and the parallelogram you get has the <em>same base, same height and same area</em>, but less lean. Now the ordinary cut works.',
+'l3.p7':'Drag the lean slider through <em>lean&nbsp;=&nbsp;base</em> and the diagram switches methods on its own. Watch the area readout as it does: it never jumps.',
+
+'l4.h':'Right triangle','l4.tag':'Half of something you know',
+'l4.p1':'Take a rectangle and cut it along a diagonal, corner to corner. You get two right triangles.',
+'l4.p2':'They are not just similar-looking, they are <strong>identical</strong>. You can prove it by moving one: turn it half a turn about the centre of the rectangle and it lands exactly on top of the other, corner for corner.',
+'l4.p3':'So the rectangle is made of two copies of the same triangle. One triangle must be half of it.',
+'l4.f':'Area of a right triangle = ½ × base × height',
+'l4.p4':'The base and height of the triangle are the two sides that meet at the square corner &mdash; which are the base and height of the rectangle it came from. That is why the same two numbers appear in both formulas.',
+'l4.p5':'Step to <em>Turn it</em> and watch the moving triangle settle onto the dashed outline of the one that stayed. If it covers the outline exactly, the two halves really are the same.',
+
+'l5.h':'Any triangle at all','l5.tag':'Including the lopsided ones',
+'l5.p1':'Most triangles have no square corner, so lesson 4 doesn&rsquo;t reach them. They need their own move &mdash; and it is the neatest one on this page.',
+'l5.p2':'Make a <strong>copy</strong> of the triangle. Turn the copy half a turn, and attach it to the original along one of its slanted sides. The two triangles lock together into a <strong>parallelogram</strong>.',
+'l5.p3':'Look at what that parallelogram is: its base is the triangle&rsquo;s base, and its height is the triangle&rsquo;s height. Lesson 3 already told you its area is <em>base&nbsp;×&nbsp;height</em>. The triangle is one of the two identical halves, so it is half of that.',
+'l5.f':'Area of a triangle = ½ × base × height',
+'l5.h3':'It doesn&rsquo;t care where the apex is',
+'l5.p4':'Slide the apex along. Push it past the end of the base, so the triangle leans right out beyond its own foot &mdash; the two copies still lock into a parallelogram, and the base and height are still the same two numbers.',
+'l5.p5':'When the apex hangs outside the base, the height is still measured straight down to the base <em>line</em>, extended past the corner if it has to be. The dotted line in the diagram shows where it lands.',
+'l5.p6':'This is why one formula covers every triangle. The apex can sit anywhere along that line without changing the height, so every triangle sharing this base and this height has exactly the same area.',
+
+'b.shape':'New shape','b.all':'Fill them all','b.clear':'Clear',
+'b.next':'Next step','b.play':'Play all','b.reset':'Reset','b.square':'Make it a square',
+'c.base':'base','c.height':'height','c.unit':'units',
+'c.lean':'lean, measured in base lengths','c.apex':'apex, sliding along',
+'s.base':'base','s.height':'height','s.area':'area',
+'s.rect':'rectangle','s.tri':'triangle','s.para':'parallelogram',
+'s1.a':'squares filled','s1.b':'squares in the shape','s2.n':'squares shown',
+'s3.d':'lean','s3.s':'slanted side','s5.p':'apex sits',
+'lg.stay':'stays where it is','lg.move':'the piece that moves','lg.dim':'measurements',
+'lg.orig':'the original','lg.copy':'the copy',
+
+'ch.h':'The whole argument, in order',
+'ch.p':'Each proof is allowed to use the ones above it, and nothing else. That is what makes it a chain rather than a list of formulas to memorise.',
+'ch.1a':'A unit square covers one square unit.','ch.1b':'Area is a count of these. This is a definition, so nothing has to be proved.',
+'ch.2a':'A rectangle holds height rows of base squares.','ch.2b':'Counting them in rows gives base × height.',
+'ch.3a':'A parallelogram can be cut into a rectangle.','ch.3b':'Same base, same height, and no material gained or lost, so base × height again.',
+'ch.4a':'A rectangle splits into two identical right triangles.','ch.4b':'Each one is half: ½ × base × height.',
+'ch.5a':'Two copies of any triangle make a parallelogram.','ch.5b':'By step 3 that is base × height, so the triangle is ½ × base × height &mdash; wherever the apex sits.',
+'ch.col':'Every diagram is drawn from the numbers on the sliders, so nothing here is a pre-recorded animation. If a proof looks like it works, it is because it does.'
+};
+
+/* strings the diagrams build at run time */
+var D={
+'title':{th:'ที่มาของพื้นที่ — ทำไมสูตรพื้นที่ถึงใช้ได้',en:'Origin: Area — where the formulas come from'},
+
+'hero0':{th:'สี่เหลี่ยมด้านขนาน เราจะนับสี่เหลี่ยมเต็มช่องบนด้านเอียงไม่ได้',
+         en:'A parallelogram. You cannot count whole squares on a slanted edge.'},
+'hero1':{th:'ตัดลงตรง ๆ จากมุมด้านบน',en:'Cut straight down from the top corner.'},
+'hero2':{th:'ยกชิ้นนั้นข้ามไปเติมช่องว่างที่ปลายอีกด้าน',en:'Carry that piece across to the notch at the far end.'},
+'hero3':{th:'ได้สี่เหลี่ยมผืนผ้า <b>ฐานเท่าเดิม สูงเท่าเดิม พื้นที่เท่าเดิม</b>',
+         en:'A rectangle. <b>Same base, same height, same area.</b>'},
+
+'lbl.base':{th:'ฐาน = {v}',en:'base = {v}'},
+'lbl.height':{th:'สูง = {v}',en:'height = {v}'},
+'lbl.lean':{th:'ระยะเยื้อง = {v}',en:'lean = {v}'},
+'lbl.baseOnly':{th:'ฐาน',en:'base'},
+'lbl.heightOnly':{th:'สูง',en:'height'},
+'lbl.areaEq':{th:'พื้นที่ = ฐาน × สูง',en:'area = base × height'},
+'lbl.areaNum':{th:'พื้นที่ = {b} × {h} = {a}',en:'area = {b} × {h} = {a}'},
+'lbl.areaUnits':{th:'พื้นที่ = {b} × {h} = {a} ตารางหน่วย',en:'area = {b} × {h} = {a} square units'},
+'lbl.half':{th:'½ × ฐาน × สูง = {a}',en:'½ × base × height = {a}'},
+'lbl.halfNum':{th:'½ × {b} × {h} = {a}',en:'½ × {b} × {h} = {a}'},
+'lbl.rowOf':{th:'แถวละ {b} ช่อง',en:'{b} {sq} in a row'},
+'lbl.rows':{th:'{h} แถว',en:'{h} {rw}'},
+'lbl.wide':{th:'กว้าง {b}',en:'{b} wide'},
+'lbl.unitSq':{th:'สี่เหลี่ยมหนึ่งหน่วย = 1 ตารางหน่วย',en:'one unit square = 1 square unit'},
+'lbl.miss':{th:'รอยตัดแบบปกติจะไปตกอยู่ตรงนี้',en:'the usual cut would land out here'},
+
+'f1.n0':{th:'แตะสี่เหลี่ยมทีละช่อง ทุกช่องที่แตะปกคลุมพื้นที่ <b>1 ตารางหน่วย</b> ของรูปนี้',
+         en:'Tap the squares one at a time. Each one you tap covers <b>1 square unit</b> of the shape.'},
+'f1.np':{th:'นับแล้ว <b>{n}</b> ช่อง เหลืออีก <b>{m}</b> ช่อง แตะช่องที่มีตัวเลขอีกครั้งเพื่อยกเลิกได้',
+         en:'<b>{n}</b> counted, <b>{m}</b> still to go. Tap a numbered square again to take it back.'},
+'f1.nc':{th:'ปูครบทั้ง <b>{n}</b> ช่องแล้ว รูปนี้จึงมีพื้นที่ <b>{n} ตารางหน่วย</b> นี่คือแนวคิดทั้งหมด โดยไม่ต้องใช้สูตรเลย',
+         en:'All <b>{n}</b> squares are covered, so this shape has an area of <b>{n} square units</b>. That is the whole idea &mdash; no formula was needed.'},
+'f1.area':{th:'{n} ตารางหน่วย',en:'{n} square units'},
+'f1.on':{th:'ช่องที่ {i} นับแล้วเป็นลำดับที่ {n}',en:'Square {i}, counted as number {n}'},
+'f1.off':{th:'ช่องที่ {i} ยังไม่ได้นับ',en:'Square {i}, not counted yet'},
+
+'f2.s0':{th:'ว่างเปล่า',en:'Empty'},'f2.s1':{th:'หนึ่งแถว',en:'One row'},
+'f2.s2':{th:'ทุกแถว',en:'All rows'},'f2.s3':{th:'คูณ',en:'Multiply'},
+'f2.n0':{th:'สี่เหลี่ยมผืนผ้ากว้าง <b>{b}</b> สูง <b>{h}</b> คำถามมีอยู่ข้อเดียวเสมอ คือข้างในใส่สี่เหลี่ยมหนึ่งหน่วยได้กี่ช่อง',
+         en:'A rectangle <b>{b}</b> wide and <b>{h}</b> tall. The question is only ever: how many unit squares fit inside?'},
+'f2.n1':{th:'แถวล่างสุดทอดยาวตลอดแนวฐาน จึงมีสี่เหลี่ยม <b>{b}</b> ช่อง คือหนึ่งช่องต่อฐานหนึ่งหน่วย',
+         en:'The bottom row reaches the whole way along the base, so it holds <b>{b}</b> {sq} &mdash; one for every unit of base.'},
+'f2.n2':{th:'ทุกแถวที่อยู่เหนือขึ้นไปเหมือนกันทุกประการ และซ้อนขึ้นไปจนถึงด้านบน มีทั้งหมด <b>{h}</b> แถว',
+         en:'Every row above it is exactly the same, and the rows stack all the way to the top. There are <b>{h}</b> of them.'},
+'f2.n3':{th:'{h} แถว แถวละ {b} ช่อง คือ {h} × {b} = <b>{a}</b> ช่อง การคูณเป็นเพียงวิธีนับให้จบเร็วขึ้น',
+         en:'<b>{h}</b> {rw} of <b>{b}</b> {sq} is {h} × {b} = <b>{a}</b> squares. Multiplying is just a faster way to finish the count.'},
+'f2.sq':{th:' ตรงนี้ฐานกับสูงเท่ากัน สี่เหลี่ยมผืนผ้าจึงเป็น<b>สี่เหลี่ยมจัตุรัส</b> คือ {b} × {b}',
+         en:' Here the base and the height match, so the rectangle is a <b>square</b>: {b} × {b}.'},
+
+'f3.s0':{th:'เริ่มต้น',en:'Start'},'f3.s1':{th:'ตัด',en:'Cut'},
+'f3.s2':{th:'ยกข้ามไป',en:'Carry it over'},'f3.s3':{th:'สี่เหลี่ยมผืนผ้า',en:'Rectangle'},
+'f3.s4':{th:'แบ่งครึ่ง',en:'Bisect'},'f3.s5':{th:'เลื่อนกลับ',en:'Slide back'},
+'f3.s6':{th:'พื้นที่เท่าเดิม',en:'Same area'},
+'f3.start':{th:'สี่เหลี่ยมด้านขนาน ด้านบนเลื่อนไปแล้ว <b>{d}</b> แต่ยังยาว <b>{b}</b> เท่าเดิม และยังอยู่สูงจากฐาน <b>{h}</b> เท่าเดิม',
+            en:'A parallelogram. The top edge has slid <b>{d}</b> across, but it is still <b>{b}</b> long and still <b>{h}</b> above the base.'},
+'f3.cut':{th:'ตัดลงตรง ๆ จากมุมบนซ้ายมาถึงฐาน รอยตัดนี้ยาวเท่ากับ<b>ความสูง</b>พอดี และเฉือนสามเหลี่ยมมุมฉากออกมาหนึ่งชิ้น',
+          en:'Cut straight down from the top-left corner to the base. The cut is exactly the <b>height</b>, and it slices off a right triangle.'},
+'f3.carry':{th:'เลื่อนสามเหลี่ยมชิ้นนั้นข้ามไปหนึ่งช่วงฐานเต็ม ๆ มันจะเติมช่องว่างที่ปลายอีกด้านได้พอดี เพราะด้านเอียงทั้งสองคือเส้นเดียวกันที่แค่ย้ายที่',
+            en:'Slide that triangle across by one whole base length. It fits the notch at the far end exactly, because both slanted sides are the same line, just moved.'},
+'f3.rect':{th:'ได้สี่เหลี่ยมผืนผ้าขนาด <b>{b}</b> คูณ <b>{h}</b> ไม่มีอะไรเพิ่มและไม่มีอะไรหายไป สี่เหลี่ยมด้านขนานจึงมีพื้นที่เท่านี้มาตั้งแต่แรก คือ <b>{b} × {h} = {a}</b>',
+           en:'A rectangle, <b>{b}</b> by <b>{h}</b>. Nothing was added or thrown away, so the parallelogram had this area all along: <b>{b} × {h} = {a}</b>.'},
+'f3.xstart':{th:'ระยะเยื้องคือ <b>{d}</b> ซึ่งยาวกว่าฐานที่ยาว <b>{b}</b> ถ้าตัดลงตรง ๆ จากมุมบนซ้าย รอยตัดจะไปตกเลยปลายฐานออกไป วิธีเดิมจึงยังไม่มีอะไรให้เฉือน',
+             en:'The lean is <b>{d}</b>, longer than the base of <b>{b}</b>. A straight cut down from the top-left corner would land past the end of the base, so the usual method has nothing to slice off yet.'},
+'f3.bisect':{th:'ต้องซ่อมก่อน ตัดตามเส้นทแยงมุมจากปลายฐานด้านไกล ขึ้นไปยังปลายด้านบนที่อยู่ใกล้ ทั้งสองครึ่งใช้ขอบนั้นร่วมกันทั้งเส้น',
+             en:'First, a repair. Cut along the diagonal from the far end of the base up to the near end of the top edge. The two halves share that whole edge.'},
+'f3.slide':{th:'เลื่อนครึ่งที่มีด้านบนติดอยู่ ถอยกลับไปหนึ่งช่วงฐานพอดี ในทิศตรงข้ามกับความเอียง ทั้งสองครึ่งยังต่อกันสนิทตามขอบร่วมนั้น และฐานไม่ได้ขยับเลย',
+            en:'Slide the half holding the top edge back by exactly one base length, against the lean. The halves still meet along that shared edge, and the base has not moved.'},
+'f3.same':{th:'ฐานเท่าเดิม สูงเท่าเดิม พื้นที่เท่าเดิม แต่ตอนนี้ระยะเยื้องเหลือ <b>{d2}</b> ซึ่งน้อยกว่าฐานแล้ว จากตรงนี้วิธีตัดแบบปกติใช้ได้',
+           en:'Same base, same height, same area &mdash; but the lean is now <b>{d2}</b>, smaller than the base. The ordinary cut works from here.'},
+
+'f4.s0':{th:'สี่เหลี่ยมผืนผ้า',en:'Rectangle'},'f4.s1':{th:'ตัดทแยงมุม',en:'Cut the diagonal'},
+'f4.s2':{th:'แยกออกจากกัน',en:'Pull apart'},'f4.s3':{th:'หมุน',en:'Turn it'},
+'f4.s4':{th:'จึงเป็นครึ่งหนึ่ง',en:'So it is half'},
+'f4.n0':{th:'เริ่มจากสี่เหลี่ยมผืนผ้าที่เรารู้จักอยู่แล้ว <b>{b} × {h} = {a}</b> ตารางหน่วย',
+         en:'Start from a rectangle you already know: <b>{b} × {h} = {a}</b> square units.'},
+'f4.n1':{th:'ตัดจากมุมหนึ่งไปยังอีกมุมหนึ่ง จะได้สามเหลี่ยมมุมฉากสองรูป แต่ละรูปยังมีฐานกับสูงเท่ากับของสี่เหลี่ยมผืนผ้าเดิม เป็นด้านสองด้านที่ประกบมุมฉาก',
+         en:'Cut it corner to corner. The two pieces are right triangles, and each one keeps the rectangle&rsquo;s base and height as the sides around its square corner.'},
+'f4.n2':{th:'แยกออกจากกัน สองรูปดูเหมือนกัน แต่การมองยังไม่ใช่การพิสูจน์',
+         en:'Separate them. They look the same &mdash; but looking is not proving.'},
+'f4.n3':{th:'หมุนรูปที่สองไปครึ่งรอบ รอบจุดกึ่งกลางของสี่เหลี่ยมผืนผ้า มันจะลงไปทับเส้นประของรูปแรกพอดี ทุกมุมเข้าที่ สองรูปนี้จึง<b>เท่ากันทุกประการ</b>',
+         en:'Turn the second one half a turn about the middle of the rectangle. It settles onto the dashed outline of the first with every corner in the right place, so the two triangles are <b>identical</b>.'},
+'f4.n4':{th:'สี่เหลี่ยมผืนผ้าประกอบขึ้นจากสามเหลี่ยมรูปเดียวกันสองชิ้น ชิ้นหนึ่งจึงต้องเป็นครึ่งหนึ่ง คือ <b>½ × {b} × {h} = {a}</b> ตารางหน่วย',
+         en:'The rectangle is two copies of one triangle. One copy must be half of it: <b>½ × {b} × {h} = {a}</b> square units.'},
+
+'f5.s0':{th:'สามเหลี่ยมหนึ่งรูป',en:'One triangle'},'f5.s1':{th:'ทำสำเนา',en:'Copy it'},
+'f5.s2':{th:'หมุนสำเนา',en:'Turn the copy'},'f5.s3':{th:'สี่เหลี่ยมด้านขนาน',en:'Parallelogram'},
+'f5.n0':{th:'สามเหลี่ยมที่มีฐาน <b>{b}</b> และสูง <b>{h}</b> ',
+         en:'A triangle with base <b>{b}</b> and height <b>{h}</b>. '},
+'f5.sq':{th:'รูปนี้บังเอิญมีมุมฉาก แต่วิธีข้างล่างไม่จำเป็นต้องใช้มุมฉากเลย',
+         en:'This one happens to have a square corner &mdash; but the method below never needs one.'},
+'f5.nosq':{th:'ไม่มีมุมฉาก บทที่ 4 จึงยังช่วยไม่ได้',
+           en:'No square corner, so lesson 4 cannot help&nbsp;yet.'},
+'f5.out':{th:' จุดยอดยื่นเลยปลายฐานออกไป ความสูงจึงวัดลงมาที่<em>เส้น</em>ฐานที่ต่อออกไปพ้นมุม',
+          en:' The apex hangs past the end of the base, so the height is measured down to the base <em>line</em>, extended past the corner.'},
+'f5.n1':{th:'สร้างสำเนาของมันขึ้นมาอีกหนึ่งรูปให้เหมือนกันเป๊ะ สำเนามีพื้นที่เท่ากัน สองรูปรวมกันจึงปกคลุมพื้นที่เป็น<b>สองเท่า</b>ของสามเหลี่ยมหนึ่งรูป',
+         en:'Make an exact copy of it. A copy has the same area, so the two together cover <b>twice</b> whatever one triangle covers.'},
+'f5.n2':{th:'หมุนสำเนาไปครึ่งรอบ รอบจุดกึ่งกลางของด้านเอียงด้านหนึ่ง ด้านนั้นเป็นด้านร่วม สำเนาจึงหมุนรอบมันไปโดยยังติดกันอยู่',
+         en:'Turn the copy half a turn about the midpoint of one slanted side. That side is shared, so the copy swings around it and stays joined.'},
+'f5.n3':{th:'สามเหลี่ยมสองรูปประกบกันเป็นสี่เหลี่ยมด้านขนานที่มี<b>ฐานเท่าเดิมและสูงเท่าเดิม</b> บทที่ 3 บอกว่าพื้นที่ของมันคือ {b} × {h} = <b>{r}</b> และสามเหลี่ยมคือหนึ่งในสองครึ่งที่เท่ากัน จึงได้ <b>{a}</b>',
+         en:'The two triangles lock into a parallelogram with the <b>same base and the same height</b>. Lesson 3 says its area is {b} × {h} = <b>{r}</b>, and the triangle is one of the two equal halves: <b>{a}</b>.'},
+'pos.in':{th:'เหนือฐาน',en:'over the base'},
+'pos.left':{th:'เลยปลายซ้าย',en:'past the left end'},
+'pos.right':{th:'เลยปลายขวา',en:'past the right end'}
+};
+
+function fillT(s,v){
+  if(!v)return s;
+  return s.replace(/\{(\w+)\}/g,function(m,k){return v[k]!=null?v[k]:m;});
+}
+function t(k,v){
+  var e=D[k];
+  if(!e)return k;
+  return fillT(e[LANG]!=null?e[LANG]:e.en,v);
+}
+function captureTH(){
+  var i,els=document.querySelectorAll('[data-t]');
+  for(i=0;i<els.length;i++)TH[els[i].getAttribute('data-t')]=els[i].innerHTML;
+  els=document.querySelectorAll('[data-ta]');
+  for(i=0;i<els.length;i++)ARIA_TH[els[i].getAttribute('data-ta')]=els[i].getAttribute('aria-label');
+}
+function applyLang(){
+  var dict=(LANG==='th')?TH:EN,i,els,k,v;
+  els=document.querySelectorAll('[data-t]');
+  for(i=0;i<els.length;i++){
+    k=els[i].getAttribute('data-t');
+    v=dict[k];
+    if(v==null)v=TH[k];
+    if(v!=null)els[i].innerHTML=v;
+  }
+  els=document.querySelectorAll('[data-ta]');
+  for(i=0;i<els.length;i++){
+    k=els[i].getAttribute('data-ta');
+    v=(LANG==='th')?ARIA_TH[k]:EN[k];
+    if(v!=null)els[i].setAttribute('aria-label',v);
+  }
+  document.documentElement.setAttribute('lang',LANG);
+  document.title=t('title');
+  els=document.querySelectorAll('.lang button');
+  for(i=0;i<els.length;i++)
+    els[i].setAttribute('aria-pressed',els[i].getAttribute('data-lang')===LANG?'true':'false');
+}
+function setLang(l){
+  if(l===LANG)return;
+  LANG=l;
+  try{localStorage.setItem('origin-area-lang',l);}catch(e){}
+  applyLang();
+  redrawAll();
+}
+
+/* =========================================================== hero fig */
+var hero=new Scene('fig0',700,312);
+var heroCap=document.getElementById('cap0');
+var heroTok=0,heroLast=0;
+function heroStages(){
+  var b=4.3,h=2.7,d=1.9;
+  hero.fit(0,b+d,0,h,1,0.85,0.7,0);
+  var whole=[[0,0],[b,0],[b+d,h],[d,h]];
+  var body=[[d,0],[b,0],[b+d,h],[d,h]];
+  var tri=[[0,0],[d,0],[d,h]];
+  var G={fill:COL.gold,stroke:COL.goldEdge},R={fill:COL.rasp,stroke:COL.raspEdge};
+  function P(id,pts,c,tx){return{id:id,pts:pts,fill:c.fill,stroke:c.stroke,tx:tx||0};}
+  return [
+    {cap:t('hero0'),pieces:[P('w',whole,G)]},
+    {cap:t('hero1'),dur:340,
+     pieces:[P('b',body,G),P('t',tri,R)],
+     guides:function(s,an){s.cut(d,0,d,h,an);}},
+    {cap:t('hero2'),dur:900,
+     pieces:[P('b',body,G),P('t',tri,R,b)],
+     guides:function(s){s.wline(d,0,d,h,{stroke:COL.raspEdge,'stroke-width':2,'stroke-dasharray':'7 6','stroke-opacity':.5});}},
+    {cap:t('hero3'),dur:420,
+     pieces:[P('b',body,G),P('t',tri,R,b)],
+     guides:function(s){
+       s.dimH(d,d+b,0,t('lbl.baseOnly'),26);
+       s.dimV(d,0,h,t('lbl.heightOnly'),-14);
+       s.label(s.X(d+b/2),s.Y(h)-16,t('lbl.areaEq'),{'font-size':17,fill:COL.ink});
+     }}
+  ];
+}
+function heroRun(){
+  heroTok++;
+  var tok=heroTok,alive=function(){return heroTok===tok;};
+  var st=heroStages();
+  function go(i,an){
+    heroLast=i;
+    heroCap.innerHTML=st[i].cap;
+    hero.setPieces(st[i].pieces);
+    hero.clearGuides();
+    if(st[i].guides)st[i].guides(hero,an);
+    return hero.animateTo(st[i].pieces,an?(st[i].dur||760):0,alive);
+  }
+  go(0,false);
+  (function run(i){
+    if(!alive()||i>=st.length)return;
+    sleep(i===1?820:560,alive).then(function(){
+      if(!alive())return;
+      go(i,true).then(function(){run(i+1);});
+    });
+  })(1);
+}
+document.getElementById('replay0').addEventListener('click',heroRun);
+
+/* ================================================= 1. count the units */
+var SHAPES=[
+  [[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[0,2],[1,2],[0,3]],
+  [[0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[2,1],[3,1],[2,2]],
+  [[0,0],[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[3,1],[4,1],[0,2],[1,2],[3,2],[4,2]]
+];
+var f1=new Scene('fig1',760,430),f1i=0,f1order=[];
+var f1note=document.getElementById('note1');
+
+function f1toggle(idx){
+  var at=f1order.indexOf(idx);
+  if(at>=0)f1order.splice(at,1);else f1order.push(idx);
+  var a=document.activeElement,keep=!!(a&&a.getAttribute&&a.getAttribute('data-cell')===String(idx));
+  f1draw(keep?idx:null);
+}
+function f1draw(focusIdx){
+  var cells=SHAPES[f1i],i,c,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,key={};
+  for(i=0;i<cells.length;i++){
+    c=cells[i];key[c[0]+','+c[1]]=1;
+    x0=Math.min(x0,c[0]);x1=Math.max(x1,c[0]+1);
+    y0=Math.min(y0,c[1]);y1=Math.max(y1,c[1]+1);
+  }
+  f1.fit(x0,x1,y0,y1+1.2,1,0.7);
+  wipe(f1.gCells);f1.clearGuides();f1.setPieces([]);
+
+  cells.forEach(function(c,idx){
+    var n=f1order.indexOf(idx)+1,on=n>0;
+    var r=el('rect',{
+      x:(f1.X(c[0])+1.5).toFixed(2),y:(f1.Y(c[1]+1)+1.5).toFixed(2),
+      width:(f1.u-3).toFixed(2),height:(f1.u-3).toFixed(2),rx:3,
+      fill:on?COL.gold:'#ffffff','fill-opacity':on?1:0.07,
+      stroke:on?COL.goldEdge:'rgba(255,255,255,.30)','stroke-width':1.5,
+      tabindex:'0',role:'button','data-cell':String(idx),style:'cursor:pointer'});
+    r.setAttribute('aria-label',on?t('f1.on',{i:idx+1,n:n}):t('f1.off',{i:idx+1}));
+    r.addEventListener('click',function(){f1toggle(idx);});
+    r.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){e.preventDefault();f1toggle(idx);}
+    });
+    f1.gCells.appendChild(r);
+    if(on){
+      var tx=el('text',{x:f1.X(c[0]+0.5).toFixed(2),y:(f1.Y(c[1]+0.5)+f1.u*0.16).toFixed(2),
+        'text-anchor':'middle','font-size':(f1.u*0.4).toFixed(1),fill:'#4a3405','font-weight':'600',
+        style:'pointer-events:none'});
+      tx.textContent=String(n);
+      f1.gCells.appendChild(tx);
+    }
+  });
+
+  /* silhouette: draw only the edges with no neighbour behind them */
+  var seg=[];
+  cells.forEach(function(c){
+    var x=c[0],y=c[1];
+    if(!key[(x+1)+','+y])seg.push([x+1,y,x+1,y+1]);
+    if(!key[(x-1)+','+y])seg.push([x,y,x,y+1]);
+    if(!key[x+','+(y+1)])seg.push([x,y+1,x+1,y+1]);
+    if(!key[x+','+(y-1)])seg.push([x,y,x+1,y]);
+  });
+  seg.forEach(function(s){
+    f1.wline(s[0],s[1],s[2],s[3],{stroke:COL.goldEdge,'stroke-width':3,'stroke-opacity':.85});
+  });
+
+  /* the measuring stick itself, drawn at true size */
+  var lx=16,ly=16,u=Math.min(f1.u,42);
+  f1.gAdd('rect',{x:lx,y:ly,width:u,height:u,rx:3,fill:'none',
+    stroke:COL.mint,'stroke-width':1.6,'stroke-dasharray':'4 4'},true);
+  var lt=f1.gAdd('text',{x:lx+u+10,y:ly+u/2+5,fill:COL.mint,'font-size':15*TS},true);
+  lt.textContent=t('lbl.unitSq');
+
+  f1stats(focusIdx);
+}
+function f1stats(focusIdx){
+  var total=SHAPES[f1i].length,n=f1order.length;
+  document.getElementById('s1-count').textContent=n;
+  document.getElementById('s1-total').textContent=total;
+  document.getElementById('s1-area').textContent=(n===total)?t('f1.area',{n:total}):'—';
+  if(n===0)f1note.innerHTML=t('f1.n0');
+  else if(n<total)f1note.innerHTML=t('f1.np',{n:n,m:total-n});
+  else f1note.innerHTML=t('f1.nc',{n:total});
+  if(focusIdx!=null){
+    var el0=f1.gCells.querySelector('rect[data-cell="'+focusIdx+'"]');
+    if(el0)el0.focus();
+  }
+}
+document.querySelectorAll('[data-fig="1"]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var a=b.getAttribute('data-act');
+    if(a==='shape'){f1i=(f1i+1)%SHAPES.length;f1order=[];}
+    else if(a==='clear'){f1order=[];}
+    else if(a==='all'){
+      var cells=SHAPES[f1i],idx=cells.map(function(c,i){return i;});
+      idx.sort(function(p,q){return (cells[p][1]-cells[q][1])||(cells[p][0]-cells[q][0]);});
+      f1order=idx;
+    }
+    f1draw();
+  });
+});
+
+/* ============================================= 2. rectangle by rows */
+var f2=new Scene('fig2',760,430);
+var c2b=document.getElementById('c2b'),c2h=document.getElementById('c2h');
+
+function f2paintCells(scene,b,h,shown){
+  wipe(scene.gCells);
+  var total=b*h,i,x,y,vis,pad=Math.min(2.2,scene.u*0.06);
+  for(i=0;i<total;i++){
+    vis=i<Math.floor(shown)?1:(i<shown?shown-i:0);
+    if(vis<=0.001)continue;
+    x=i%b;y=Math.floor(i/b);
+    scene.gCells.appendChild(el('rect',{
+      x:(scene.X(x)+pad).toFixed(2),y:(scene.Y(y+1)+pad).toFixed(2),
+      width:(scene.u-pad*2).toFixed(2),height:(scene.u-pad*2).toFixed(2),rx:2,
+      fill:COL.gold,'fill-opacity':(0.96*vis).toFixed(3),
+      stroke:COL.goldEdge,'stroke-width':1.1,'stroke-opacity':vis.toFixed(3)}));
+  }
+  document.getElementById('s2-n').textContent=Math.round(shown);
+}
+function f2stats(b,h){
+  document.getElementById('s2-b').textContent=num(b);
+  document.getElementById('s2-h').textContent=num(h);
+  document.getElementById('s2-a').textContent=num(b*h);
+  document.getElementById('v2b').textContent=num(b);
+  document.getElementById('v2h').textContent=num(h);
+}
+function f2build(){
+  var b=+c2b.value,h=+c2h.value;
+  f2.fit(0,b,0,h,1,0.9,1.25,0);
+  f2stats(b,h);
+  var square=(b===h);
+  var V={b:num(b),h:num(h),a:num(b*h),
+    sq:plural(b,'square','squares'),rw:plural(h,'row','rows')};
+  function frame(scene,dashed){
+    scene.wline(0,0,b,0,{stroke:COL.goldEdge,'stroke-width':2.5,'stroke-dasharray':dashed?'6 5':''});
+    scene.wline(b,0,b,h,{stroke:COL.goldEdge,'stroke-width':2.5,'stroke-dasharray':dashed?'6 5':''});
+    scene.wline(b,h,0,h,{stroke:COL.goldEdge,'stroke-width':2.5,'stroke-dasharray':dashed?'6 5':''});
+    scene.wline(0,h,0,0,{stroke:COL.goldEdge,'stroke-width':2.5,'stroke-dasharray':dashed?'6 5':''});
+  }
+  return [
+    {name:t('f2.s0'),
+     note:t('f2.n0',V),
+     custom:function(s){f2paintCells(s,b,h,0);},
+     guides:function(s){frame(s,true);
+       s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+       s.dimV(0,0,h,t('lbl.height',{v:num(h)}),-14);}},
+    {name:t('f2.s1'),dur:700,
+     note:t('f2.n1',V),
+     custom:function(s,p){f2paintCells(s,b,h,b*p);},
+     guides:function(s){frame(s,true);s.dimH(0,b,0,t('lbl.rowOf',V),26);}},
+    {name:t('f2.s2'),dur:Math.min(1500,420+h*160),
+     note:t('f2.n2',V),
+     custom:function(s,p){f2paintCells(s,b,h,b+(b*h-b)*p);},
+     guides:function(s){frame(s,false);
+       s.dimV(0,0,h,t('lbl.rows',V),-14);
+       s.dimH(0,b,0,t('lbl.wide',V),26);}},
+    {name:t('f2.s3'),dur:260,
+     note:t('f2.n3',V)+(square?t('f2.sq',V):''),
+     custom:function(s){f2paintCells(s,b,h,b*h);},
+     guides:function(s){
+       frame(s,false);
+       s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+       s.dimV(0,0,h,t('lbl.height',{v:num(h)}),-14);
+       s.label(s.X(b/2),s.Y(h)-16,t('lbl.areaUnits',V),{'font-size':17,fill:COL.ink});
+     }}
+  ];
+}
+var P2=new Player(2,f2,f2build);
+c2b.addEventListener('input',function(){P2.refresh();});
+c2h.addEventListener('input',function(){P2.refresh();});
+document.querySelector('[data-fig="2"][data-act="square"]').addEventListener('click',function(){
+  var s=Math.min(+c2b.value,+c2h.value,8);
+  c2b.value=s;c2h.value=s;P2.cur=P2.stages.length-1;P2.refresh();
+});
+
+/* =========================================== 3. parallelogram → rect */
+var f3=new Scene('fig3',760,430);
+var c3b=document.getElementById('c3b'),c3h=document.getElementById('c3h'),c3l=document.getElementById('c3l');
+
+function f3build(){
+  var b=+c3b.value,h=+c3h.value,r=+c3l.value,d=r*b;
+  var slant=Math.sqrt(d*d+h*h),area=b*h,need=d>b+1e-6;
+
+  f3.fit(0,b+d,0,h,1,0.9,1.4,0);
+  document.getElementById('v3b').textContent=num(b);
+  document.getElementById('v3h').textContent=num(h);
+  document.getElementById('v3l').textContent=r.toFixed(2);
+  document.getElementById('s3-b').textContent=num(b);
+  document.getElementById('s3-h').textContent=num(h);
+  document.getElementById('s3-d').textContent=num(d);
+  document.getElementById('s3-s').textContent=slant.toFixed(2);
+  document.getElementById('s3-a').textContent=num(area);
+
+  var V={b:num(b),h:num(h),d:num(d),a:num(area),d2:num(d-b)};
+  var G={fill:COL.gold,stroke:COL.goldEdge},R={fill:COL.rasp,stroke:COL.raspEdge};
+  function pc(id,pts,c,o){
+    var p={id:id,pts:pts,fill:c.fill,stroke:c.stroke};
+    if(o)for(var k in o)p[k]=o[k];
+    return p;
+  }
+  function baseAndHeight(s,lean){
+    s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+    s.dimV(0,0,h,t('lbl.height',{v:num(h)}),-14);
+    if(lean>0.02)s.dimH(0,lean,h,t('lbl.lean',{v:num(lean)}),-24);
+  }
+  function result(s,x0){
+    s.wline(x0,0,x0+b,0,{stroke:COL.ink,'stroke-width':2.5});
+    s.wline(x0+b,0,x0+b,h,{stroke:COL.ink,'stroke-width':2.5});
+    s.wline(x0+b,h,x0,h,{stroke:COL.ink,'stroke-width':2.5});
+    s.wline(x0,h,x0,0,{stroke:COL.ink,'stroke-width':2.5});
+    s.rightAngle(x0,0,1,1);
+    s.dimH(x0,x0+b,0,t('lbl.base',{v:num(b)}),26);
+    s.dimV(x0,0,h,t('lbl.height',{v:num(h)}),-14);
+    s.label(s.X(x0+b/2),s.Y(h)-16,t('lbl.areaNum',V),{'font-size':17,fill:COL.ink});
+  }
+
+  /* the ordinary cut, applied to a parallelogram of lean L anchored at x = 0 */
+  function standard(L){
+    var body=[[L,0],[b,0],[b+L,h],[L,h]],tri=[[0,0],[L,0],[L,h]];
+    return [
+      {name:t('f3.s1'),dur:300,
+       note:t('f3.cut'),
+       pieces:[pc('body',body,G),pc('tri',tri,R)],
+       guides:function(s,an){s.cut(L,0,L,h,an);baseAndHeight(s,L);}},
+      {name:t('f3.s2'),dur:900,
+       note:t('f3.carry'),
+       pieces:[pc('body',body,G),pc('tri',tri,R,{tx:b})],
+       guides:function(s){
+         s.wline(L,0,L,h,{stroke:COL.raspEdge,'stroke-width':2,'stroke-dasharray':'7 6','stroke-opacity':.45});
+         s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+       }},
+      {name:t('f3.s3'),dur:340,
+       note:t('f3.rect',V),
+       pieces:[pc('body',body,G),pc('tri',tri,R,{tx:b})],
+       guides:function(s){result(s,L);}}
+    ];
+  }
+
+  var whole=[[0,0],[b,0],[b+d,h],[d,h]];
+  var stages;
+  if(!need){
+    stages=[{name:t('f3.s0'),
+      note:t('f3.start',V),
+      pieces:[pc('whole',whole,G)],
+      guides:function(s){baseAndHeight(s,d);}}];
+    stages=stages.concat(standard(d));
+  }else{
+    var upper=[[b,0],[b+d,h],[d,h]],lower=[[0,0],[b,0],[d,h]],d2=d-b;
+    stages=[
+      {name:t('f3.s0'),
+       note:t('f3.xstart',V),
+       pieces:[pc('whole',whole,G)],
+       guides:function(s){
+         baseAndHeight(s,d);
+         s.wline(d,0,d,h,{stroke:COL.raspEdge,'stroke-width':2,'stroke-dasharray':'5 6','stroke-opacity':.4});
+         s.label(s.X(d),s.Y(0)+46,t('lbl.miss'),{'font-size':14,fill:COL.raspEdge});
+       }},
+      {name:t('f3.s4'),dur:320,
+       note:t('f3.bisect'),
+       pieces:[pc('lower',lower,G),pc('upper',upper,R)],
+       guides:function(s,an){s.cut(b,0,d,h,an);baseAndHeight(s,d);}},
+      {name:t('f3.s5'),dur:950,
+       note:t('f3.slide'),
+       pieces:[pc('lower',lower,G),pc('upper',upper,R,{tx:-b})],
+       guides:function(s){s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);}},
+      {name:t('f3.s6'),dur:300,
+       note:t('f3.same',V),
+       pieces:[pc('lower',lower,G),pc('upper',upper,R,{tx:-b})],
+       guides:function(s){baseAndHeight(s,d2);}}
+    ];
+    stages=stages.concat(standard(d2));
+  }
+  return stages;
+}
+var P3=new Player(3,f3,f3build);
+[c3b,c3h,c3l].forEach(function(c){c.addEventListener('input',function(){P3.refresh();});});
+
+/* ============================================== 4. right triangle */
+var f4=new Scene('fig4',760,430);
+var c4b=document.getElementById('c4b'),c4h=document.getElementById('c4h');
+
+function f4build(){
+  var b=+c4b.value,h=+c4h.value,area=b*h;
+  f4.fit(-0.75,b,0,h+0.75,0.9,0.8,0,1.5);
+  document.getElementById('v4b').textContent=num(b);
+  document.getElementById('v4h').textContent=num(h);
+  document.getElementById('s4-b').textContent=num(b);
+  document.getElementById('s4-h').textContent=num(h);
+  document.getElementById('s4-r').textContent=num(area);
+  document.getElementById('s4-a').textContent=num(area/2);
+
+  var V={b:num(b),h:num(h),a:num(area)},H={b:num(b),h:num(h),a:num(area/2)};
+  var rect=[[0,0],[b,0],[b,h],[0,h]];
+  var low=[[0,0],[b,0],[b,h]],up=[[0,0],[b,h],[0,h]];
+  var G={fill:COL.gold,stroke:COL.goldEdge},R={fill:COL.rasp,stroke:COL.raspEdge};
+  function pc(id,pts,c,o){
+    var p={id:id,pts:pts,fill:c.fill,stroke:c.stroke,cx:b/2,cy:h/2};
+    if(o)for(var k in o)p[k]=o[k];
+    return p;
+  }
+  function dims(s){
+    s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+    s.dimV(b,0,h,t('lbl.height',{v:num(h)}),16);
+  }
+  function ghost(s){
+    s.gAdd('polygon',{points:s.P(low),fill:'none',stroke:COL.ink,
+      'stroke-width':2,'stroke-dasharray':'6 5','stroke-opacity':.85});
+  }
+  return [
+    {name:t('f4.s0'),
+     note:t('f4.n0',V),
+     pieces:[pc('rect',rect,G)],
+     guides:function(s){dims(s);}},
+    {name:t('f4.s1'),dur:320,
+     note:t('f4.n1'),
+     pieces:[pc('low',low,G),pc('up',up,R)],
+     guides:function(s,an){s.cut(0,0,b,h,an);dims(s);s.rightAngle(b,0,-1,1);}},
+    {name:t('f4.s2'),dur:700,
+     note:t('f4.n2'),
+     pieces:[pc('low',low,G),pc('up',up,R,{tx:-0.62,ty:0.62})],
+     guides:function(s){}},
+    {name:t('f4.s3'),dur:1000,
+     note:t('f4.n3'),
+     pieces:[pc('low',low,G),pc('up',up,R,{rot:180,op:0.72})],
+     guides:function(s){ghost(s);}},
+    {name:t('f4.s4'),dur:300,
+     note:t('f4.n4',H),
+     pieces:[pc('low',low,G),pc('up',up,R,{rot:180,op:0.72})],
+     guides:function(s){
+       ghost(s);dims(s);
+       s.label(s.X(b/2),s.Y(h)+18,t('lbl.half',H),{'font-size':17,fill:COL.ink});
+     }}
+  ];
+}
+var P4=new Player(4,f4,f4build);
+[c4b,c4h].forEach(function(c){c.addEventListener('input',function(){P4.refresh();});});
+
+/* ================================================= 5. any triangle */
+var f5=new Scene('fig5',760,430);
+var c5b=document.getElementById('c5b'),c5h=document.getElementById('c5h'),c5a=document.getElementById('c5a');
+
+function f5build(){
+  var b=+c5b.value,h=+c5h.value,a=+c5a.value;
+  var area=b*h/2,outside=(a<0)?'left':(a>b?'right':'in');
+  var square=(Math.abs(a)<1e-6||Math.abs(a-b)<1e-6);
+  f5.fit(Math.min(0,a),Math.max(b,a+b),0,h,1,0.9,1.55,0);
+  document.getElementById('v5b').textContent=num(b);
+  document.getElementById('v5h').textContent=num(h);
+  document.getElementById('v5a').textContent=(a>=0?'+':'')+num(a);
+  document.getElementById('s5-b').textContent=num(b);
+  document.getElementById('s5-h').textContent=num(h);
+  document.getElementById('s5-p').textContent=
+    outside==='in'?t('pos.in'):(outside==='left'?t('pos.left'):t('pos.right'));
+  document.getElementById('s5-r').textContent=num(b*h);
+  document.getElementById('s5-a').textContent=num(area);
+
+  var V={b:num(b),h:num(h),a:num(area),r:num(b*h)};
+  var tri=[[0,0],[b,0],[a,h]];
+  var G={fill:COL.gold,stroke:COL.goldEdge},T={fill:COL.turq,stroke:COL.turqEdge};
+  function pc(id,c,o){
+    var p={id:id,pts:tri,fill:c.fill,stroke:c.stroke,cx:(b+a)/2,cy:h/2};
+    if(o)for(var k in o)p[k]=o[k];
+    return p;
+  }
+  function heightMark(s){
+    if(outside!=='in'){
+      var x0=Math.min(0,a)-0.15,x1=Math.max(b,a)+0.15;
+      s.wline(x0,0,x1,0,{stroke:COL.mint,'stroke-width':1.4,'stroke-dasharray':'3 5','stroke-opacity':.7});
+    }
+    s.wline(a,0,a,h,{stroke:COL.mint,'stroke-width':1.8,'stroke-dasharray':'6 5'});
+    s.rightAngle(a,0,(a>b?-1:1),1,0.34);
+    s.dimV(Math.min(0,a)-0.5,0,h,t('lbl.height',{v:num(h)}),-14);
+    s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+  }
+  return [
+    {name:t('f5.s0'),
+     note:t('f5.n0',V)+(square?t('f5.sq'):t('f5.nosq'))+(outside==='in'?'':t('f5.out')),
+     pieces:[pc('t',G)],
+     guides:function(s){heightMark(s);}},
+    {name:t('f5.s1'),dur:520,
+     note:t('f5.n1'),
+     pieces:[pc('t',G),pc('c',T,{enter:true,op:0.92})],
+     guides:function(s){heightMark(s);}},
+    {name:t('f5.s2'),dur:1050,
+     note:t('f5.n2'),
+     pieces:[pc('t',G),pc('c',T,{rot:180,op:0.92})],
+     guides:function(s){
+       s.gAdd('circle',{cx:s.X((b+a)/2),cy:s.Y(h/2),r:4,fill:COL.mint});
+       s.dimH(0,b,0,t('lbl.base',{v:num(b)}),26);
+     }},
+    {name:t('f5.s3'),dur:340,
+     note:t('f5.n3',V),
+     pieces:[pc('t',G),pc('c',T,{rot:180,op:0.92})],
+     guides:function(s){
+       var par=[[0,0],[b,0],[a+b,h],[a,h]];
+       s.gAdd('polygon',{points:s.P(par),fill:'none',stroke:COL.ink,'stroke-width':2.5});
+       heightMark(s);
+       s.label(s.X((a+b)/2),s.Y(h)-16,t('lbl.halfNum',V),{'font-size':17,fill:COL.ink});
+     }}
+  ];
+}
+var P5=new Player(5,f5,f5build);
+[c5b,c5h,c5a].forEach(function(c){c.addEventListener('input',function(){P5.refresh();});});
+
+/* ================================================= nav + first paint */
+var links={},sections=[];
+document.querySelectorAll('.nav-links a').forEach(function(a){
+  var id=a.getAttribute('href').slice(1);
+  links[id]=a;
+  var sec=document.getElementById(id);
+  if(sec)sections.push(sec);
+});
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      var a=links[e.target.id];
+      if(!a)return;
+      if(e.isIntersecting){
+        Object.keys(links).forEach(function(k){links[k].classList.remove('on');});
+        a.classList.add('on');
+      }
+    });
+  },{rootMargin:'-45% 0px -50% 0px',threshold:0});
+  sections.forEach(function(s){io.observe(s);});
+}
+
+function redrawAll(){
+  heroTok++;               /* a run in flight holds stale text and a stale fit */
+  f1draw();P2.refresh();P3.refresh();P4.refresh();P5.refresh();
+  var st=heroStages(),i=Math.min(heroLast,st.length-1);
+  hero.setPieces(st[i].pieces);hero.clearGuides();
+  if(st[i].guides)st[i].guides(hero,false);
+  hero.animateTo(st[i].pieces,0);
+  heroCap.innerHTML=st[i].cap;
+}
+var rzT=null;
+window.addEventListener('resize',function(){
+  clearTimeout(rzT);
+  rzT=setTimeout(function(){
+    var s=textScale();
+    if(s!==TS){TS=s;redrawAll();}
+  },160);
+});
+
+document.querySelectorAll('.lang button').forEach(function(b){
+  b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});
+});
+
+captureTH();
+try{if(localStorage.getItem('origin-area-lang')==='en')LANG='en';}catch(e){}
+applyLang();
+
+TS=textScale();
+f1draw();
+P2.refresh();
+P3.refresh();
+P4.refresh();
+P5.refresh();
+setTimeout(heroRun,420);
+
+})();
+</script>
+</body>
+</html>
