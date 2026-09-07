@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Number That Broke the Greeks</title>
+<meta name="description" content="An interactive story: how the diagonal of a square revealed the first irrational number, and a complete proof that the square root of 2 is not a fraction.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+
+:root{
+  --sea:#0a1c25;
+  --sea-deep:#06121a;
+  --stone:#0f2a35;
+  --stone-lit:#164152;
+  --marble:#ece6d8;
+  --dim:#a3b3b7;
+  --verdigris:#58b3a4;
+  --bronze:#d09a4b;
+  --porphyry:#de7580;
+  --line:rgba(236,230,216,.16);
+  --line-soft:rgba(236,230,216,.08);
+  --display:"Optima","Optima nova LT Pro",Candara,"Gill Sans","Gill Sans MT","Trebuchet MS",system-ui,sans-serif;
+  --body:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --col:40rem;
+  --wide:54rem;
+}
+
+html{-webkit-text-size-adjust:100%}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(130% 90% at 50% -20%, #17414f 0%, var(--sea) 42%, var(--sea-deep) 100%)
+    var(--sea-deep) fixed;
+  color:var(--marble);
+  font-family:var(--body);
+  font-size:1.075rem;
+  line-height:1.72;
+  font-kerning:normal;
+  text-rendering:optimizeLegibility;
+}
+
+/* ---------- shared type ---------- */
+
+h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.12;margin:0}
+h1{font-size:clamp(2.1rem,5.4vw,3.35rem);letter-spacing:.005em;max-width:16ch}
+h2{font-size:clamp(1.8rem,4.4vw,2.6rem);letter-spacing:.008em;max-width:19ch}
+h3{font-size:1.14rem;letter-spacing:.02em;font-weight:600;color:var(--verdigris)}
+p{margin:0 0 1.1em}
+a{color:var(--verdigris);text-underline-offset:.22em;text-decoration-thickness:1px}
+a:hover{color:var(--bronze)}
+strong{font-weight:600;color:#fff}
+em{font-style:italic}
+
+.lede{font-size:1.22rem;line-height:1.62;color:var(--marble)}
+.quiet{color:var(--dim)}
+.sub{font-size:.95rem;line-height:1.6;color:var(--dim)}
+.vis-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- progress rail ---------- */
+
+.rail{
+  position:sticky;top:0;z-index:40;
+  background:linear-gradient(to bottom,rgba(6,18,26,.96),rgba(6,18,26,.82) 70%,rgba(6,18,26,0));
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line-soft);
+}
+.rail-in{
+  max-width:var(--wide);margin:0 auto;padding:.55rem clamp(1rem,4vw,2rem);
+  display:flex;align-items:center;gap:1rem;
+}
+.dots{display:flex;gap:.28rem;flex:1;list-style:none;margin:0;padding:0}
+.dot{
+  flex:1;min-width:0;background:none;border:0;padding:.5rem 0 .42rem;cursor:pointer;
+  font-family:var(--display);font-size:.95rem;color:var(--dim);
+  border-bottom:2px solid var(--line-soft);
+  transition:color .25s ease,border-color .25s ease;
+}
+.dot:hover{color:var(--marble);border-bottom-color:var(--line)}
+.dot[aria-current="step"]{color:var(--bronze);border-bottom-color:var(--bronze)}
+.dot.seen{border-bottom-color:rgba(88,179,164,.45)}
+.dot:focus-visible,.jump-btn:focus-visible{outline:2px solid var(--bronze);outline-offset:2px;border-radius:2px}
+
+.jump-btn{
+  flex:none;background:none;border:1px solid var(--line);color:var(--marble);
+  font-family:var(--display);font-size:.86rem;letter-spacing:.02em;
+  padding:.36rem .7rem;border-radius:2px;cursor:pointer;
+  transition:border-color .25s ease,color .25s ease;
+}
+.jump-btn:hover{border-color:var(--bronze);color:var(--bronze)}
+
+.jump-panel{
+  max-width:var(--wide);margin:0 auto;padding:0 clamp(1rem,4vw,2rem) .8rem;
+}
+.jump-panel[hidden]{display:none}
+.jump-list{list-style:none;margin:0;padding:.4rem 0 0;display:grid;gap:1px;
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));background:var(--line-soft)}
+.jump-list button{
+  width:100%;text-align:left;background:var(--sea);border:0;color:var(--marble);
+  font-family:var(--body);font-size:.98rem;padding:.6rem .8rem;cursor:pointer;
+  display:flex;gap:.7rem;align-items:baseline;
+}
+.jump-list button:hover{background:var(--stone);color:var(--bronze)}
+.jump-list button[aria-current="step"]{color:var(--bronze)}
+.jump-list .gk{font-family:var(--display);color:var(--verdigris);width:1.1em;flex:none}
+.jump-list button:focus-visible{outline:2px solid var(--bronze);outline-offset:-2px}
+
+/* ---------- stage ---------- */
+
+.stage{max-width:var(--wide);margin:0 auto;
+  padding:clamp(1.6rem,5vw,3.4rem) clamp(1rem,4vw,2rem) 5.5rem}
+.scene{display:none;opacity:0;transform:translateY(10px);
+  transition:opacity .34s ease,transform .34s ease}
+.scene.is-active{display:block}
+.scene.is-in{opacity:1;transform:none}
+.scene h2:focus{outline:none}
+
+.marker{
+  font-family:var(--display);font-size:.95rem;color:var(--verdigris);
+  letter-spacing:.16em;margin:0 0 .9rem;display:flex;align-items:center;gap:.7rem;
+}
+.marker::after{content:"";height:1px;flex:1;background:linear-gradient(to right,var(--line),transparent)}
+
+.prose{max-width:var(--col)}
+.prose > p:last-child{margin-bottom:0}
+.scene h2 + p, .scene h1 + p{margin-top:1.1rem}
+
+/* ---------- figures ---------- */
+
+figure{margin:2rem 0;max-width:var(--wide)}
+figcaption{font-size:.92rem;color:var(--dim);line-height:1.55;margin-top:.7rem;max-width:var(--col)}
+svg{display:block;width:100%;height:auto;overflow:visible}
+
+.panel{
+  background:linear-gradient(180deg,rgba(22,65,82,.5),rgba(15,42,53,.5));
+  border:1px solid var(--line-soft);border-top:1px solid var(--line);
+  padding:clamp(1rem,3vw,1.6rem);margin:2rem 0;
+}
+.panel > :last-child{margin-bottom:0}
+.panel h3{margin-bottom:.6rem}
+.panel p{max-width:var(--col)}
+.qed p{max-width:var(--col)}
+.dgroup .sub{max-width:var(--col)}
+
+/* ---------- controls ---------- */
+
+.controls{display:flex;flex-wrap:wrap;gap:1rem 1.4rem;align-items:flex-end;margin:1.2rem 0}
+.controls[hidden]{display:none}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.field label{font-family:var(--display);font-size:.85rem;letter-spacing:.03em;color:var(--dim)}
+
+input[type="number"]{
+  font-family:var(--mono);font-size:1.05rem;width:8.5rem;
+  background:var(--sea-deep);color:var(--marble);
+  border:1px solid var(--line);border-radius:2px;padding:.45rem .55rem;
+}
+input[type="number"]:focus-visible{outline:2px solid var(--bronze);outline-offset:1px;border-color:transparent}
+
+input[type="range"]{
+  -webkit-appearance:none;appearance:none;background:transparent;width:min(22rem,100%);
+  padding:.5rem 0;cursor:pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track{height:2px;background:var(--line);border-radius:2px}
+input[type="range"]::-moz-range-track{height:2px;background:var(--line);border-radius:2px}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:1.15rem;height:1.15rem;margin-top:-.55rem;
+  border-radius:50%;background:var(--bronze);border:0;
+}
+input[type="range"]::-moz-range-thumb{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--bronze);border:0}
+input[type="range"]:focus-visible{outline:2px solid var(--bronze);outline-offset:4px;border-radius:4px}
+
+.btn{
+  font-family:var(--display);font-size:.98rem;letter-spacing:.015em;
+  background:transparent;color:var(--marble);
+  border:1px solid var(--line);border-radius:2px;
+  padding:.55rem 1.05rem;cursor:pointer;
+  transition:background .2s ease,border-color .2s ease,color .2s ease;
+}
+.btn:hover{border-color:var(--bronze);color:var(--bronze)}
+.btn:focus-visible{outline:2px solid var(--bronze);outline-offset:2px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn[disabled]:hover{border-color:var(--line);color:var(--marble)}
+.btn-key{background:var(--bronze);border-color:var(--bronze);color:#16110a;font-weight:600}
+.btn-key:hover{background:#e6ad5b;border-color:#e6ad5b;color:#16110a}
+.btn-sm{font-size:.86rem;padding:.32rem .66rem}
+
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 0}
+
+/* ---------- footer nav ---------- */
+
+.foot{
+  position:sticky;bottom:0;z-index:30;
+  background:linear-gradient(to top,rgba(6,18,26,.97),rgba(6,18,26,.85) 60%,rgba(6,18,26,0));
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.foot-in{
+  max-width:var(--wide);margin:0 auto;
+  padding:.9rem clamp(1rem,4vw,2rem) 1rem;
+  display:flex;align-items:center;gap:.8rem;
+}
+.foot .spacer{flex:1}
+.foot-hint{font-size:.85rem;color:var(--dim);max-width:22ch;line-height:1.4}
+
+/* ---------- katex ---------- */
+
+.katex{font-size:1.05em}
+.katex-display{margin:1rem 0;overflow-x:auto;overflow-y:hidden;padding:.2rem 0}
+.tex-fallback{font-family:var(--mono);font-size:.95em;color:var(--dim)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+</style>
+<style>
+/* ---------- scene 1: number line ---------- */
+
+.numline .tick{stroke:var(--marble);stroke-width:1}
+.numline .anchor{stroke:var(--marble);stroke-width:1.6}
+.numline .axis{stroke:var(--line);stroke-width:1}
+.numline text{fill:var(--dim);font-family:var(--body);font-size:15px}
+.numline .anchor-label{fill:var(--marble)}
+.count-out{font-family:var(--mono);color:var(--bronze);font-size:1.05rem}
+
+/* ---------- scene 2: the hunt ---------- */
+
+.square-fig{max-width:18rem;margin-inline:0}
+.sq-side{stroke:var(--marble);stroke-width:2;fill:rgba(88,179,164,.07)}
+.sq-diag{stroke:var(--bronze);stroke-width:2.5}
+.sq-label{fill:var(--marble);font-family:var(--body);font-size:16px}
+.sq-q{fill:var(--bronze);font-family:var(--display);font-size:26px;font-weight:600}
+
+.digits{font-family:var(--mono);font-size:clamp(.86rem,2.7vw,1.05rem);line-height:2;letter-spacing:.01em}
+.digits .row{display:flex;gap:.6rem;align-items:baseline;white-space:nowrap;overflow-x:auto}
+.digits .tag{color:var(--dim);flex:none;width:5.4rem;font-family:var(--body);font-size:.9rem;letter-spacing:0}
+.digits .hit{color:var(--verdigris)}
+.digits .miss{color:var(--porphyry)}
+.digits .rest{color:var(--dim)}
+
+.readout{display:grid;gap:.5rem 1.6rem;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));margin-top:1.2rem}
+.readout div{border-top:1px solid var(--line-soft);padding-top:.45rem}
+.readout dt{font-family:var(--display);font-size:.8rem;letter-spacing:.05em;color:var(--dim);margin:0}
+.readout dd{margin:.1rem 0 0;font-family:var(--mono);font-size:1.02rem;color:var(--marble)}
+.readout dd.accent{color:var(--bronze)}
+
+.zoom .gap-line{stroke:var(--line);stroke-width:1}
+.zoom .gap{stroke:var(--porphyry);stroke-width:4;stroke-linecap:butt}
+.zoom .grad{stroke:var(--line-soft);stroke-width:1}
+.zoom{max-width:36rem;margin-top:1.1rem}
+.zoom .t-gap{fill:var(--porphyry)}
+.zoom .true{stroke:var(--bronze);stroke-width:2}
+.zoom .guess{stroke:var(--verdigris);stroke-width:2}
+.zoom text{font-family:var(--body);font-size:22px}
+.zoom .t-true{fill:var(--bronze)}
+.zoom .t-guess{fill:var(--verdigris)}
+.zoom .t-scale{fill:var(--dim)}
+
+.verdict{margin-top:1.1rem;font-size:1.08rem;min-height:1.7em}
+.verdict b{color:var(--porphyry);font-weight:600}
+
+.turn{
+  border-left:2px solid var(--bronze);
+  background:linear-gradient(90deg,rgba(208,154,75,.1),transparent 70%);
+  padding:1rem 1.1rem;margin:1.8rem 0 0;
+}
+.turn[hidden]{display:none}
+.turn p{margin-bottom:.8rem}
+.turn .row{display:flex;flex-wrap:wrap;gap:.6rem}
+
+/* ---------- scene 3: lowest terms ---------- */
+
+.frac-stack{display:inline-flex;flex-direction:column;align-items:center;font-family:var(--mono);
+  font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.25;min-width:4ch}
+.frac-stack .bar{height:2px;background:var(--marble);width:100%;margin:.16em 0}
+.frac-stack .num,.frac-stack .den{transition:color .3s ease}
+.reduce-row{display:flex;align-items:center;gap:clamp(1rem,4vw,2.4rem);flex-wrap:wrap;margin:1.4rem 0}
+
+.factors{display:flex;flex-direction:column;gap:.45rem;font-family:var(--mono);font-size:1rem}
+.factors .flabel{font-family:var(--body);font-size:.85rem;color:var(--dim);letter-spacing:.02em}
+.frow{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.fchip{
+  border:1px solid var(--line);padding:.1rem .5rem;border-radius:2px;color:var(--marble);
+  transition:opacity .35s ease,color .35s ease,border-color .35s ease,transform .35s ease;
+}
+.fchip.shared{border-color:var(--bronze);color:var(--bronze)}
+.fchip.gone{opacity:.22;text-decoration:line-through;color:var(--dim);border-color:var(--line-soft);transform:scale(.9)}
+.done-note{color:var(--verdigris);font-family:var(--display);letter-spacing:.02em}
+.done-note[hidden]{display:none}
+
+/* ---------- scene 4: the proof ---------- */
+
+.steps{list-style:none;margin:1.6rem 0 0;padding:0;counter-reset:pstep}
+.step{
+  border-left:1px solid var(--line-soft);
+  padding:0 0 1.5rem 1.4rem;margin:0;position:relative;
+  max-width:calc(var(--col) + 1.4rem);
+  opacity:0;transform:translateY(12px);
+  transition:opacity .45s ease,transform .45s ease;
+}
+.step:not(.revealed){display:none}
+.step.shown{opacity:1;transform:none}
+.step::before{
+  counter-increment:pstep;content:counter(pstep);
+  position:absolute;left:0;top:.05em;transform:translateX(-50%);
+  width:1.55rem;height:1.55rem;border-radius:50%;
+  background:var(--sea-deep);border:1px solid var(--line);
+  display:grid;place-items:center;
+  font-family:var(--display);font-size:.82rem;color:var(--verdigris);
+}
+.step:last-child{padding-bottom:.5rem}
+.step h3{margin-bottom:.45rem}
+.step p{margin-bottom:.7rem}
+.step > :last-child{margin-bottom:0}
+.step.final::before{border-color:var(--bronze);color:var(--bronze)}
+.step.final h3{color:var(--bronze)}
+.step.crisis::before{border-color:var(--porphyry);color:var(--porphyry)}
+.step.crisis h3{color:var(--porphyry)}
+
+.lemma{
+  border:1px solid var(--line-soft);border-left:2px solid var(--verdigris);
+  background:rgba(88,179,164,.06);
+  padding:.9rem 1rem;margin:.9rem 0;
+}
+.lemma > :last-child{margin-bottom:0}
+.lemma .lemma-head{font-family:var(--display);font-size:.86rem;letter-spacing:.05em;color:var(--verdigris);margin-bottom:.5rem}
+
+/* trap diagram */
+.trap{max-width:30rem;margin:1.2rem 0}
+.trap .arc{fill:none;stroke:var(--porphyry);stroke-width:2.5;stroke-linecap:round}
+.trap .arc.draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1s ease}
+.trap .arc.closed{stroke-dashoffset:0}
+.trap .assume-box{fill:rgba(6,18,26,.55);stroke:var(--line);stroke-width:1;
+  transition:stroke .4s ease .9s}
+.trap.sprung .assume-box{stroke:var(--porphyry)}
+.trap text{font-family:var(--body);font-size:15px;fill:var(--marble)}
+.trap .t-branch{fill:var(--porphyry);font-family:var(--mono);font-size:15px}
+.trap .t-centre{font-family:var(--mono);font-size:17px}
+.trap .strike{stroke:var(--porphyry);stroke-width:2.5;stroke-linecap:round;
+  stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .5s ease .9s}
+.trap .strike.closed{stroke-dashoffset:0}
+.trap .t-centre.broken{fill:var(--porphyry)}
+
+.qed{
+  border:1px solid var(--bronze);border-left-width:3px;
+  background:linear-gradient(90deg,rgba(208,154,75,.12),transparent 75%);
+  padding:1.1rem 1.2rem;margin-top:1.6rem;
+}
+.qed[hidden]{display:none}
+.qed p{margin-bottom:0}
+
+/* ---------- scene 5: legend ---------- */
+
+.aside-note{
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:1rem 0;margin:1.8rem 0;max-width:var(--col);
+}
+.aside-note .aside-head{font-family:var(--display);font-size:.86rem;letter-spacing:.06em;color:var(--bronze);margin-bottom:.4rem}
+.aside-note p{font-size:.98rem;color:var(--dim);margin-bottom:.7rem}
+.aside-note p:last-child{margin-bottom:0}
+
+.waves{opacity:.55;margin:2rem 0 0}
+.waves path{fill:none;stroke:var(--verdigris);stroke-width:1.2}
+
+/* ---------- scene 7: gallery ---------- */
+
+.gallery{list-style:none;margin:1.8rem 0 0;padding:0}
+.gitem{display:grid;grid-template-columns:5.5rem 1fr;gap:0 1.4rem;
+  align-items:baseline;padding:1.15rem 0;border-top:1px solid var(--line-soft)}
+.gitem:last-child{border-bottom:1px solid var(--line-soft)}
+.gsym{font-family:var(--display);font-size:2.6rem;color:var(--bronze);line-height:1;grid-row:span 2}
+.gval{font-family:var(--mono);font-size:.98rem;color:var(--dim);margin:0 0 .35rem}
+.gnote{margin:0;max-width:52ch}
+
+/* ---------- scene 8: digits ---------- */
+
+.digit-block{
+  font-family:var(--mono);font-size:.95rem;line-height:1.85;
+  word-break:break-all;overflow-wrap:anywhere;
+  background:var(--sea-deep);border:1px solid var(--line-soft);
+  padding:.85rem .95rem;margin:.5rem 0 0;max-height:15rem;overflow-y:auto;
+}
+.digit-block .head{color:var(--bronze)}
+.digit-block .note{
+  display:block;margin-top:.7rem;padding-top:.6rem;
+  border-top:1px solid var(--line-soft);
+  font-family:var(--body);font-size:.92rem;line-height:1.55;
+  color:var(--dim);word-break:normal;
+}
+.digit-block .cycle{color:var(--verdigris)}
+.digit-block .stop{color:var(--dim)}
+.dgroup{margin:1.5rem 0}
+.dgroup h3{margin-bottom:.15rem}
+.dgroup .sub{margin:0}
+
+@media (max-width:34rem){
+  /* SVG text scales with the viewBox; bump it so labels stay readable
+     once these figures are squeezed to phone width */
+  .numline text{font-size:38px}
+  .zoom text{font-size:40px}
+  .trap text,.trap .t-branch,.trap .t-centre{font-size:19px}
+  .dot{font-size:.85rem}
+  .foot-in{flex-wrap:wrap}
+  .foot-hint{order:3;width:100%;max-width:none}
+  .btn{flex:1;min-width:6.5rem}
+  .gitem{grid-template-columns:3.4rem 1fr;gap:0 1rem}
+  .gsym{font-size:2rem}
+  .readout dd{font-size:.94rem}
+  input[type="number"]{width:7rem}
+}
+</style>
+</head>
+<body>
+
+<header class="rail">
+  <div class="rail-in">
+    <ul class="dots" id="dots"></ul>
+    <button class="jump-btn" id="jumpBtn" aria-expanded="false" aria-controls="jumpPanel">Scenes</button>
+  </div>
+  <div class="jump-panel" id="jumpPanel" hidden>
+    <ul class="jump-list" id="jumpList"></ul>
+  </div>
+</header>
+
+<p class="vis-hidden" id="announcer" aria-live="polite"></p>
+
+<main class="stage" id="stage">
+
+<!-- ============ 1 ============ -->
+<section class="scene" id="scene-1" aria-labelledby="h-1" data-title="Every length is a ratio">
+  <p class="marker">&#945;</p>
+  <h1 id="h-1" tabindex="-1">Every length is a ratio</h1>
+
+  <div class="prose">
+    <p class="lede">Remember the sheet of paper that folded onto itself perfectly, its long side matching its short side twice over? That number was hiding something, and it took the Greeks a few centuries to notice.</p>
+
+    <p>Around 500 BCE, the followers of Pythagoras believed something beautiful about the world: that whole numbers explain everything. Not just counting, but music, astronomy, and above all <em>measurement</em>. Give them any two lengths and they were certain you could find a small unit that measures both exactly &mdash; so many of them in the first, so many in the second. Every length was a ratio of whole numbers.</p>
+
+    <p>That belief is still hiding in the word we use today. A <strong>rational</strong> number is not a sensible one. It is a <em>ratio</em> one: a number you can write as <span data-tex="\tfrac{a}{b}"></span> with <span data-tex="a"></span> and <span data-tex="b"></span> whole numbers and <span data-tex="b \neq 0"></span>.</p>
+
+    <p>And the fractions really do look like enough. Watch what happens to a plain number line as you allow bigger and bigger denominators.</p>
+  </div>
+
+  <figure>
+    <svg class="numline" id="numline" viewBox="0 0 1000 110" role="img" aria-labelledby="nl-title">
+      <title id="nl-title">A number line from 0 to 2 filling with fraction marks</title>
+      <g id="nl-ticks"></g>
+      <line class="axis" x1="40" y1="70" x2="960" y2="70"></line>
+      <g id="nl-anchors"></g>
+    </svg>
+    <div class="controls">
+      <div class="field">
+        <label for="denSlider">Allow denominators up to <span class="count-out" id="denOut">12</span></label>
+        <input type="range" id="denSlider" min="1" max="40" value="12" step="1"
+               aria-describedby="nl-count">
+      </div>
+      <p class="sub" id="nl-count" style="margin:0"><span class="count-out" id="tickCount">0</span> distinct fractions between 0 and 2</p>
+    </div>
+    <figcaption>Every mark is a fraction with a denominator no larger than the slider. Push it up and the gaps close so fast that the line looks solid. If you believed the Pythagoreans, there is nothing left to find: pick any point on this line and some fraction lands exactly on it.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>Hold on to that feeling of a full, complete line. In the next scene we go looking for one specific point on it &mdash; and the hunt does not end the way anyone expected.</p>
+    <p class="sub">New here? The paper-folding version of this story is <a href="https://natthaphat-math.github.io/Math-contents/M1-3/sqrt2-paper.html" target="_blank" rel="noopener">one fold away</a> (opens in a new tab).</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="scene" id="scene-2" aria-labelledby="h-2" data-title="The diagonal that won&rsquo;t be caught">
+  <p class="marker">&#946;</p>
+  <h2 id="h-2" tabindex="-1">The diagonal that won&rsquo;t be caught</h2>
+
+  <div class="prose">
+    <p>Here is the most ordinary shape in Greek geometry: a square with sides of length 1. Draw the diagonal. By the theorem that carries Pythagoras' own name, its length <span data-tex="d"></span> satisfies</p>
+  </div>
+
+  <p data-tex="d^2 = 1^2 + 1^2 = 2 \qquad\text{so}\qquad d = \sqrt{2}" data-display></p>
+
+  <figure class="square-fig">
+    <svg viewBox="0 0 260 230" role="img" aria-labelledby="sq-title">
+      <title id="sq-title">A unit square with its diagonal drawn</title>
+      <rect class="sq-side" x="40" y="40" width="150" height="150"></rect>
+      <line class="sq-diag" x1="40" y1="190" x2="190" y2="40"></line>
+      <text class="sq-label" x="115" y="212" text-anchor="middle">1</text>
+      <text class="sq-label" x="24" y="120" text-anchor="middle">1</text>
+      <text class="sq-q" x="92" y="104" text-anchor="middle">?</text>
+    </svg>
+  </figure>
+
+  <div class="prose">
+    <p>So the question is not abstract at all. This length is sitting right there on the page, drawn with a straightedge. The Pythagoreans were sure it had to be a ratio. <strong>Your job is to find it.</strong></p>
+    <p>Pick a numerator and a denominator, and see how close you land.</p>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="field">
+        <label for="numIn">Numerator a</label>
+        <input type="number" id="numIn" value="7" min="1" max="9999999" step="1" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="denIn">Denominator b</label>
+        <input type="number" id="denIn" value="5" min="1" max="9999999" step="1" inputmode="numeric">
+      </div>
+      <button class="btn btn-key" id="guessBtn">Test this fraction</button>
+    </div>
+
+    <p class="sub" style="margin:.2rem 0 0">Try one of these if you want a running start:</p>
+    <div class="chips" id="presetChips"></div>
+
+    <div id="guessResult" hidden>
+      <div class="digits" id="digitRows"></div>
+
+      <svg class="zoom" id="zoomView" viewBox="0 0 1000 110" role="img" aria-labelledby="zoom-title">
+        <title id="zoom-title">A magnified number line showing the gap between your fraction and the true diagonal</title>
+        <line class="gap-line" x1="40" y1="58" x2="960" y2="58"></line>
+        <g id="zoom-marks"></g>
+      </svg>
+      <p class="sub" id="zoomCaption" style="margin:.2rem 0 0"></p>
+
+      <dl class="readout" id="readout"></dl>
+      <p class="verdict" id="verdict"></p>
+    </div>
+
+    <div class="turn" id="turnBlock" hidden>
+      <p><strong>Convinced yet?</strong> You can keep hunting as long as you like &mdash; there are infinitely many fractions left to try, and some of them get spectacularly close. But close is not equal, and no amount of searching can tell you whether the exact one is just around the corner.</p>
+      <p>Only a proof can settle it. And the proof says the search is hopeless.</p>
+      <div class="row">
+        <button class="btn" id="keepGuessing">Keep guessing</button>
+        <button class="btn btn-key" id="toProof">Prove it&rsquo;s impossible</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="sub" id="scene2Hint">Test at least one fraction before moving on.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="scene" id="scene-3" aria-labelledby="h-3" data-title="Lowest terms, first">
+  <p class="marker">&#947;</p>
+  <h2 id="h-3" tabindex="-1">Lowest terms, first</h2>
+
+  <div class="prose">
+    <p>The proof coming next rests on one small, familiar idea, so it is worth a minute to make it solid.</p>
+    <p>A fraction is in <strong>lowest terms</strong> when its numerator and denominator share no common factor bigger than 1 &mdash; in symbols, <span data-tex="\gcd(a,b) = 1"></span>. Take a fraction that is not yet reduced and cancel the shared factors one at a time.</p>
+  </div>
+
+  <div class="panel">
+    <div class="chips" id="fracPresets"></div>
+
+    <div class="reduce-row">
+      <div class="frac-stack" id="fracView" aria-live="polite">
+        <span class="num" id="fracNum">8</span>
+        <span class="bar"></span>
+        <span class="den" id="fracDen">12</span>
+      </div>
+      <div class="factors">
+        <span class="flabel">a splits into</span>
+        <div class="frow" id="numFactors"></div>
+        <span class="flabel">b splits into</span>
+        <div class="frow" id="denFactors"></div>
+      </div>
+    </div>
+
+    <div class="chips" id="cancelBtns"></div>
+    <p class="done-note" id="reduceDone" hidden></p>
+  </div>
+
+  <div class="prose">
+    <p><strong>Why can this always be finished?</strong> Every time you cancel a shared factor, the numerator and the denominator both get strictly smaller, and they are positive whole numbers the whole way. A sequence of positive whole numbers cannot decrease forever, so the cancelling has to stop &mdash; and it only stops when nothing is left to cancel, which is exactly <span data-tex="\gcd(a,b)=1"></span>.</p>
+
+    <p>So this is a free assumption. <em>Any</em> fraction can be written in lowest terms, which means that if <span data-tex="\sqrt{2}"></span> is a fraction at all, it is a fraction in lowest terms.</p>
+
+    <p>Remember what &ldquo;lowest terms&rdquo; rules out, because it is the whole lever of the proof: once <span data-tex="\gcd(a,b)=1"></span>, the numbers <span data-tex="a"></span> and <span data-tex="b"></span> <strong>cannot both be even</strong>. Two even numbers always share the factor 2. Keep one eye on that sentence for the next three minutes.</p>
+  </div>
+</section>
+<!-- ============ 4 ============ -->
+<section class="scene" id="scene-4" aria-labelledby="h-4" data-title="The trap closes">
+  <p class="marker">&#948;</p>
+  <h2 id="h-4" tabindex="-1">The trap closes</h2>
+
+  <div class="prose">
+    <p>Here is the claim we are going to establish, with no gaps.</p>
+  </div>
+
+  <div class="panel">
+    <h3>The claim</h3>
+    <p style="margin-bottom:0">There are no whole numbers <span data-tex="a"></span> and <span data-tex="b"></span>, with <span data-tex="b \neq 0"></span>, such that <span data-tex="\sqrt{2} = \tfrac{a}{b}"></span>.</p>
+  </div>
+
+  <div class="prose">
+    <p>The strategy is <strong>proof by contradiction</strong>. We assume the opposite of what we want, follow the consequences with complete honesty, and arrive at something that cannot be true. If careful reasoning from an assumption produces an impossibility, the assumption itself was impossible.</p>
+  </div>
+
+  <ol class="steps" id="proofSteps">
+
+    <li class="step" id="pstep-1">
+      <h3>Assume it is a fraction</h3>
+      <p>Suppose, for contradiction, that <span data-tex="\sqrt{2}"></span> can be written as a fraction of whole numbers. By the previous scene we may take that fraction in lowest terms:</p>
+      <p data-tex="\sqrt{2} = \frac{a}{b}, \qquad a, b \in \mathbb{Z},\; b \neq 0, \qquad \gcd(a,b) = 1" data-display></p>
+      <p>That last condition is not an extra restriction we are sneaking in. It is free, because every fraction reduces. Write it down and guard it.</p>
+    </li>
+
+    <li class="step" id="pstep-2">
+      <h3>Square both sides</h3>
+      <p>Squaring is safe here: if two numbers are equal, their squares are equal.</p>
+      <p data-tex="2 = \frac{a^2}{b^2}" data-display></p>
+      <p>Multiply both sides by <span data-tex="b^2"></span> (allowed, since <span data-tex="b \neq 0"></span>):</p>
+      <p data-tex="a^2 = 2b^2" data-display></p>
+      <p>Now everything in sight is a whole number, which is where the Greeks were strongest.</p>
+    </li>
+
+    <li class="step" id="pstep-3">
+      <h3>So a is even</h3>
+      <p>The equation <span data-tex="a^2 = 2b^2"></span> says <span data-tex="a^2"></span> is 2 times a whole number, so <span data-tex="a^2"></span> is even. We want to conclude that <span data-tex="a"></span> itself is even &mdash; and that step needs an argument, not a shrug. Here it is.</p>
+
+      <div class="lemma">
+        <p class="lemma-head">Lemma: if a is odd, then a squared is odd</p>
+        <p>Suppose <span data-tex="a"></span> is odd. Then by definition <span data-tex="a = 2k+1"></span> for some whole number <span data-tex="k"></span>. Square it:</p>
+        <p data-tex="a^2 = (2k+1)^2 = 4k^2 + 4k + 1 = 2\underbrace{(2k^2 + 2k)}_{\text{a whole number}} + 1" data-display></p>
+        <p style="margin-bottom:0">That is 2 times a whole number, plus 1 &mdash; the definition of odd. So an odd number always has an odd square.</p>
+      </div>
+
+      <p>Read that lemma backwards, which is logically the same statement: if <span data-tex="a^2"></span> is <em>even</em>, then <span data-tex="a"></span> cannot be odd, so <span data-tex="a"></span> is even. We know <span data-tex="a^2"></span> is even. Therefore:</p>
+      <p data-tex="a \text{ is even.}" data-display></p>
+    </li>
+
+    <li class="step" id="pstep-4">
+      <h3>Substitute a = 2k</h3>
+      <p>Since <span data-tex="a"></span> is even, write <span data-tex="a = 2k"></span> for some whole number <span data-tex="k"></span>, and feed that back into <span data-tex="a^2 = 2b^2"></span>:</p>
+      <p data-tex="(2k)^2 = 2b^2" data-display></p>
+      <p data-tex="4k^2 = 2b^2" data-display></p>
+      <p>Divide both sides by 2:</p>
+      <p data-tex="b^2 = 2k^2" data-display></p>
+      <p>Look closely at that equation. It has exactly the same shape as <span data-tex="a^2 = 2b^2"></span> from step 2 &mdash; with <span data-tex="b"></span> now playing the role that <span data-tex="a"></span> played.</p>
+    </li>
+
+    <li class="step" id="pstep-5">
+      <h3>So b is even too</h3>
+      <p>The equation <span data-tex="b^2 = 2k^2"></span> says <span data-tex="b^2"></span> is 2 times a whole number, so <span data-tex="b^2"></span> is even. We now need the same conclusion for <span data-tex="b"></span> that we drew for <span data-tex="a"></span> &mdash; and it deserves the same argument written out, not a wave at symmetry.</p>
+
+      <div class="lemma">
+        <p class="lemma-head">The same lemma, applied to b</p>
+        <p>Suppose <span data-tex="b"></span> is odd. Then <span data-tex="b = 2m+1"></span> for some whole number <span data-tex="m"></span>, and</p>
+        <p data-tex="b^2 = (2m+1)^2 = 4m^2 + 4m + 1 = 2(2m^2 + 2m) + 1," data-display></p>
+        <p style="margin-bottom:0">which is odd. But we just showed <span data-tex="b^2"></span> is even, and no number is both even and odd. So <span data-tex="b"></span> is not odd.</p>
+      </div>
+
+      <p data-tex="b \text{ is even.}" data-display></p>
+    </li>
+
+    <li class="step crisis" id="pstep-6">
+      <h3>The contradiction, named exactly</h3>
+      <p>Step 3 proved <span data-tex="a"></span> is even. Step 5 proved <span data-tex="b"></span> is even. So <span data-tex="a = 2k"></span> and <span data-tex="b = 2m"></span>, and therefore <strong>2 is a common factor of <span data-tex="a"></span> and <span data-tex="b"></span></strong>, which means</p>
+      <p data-tex="\gcd(a,b) \geq 2." data-display></p>
+      <p>But in step 1 we assumed <span data-tex="\gcd(a,b) = 1"></span>. These two statements cannot both hold: <span data-tex="\gcd(a,b)"></span> cannot be equal to 1 and also be at least 2. That is the contradiction, and it is a flat one &mdash; not a surprise, not a difficulty, but an outright impossibility.</p>
+
+      <svg class="trap" id="trapSvg" viewBox="0 0 480 200" role="img" aria-labelledby="trap-title">
+        <title id="trap-title">Two branches, a is even and b is even, closing in on the assumption that the greatest common divisor of a and b is 1, and striking it out</title>
+        <text class="t-branch" x="72" y="32" text-anchor="middle">a = 2k</text>
+        <text class="t-branch" x="408" y="32" text-anchor="middle">b = 2m</text>
+        <path class="arc draw" id="arcL" d="M72,48 C72,110 100,124 140,124" pathLength="1"></path>
+        <path class="arc draw" id="arcR" d="M408,48 C408,110 380,124 340,124" pathLength="1"></path>
+        <rect class="assume-box" x="140" y="102" width="200" height="44"></rect>
+        <text class="t-centre" id="trapCentre" x="240" y="130" text-anchor="middle">gcd(a, b) = 1</text>
+        <line class="strike" id="trapStrike" x1="150" y1="124" x2="330" y2="124" pathLength="1"></line>
+        <text x="240" y="178" text-anchor="middle" font-size="14" fill="#a3b3b7">both branches force a shared factor of 2</text>
+      </svg>
+    </li>
+
+    <li class="step final" id="pstep-7">
+      <h3>Therefore no such fraction exists</h3>
+      <p>Every step from 2 to 6 was forced &mdash; ordinary algebra and one lemma about odd squares. Nothing was assumed along the way except in step 1. So the fault lies in step 1 itself.</p>
+      <p>The assumption that <span data-tex="\sqrt{2}"></span> can be written as <span data-tex="\tfrac{a}{b}"></span> in lowest terms is false. And since every fraction <em>can</em> be put in lowest terms, that rules out every fraction whatsoever:</p>
+      <p data-tex="\sqrt{2} \notin \mathbb{Q}" data-display></p>
+      <p>The diagonal of the square you drew a minute ago is not a ratio of whole numbers. Not a hard one to find. Not one waiting for a bigger denominator. <strong>There is none.</strong></p>
+    </li>
+  </ol>
+
+  <div class="controls" id="proofControls">
+    <button class="btn btn-key" id="stepBtn">Reveal step 1</button>
+    <button class="btn" id="allStepsBtn">Show all steps</button>
+  </div>
+
+  <div class="qed" id="qedBlock" hidden>
+    <p>This is one of the oldest surviving proofs in mathematics, and it is still taught unchanged. It needs no calculator, no decimals, and no measuring &mdash; nothing your search in scene 2 could ever have given you. Twenty-four centuries later, every step above is still airtight.</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="scene" id="scene-5" aria-labelledby="h-5" data-title="The man in the water">
+  <p class="marker">&#949;</p>
+  <h2 id="h-5" tabindex="-1">The man in the water</h2>
+
+  <div class="prose">
+    <p>The Pythagoreans were not a maths department. They were a secretive brotherhood with rules about food, silence, and loyalty, for whom &ldquo;all is number&rdquo; was closer to a religious commitment than a research programme. A proof that some perfectly ordinary length is not a ratio was not an interesting result. It was a crack in the foundation of the world.</p>
+
+    <p>The name attached to that crack is <strong>Hippasus of Metapontum</strong>, a Pythagorean of the fifth century BCE. According to the stories, he discovered incommensurability &mdash; or revealed it to outsiders &mdash; and did not survive the consequences. In one version the brotherhood drowned him at sea. In another he was cast out and drowned later, by the gods, for divulging what should have stayed hidden. In a third the secret he betrayed was not <span data-tex="\sqrt{2}"></span> at all, but the construction of the dodecahedron.</p>
+  </div>
+
+  <div class="aside-note">
+    <p class="aside-head">How much of this is true?</p>
+    <p>Very little of it can be verified, and historians actively dispute it. No contemporary source describes the drowning: the accounts we have were written by Iamblichus and others some 700 to 900 years after the fact, and they contradict each other on who Hippasus was, what he revealed, and how he died. Some historians read the story as a later moral fable about betraying a school's secrets rather than a record of events.</p>
+    <p>What is not disputed is the mathematics. Incommensurability was discovered in the Greek world sometime in the fifth century BCE, and the proof in the previous scene &mdash; or a close geometric relative of it &mdash; is genuinely ancient. Treat the drowning as legend. Treat the proof as fact.</p>
+  </div>
+
+  <svg class="waves" viewBox="0 0 900 60" aria-hidden="true" focusable="false">
+    <path d="M0,30 C75,8 150,52 225,30 S375,8 450,30 S600,52 675,30 S825,8 900,30"></path>
+    <path d="M0,46 C75,26 150,66 225,46 S375,26 450,46 S600,66 675,46 S825,26 900,46" opacity=".5"></path>
+  </svg>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="scene" id="scene-6" aria-labelledby="h-6" data-title="What actually broke">
+  <p class="marker">&#950;</p>
+  <h2 id="h-6" tabindex="-1">What actually broke</h2>
+
+  <div class="prose">
+    <p>Strip away the drowning and a real crisis remains. To see it, you have to notice what the Greeks did <em>not</em> have.</p>
+
+    <p>They had no number <span data-tex="1.41421\ldots"></span>. They had no decimals at all, and no notion of an irrational quantity as a number in its own right. What they had were whole numbers, and ratios of whole numbers, and geometric magnitudes &mdash; lengths, areas, volumes. Their entire theory of proportion rested on the assumption that any two magnitudes of the same kind are <strong>commensurable</strong>: that some common unit measures both a whole number of times.</p>
+
+    <p>The diagonal and the side of a square are not commensurable. No unit, however small, fits a whole number of times into both. And that did not just add an awkward exception &mdash; it invalidated the proofs. Any theorem about similar triangles or proportional areas that had been established by counting common units was now resting on a claim known to be false in general. A large part of established geometry was suddenly unproved.</p>
+
+    <p>The repair took roughly a century, and it came from <strong>Eudoxus of Cnidus</strong> in the fourth century BCE. His theory of proportion &mdash; preserved as Book V of Euclid's <em>Elements</em> &mdash; defines what it means for two ratios of magnitudes to be equal without ever counting a common unit. Instead it compares them against <em>all</em> whole-number multiples at once: the ratios are equal when every possible whole-number comparison falls the same way for both. That definition works perfectly well for incommensurable magnitudes, and it rescued the geometry.</p>
+
+    <p>It also settled the direction of Greek mathematics for centuries. If arithmetic could not be trusted to describe magnitude, then geometry would be the rigorous foundation, and quantity would be handled by construction rather than by calculation. The number line as a continuous line of numbers &mdash; the thing you were sliding along in scene 1 &mdash; would not be built properly until the nineteenth century.</p>
+
+    <p class="quiet">One footnote worth knowing: Eudoxus' definition of equal ratios is startlingly close to the definition of a real number that Dedekind gave in 1872. The repair job outlasted the empire that commissioned it.</p>
+  </div>
+</section>
+<!-- ============ 7 ============ -->
+<section class="scene" id="scene-7" aria-labelledby="h-7" data-title="Root 2 isn&rsquo;t alone">
+  <p class="marker">&#951;</p>
+  <h2 id="h-7" tabindex="-1"><span data-tex="\sqrt{2}"></span> isn&rsquo;t alone</h2>
+
+  <div class="prose">
+    <p>Once the first crack appears, it spreads. Theodorus of Cyrene proved the same kind of result for <span data-tex="\sqrt{3}, \sqrt{5}"></span> and the rest up to <span data-tex="\sqrt{17}"></span>, and today we know the irrationals are not the rare exceptions &mdash; they are almost everything. Between any two fractions on that dense-looking line from scene 1, there are infinitely many numbers that are not fractions at all.</p>
+    <p>Three you will meet again and again:</p>
+  </div>
+
+  <ul class="gallery">
+    <li class="gitem">
+      <span class="gsym">&pi;</span>
+      <p class="gval" data-tex="\pi = 3.14159265358979\ldots"></p>
+      <p class="gnote">Every circle you will ever measure. Divide any circumference by its own diameter and you get this number, which is why no circle has a circumference and a diameter that are both whole numbers.</p>
+    </li>
+    <li class="gitem">
+      <span class="gsym">e</span>
+      <p class="gval" data-tex="e = 2.71828182845904\ldots"></p>
+      <p class="gnote">Anything that grows or decays at a rate proportional to its own size: compound interest, cooling coffee, radioactive decay, populations. It falls out of the maths of continuous growth whether you invite it or not.</p>
+    </li>
+    <li class="gitem">
+      <span class="gsym">&phi;</span>
+      <p class="gval" data-tex="\varphi = \frac{1 + \sqrt{5}}{2} = 1.61803398874989\ldots"></p>
+      <p class="gnote">The ratio the Fibonacci numbers creep towards, and the angle sunflowers and pinecones use to pack seeds without leaving gaps. Its irrationality is exactly why the packing works.</p>
+    </li>
+  </ul>
+
+  <div class="prose">
+    <p style="margin-top:1.6rem">A distinction worth carrying with you: <span data-tex="\varphi"></span> is irrational but still <em>algebraic</em> &mdash; like <span data-tex="\sqrt{2}"></span>, it is a solution of a polynomial equation with whole-number coefficients (<span data-tex="x^2 = x + 1"></span>). Whereas <span data-tex="\pi"></span> and <span data-tex="e"></span> are <strong>transcendental</strong>: no such equation exists for them, at any degree. Proving that about <span data-tex="\pi"></span> took until 1882, and it finally settled the ancient problem of squaring the circle &mdash; in the negative.</p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="scene" id="scene-8" aria-labelledby="h-8" data-title="The decimal that never repeats">
+  <p class="marker">&#952;</p>
+  <h2 id="h-8" tabindex="-1">The decimal that never repeats</h2>
+
+  <div class="prose">
+    <p>There is a second way to tell fractions and irrationals apart, and it shows up in the digits themselves. Compute as far as you like and compare the three below.</p>
+  </div>
+
+  <div class="panel">
+    <div class="dgroup">
+      <h3>1/4 &mdash; a fraction that stops</h3>
+      <p class="sub">The long division runs out of remainder. After two digits there is nothing left to divide, so the expansion terminates.</p>
+      <div class="digit-block" id="quarterOut"></div>
+    </div>
+
+    <div class="dgroup">
+      <h3>1/3 &mdash; a fraction that repeats</h3>
+      <p class="sub">The remainder returns to a value it has already taken, so the digits are locked into a cycle forever. The repeating block is marked.</p>
+      <div class="digit-block" id="thirdOut"></div>
+    </div>
+
+    <div class="dgroup">
+      <h3>&radic;2 &mdash; neither</h3>
+      <p class="sub">These are exact digits, computed with integer arithmetic, not floating point. Look for a repeating block. There isn&rsquo;t one, and there never will be.</p>
+      <div class="digit-block" id="rootOut"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-key" id="moreDigits">Compute 50 more digits</button>
+      <p class="sub" style="margin:0"><span class="count-out" id="digitCount">50</span> decimal places</p>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p>Every fraction does one of those first two things. Dividing <span data-tex="a"></span> by <span data-tex="b"></span> by hand, the only possible remainders are <span data-tex="0, 1, 2, \ldots, b-1"></span> &mdash; just <span data-tex="b"></span> options. So within <span data-tex="b"></span> steps either you hit remainder 0 and the decimal stops, or a remainder repeats and the digits cycle from there on. There is no third outcome.</p>
+
+    <p>Now run that backwards, and notice that scene 4 already decided this. A repeating decimal can always be converted back into a fraction &mdash; that is the standard trick where you multiply by a power of 10 and subtract. So if <span data-tex="\sqrt{2}"></span> ever repeated, even after a trillion digits, it would <em>be</em> a fraction. We proved it is not one.</p>
+
+    <p>So the digits above cannot terminate and cannot ever fall into a cycle. Not because no one has found the pattern yet &mdash; because the proof forbids the pattern from existing. Keep clicking as long as you like.</p>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="scene" id="scene-9" aria-labelledby="h-9" data-title="Back to the paper">
+  <p class="marker">&#953;</p>
+  <h2 id="h-9" tabindex="-1">Back to the paper</h2>
+
+  <div class="prose">
+    <p class="lede">A sheet of A4 paper, folded in half, gives you another sheet of exactly the same proportions. That only works for one ratio of long side to short side, and you now know something uncomfortable about it: it is <span data-tex="\sqrt{2}"></span>, so no A-series sheet has a length and a width that are both whole numbers of anything.</p>
+
+    <p>That is the shape of the discovery. It did not come from an exotic construction or a difficult equation. It came from a square with sides of 1, drawn by someone who expected an ordinary answer, and it took a worldview down with it.</p>
+
+    <p>What you did in scene 2 was what the Pythagoreans did for years: search, get closer, and never arrive. What scene 4 did was different in kind. Fourteen lines of algebra settled, permanently, a question that no amount of searching could ever have settled &mdash; and that gap between <em>we haven't found one</em> and <em>there isn't one</em> is the reason mathematics bothers with proof at all.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Where to go next</h3>
+    <p>If you haven&rsquo;t met the paper-folding version of <span data-tex="\sqrt{2}"></span> yet, it is the same number from the other direction &mdash; you can hold this one in your hands.</p>
+    <p style="margin-bottom:0">
+      <a class="btn" href="https://natthaphat-math.github.io/Math-contents/M1-3/sqrt2-paper.html" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">Open the paper-folding activity</a>
+    </p>
+  </div>
+
+  <div class="prose">
+    <p class="sub" style="margin-top:1.6rem">One last thing to try on your own, with the proof from scene 4 in front of you: run the identical argument on <span data-tex="\sqrt{3}"></span>. Nearly every line carries over. Then try to run it on <span data-tex="\sqrt{4}"></span> and find the exact step where it fails &mdash; because it must fail, since <span data-tex="\sqrt{4} = 2"></span>. Finding that step is the best test of whether the proof really landed.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <button class="btn" id="backBtn">Back</button>
+    <button class="btn btn-key" id="nextBtn">Next</button>
+    <span class="spacer"></span>
+    <span class="foot-hint" id="footHint">Arrow keys also work</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script>
+(function(){
+"use strict";
+
+var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ------------------------------------------------------------------ *
+ * math typesetting
+ * ------------------------------------------------------------------ */
+
+function renderMath(root){
+  var nodes = (root || document).querySelectorAll("[data-tex]");
+  for(var i=0;i<nodes.length;i++){
+    var el = nodes[i];
+    if(el.dataset.rendered === "1") continue;
+    var src = el.getAttribute("data-tex");
+    el.dataset.rendered = "1";
+    if(window.katex){
+      try{
+        window.katex.render(src, el, {
+          throwOnError:false,
+          displayMode: el.hasAttribute("data-display")
+        });
+        continue;
+      }catch(err){ /* fall through to plain text */ }
+    }
+    el.className = (el.className ? el.className + " " : "") + "tex-fallback";
+    el.textContent = plainMath(src);
+  }
+}
+
+/* Readable plain text for the case where the KaTeX CDN cannot be reached.
+   Runs repeatedly so nested groups resolve from the inside out. */
+function plainMath(src){
+
+  function wrap(part){
+    /* parenthesise anything that is not a single atom, so
+       \frac{1 + \sqrt5}{2} does not degrade into "1 + √5/2" */
+    return /^[A-Za-z0-9²³.]+$/.test(part.trim()) ? part.trim() : "(" + part.trim() + ")";
+  }
+
+  var rules = [
+    [/\\underbrace\{([^{}]*)\}_\{(?:[^{}]|\{[^{}]*\})*\}/g, "$1"],
+    [/\\t?frac\{([^{}]*)\}\{([^{}]*)\}/g,
+      function(_, n, d){ return wrap(n) + "/" + wrap(d); }],
+    [/\\sqrt\{([^{}]*)\}/g, "√$1"],
+    [/\\mathbb\{Q\}/g, "ℚ"],
+    [/\\mathbb\{Z\}/g, "ℤ"],
+    [/\\text\{([^{}]*)\}/g, "$1"],
+    [/\\qquad|\\quad/g, "   "],
+    [/\\notin/g, "∉"],
+    [/\\neq/g, "≠"],
+    [/\\geq/g, "≥"],
+    [/\\ldots/g, "…"],
+    [/\\varphi/g, "φ"],
+    [/\\pi/g, "π"],
+    [/\\in\b/g, "in"],
+    [/\\gcd/g, "gcd"],
+    [/\^2/g, "²"],
+    [/\\[,;!]/g, " "]
+  ];
+
+  var out = src, pass, prev;
+  for(pass = 0; pass < 5; pass++){
+    prev = out;
+    for(var i = 0; i < rules.length; i++) out = out.replace(rules[i][0], rules[i][1]);
+    if(out === prev) break;
+  }
+  return out.replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
+}
+
+/* ------------------------------------------------------------------ *
+ * small number helpers
+ * ------------------------------------------------------------------ */
+
+var SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴",
+           "5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
+
+function sup(n){
+  return String(n).split("").map(function(c){ return SUP[c] || c; }).join("");
+}
+
+function sci(x, sigfigs){
+  if(!isFinite(x)) return "—";
+  if(x === 0) return "0";
+  var e = Math.floor(Math.log10(Math.abs(x)));
+  var m = x / Math.pow(10, e);
+  if(Math.abs(m) >= 10){ m /= 10; e += 1; }
+  var mant = m.toFixed(sigfigs == null ? 2 : sigfigs);
+  if(e === 0) return mant;
+  return mant + "×" + "10" + sup(e);
+}
+
+function gcd(a, b){
+  a = Math.abs(a); b = Math.abs(b);
+  while(b){ var t = a % b; a = b; b = t; }
+  return a;
+}
+
+function primeFactors(n){
+  var out = [];
+  for(var p = 2; p * p <= n; p++){
+    while(n % p === 0){ out.push(p); n /= p; }
+  }
+  if(n > 1) out.push(n);
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * scene navigation
+ * ------------------------------------------------------------------ */
+
+var scenes  = Array.prototype.slice.call(document.querySelectorAll(".scene"));
+var dotsBox = document.getElementById("dots");
+var jumpList= document.getElementById("jumpList");
+var jumpBtn = document.getElementById("jumpBtn");
+var jumpPanel = document.getElementById("jumpPanel");
+var backBtn = document.getElementById("backBtn");
+var nextBtn = document.getElementById("nextBtn");
+var footHint= document.getElementById("footHint");
+var announcer = document.getElementById("announcer");
+var GREEK = ["α","β","γ","δ","ε","ζ","η","θ","ι"];
+
+var current = 0;
+var visited = {0:true};
+var dotEls = [], jumpEls = [];
+var entered = {};
+
+scenes.forEach(function(sc, i){
+  var title = sc.getAttribute("data-title");
+
+  var li = document.createElement("li");
+  var b = document.createElement("button");
+  b.className = "dot";
+  b.type = "button";
+  b.innerHTML = GREEK[i];
+  b.setAttribute("aria-label", "Scene " + (i+1) + " of " + scenes.length + ": " + title);
+  b.addEventListener("click", function(){ goTo(i); });
+  li.appendChild(b);
+  dotsBox.appendChild(li);
+  dotEls.push(b);
+
+  var jli = document.createElement("li");
+  var jb = document.createElement("button");
+  jb.type = "button";
+  jb.innerHTML = '<span class="gk">' + GREEK[i] + '</span><span>' + title + '</span>';
+  jb.addEventListener("click", function(){ goTo(i); closeJump(); });
+  jli.appendChild(jb);
+  jumpList.appendChild(jli);
+  jumpEls.push(jb);
+
+  sc.setAttribute("aria-hidden", i === 0 ? "false" : "true");
+});
+
+/* scene 2 must be interacted with before Next will advance */
+function canLeave(i){
+  if(i === 1) return guessCount > 0;
+  return true;
+}
+
+function syncChrome(){
+  dotEls.forEach(function(d, i){
+    if(i === current) d.setAttribute("aria-current", "step");
+    else d.removeAttribute("aria-current");
+    d.classList.toggle("seen", !!visited[i] && i !== current);
+  });
+  jumpEls.forEach(function(j, i){
+    if(i === current) j.setAttribute("aria-current", "step");
+    else j.removeAttribute("aria-current");
+  });
+  backBtn.disabled = current === 0;
+  var blocked = !canLeave(current);
+  nextBtn.disabled = current === scenes.length - 1 || blocked;
+  nextBtn.textContent = current === scenes.length - 1 ? "The end" : "Next";
+  if(blocked){
+    footHint.textContent = "Test a fraction above to continue";
+  }else if(current === scenes.length - 1){
+    footHint.textContent = "Jump back to any scene from the menu above";
+  }else{
+    footHint.textContent = "Arrow keys also work";
+  }
+}
+
+function goTo(i){
+  if(i === current || i < 0 || i >= scenes.length) return;
+  var from = scenes[current], to = scenes[i];
+  var dur = REDUCE ? 0 : 300;
+
+  from.classList.remove("is-in");
+  window.setTimeout(function(){
+    from.classList.remove("is-active");
+    from.setAttribute("aria-hidden", "true");
+    to.classList.add("is-active");
+    to.setAttribute("aria-hidden", "false");
+    void to.offsetWidth;
+    to.classList.add("is-in");
+
+    current = i;
+    visited[i] = true;
+    syncChrome();
+    window.scrollTo(0, 0);
+
+    var head = to.querySelector("h1, h2");
+    if(head) head.focus({ preventScroll: true });
+    announcer.textContent = "Scene " + (i+1) + " of " + scenes.length + ": " + to.getAttribute("data-title");
+
+    if(!entered[i]){ entered[i] = true; onEnter(i); }
+  }, dur);
+}
+
+function onEnter(i){
+  if(i === 0) startNumberLine();
+  if(i === 7) renderDigits();
+}
+
+nextBtn.addEventListener("click", function(){ goTo(current + 1); });
+backBtn.addEventListener("click", function(){ goTo(current - 1); });
+
+function closeJump(){
+  jumpPanel.hidden = true;
+  jumpBtn.setAttribute("aria-expanded", "false");
+}
+jumpBtn.addEventListener("click", function(){
+  var open = jumpPanel.hidden;
+  jumpPanel.hidden = !open;
+  jumpBtn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape" && !jumpPanel.hidden){ closeJump(); jumpBtn.focus(); return; }
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  var tag = (e.target && e.target.tagName || "").toLowerCase();
+  if(tag === "input" || tag === "textarea" || tag === "select") return;
+  if(e.key === "ArrowRight"){
+    if(!nextBtn.disabled){ e.preventDefault(); goTo(current + 1); }
+  }else if(e.key === "ArrowLeft"){
+    if(!backBtn.disabled){ e.preventDefault(); goTo(current - 1); }
+  }else if(e.key === "Enter"){
+    if(tag === "button" || tag === "a") return;
+    if(!nextBtn.disabled){ e.preventDefault(); goTo(current + 1); }
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * scene 1 - the dense number line
+ * ------------------------------------------------------------------ */
+
+var denSlider = document.getElementById("denSlider");
+var denOut    = document.getElementById("denOut");
+var tickCount = document.getElementById("tickCount");
+var nlTicks   = document.getElementById("nl-ticks");
+var nlAnchors = document.getElementById("nl-anchors");
+
+function xFor(v){ return 40 + (v / 2) * 920; }
+
+(function drawAnchors(){
+  var marks = [[0,"0"],[0.5,"½"],[1,"1"],[1.5,"1½"],[2,"2"]];
+  var s = "";
+  marks.forEach(function(m){
+    var x = xFor(m[0]);
+    s += '<line class="anchor" x1="' + x + '" y1="70" x2="' + x + '" y2="80"></line>';
+    s += '<text class="anchor-label" x="' + x + '" y="99" text-anchor="middle">' + m[1] + '</text>';
+  });
+  nlAnchors.innerHTML = s;
+})();
+
+function drawTicks(maxDen){
+  var s = "", count = 0;
+  for(var q = 1; q <= maxDen; q++){
+    var h = 34 * Math.pow(q, -0.35);
+    var op = Math.min(1, 0.9 * Math.pow(q, -0.3));
+    for(var p = 0; p <= 2 * q; p++){
+      if(gcd(p, q) !== 1) continue;
+      count++;
+      var x = xFor(p / q);
+      s += '<line class="tick" x1="' + x.toFixed(2) + '" y1="70" x2="' + x.toFixed(2) +
+           '" y2="' + (70 - h).toFixed(1) + '" opacity="' + op.toFixed(3) + '"></line>';
+    }
+  }
+  nlTicks.innerHTML = s;
+  tickCount.textContent = count;
+  denOut.textContent = maxDen;
+}
+
+denSlider.addEventListener("input", function(){
+  drawTicks(parseInt(denSlider.value, 10));
+});
+
+function startNumberLine(){
+  if(REDUCE){ drawTicks(12); return; }
+  var start = performance.now(), from = 1, to = 12, ms = 1500;
+  drawTicks(from);
+  function frame(now){
+    var t = Math.min(1, (now - start) / ms);
+    var eased = 1 - Math.pow(1 - t, 3);
+    drawTicks(Math.max(1, Math.round(from + (to - from) * eased)));
+    if(t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------------------------ *
+ * scene 2 - hunting for the fraction
+ * ------------------------------------------------------------------ */
+
+var SQRT2 = Math.SQRT2;
+var SQRT2_DEC = "414213562373";           /* 12 exact decimal places */
+var MAXPART = 9999999;
+
+var numIn      = document.getElementById("numIn");
+var denIn      = document.getElementById("denIn");
+var guessBtn   = document.getElementById("guessBtn");
+var guessResult= document.getElementById("guessResult");
+var digitRows  = document.getElementById("digitRows");
+var zoomMarks  = document.getElementById("zoom-marks");
+var readout    = document.getElementById("readout");
+var verdictEl  = document.getElementById("verdict");
+var turnBlock  = document.getElementById("turnBlock");
+var scene2Hint = document.getElementById("scene2Hint");
+
+var guessCount = 0;
+var best = null;
+
+var PRESETS = [[3,2],[7,5],[17,12],[99,70],[577,408],[665857,470832]];
+(function buildPresets(){
+  var box = document.getElementById("presetChips");
+  PRESETS.forEach(function(pr){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-sm";
+    b.textContent = pr[0] + "/" + pr[1];
+    b.addEventListener("click", function(){
+      numIn.value = pr[0];
+      denIn.value = pr[1];
+      testGuess();
+    });
+    box.appendChild(b);
+  });
+})();
+
+function matchedDecimals(decStr){
+  var k = 0;
+  while(k < SQRT2_DEC.length && decStr.charAt(k) === SQRT2_DEC.charAt(k)) k++;
+  return k;
+}
+
+function digitRow(tag, decStr, k, isTruth){
+  var hit  = decStr.slice(0, k);
+  var rest = decStr.slice(k);
+  /* only the guess gets a red digit — root 2 is never "wrong" */
+  var tail = isTruth
+    ? '<span class="rest">' + rest + '</span>'
+    : '<span class="miss">' + rest.slice(0, 1) + '</span>' +
+      '<span class="rest">' + rest.slice(1) + '</span>';
+  return '<div class="row"><span class="tag">' + tag + '</span><span>1.' +
+         '<span class="hit">' + hit + '</span>' + tail + '</span></div>';
+}
+
+function drawZoom(signedErr, a, b, err){
+  var half = Math.max(Math.abs(signedErr) * 2.5, 1e-13);
+  var xg   = 500 + (signedErr / half) * 380;
+  var mid  = (500 + xg) / 2;
+  var s = "";
+
+  /* faint graduations, so this reads as a magnified ruler rather than a blank line */
+  for(var t = 40; t <= 960; t += 46){
+    s += '<line class="grad" x1="' + t + '" y1="52" x2="' + t + '" y2="64"></line>';
+  }
+
+  /* the gap itself, drawn on the baseline between the two marks */
+  s += '<line class="gap" x1="500" y1="58" x2="' + xg.toFixed(1) + '" y2="58"></line>';
+
+  s += '<line class="true" x1="500" y1="34" x2="500" y2="82"></line>';
+  s += '<text class="t-true" x="500" y="24" text-anchor="middle">√2</text>';
+
+  s += '<line class="guess" x1="' + xg.toFixed(1) + '" y1="34" x2="' + xg.toFixed(1) + '" y2="82"></line>';
+  s += '<text class="t-guess" x="' + xg.toFixed(1) + '" y="102" text-anchor="middle">' +
+       a + '/' + b + '</text>';
+
+  s += '<text class="t-gap" x="' + mid.toFixed(1) + '" y="24" text-anchor="middle">gap ' +
+       sci(err, 2) + '</text>';
+  zoomMarks.innerHTML = s;
+
+  document.getElementById("zoomCaption").textContent =
+    "The number line, magnified about " + sci(1 / half, 1) +
+    " times compared with scene 1. However far you zoom in, the two marks never land on top of each other.";
+}
+
+function verdictFor(k){
+  if(k <= 1) return "A visible gap. Keep going — the good approximations are out there.";
+  if(k <= 3) return "Closer. Zoom in above and the gap is still perfectly plain.";
+  if(k <= 6) return "Very close. You would need a fine ruler to see this difference on paper.";
+  if(k <= 9) return "Remarkable. You are inside a billionth of the true diagonal.";
+  return "Astonishing — and it changes nothing.";
+}
+
+function testGuess(){
+  var a = parseInt(numIn.value, 10);
+  var b = parseInt(denIn.value, 10);
+
+  if(!isFinite(a) || !isFinite(b) || a < 1 || b < 1 || a > MAXPART || b > MAXPART){
+    guessResult.hidden = false;
+    digitRows.innerHTML = "";
+    zoomMarks.innerHTML = "";
+    readout.innerHTML = "";
+    verdictEl.innerHTML = "Enter two whole numbers between 1 and " +
+      MAXPART.toLocaleString() + " for a and b.";
+    return;
+  }
+
+  var val = a / b;
+  /* exact rearrangement of (a/b - sqrt2); a*a and 2*b*b stay exact in doubles here,
+     so this never collapses to a false zero the way a plain subtraction can */
+  var signedErr = (a * a - 2 * b * b) / (b * b * (val + SQRT2));
+  var err = Math.abs(signedErr);
+
+  var decStr = val.toFixed(12).split(".")[1] || "";
+  if(val < 1 || val >= 2) decStr = "";                 /* wildly off: no digit match */
+  var k = decStr ? matchedDecimals(decStr) : 0;
+
+  guessResult.hidden = false;
+
+  if(decStr){
+    digitRows.innerHTML = digitRow("your a/b", decStr, k, false) +
+                          digitRow("√2", SQRT2_DEC, k, true);
+  }else{
+    digitRows.innerHTML = '<div class="row"><span class="tag">your a/b</span><span>' +
+      val.toFixed(6) + '</span></div>' +
+      '<div class="row"><span class="tag">√2</span><span>1.' + SQRT2_DEC + '</span></div>';
+  }
+
+  drawZoom(signedErr, a, b, err);
+
+  if(!best || err < best.err) best = { a:a, b:b, err:err, k:k };
+
+  readout.innerHTML =
+    '<div><dt>Your fraction</dt><dd>' + a + "/" + b + '</dd></div>' +
+    '<div><dt>As a decimal</dt><dd>' + val.toFixed(12) + '</dd></div>' +
+    '<div><dt>Off by</dt><dd class="accent">' + sci(err, 3) + '</dd></div>' +
+    '<div><dt>Decimal places matched</dt><dd>' + k + (k >= 12 ? " (all shown)" : "") + '</dd></div>' +
+    '<div><dt>Closest you have found</dt><dd>' + best.a + "/" + best.b +
+      ' <span class="quiet">off by ' + sci(best.err, 2) + '</span></dd></div>' +
+    '<div><dt>Fractions tested</dt><dd>' + (guessCount + 1) + '</dd></div>';
+
+  verdictEl.innerHTML = verdictFor(k) + " <b>Still not exact.</b>";
+
+  guessCount++;
+  if(guessCount === 1){
+    turnBlock.hidden = false;
+    scene2Hint.hidden = true;
+  }
+  syncChrome();
+}
+
+guessBtn.addEventListener("click", testGuess);
+[numIn, denIn].forEach(function(el){
+  el.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ e.preventDefault(); testGuess(); }
+  });
+});
+
+document.getElementById("keepGuessing").addEventListener("click", function(){
+  numIn.focus();
+  numIn.select();
+});
+document.getElementById("toProof").addEventListener("click", function(){ goTo(2); });
+
+/* ------------------------------------------------------------------ *
+ * scene 3 - reducing to lowest terms
+ * ------------------------------------------------------------------ */
+
+var fracNum   = document.getElementById("fracNum");
+var fracDen   = document.getElementById("fracDen");
+var numFactors= document.getElementById("numFactors");
+var denFactors= document.getElementById("denFactors");
+var cancelBtns= document.getElementById("cancelBtns");
+var reduceDone= document.getElementById("reduceDone");
+
+var rn = 8, rd = 12;
+
+/* how many copies of each prime the two numbers actually have in common:
+   8/12 shares 2x2, not all three of the 2s in 8 */
+function sharedBudget(){
+  var budget = {};
+  primeFactors(gcd(rn, rd)).forEach(function(p){
+    budget[p] = (budget[p] || 0) + 1;
+  });
+  return budget;
+}
+
+function chipRow(list, killPrime){
+  var budget = sharedBudget();
+  var killed = false;
+  return list.map(function(p){
+    var cls = "fchip";
+    if(killPrime && p === killPrime && !killed){
+      cls += " gone"; killed = true;
+      if(budget[p] > 0) budget[p]--;
+    }else if(budget[p] > 0){
+      cls += " shared"; budget[p]--;
+    }
+    return '<span class="' + cls + '">' + p + '</span>';
+  }).join('<span class="quiet">·</span>');
+}
+
+function sharedPrimes(){
+  var g = gcd(rn, rd);
+  if(g === 1) return [];
+  var uniq = [];
+  primeFactors(g).forEach(function(p){ if(uniq.indexOf(p) === -1) uniq.push(p); });
+  return uniq;
+}
+
+function renderReduce(killPrime){
+  fracNum.textContent = rn;
+  fracDen.textContent = rd;
+  numFactors.innerHTML = rn === 1 ? '<span class="fchip">1</span>' : chipRow(primeFactors(rn), killPrime);
+  denFactors.innerHTML = rd === 1 ? '<span class="fchip">1</span>' : chipRow(primeFactors(rd), killPrime);
+
+  var shared = sharedPrimes();
+  cancelBtns.innerHTML = "";
+  if(shared.length === 0){
+    reduceDone.hidden = false;
+    reduceDone.textContent = "gcd(" + rn + ", " + rd + ") = 1 — this is lowest terms. Nothing left to cancel.";
+  }else{
+    reduceDone.hidden = true;
+    shared.forEach(function(p){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn btn-sm";
+      b.textContent = "Divide both by " + p;
+      b.addEventListener("click", function(){ cancel(p); });
+      cancelBtns.appendChild(b);
+    });
+  }
+}
+
+function cancel(p){
+  renderReduce(p);
+  var apply = function(){ rn = rn / p; rd = rd / p; renderReduce(null); };
+  if(REDUCE) apply(); else window.setTimeout(apply, 400);
+}
+
+(function buildFracPresets(){
+  var box = document.getElementById("fracPresets");
+  [[8,12],[18,24],[45,60],[84,210]].forEach(function(pr){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-sm";
+    b.textContent = "Start from " + pr[0] + "/" + pr[1];
+    b.addEventListener("click", function(){
+      rn = pr[0]; rd = pr[1]; renderReduce(null);
+    });
+    box.appendChild(b);
+  });
+})();
+
+renderReduce(null);
+
+/* ------------------------------------------------------------------ *
+ * scene 4 - stepping through the proof
+ * ------------------------------------------------------------------ */
+
+var stepEls  = Array.prototype.slice.call(document.querySelectorAll(".step"));
+var stepBtn  = document.getElementById("stepBtn");
+var allBtn   = document.getElementById("allStepsBtn");
+var qedBlock = document.getElementById("qedBlock");
+var shownSteps = 0;
+
+function springTrap(){
+  var l = document.getElementById("arcL");
+  var r = document.getElementById("arcR");
+  var strike = document.getElementById("trapStrike");
+  var centre = document.getElementById("trapCentre");
+  l.classList.add("closed");
+  r.classList.add("closed");
+  strike.classList.add("closed");
+  var mark = function(){
+    centre.classList.add("broken");
+    document.getElementById("trapSvg").classList.add("sprung");
+  };
+  if(REDUCE) mark(); else window.setTimeout(mark, 950);
+}
+
+function revealStep(){
+  if(shownSteps >= stepEls.length) return;
+  var el = stepEls[shownSteps];
+  el.classList.add("revealed");
+  void el.offsetWidth;              /* flush layout so the fade actually runs */
+  el.classList.add("shown");
+  shownSteps++;
+  if(el.id === "pstep-6") springTrap();
+  if(shownSteps === stepEls.length){
+    qedBlock.hidden = false;
+    document.getElementById("proofControls").hidden = true;
+  }else{
+    stepBtn.textContent = shownSteps === stepEls.length - 1
+      ? "Reveal the conclusion"
+      : "Reveal step " + (shownSteps + 1);
+  }
+  return el;
+}
+
+stepBtn.addEventListener("click", function(){
+  var el = revealStep();
+  if(el && !REDUCE){
+    window.setTimeout(function(){
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 60);
+  }
+});
+
+allBtn.addEventListener("click", function(){
+  while(shownSteps < stepEls.length) revealStep();
+});
+
+/* ------------------------------------------------------------------ *
+ * scene 8 - exact decimal expansions
+ * ------------------------------------------------------------------ */
+
+var quarterOut = document.getElementById("quarterOut");
+var thirdOut   = document.getElementById("thirdOut");
+var rootOut    = document.getElementById("rootOut");
+var moreBtn    = document.getElementById("moreDigits");
+var digitCount = document.getElementById("digitCount");
+var DIGIT_CAP  = 1000;
+var nDigits    = 50;
+
+/* Digit-by-digit square-root extraction on arrays of decimal digits.
+   Deliberately avoids BigInt: these are exact digits on any engine, and a
+   missing-BigInt engine would be a parse error that kills the whole page. */
+
+function bnTrim(a){
+  var i = a.length;
+  while(i > 1 && a[i-1] === 0) i--;
+  return a.slice(0, i);
+}
+function bnMulSmall(a, m){
+  var out = [], carry = 0, i;
+  for(i = 0; i < a.length; i++){
+    var v = a[i] * m + carry;
+    out.push(v % 10);
+    carry = Math.floor(v / 10);
+  }
+  while(carry > 0){ out.push(carry % 10); carry = Math.floor(carry / 10); }
+  return bnTrim(out);
+}
+function bnAddSmall(a, m){
+  var out = a.slice(), carry = m, i = 0;
+  while(carry > 0){
+    if(i >= out.length) out.push(0);
+    var v = out[i] + carry;
+    out[i] = v % 10;
+    carry = Math.floor(v / 10);
+    i++;
+  }
+  return bnTrim(out);
+}
+function bnCmp(a, b){
+  a = bnTrim(a); b = bnTrim(b);
+  if(a.length !== b.length) return a.length > b.length ? 1 : -1;
+  for(var i = a.length - 1; i >= 0; i--){
+    if(a[i] !== b[i]) return a[i] > b[i] ? 1 : -1;
+  }
+  return 0;
+}
+function bnSub(a, b){
+  var out = [], borrow = 0;
+  for(var i = 0; i < a.length; i++){
+    var v = a[i] - borrow - (b[i] || 0);
+    if(v < 0){ v += 10; borrow = 1; } else { borrow = 0; }
+    out.push(v);
+  }
+  return bnTrim(out);
+}
+function bnShift2(a){                     /* multiply by 100 */
+  if(a.length === 1 && a[0] === 0) return [0];
+  return [0, 0].concat(a);
+}
+
+var rootCache = "";
+function sqrt2Digits(places){
+  if(rootCache.length >= places) return rootCache.slice(0, places);
+  var root = [1];                         /* digits of the root so far, 1 */
+  var rem  = [1];                         /* 2 - 1*1 */
+  var out  = "";
+  for(var n = 0; n < places; n++){
+    rem = bnShift2(rem);                  /* bring down the next "00" */
+    var base = bnMulSmall(root, 20);
+    var d = 0, taken = null;
+    for(var c = 9; c >= 1; c--){
+      var cand = bnMulSmall(bnAddSmall(base, c), c);
+      if(bnCmp(cand, rem) <= 0){ d = c; taken = cand; break; }
+    }
+    if(taken) rem = bnSub(rem, taken);
+    root = bnAddSmall(bnMulSmall(root, 10), d);
+    out += d;
+  }
+  rootCache = out;
+  return out;
+}
+
+/* long division: returns { intPart, digits, cycleStart } — cycleStart is -1 when it terminates */
+function longDivide(num, den, limit){
+  var intPart = Math.floor(num / den);
+  var rem = num % den;
+  var digits = "", seen = {}, cycleStart = -1;
+  while(rem !== 0 && digits.length < limit){
+    if(Object.prototype.hasOwnProperty.call(seen, rem)){
+      cycleStart = seen[rem];
+      break;
+    }
+    seen[rem] = digits.length;
+    rem *= 10;
+    digits += String(Math.floor(rem / den));
+    rem = rem % den;
+  }
+  return { intPart: intPart, digits: digits, cycleStart: cycleStart };
+}
+
+function renderDigits(){
+  digitCount.textContent = nDigits;
+
+  var q = longDivide(1, 4, nDigits);
+  quarterOut.innerHTML = '<span class="head">0.</span>' + q.digits +
+    '<span class="note">The remainder hit 0 after ' + q.digits.length +
+    ' digits, so every digit from here on is a plain zero. The expansion is finished.</span>';
+
+  var t = longDivide(1, 3, nDigits);
+  var block = t.digits.slice(t.cycleStart);
+  var reps = "";
+  while(reps.length < nDigits) reps += block;
+  reps = reps.slice(0, nDigits);
+  thirdOut.innerHTML = '<span class="head">0.</span><span class="cycle">' + reps +
+    '</span><span class="note">The remainder came back to 1 after ' + block.length +
+    ' digit' + (block.length === 1 ? "" : "s") + ', so the block “' + block +
+    '” is locked in and repeats forever.</span>';
+
+  rootOut.innerHTML = '<span class="head">1.</span>' + sqrt2Digits(nDigits) +
+    '<span class="note">' + nDigits + ' exact decimal places, and no block has begun ' +
+    'to repeat. None ever will — scene 4 is the reason why.</span>';
+
+  moreBtn.disabled = nDigits >= DIGIT_CAP;
+  if(moreBtn.disabled) moreBtn.textContent = "That is " + DIGIT_CAP + " digits — still no pattern";
+}
+
+moreBtn.addEventListener("click", function(){
+  nDigits = Math.min(DIGIT_CAP, nDigits + 50);
+  renderDigits();
+});
+
+/* ------------------------------------------------------------------ *
+ * boot
+ * ------------------------------------------------------------------ */
+
+function boot(){
+  renderMath(document);
+  scenes[0].classList.add("is-active");
+  void scenes[0].offsetWidth;
+  scenes[0].classList.add("is-in");
+  syncChrome();
+  entered[0] = true;
+  startNumberLine();
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", boot);
+}else{
+  boot();
+}
+
+/* KaTeX arrives async; re-run once it has loaded so nothing is left as raw TeX */
+window.addEventListener("load", function(){
+  var pending = document.querySelectorAll(".tex-fallback");
+  if(window.katex && pending.length){
+    for(var i = 0; i < pending.length; i++){
+      pending[i].dataset.rendered = "0";
+      pending[i].className = pending[i].className.replace(/\btex-fallback\b/, "").trim();
+      pending[i].textContent = "";
+    }
+    renderMath(document);
+  }
+});
+
+})();
+</script>
+</body>
+</html>
