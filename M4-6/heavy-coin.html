@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the Heavy Coin — Balance-Scale Strategy Lab</title>
+<style>
+/* ============================================================
+   Find the Heavy Coin — a classroom strategy lab.
+   Visual direction: "brass instrument on a slate lab bench" —
+   deep ink ground, parchment panels, brass coins, warm shadows.
+   No external assets so the file works offline / on a projector.
+   ============================================================ */
+
+:root{
+  --ink:#0e1519;
+  --ink-2:#14202a;
+  --ink-3:#1b2c38;
+  --line:#2c4152;
+  --parchment:#f3ead9;
+  --parchment-2:#e6d9c1;
+  --brass:#d9a441;
+  --brass-lit:#f2cf7d;
+  --brass-deep:#8a5f18;
+  --teal:#54c3b0;
+  --teal-deep:#1d6b60;
+  --crimson:#d1614c;
+  --text:#e9f0f3;
+  --text-dim:#a4b8c4;
+  --coin:44px;
+  /* the beam spans --beamw and each pan hangs --panw wide, so the widest point of
+     the assembly is --beamw + --panw; both shrink together to stay inside the stage */
+  --beamw:min(660px,56vw);
+  --panw:min(280px,26vw);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --shadow:0 18px 40px -18px rgba(0,0,0,.75);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 620px at 50% -8%, #21384a 0%, transparent 62%),
+    radial-gradient(760px 500px at 88% 104%, #1a2f3d 0%, transparent 60%),
+    var(--ink);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:18px;
+  line-height:1.55;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 90px}
+
+/* ---------- typography ---------- */
+h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:.01em;margin:0}
+h1{font-size:clamp(30px,4.4vw,52px);line-height:1.05}
+h2{font-size:clamp(22px,2.6vw,31px);margin-bottom:.35em}
+h3{font-size:20px;margin-bottom:.3em}
+p{margin:0 0 .8em}
+.lede{color:var(--text-dim);font-size:clamp(16px,1.5vw,20px);max-width:64ch;margin-top:.5em}
+.num{font-variant-numeric:tabular-nums}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+  background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+
+/* ---------- header ---------- */
+header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;
+  border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px}
+.eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.22em;font-size:12px;
+  color:var(--brass);font-weight:700;margin-bottom:.55em}
+.counters{display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:var(--ink-2);border:1px solid var(--line);border-radius:999px;
+  padding:8px 16px;font-size:15px;color:var(--text-dim);white-space:nowrap}
+.chip b{color:var(--brass-lit);font-variant-numeric:tabular-nums;font-size:18px}
+
+/* ---------- panels ---------- */
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+  border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow)}
+.panel + .panel{margin-top:22px}
+.parch{background:linear-gradient(180deg,var(--parchment),var(--parchment-2));color:#1d2a30;border-color:#c9b894}
+.parch h2,.parch h3{color:#12212b}
+.parch a{color:#7a5310}
+.hidden{display:none !important}
+
+/* ---------- buttons ---------- */
+button{font:inherit;cursor:pointer;border:none;border-radius:11px;transition:transform .12s ease,filter .15s ease,background .15s ease}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{cursor:not-allowed;opacity:.42}
+.btn{background:linear-gradient(180deg,var(--brass-lit),var(--brass));color:#301f00;font-weight:700;
+  padding:14px 28px;font-size:19px;box-shadow:0 8px 20px -10px rgba(217,164,65,.9)}
+.btn:hover:not(:disabled){filter:brightness(1.07)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:none;font-weight:600}
+.btn.ghost:hover:not(:disabled){background:rgba(255,255,255,.06)}
+.btn.teal{background:linear-gradient(180deg,#7fdccb,var(--teal));color:#04302a;
+  box-shadow:0 8px 20px -10px rgba(84,195,176,.9)}
+.btn.sm{padding:9px 16px;font-size:16px;border-radius:9px}
+
+/* ---------- setup ---------- */
+.presets{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0 6px}
+.preset{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+  padding:14px 24px;font-size:22px;font-family:var(--serif);border-radius:12px;min-width:74px}
+.preset:hover{border-color:var(--brass);color:var(--brass-lit)}
+.preset[aria-pressed="true"]{background:linear-gradient(180deg,var(--brass-lit),var(--brass));
+  color:#301f00;border-color:var(--brass);font-weight:700}
+input[type=number]{font:inherit;font-size:22px;font-family:var(--serif);width:110px;padding:12px 14px;
+  background:var(--ink-3);border:1px solid var(--line);color:var(--text);border-radius:12px;text-align:center}
+input[type=number]:focus{outline:2px solid var(--brass);outline-offset:1px}
+
+/* ---------- rule note ---------- */
+details.rule{margin-top:16px;background:rgba(84,195,176,.08);border:1px solid rgba(84,195,176,.34);
+  border-radius:12px;padding:12px 16px}
+details.rule summary{cursor:pointer;font-weight:700;color:var(--teal);list-style:none;display:flex;gap:9px;align-items:center}
+details.rule summary::-webkit-details-marker{display:none}
+details.rule summary::before{content:"?";display:grid;place-items:center;width:24px;height:24px;flex:0 0 24px;
+  border-radius:50%;background:var(--teal);color:#04302a;font-weight:800;font-size:15px}
+details.rule[open] summary{margin-bottom:9px}
+details.rule p{color:var(--text-dim);margin:0;font-size:17px}
+details.rule em{color:var(--text);font-style:normal;font-weight:600}
+
+/* ============================================================
+   THE SCALE
+   ============================================================ */
+.stage{position:relative;height:444px;margin:6px 0 4px;
+  border-radius:16px;overflow:hidden;
+  background:radial-gradient(660px 340px at 50% 22%,rgba(217,164,65,.10),transparent 68%)}
+.scale{position:absolute;left:50%;top:26px;transform:translateX(-50%);width:100%;max-width:760px}
+.beamwrap{position:relative;height:8px;margin:0 auto;width:100%}
+.beam{position:absolute;left:50%;top:0;width:var(--beamw);height:12px;margin-left:calc(var(--beamw) / -2);
+  border-radius:8px;background:linear-gradient(180deg,var(--brass-lit),var(--brass) 42%,var(--brass-deep));
+  box-shadow:0 5px 14px -6px rgba(0,0,0,.8);
+  transform-origin:50% 50%;transform:rotate(0deg);
+  transition:transform 780ms cubic-bezier(.3,1.5,.55,1)}
+.beam::after{content:"";position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;
+  border-radius:50%;background:radial-gradient(circle at 34% 30%,var(--brass-lit),var(--brass-deep));
+  box-shadow:0 0 0 3px rgba(0,0,0,.28)}
+.hanger{position:absolute;top:6px;width:0;transform-origin:50% 0;
+  transition:transform 780ms cubic-bezier(.3,1.5,.55,1)}
+.hanger.l{left:6px}
+.hanger.r{left:calc(100% - 6px)}
+.string{position:absolute;left:0;top:0;width:1px;height:56px;background:linear-gradient(180deg,var(--brass),rgba(217,164,65,.35));
+  transform:translateX(-.5px)}
+.string.a{transform:translateX(-.5px) rotate(19deg);transform-origin:top center}
+.string.b{transform:translateX(-.5px) rotate(-19deg);transform-origin:top center}
+.pan{position:absolute;top:54px;left:50%;transform:translateX(-50%);
+  width:var(--panw);min-height:88px;padding:10px 12px 14px;
+  border-radius:6px 6px 74px 74px/6px 6px 34px 34px;
+  background:linear-gradient(180deg,rgba(217,164,65,.30),rgba(138,95,24,.55));
+  border:1px solid rgba(242,207,125,.55);border-top-width:3px;
+  box-shadow:inset 0 8px 18px -12px rgba(0,0,0,.9),0 16px 26px -18px rgba(0,0,0,.9);
+  display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;align-content:flex-end;justify-content:center;
+  transition:transform 240ms cubic-bezier(.4,1.6,.5,1)}
+.pan.dip{transform:translateX(-50%) translateY(7px) scaleY(.94)}
+.pan-label{position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+  font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);font-weight:700;white-space:nowrap}
+.post{position:absolute;left:50%;top:4px;width:16px;height:252px;margin-left:-8px;border-radius:4px;
+  background:linear-gradient(90deg,#4b5c68,#8d9fa9 42%,#3c4a55);z-index:-1}
+.foot{position:absolute;left:50%;top:248px;width:260px;height:26px;margin-left:-130px;border-radius:50%/60%;
+  background:linear-gradient(180deg,#8d9fa9,#3c4a55);box-shadow:0 22px 30px -20px rgba(0,0,0,.95);z-index:-1}
+
+/* ---------- coins ---------- */
+.coin{width:var(--coin);height:var(--coin);border-radius:50%;flex:0 0 auto;
+  display:grid;place-items:center;
+  font-family:var(--serif);font-weight:700;font-size:calc(var(--coin)*.42);color:#4a3204;
+  background:radial-gradient(circle at 33% 28%,#ffe8b0,var(--brass) 52%,var(--brass-deep));
+  box-shadow:0 0 0 2px rgba(90,60,8,.55) inset,0 4px 8px -3px rgba(0,0,0,.75);
+  will-change:transform}
+.coin.out{background:radial-gradient(circle at 33% 28%,#6d7d87,#43525c 55%,#2a353d);color:#93a5ae;
+  box-shadow:0 0 0 2px rgba(0,0,0,.35) inset;opacity:.55}
+.coin.heavy-reveal{background:radial-gradient(circle at 33% 28%,#fff3cf,#ff9f43 55%,#a8480a);color:#3a1a00;
+  box-shadow:0 0 0 2px rgba(120,50,0,.5) inset,0 0 0 4px rgba(255,159,67,.35),0 0 26px 6px rgba(255,159,67,.45);
+  animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+
+/* ---------- bench + rail ---------- */
+.bench{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(660px,90%);
+  min-height:74px;border-radius:12px;padding:26px 14px 12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px dashed var(--line);
+  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-items:center;align-content:center}
+.bench-label{position:absolute;top:6px;left:14px;font-size:12px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--text-dim);font-weight:700}
+.rail{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-items:center;min-height:34px;
+  padding:12px;border-radius:12px;background:rgba(0,0,0,.22);border:1px solid rgba(44,65,82,.6);margin-top:6px}
+.rail-empty{color:var(--text-dim);font-size:15px;font-style:italic}
+
+/* ---------- control deck ---------- */
+.deck{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start}
+@media (max-width:880px){.deck{grid-template-columns:1fr}}
+@media (max-width:640px){.stage{height:480px}.post{height:190px}
+  .foot{top:186px;width:180px;margin-left:-90px}}
+@media (max-width:520px){
+  /* pans must stay narrower than the beam or they meet behind the post */
+  :root{--beamw:45vw;--panw:34vw}
+  body{font-size:16px}
+  .wrap{padding:20px 12px 70px}
+  .panel{padding:16px 14px}
+  .bench{padding-top:38px;min-height:82px}
+  .bench-label{font-size:11px;letter-spacing:.14em}
+  .pan-label{font-size:10px;letter-spacing:.12em}
+  .stepper button{width:48px;height:48px;font-size:26px}
+  .stepper .val{font-size:38px;min-width:58px}
+}
+.stepper{display:flex;align-items:center;gap:16px;margin:14px 0}
+.stepper button{width:56px;height:56px;font-size:30px;font-weight:700;line-height:1;
+  background:var(--ink-3);border:1px solid var(--line);color:var(--brass-lit)}
+.stepper button:hover:not(:disabled){border-color:var(--brass);background:#22323e}
+.stepper .val{font-family:var(--serif);font-size:46px;min-width:74px;text-align:center;
+  font-variant-numeric:tabular-nums;color:var(--brass-lit)}
+.split-readout{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
+.sr{flex:1 1 96px;background:var(--ink-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center}
+.sr .k{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);font-weight:700}
+.sr .v{font-family:var(--serif);font-size:32px;color:var(--brass-lit);font-variant-numeric:tabular-nums}
+.sr.aside .v{color:var(--teal)}
+.narrate{min-height:64px;font-size:19px;border-left:3px solid var(--brass);padding-left:14px;margin:12px 0}
+.narrate.balanced{border-color:var(--teal)}
+.narrate strong{color:var(--brass-lit)}
+.narrate.balanced strong{color:var(--teal)}
+.takeaway{background:rgba(217,164,65,.10);border:1px solid rgba(217,164,65,.35);border-radius:12px;
+  padding:13px 16px;font-size:17px;margin-top:10px}
+.takeaway b{color:var(--brass-lit)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+
+/* ---------- log ---------- */
+.log{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.log li{display:flex;gap:12px;align-items:baseline;background:var(--ink-2);border:1px solid var(--line);
+  border-radius:10px;padding:10px 14px;font-size:16px}
+.log .rn{font-family:var(--serif);font-size:20px;color:var(--brass);min-width:2.4em}
+.log .sp{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}
+.log .rs{color:var(--text-dim)}
+
+/* ---------- summary ---------- */
+.bigstat{display:flex;gap:22px;flex-wrap:wrap;margin:16px 0}
+.stat{flex:1 1 170px;border-radius:14px;padding:16px 18px;background:rgba(0,0,0,.22);border:1px solid var(--line)}
+.parch .stat{background:rgba(255,255,255,.55);border-color:#cbbb98}
+.stat .k{font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#6d7c85}
+.parch .stat .k{color:#6d5c38}
+.stat .v{font-family:var(--serif);font-size:44px;line-height:1.08;font-variant-numeric:tabular-nums;color:#12212b}
+.panel:not(.parch) .stat .k{color:var(--text-dim)}
+.panel:not(.parch) .stat .v{color:var(--brass-lit)}
+
+/* ---------- simulation ---------- */
+.simstrip{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:16px 0}
+.mini{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;
+  background:#243543;color:#7d919d;border:1px solid #31485a;transition:all .12s ease}
+.mini.done{background:rgba(84,195,176,.22);color:var(--teal);border-color:rgba(84,195,176,.5)}
+.mini.active{background:var(--brass);color:#301f00;border-color:var(--brass-lit);transform:scale(1.28)}
+.chart{display:flex;gap:16px;align-items:flex-end;justify-content:center;height:210px;margin:22px 0 6px;
+  padding:0 8px}
+.bar{flex:0 1 110px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:8px}
+.bar .cnt{font-family:var(--serif);font-size:24px;color:var(--brass-lit);font-variant-numeric:tabular-nums}
+.bar.zero .fill{background:var(--line);opacity:.6}
+.bar.zero .cnt{color:var(--text-dim)}
+.bar .fill{width:100%;border-radius:9px 9px 3px 3px;min-height:2px;
+  background:linear-gradient(180deg,var(--brass-lit),var(--brass) 60%,var(--brass-deep));
+  transition:height 420ms cubic-bezier(.25,1.2,.5,1)}
+.bar .lbl{font-size:14px;color:var(--text-dim);text-align:center;line-height:1.25}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+@media (max-width:700px){.compare{grid-template-columns:1fr}}
+.cmp{border-radius:14px;padding:16px 18px;border:1px solid var(--line);background:var(--ink-2)}
+.cmp.opt{border-color:rgba(84,195,176,.45);background:rgba(84,195,176,.09)}
+.cmp .k{font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--text-dim)}
+.cmp .v{font-family:var(--serif);font-size:40px;line-height:1.1;color:var(--brass-lit);font-variant-numeric:tabular-nums}
+.cmp.opt .v{color:var(--teal)}
+.cmp .s{font-size:15px;color:var(--text-dim)}
+
+/* ---------- explainer ---------- */
+.explain{margin-top:22px}
+.explain h2{color:#12212b}
+.explain .box{background:rgba(255,255,255,.5);border:1px solid #cbbb98;border-radius:12px;padding:14px 18px;margin:14px 0}
+.explain .box .t{font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:#7a5310;margin-bottom:6px}
+.explain p, .explain li{color:#233038;font-size:17.5px}
+.explain ul{margin:0 0 .8em;padding-left:1.2em}
+.formula{font-family:var(--serif);font-size:clamp(24px,3.2vw,34px);text-align:center;margin:18px 0;color:#12212b}
+table.t3{border-collapse:collapse;margin:12px 0;font-variant-numeric:tabular-nums;width:100%;max-width:520px}
+table.t3 th,table.t3 td{border:1px solid #cbbb98;padding:8px 14px;text-align:center;font-size:17px}
+table.t3 th{background:rgba(122,83,16,.14);font-family:var(--sans);font-size:13px;letter-spacing:.12em;text-transform:uppercase}
+table.t3 tr.you td{background:rgba(217,164,65,.34);font-weight:800}
+footer{margin-top:34px;color:var(--text-dim);font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Balance-scale strategy lab</div>
+      <h1>Find the Heavy Coin</h1>
+      <p class="lede">One coin among them is heavier. Every other coin weighs exactly the same.
+        The scale tells you only <em>which side is heavier</em> — never by how much.
+        How few weighings do you really need?</p>
+    </div>
+    <div class="counters" id="counters">
+      <div class="chip">Coins <b id="cCoins">—</b></div>
+      <div class="chip">Weighings used <b id="cWeigh">0</b></div>
+      <div class="chip">Still possible <b id="cCand">—</b></div>
+    </div>
+  </header>
+
+  <!-- ======================= SETUP ======================= -->
+  <section class="panel" id="setupPanel">
+    <h2>How many coins?</h2>
+    <p style="color:var(--text-dim);margin-bottom:0">Pick a number. One of them — chosen at random and
+      kept secret — will be the heavy one.</p>
+    <div class="presets" id="presets">
+      <button class="preset" data-n="6">6</button>
+      <button class="preset" data-n="9">9</button>
+      <button class="preset" data-n="12">12</button>
+      <button class="preset" data-n="15">15</button>
+      <span style="color:var(--text-dim);padding:0 4px">or</span>
+      <input type="number" id="customN" min="2" max="30" step="1" placeholder="2–30" aria-label="Custom number of coins">
+    </div>
+    <div class="actions">
+      <button class="btn" id="startBtn" disabled>Start the round</button>
+    </div>
+    <details class="rule" open>
+      <summary>Why must the two pans hold the same number of coins?</summary>
+      <p>If the pans hold different numbers of coins, an unequal count alone can tip the scale — you can no
+        longer tell whether it tipped because of the heavy coin or just because one side had more coins on it.
+        <em>Equal counts on both pans is what makes the tilt direction meaningful.</em></p>
+    </details>
+  </section>
+
+  <!-- ======================= GAME ======================= -->
+  <section class="panel hidden" id="gamePanel">
+    <div class="stage" id="stage">
+      <div class="scale">
+        <div class="beamwrap">
+          <div class="beam" id="beam">
+            <div class="hanger l" id="hangerL">
+              <div class="string a"></div><div class="string b"></div>
+              <div class="pan" id="panL"><span class="pan-label">Left pan</span></div>
+            </div>
+            <div class="hanger r" id="hangerR">
+              <div class="string a"></div><div class="string b"></div>
+              <div class="pan" id="panR"><span class="pan-label">Right pan</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="post"></div>
+        <div class="foot"></div>
+      </div>
+      <div class="bench" id="bench"><span class="bench-label" id="benchLabel">Set aside — not on the scale</span></div>
+    </div>
+
+    <div style="margin:8px 0 18px">
+      <div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);font-weight:700">Ruled out</div>
+      <div class="rail" id="rail"><span class="rail-empty">nothing ruled out yet</span></div>
+    </div>
+
+    <div class="deck">
+      <div>
+        <h3 id="roundTitle">Round 1 — make your split</h3>
+        <div id="assignBlock">
+          <p style="color:var(--text-dim);margin-bottom:2px">How many coins go on <em>each</em> pan?</p>
+          <div class="stepper">
+            <button id="minusBtn" aria-label="Fewer coins per pan">−</button>
+            <div class="val num" id="Lval">0</div>
+            <button id="plusBtn" aria-label="More coins per pan">+</button>
+            <span style="color:var(--text-dim);font-size:16px">per pan<br>(left and right always match)</span>
+          </div>
+        </div>
+        <div class="split-readout">
+          <div class="sr"><div class="k">Left</div><div class="v num" id="srL">0</div></div>
+          <div class="sr"><div class="k">Right</div><div class="v num" id="srR">0</div></div>
+          <div class="sr aside"><div class="k">Aside</div><div class="v num" id="srA">0</div></div>
+        </div>
+        <div id="autoNote" class="takeaway hidden"></div>
+        <div class="actions">
+          <button class="btn" id="weighBtn" disabled>Weigh</button>
+          <button class="btn teal hidden" id="nextBtn">Next step</button>
+          <button class="btn ghost sm" id="restartBtn">Change n</button>
+          <button class="btn ghost sm" id="reshuffleBtn">New hidden coin</button>
+        </div>
+        <details class="rule">
+          <summary>Why must the two pans hold the same number of coins?</summary>
+          <p>If the pans hold different numbers of coins, an unequal count alone can tip the scale — you can no
+            longer tell whether it tipped because of the heavy coin or just because one side had more coins on it.
+            <em>Equal counts on both pans is what makes the tilt direction meaningful.</em></p>
+        </details>
+      </div>
+
+      <div>
+        <div class="narrate" id="narrate">Place at least one coin on each pan, then press <span class="kbd">Weigh</span>.</div>
+        <div class="takeaway hidden" id="styleNote"></div>
+        <h3 style="margin-top:18px">Weighing log</h3>
+        <ul class="log" id="log"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= SUMMARY ======================= -->
+  <section class="panel parch hidden" id="summaryPanel">
+    <h2 id="sumTitle">Found it.</h2>
+    <p id="sumLine" style="font-size:19px"></p>
+    <div class="bigstat">
+      <div class="stat"><div class="k">Culprit</div><div class="v num" id="sumCoin">—</div></div>
+      <div class="stat"><div class="k">Weighings this run</div><div class="v num" id="sumWeigh">—</div></div>
+      <div class="stat"><div class="k">Your round-1 style</div><div class="v" id="sumRatio" style="font-size:30px">—</div></div>
+    </div>
+    <h3>The splits you used</h3>
+    <ul class="log" id="sumSplits" style="color:#233038"></ul>
+    <div class="actions">
+      <button class="btn" id="simBtn">Simulate this strategy →</button>
+      <button class="btn ghost sm" id="playAgainBtn" style="color:#233038;border-color:#c9b894">Play again (new hidden coin)</button>
+    </div>
+  </section>
+
+  <!-- ======================= SIMULATION ======================= -->
+  <section class="panel hidden" id="simPanel">
+    <h2>Your strategy, tested against every possible hiding place</h2>
+    <p style="color:var(--text-dim)">That run was one roll of the dice — the heavy coin happened to be where it was.
+      So let's replay <em>your exact strategy</em> with the heavy coin in each position in turn,
+      and count the weighings every time. No random sampling: this is every case, exactly.</p>
+    <div class="simstrip" id="simStrip"></div>
+    <div id="simStatus" style="text-align:center;color:var(--brass-lit);font-size:18px;min-height:28px"></div>
+    <div class="chart" id="chart"></div>
+    <div style="text-align:center;color:var(--text-dim);font-size:15px">how many of the <span id="chartN" class="num"></span> hiding places needed each number of weighings</div>
+    <div class="compare" id="compare"></div>
+  </section>
+
+  <!-- ======================= EXPLAINER ======================= -->
+  <section class="panel parch explain hidden" id="explainPanel">
+    <h2>So what <em>is</em> the best you can do?</h2>
+
+    <div class="box">
+      <div class="t">The bound</div>
+      <p style="margin-bottom:0">Every weighing has exactly <b>three</b> possible outcomes: left-heavy,
+        right-heavy, or balanced. So <b>w</b> weighings can tell apart at most <b>3<sup>w</sup></b> different
+        situations. To be <em>guaranteed</em> to pin down the heavy coin among <b>n</b> candidates you need
+        3<sup>w</sup> ≥ n.</p>
+      <div class="formula">3<sup>w</sup> ≥ n &nbsp;⟹&nbsp; w ≥ log<sub>3</sub> n &nbsp;⟹&nbsp;
+        w<sub>min</sub> = ⌈log<sub>3</sub> n⌉</div>
+      <p style="margin-bottom:0" id="explainYourN"></p>
+    </div>
+
+    <h3>The strategy that reaches the bound</h3>
+    <p>At <em>every</em> step, split the coins that are still in play into three groups as close to equal as
+      possible — sizes differing by at most one coin — with the two pans holding equal counts.
+      Whatever the scale does, you are left with roughly a third of what you had. That is exactly the
+      "divide by 3 each time" that ⌈log<sub>3</sub> n⌉ describes.</p>
+    <p>The key word is <em>current</em>. The optimal split is recomputed from the group you have left, not
+      locked to the ratio you opened with. This lab deliberately keeps applying your round-1 ratio so you can
+      see the difference: an opening like <b>4 / 4 / 1</b> on nine coins can cost an extra weighing on the
+      unlucky branch (4 → 2/2/0 → 1/1/0 is three weighings), while opening <b>3 / 3 / 3</b> never needs more
+      than two.</p>
+
+    <div class="box">
+      <div class="t">Why halving wastes information</div>
+      <p style="margin-bottom:0">A binary split — about half on each pan, nothing aside — throws away the
+        "balanced" outcome. Balanced can only ever point at the coins that never touched the scale, and in a
+        half/half split that group is empty or nearly so. You are paying for a three-outcome instrument and
+        collecting two outcomes. A three-way split cuts the candidates to about <b>n/3</b> per weighing;
+        halving cuts to about <b>n/2</b>, and log<sub>2</sub> n is always bigger than log<sub>3</sub> n.</p>
+    </div>
+
+    <h3>The pattern in base 3</h3>
+    <table class="t3" id="t3"></table>
+    <p style="font-size:15px;color:#4a5a63">Each extra weighing multiplies the number of coins you can handle
+      by three. Three coins in one weighing; nine in two; twenty-seven in three.</p>
+    <p id="explainVerdict" style="font-size:19px;font-weight:600"></p>
+    <p style="font-size:15px;color:#4a5a63;margin-bottom:0">A footnote for the curious: equal thirds is
+      optimal for the <em>guaranteed</em> number of weighings. Occasionally a lopsided split has a slightly
+      better <em>average</em> while still matching that guarantee — with 5 candidates, 1/1/3 averages 1.6
+      weighings against 2/2/1's 1.8, and both are never worse than 2.</p>
+  </section>
+
+  <footer>Balance-scale strategy lab · one heavy coin, three outcomes, no numbers on the dial.</footer>
+</div>
+<script>
+(function(){
+"use strict";
+
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+/* ceil(log3 n) computed by repeated multiplication so there is no float wobble
+   at exact powers of three (Math.log(27)/Math.log(3) can land at 3.0000000000000004). */
+function ceilLog3(n){ if(n<=1) return 0; let w=0, c=1; while(c<n){ c*=3; w++; } return w; }
+const plural = (k,w) => k + " " + w + (k===1?"":"s");
+
+/* ================= state ================= */
+const S = {
+  n:0, heavy:-1, coinEls:[],
+  candidates:[], out:[],
+  groups:{left:[],right:[],aside:[]},
+  L:0,                 // round-1 coins per pan while the student is choosing
+  p:0, preference:null, // strategy fingerprint captured after round 1
+  round1:null,          // the exact round-1 grouping, replayed by the simulator
+  round:1, weighings:0,
+  history:[], busy:false, phase:"setup"
+};
+
+/* ================= setup screen ================= */
+let chosenN = null;
+$("presets").addEventListener("click", e => {
+  const b = e.target.closest(".preset"); if(!b) return;
+  chosenN = parseInt(b.dataset.n,10);
+  $("customN").value = "";
+  markPresets();
+});
+$("customN").addEventListener("input", () => {
+  const v = parseInt($("customN").value,10);
+  chosenN = (Number.isFinite(v) && v>=2 && v<=30) ? v : null;
+  markPresets();
+});
+function markPresets(){
+  [...document.querySelectorAll(".preset")].forEach(b =>
+    b.setAttribute("aria-pressed", String(parseInt(b.dataset.n,10)===chosenN)));
+  $("startBtn").disabled = chosenN === null;
+}
+$("startBtn").addEventListener("click", () => startGame(chosenN));
+$("restartBtn").addEventListener("click", () => {
+  S.phase="setup";
+  ["gamePanel","summaryPanel","simPanel","explainPanel"].forEach(id => $(id).classList.add("hidden"));
+  $("setupPanel").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+$("reshuffleBtn").addEventListener("click", () => startGame(S.n));
+$("playAgainBtn").addEventListener("click", () => { startGame(S.n); window.scrollTo({top:0,behavior:"smooth"}); });
+
+/* ================= building a round ================= */
+function startGame(n){
+  S.n = n;
+  S.heavy = Math.floor(Math.random()*n);
+  S.candidates = Array.from({length:n},(_,i)=>i);
+  S.out = [];
+  S.groups = {left:[],right:[],aside:S.candidates.slice()};
+  S.L = 0; S.p = 0; S.preference = null; S.round1 = null;
+  S.round = 1; S.weighings = 0; S.history = []; S.busy = false; S.phase = "assign";
+
+  ["setupPanel","summaryPanel","simPanel","explainPanel"].forEach(id => $(id).classList.add("hidden"));
+  $("gamePanel").classList.remove("hidden");
+
+  setCoinSize();
+
+  // fresh coins
+  S.coinEls = [];
+  [...document.querySelectorAll(".coin")].forEach(c => c.remove());
+  for(let i=0;i<n;i++){
+    const c = document.createElement("div");
+    c.className = "coin"; c.textContent = String(i+1);
+    c.title = "Coin " + (i+1);
+    S.coinEls.push(c);
+    $("bench").appendChild(c);
+  }
+
+  setTilt(0);
+  $("assignBlock").classList.remove("hidden");
+  $("autoNote").classList.add("hidden");
+  $("styleNote").classList.add("hidden");
+  document.querySelector(".split-readout").classList.remove("hidden");
+  $("nextBtn").classList.add("hidden");
+  $("weighBtn").classList.remove("hidden");
+  $("weighBtn").disabled = true;
+  $("roundTitle").textContent = "Round 1 — make your split";
+  $("benchLabel").textContent = "Set aside — not on the scale";
+  $("narrate").className = "narrate";
+  $("narrate").innerHTML = 'Place at least one coin on each pan, then press <span class="kbd">Weigh</span>.';
+  $("log").innerHTML = "";
+  $("rail").innerHTML = '<span class="rail-empty">nothing ruled out yet</span>';
+  applyL(0, false);
+  updateCounters();
+}
+
+/* ---- round-1 stepper: left and right are locked to the same size ---- */
+$("plusBtn").addEventListener("click", () => applyL(S.L+1, true));
+$("minusBtn").addEventListener("click", () => applyL(S.L-1, true));
+function applyL(L, animate){
+  if(S.phase !== "assign" || S.busy) return;
+  const maxL = Math.floor(S.n/2);
+  S.L = clamp(L, 0, maxL);
+  S.groups = {
+    left:  S.candidates.slice(0, S.L),
+    right: S.candidates.slice(S.L, 2*S.L),
+    aside: S.candidates.slice(2*S.L)
+  };
+  $("Lval").textContent = S.L;
+  $("minusBtn").disabled = S.L<=0;
+  $("plusBtn").disabled  = S.L>=maxL;
+  $("weighBtn").disabled = S.L<1;
+  renderSplitReadout();
+  layout(animate);
+}
+function renderSplitReadout(){
+  $("srL").textContent = S.groups.left.length;
+  $("srR").textContent = S.groups.right.length;
+  $("srA").textContent = S.groups.aside.length;
+}
+function updateCounters(){
+  $("cCoins").textContent = S.n;
+  $("cWeigh").textContent = S.weighings;
+  $("cCand").textContent = S.candidates.length;
+}
+
+/* ================= layout with FLIP animation ================= */
+function slotOf(i){
+  if(S.groups.left.includes(i))  return $("panL");
+  if(S.groups.right.includes(i)) return $("panR");
+  if(S.candidates.includes(i))   return $("bench");
+  return $("rail");
+}
+function layout(animate){
+  const first = S.coinEls.map(c => c.getBoundingClientRect());
+
+  const railHasCoins = S.out.length > 0;
+  const emptyMsg = $("rail").querySelector(".rail-empty");
+  if(railHasCoins && emptyMsg) emptyMsg.remove();
+  if(!railHasCoins && !emptyMsg) $("rail").innerHTML = '<span class="rail-empty">nothing ruled out yet</span>';
+
+  S.coinEls.forEach((c,i) => {
+    const dest = slotOf(i);
+    c.classList.toggle("out", !S.candidates.includes(i));
+    if(c.parentElement !== dest) dest.appendChild(c);
+  });
+
+  if(!animate) return;
+  S.coinEls.forEach((c,i) => {
+    const last = c.getBoundingClientRect();
+    const dx = first[i].left - last.left, dy = first[i].top - last.top;
+    if(Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    c.style.transition = "none";
+    c.style.transform = "translate(" + dx + "px," + dy + "px)";
+    // two frames so the browser commits the inverted position before easing it away
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      c.style.transition = "transform 460ms cubic-bezier(.32,1.25,.5,1) " + (i%6)*22 + "ms";
+      c.style.transform = "";
+    }));
+  });
+}
+
+/* ================= the scale ================= */
+function setTilt(deg){
+  $("beam").style.transform = "rotate(" + deg + "deg)";
+  $("hangerL").style.transform = "rotate(" + (-deg) + "deg)";
+  $("hangerR").style.transform = "rotate(" + (-deg) + "deg)";
+}
+
+/* which group holds the heavy coin, for a given hidden position */
+function outcome(groups, h){
+  if(groups.left.includes(h))  return "left";
+  if(groups.right.includes(h)) return "right";
+  return "aside";
+}
+
+/* ================= weighing ================= */
+$("weighBtn").addEventListener("click", doWeigh);
+$("nextBtn").addEventListener("click", nextRound);
+
+async function doWeigh(){
+  if(S.busy || S.groups.left.length < 1) return;
+  S.busy = true;
+  $("weighBtn").disabled = true;
+  $("minusBtn").disabled = true; $("plusBtn").disabled = true;
+
+  const res = outcome(S.groups, S.heavy);
+
+  // capture the student's fingerprint from round 1 and never re-ask for it
+  if(S.round === 1){
+    S.round1 = { left:S.groups.left.slice(), right:S.groups.right.slice(), aside:S.groups.aside.slice() };
+    S.p = S.groups.left.length / S.n;
+    const U1 = S.n - 2*S.groups.left.length;
+    S.preference = U1 > 1 ? "prefers-untouched" : "prefers-binary";
+    S.phase = "playing";
+    $("assignBlock").classList.add("hidden");
+  }
+
+  // 1. pans settle under the load  →  2. beam tilts  →  3. the verdict is read out
+  $("panL").classList.add("dip"); $("panR").classList.add("dip");
+  await sleep(190);
+  $("panL").classList.remove("dip"); $("panR").classList.remove("dip");
+  setTilt(res === "left" ? -9 : res === "right" ? 9 : 0);
+  if(res === "left") $("panL").classList.add("dip");
+  if(res === "right") $("panR").classList.add("dip");
+  await sleep(820);
+
+  S.weighings++;
+  const before = S.candidates.length;
+  const keep = S.groups[res].slice();
+  S.out = S.out.concat(S.candidates.filter(i => !keep.includes(i)));
+  S.candidates = keep;
+  S.history.push({
+    round:S.round,
+    split:[S.groups.left.length, S.groups.right.length, S.groups.aside.length],
+    result:res, before, after:keep.length
+  });
+
+  $("roundTitle").textContent = "Round " + S.round + " — result";
+  narrateResult(res, keep.length);
+  addLogRow(S.history[S.history.length-1]);
+  if(S.round === 1) showStyleNote();
+  updateCounters();
+
+  // ruled-out coins slide off to the rail
+  S.groups = {left:[],right:[],aside:S.candidates.slice()};
+  renderSplitReadout();
+  $("benchLabel").textContent = "Still in play";
+  layout(true);
+  await sleep(360);
+
+  S.busy = false;
+  if(S.candidates.length === 1) finish();
+  else { $("nextBtn").classList.remove("hidden"); $("weighBtn").classList.add("hidden"); }
+}
+
+function narrateResult(res, m){
+  const el = $("narrate");
+  el.className = "narrate" + (res==="aside" ? " balanced" : "");
+  if(res === "left")
+    el.innerHTML = "The <strong>left pan dropped</strong>. Both pans held the same number of coins, so the extra "
+      + "weight can only be the heavy coin — it is one of the <strong>" + plural(m,"coin") + " on the left</strong>.";
+  else if(res === "right")
+    el.innerHTML = "The <strong>right pan dropped</strong>. Equal counts, unequal weight: the heavy coin is one of the "
+      + "<strong>" + plural(m,"coin") + " on the right</strong>.";
+  else
+    el.innerHTML = "The scale <strong>balanced</strong>. Every coin on the scale weighs the same, so the heavy one "
+      + "never made it on — it is among the <strong>" + plural(m,"coin") + " set aside</strong>.";
+}
+
+function addLogRow(h){
+  const li = document.createElement("li");
+  const words = {left:"left pan dropped", right:"right pan dropped", aside:"balanced"};
+  li.innerHTML = '<span class="rn">' + h.round + '.</span>'
+    + '<span class="sp">' + h.split[0] + " / " + h.split[1] + " / " + h.split[2] + '</span>'
+    + '<span class="rs">' + words[h.result] + " → " + plural(h.after,"coin") + " left</span>";
+  $("log").appendChild(li);
+}
+
+function showStyleNote(){
+  const L = S.round1.left.length, U1 = S.n - 2*L;
+  const pctL = Math.round(S.p*100), pctA = 100 - 2*pctL;
+  const note = $("styleNote");
+  note.classList.remove("hidden");
+  const ratio = "~" + pctL + "/" + pctL + "/" + pctA;
+  if(S.preference === "prefers-untouched")
+    note.innerHTML = "<b>Your instinct: leave some aside.</b> You deliberately kept " + plural(U1,"coin")
+      + " off the scale — that's close to the idea behind the best possible strategy. "
+      + "From here on we'll keep applying your " + ratio + " style so you can see where it leads.";
+  else
+    note.innerHTML = "<b>Your instinct: split it in half.</b> You put everything into two equal halves with "
+      + (U1===0 ? "nothing" : "just one coin") + " left aside — the classic 'binary search' move people bring "
+      + "from searching lists or guessing numbers. From here on we'll keep applying your " + ratio
+      + " style so you can see where it leads.";
+}
+
+/* ================= rounds 2+ : replay the student's ratio ================= */
+/* Choose coins-per-pan for a candidate group of size m, following the ratio p
+   revealed in round 1, clamped to what is physically possible. */
+function autoK(m, p, preference){
+  const maxK = Math.floor(m/2);
+  const kIdeal = m * p;
+  const kLow  = clamp(Math.floor(kIdeal), 1, maxK);
+  const kHigh = clamp(Math.ceil(kIdeal),  1, maxK);
+  if(kLow === kHigh) return kLow;
+  const dLow = Math.abs(kIdeal - kLow), dHigh = Math.abs(kHigh - kIdeal);
+  const EPS = 1e-9;
+  if(dLow < dHigh - EPS) return kLow;
+  if(dHigh < dLow - EPS) return kHigh;
+  // exact tie (k_ideal ends in .5): break it with the revealed preference
+  return preference === "prefers-untouched" ? kLow : kHigh;
+}
+/* Equal-thirds reference strategy: three parts differing by at most one coin,
+   with the two pans equal. For m ≡ 1 (mod 3) the odd coin goes aside. */
+function optimalK(m){
+  const k = (m % 3 === 1) ? Math.floor(m/3) : Math.ceil(m/3);
+  return clamp(k, 1, Math.floor(m/2));
+}
+
+function nextRound(){
+  if(S.busy) return;
+  S.round++;
+  const m = S.candidates.length;
+  const k = autoK(m, S.p, S.preference);
+  S.groups = {
+    left:  S.candidates.slice(0, k),
+    right: S.candidates.slice(k, 2*k),
+    aside: S.candidates.slice(2*k)
+  };
+  const pctL = Math.round(S.p*100), pctA = 100 - 2*pctL;
+  $("roundTitle").textContent = "Round " + S.round + " — your ratio, applied again";
+  $("autoNote").classList.remove("hidden");
+  $("autoNote").innerHTML = "Following your <b>~" + pctL + "/" + pctL + "/" + pctA + "</b> style, we split these "
+    + plural(m,"coin") + " into <b>" + k + " / " + k + " / " + (m-2*k) + "</b>."
+    + (m - 2*k === 0 ? " Nothing aside this time — a balanced scale is impossible here." : "");
+  $("narrate").className = "narrate";
+  $("narrate").innerHTML = 'Coins loaded. Press <span class="kbd">Weigh</span>.';
+  renderSplitReadout();
+  setTilt(0);
+  $("panL").classList.remove("dip"); $("panR").classList.remove("dip");
+  layout(true);
+  $("nextBtn").classList.add("hidden");
+  $("weighBtn").classList.remove("hidden");
+  $("weighBtn").disabled = false;
+}
+
+/* ================= end of the first game ================= */
+function finish(){
+  S.phase = "found";
+  const found = S.candidates[0];
+  S.coinEls[found].classList.add("heavy-reveal");
+  $("nextBtn").classList.add("hidden");
+  $("weighBtn").classList.add("hidden");
+  $("narrate").className = "narrate";
+  $("narrate").innerHTML = "Only one coin can still be the heavy one: <strong>coin " + (found+1) + "</strong>.";
+  $("roundTitle").textContent = "Solved in " + plural(S.weighings,"weighing");
+  $("autoNote").classList.add("hidden");
+  document.querySelector(".split-readout").classList.add("hidden");
+
+  const pctL = Math.round(S.p*100), pctA = 100 - 2*pctL;
+  $("summaryPanel").classList.remove("hidden");
+  $("sumCoin").textContent = "#" + (found+1);
+  $("sumWeigh").textContent = S.weighings;
+  $("sumRatio").textContent = pctL + "/" + pctL + "/" + pctA;
+  $("sumLine").textContent = "Coin " + (found+1) + " was the heavy one, and this run took "
+    + plural(S.weighings,"weighing") + ". But was that skill or luck? The heavy coin could have been anywhere.";
+  $("sumSplits").innerHTML = "";
+  const words = {left:"left pan dropped", right:"right pan dropped", aside:"balanced"};
+  S.history.forEach(h => {
+    const li = document.createElement("li");
+    li.style.background = "rgba(255,255,255,.55)"; li.style.borderColor = "#cbbb98";
+    li.innerHTML = '<span class="rn" style="color:#7a5310">' + h.round + '.</span>'
+      + '<span class="sp" style="color:#12212b">' + h.split.join(" / ") + '</span>'
+      + '<span class="rs" style="color:#4a5a63">' + words[h.result] + " → "
+      + plural(h.after,"coin") + " still possible</span>";
+    $("sumSplits").appendChild(li);
+  });
+  $("summaryPanel").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+/* ================= exact simulation ================= */
+/* Replays a strategy against one hidden position and returns the weighing count.
+   Exhaustive, not sampled: at classroom-scale n every case is cheap, so the
+   reported average carries no sampling noise. */
+function runStudent(h){
+  let w = 1;
+  let cand = [S.round1.left, S.round1.right, S.round1.aside]
+    .find(g => g.includes(h)).slice();
+  while(cand.length > 1){
+    const k = autoK(cand.length, S.p, S.preference);
+    const g = {left:cand.slice(0,k), right:cand.slice(k,2*k), aside:cand.slice(2*k)};
+    w++;
+    cand = g[outcome(g,h)].slice();
+  }
+  return w;
+}
+function runOptimal(h){
+  let cand = Array.from({length:S.n},(_,i)=>i), w = 0;
+  while(cand.length > 1){
+    const k = optimalK(cand.length);
+    const g = {left:cand.slice(0,k), right:cand.slice(k,2*k), aside:cand.slice(2*k)};
+    w++;
+    cand = g[outcome(g,h)].slice();
+  }
+  return w;
+}
+function tally(fn){
+  const counts = {}; let sum = 0, worst = 0;
+  for(let h=0; h<S.n; h++){
+    const w = fn(h);
+    counts[w] = (counts[w]||0) + 1;
+    sum += w; worst = Math.max(worst, w);
+  }
+  return {counts, avg:sum/S.n, worst, per:Array.from({length:S.n},(_,h)=>fn(h))};
+}
+
+$("simBtn").addEventListener("click", runSimulation);
+
+async function runSimulation(){
+  const panel = $("simPanel");
+  panel.classList.remove("hidden");
+  panel.scrollIntoView({behavior:"smooth", block:"start"});
+
+  const mine = tally(runStudent);
+  const opt  = tally(runOptimal);
+  const bound = ceilLog3(S.n);
+
+  // sanity: the live game must be exactly the case the simulator computes
+  if(mine.per[S.heavy] !== S.weighings)
+    console.warn("simulation/live mismatch", mine.per[S.heavy], S.weighings);
+
+  $("chartN").textContent = S.n;
+
+  // strip of every possible hiding place
+  const strip = $("simStrip"); strip.innerHTML = "";
+  const minis = [];
+  for(let i=0;i<S.n;i++){
+    const d = document.createElement("div");
+    d.className = "mini"; d.textContent = String(i+1);
+    strip.appendChild(d); minis.push(d);
+  }
+
+  // bars, one per weighing count actually observed
+  const maxW = Math.max(mine.worst, 1);
+  const chart = $("chart"); chart.innerHTML = "";
+  const fills = {}, cnts = {}, running = {};
+  for(let w=1; w<=maxW; w++){
+    const bar = document.createElement("div"); bar.className = "bar";
+    bar.innerHTML = '<div class="cnt num">0</div><div class="fill" style="height:0"></div>'
+      + '<div class="lbl">' + w + '<br>' + (w===1?"weighing":"weighings") + '</div>';
+    if(!mine.counts[w]) bar.classList.add("zero");
+    chart.appendChild(bar);
+    fills[w] = bar.querySelector(".fill");
+    cnts[w]  = bar.querySelector(".cnt");
+    running[w] = 0;
+  }
+  const peak = Math.max(...Object.values(mine.counts));
+  const H = 140; // px available for the tallest bar
+
+  $("compare").innerHTML = "";
+  const step = clamp(Math.round(900/S.n), 40, 150);
+  for(let h=0; h<S.n; h++){
+    $("simStatus").textContent = "Running trial " + (h+1) + " of " + S.n
+      + " — heavy coin hidden at #" + (h+1) + "…";
+    minis[h].classList.add("active");
+    const w = mine.per[h];
+    running[w]++;
+    cnts[w].textContent = running[w];
+    fills[w].style.height = (running[w]/peak*H) + "px";
+    await sleep(step);
+    minis[h].classList.remove("active");
+    minis[h].classList.add("done");
+    minis[h].title = plural(w,"weighing");
+  }
+  $("simStatus").innerHTML = "All " + S.n + " cases played out. Your strategy averages <b>"
+    + mine.avg.toFixed(2) + "</b> weighings, worst case <b>" + mine.worst + "</b>.";
+
+  const pctL = Math.round(S.p*100), pctA = 100 - 2*pctL;
+  $("compare").innerHTML =
+      '<div class="cmp"><div class="k">Your strategy (' + pctL + "/" + pctL + "/" + pctA + ')</div>'
+    + '<div class="v num">' + mine.avg.toFixed(2) + '</div>'
+    + '<div class="s">average weighings · worst case <b class="num">' + mine.worst + '</b></div></div>'
+    + '<div class="cmp opt"><div class="k">Equal thirds, recomputed every step</div>'
+    + '<div class="v num">' + opt.avg.toFixed(2) + '</div>'
+    + '<div class="s">average weighings · worst case <b class="num">' + opt.worst
+    + '</b>, which equals the proven minimum ⌈log<sub>3</sub> ' + S.n + '⌉ = ' + bound + '</div></div>';
+
+  showExplainer(mine, opt, bound);
+}
+
+/* ================= closing explainer ================= */
+function showExplainer(mine, opt, bound){
+  $("explainPanel").classList.remove("hidden");
+  $("explainYourN").innerHTML = "For your <b>" + S.n + "</b> coins: 3<sup>" + (bound-1) + "</sup> = "
+    + Math.pow(3,Math.max(bound-1,0)) + " is not enough, 3<sup>" + bound + "</sup> = " + Math.pow(3,bound)
+    + " is — so <b>" + plural(bound,"weighing") + "</b> always suffices, and no strategy can promise fewer.";
+
+  // n vs ceil(log3 n), with the student's n highlighted
+  const rows = [3,9,27];
+  const set = rows.includes(S.n) ? rows : rows.concat([S.n]).sort((a,b)=>a-b);
+  let html = "<tr><th>Coins (n)</th><th>Weighings needed ⌈log₃ n⌉</th></tr>";
+  set.forEach(v => {
+    html += '<tr class="' + (v===S.n?"you":"") + '"><td>' + v + (v===S.n?" ← yours":"")
+         + "</td><td>" + ceilLog3(v) + "</td></tr>";
+  });
+  $("t3").innerHTML = html;
+
+  const gap = mine.avg - opt.avg;
+  let verdict;
+  if(mine.worst === bound && gap <= 0.001)
+    verdict = "Your strategy matched the optimum exactly: an average of " + mine.avg.toFixed(2)
+      + " weighings and a worst case of " + mine.worst + ", the same as equal thirds. Well played.";
+  else if(mine.worst === bound)
+    verdict = "Your strategy never exceeds the proven minimum of " + plural(bound,"weighing")
+      + " — but it averages " + mine.avg.toFixed(2) + " against equal thirds' " + opt.avg.toFixed(2)
+      + ", so some hiding places cost you more than they had to.";
+  else
+    verdict = "Your worst case is " + mine.worst + " weighings against the proven minimum of " + bound
+      + ", and your average is " + mine.avg.toFixed(2) + " against equal thirds' " + opt.avg.toFixed(2)
+      + ". Recomputing near-equal thirds at every step — instead of holding your opening ratio — closes that gap.";
+  $("explainVerdict").textContent = verdict;
+}
+
+/* Coins are sized as large as the classroom projector allows, then capped so a
+   pan on a narrow screen still fits a couple of coins per row. */
+function setCoinSize(){
+  let px = S.n<=12 ? 48 : S.n<=20 ? 40 : 32;
+  const w = window.innerWidth;
+  if(w < 520) px = Math.min(px, 26);
+  else if(w < 760) px = Math.min(px, 34);
+  document.documentElement.style.setProperty("--coin", px + "px");
+}
+
+/* keep coin positions correct after a resize without animating them */
+let rz;
+window.addEventListener("resize", () => {
+  clearTimeout(rz);
+  rz = setTimeout(() => { if(S.phase!=="setup"){ setCoinSize(); layout(false); } }, 120);
+});
+
+markPresets();
+})();
+</script>
+</body>
+</html>
