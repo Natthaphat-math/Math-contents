@@ -35,9 +35,10 @@
   }
 
   *{ box-sizing:border-box; }
-  html{ scroll-behavior:smooth; }
+  html{ scroll-behavior:smooth; overscroll-behavior-y:none; }
   body{
     margin:0;
+    overscroll-behavior-y:none;
     background-color:var(--paper);
     background-image:
       linear-gradient(var(--grid-line) 1px, transparent 1px),
@@ -335,10 +336,18 @@
     border:0;
     background:#fff;
     pointer-events:none;
+    touch-action:none;
     opacity:0;
     transition:opacity .5s ease;
   }
   .card-preview iframe.loaded{ opacity:1; }
+  /* iOS Safari can let touch drags reach into an iframe's own scrollable
+     content even with pointer-events:none on the iframe itself. This
+     transparent shield sits on top and catches the touch first, so a drag
+     over a preview always scrolls the page instead of the embedded page. */
+  .preview-shield{
+    position:absolute; inset:0;
+  }
   .preview-badge{
     position:absolute; right:8px; bottom:8px;
     font-family:var(--font-mono);
@@ -507,6 +516,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="P1-6/origin-area.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">พื้นที่</span><span class="level-tag lvl-ps">ประถม</span></div>
@@ -521,6 +531,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="General/multi-dimension.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">มิติ</span><span class="level-tag lvl-other">อื่น ๆ</span></div>
@@ -535,6 +546,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M1-3/sqrt2-paper.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">จํานวนอตรรกยะ</span><span class="level-tag lvl-jh">ม.ต้น</span></div>
@@ -549,6 +561,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="matrix-multiplication-trainer.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">เมทริกซ์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -563,6 +576,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/logic-connectives.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ตรรกศาสตร์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -577,6 +591,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/logic-parlor.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ตรรกศาสตร์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -591,6 +606,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/casino-expected-value.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ค่าคาดหมาย</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -605,6 +621,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/Cube-folding.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">TGAT2</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -619,6 +636,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/complex-roots-explorer.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">จํานวนเชิงซ้อน</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -633,6 +651,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="University/intro-coding-theory.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีรหัส</span><span class="level-tag lvl-uni">มหาลัย</span></div>
@@ -647,6 +666,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="University/simple-take-away-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-uni">มหาลัย</span></div>
@@ -661,6 +681,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="University/nim.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-uni">มหาลัย</span></div>
@@ -675,6 +696,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="University/turning-turtles.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-uni">มหาลัย</span></div>
@@ -689,6 +711,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/pizza-trig.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">ฟังก์ชันตรีโกณมิติ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
@@ -703,6 +726,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="General/Birthday-math-trick.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">เกมทายใจ</span><span class="level-tag lvl-other">อื่น ๆ</span></div>
@@ -717,6 +741,7 @@
         <span class="hole"></span>
         <div class="card-preview">
           <iframe data-src="M4-6/Math-card-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="preview-shield"></div>
           <span class="preview-badge">ตัวอย่าง</span>
         </div>
         <div class="tag-row"><span class="tag">เกมฝึกทักษะ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
