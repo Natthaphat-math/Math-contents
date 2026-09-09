@@ -884,11 +884,17 @@
     cards.forEach(c => io.observe(c));
   }
 
-  // lazy-load the live preview iframes: only fetch a page once its card is
-  // about to scroll into view, so the initial page load stays light
+  // lazy-load the live preview iframes: fetch a page only while its card is
+  // near the viewport, and unload it again once the card scrolls well away.
+  // Each preview is a whole separate webpage (own JS/canvas/etc.), so with
+  // 15+ cards on the page, keeping every previously-seen preview resident
+  // forever can push mobile Safari over its per-tab memory ceiling — which
+  // is what makes it silently kill and reload the tab on a fast scroll.
+  // Unloading out-of-view frames keeps only a handful loaded at any time.
   const previewFrames = Array.from(document.querySelectorAll('.card-preview iframe[data-src]'));
   previewFrames.forEach(frame => {
     frame.addEventListener('load', () => {
+      if (!frame.getAttribute('src')) return; // fires on unload too; ignore that
       if (reduceMotion) { frame.classList.add('loaded'); }
       else { requestAnimationFrame(() => frame.classList.add('loaded')); }
     });
@@ -896,18 +902,19 @@
   if ('IntersectionObserver' in window) {
     const previewIo = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
+        const frame = entry.target;
         if (entry.isIntersecting) {
-          const frame = entry.target;
-          frame.src = frame.dataset.src;
-          frame.removeAttribute('data-src');
-          previewIo.unobserve(frame);
+          if (!frame.getAttribute('src')) frame.src = frame.dataset.src;
+        } else {
+          frame.classList.remove('loaded');
+          frame.removeAttribute('src'); // free the memory until it's back in view
         }
       });
-    }, { threshold: 0.01, rootMargin: '200px 0px' });
+    }, { threshold: 0, rootMargin: '150px 0px' });
     previewFrames.forEach(frame => previewIo.observe(frame));
   } else {
     // no IntersectionObserver support — just load everything up front
-    previewFrames.forEach(frame => { frame.src = frame.dataset.src; frame.removeAttribute('data-src'); });
+    previewFrames.forEach(frame => { frame.src = frame.dataset.src; });
   }
 </script>
 
