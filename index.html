@@ -909,14 +909,18 @@
     cards.forEach(c => io.observe(c));
   }
 
-  // lazy-load the live preview iframes: fetch a page only while its card is
-  // near the viewport, and unload it again once the card scrolls well away.
-  // Each preview is a whole separate webpage (own JS/canvas/etc.), so with
-  // 15+ cards on the page, keeping every previously-seen preview resident
-  // forever can push mobile Safari over its per-tab memory ceiling — which
-  // is what makes it silently kill and reload the tab on a fast scroll.
-  // Unloading out-of-view frames keeps only a handful loaded at any time.
+  // Live preview iframes: each one is a full separate webpage (own JS,
+  // canvas, animation loops). Letting several run indefinitely at once is
+  // what was crashing Safari's renderer repeatedly on fast scrolls. Fix:
+  // load a preview, let it draw for a moment, then freeze its animation and
+  // timers so it becomes a still image — and never allow more than a
+  // handful of previews to be "live" (unfrozen) at the same time.
   const previewFrames = Array.from(document.querySelectorAll('.card-preview iframe[data-src]'));
+  const MAX_ACTIVE_PREVIEWS = 3;   // hard cap on concurrently-live previews
+  const FREEZE_AFTER_MS = 900;     // how long a preview gets to render before it's frozen
+  let activePreviewCount = 0;
+  const previewQueue = [];         // frames waiting for a free "live" slot
+
   previewFrames.forEach(frame => {
     frame.addEventListener('load', () => {
       if (!frame.getAttribute('src')) return; // fires on unload too; ignore that
@@ -924,23 +928,66 @@
       else { requestAnimationFrame(() => frame.classList.add('loaded')); }
     });
   });
+
+  function freezePreview(frame){
+    // same-origin (allow-same-origin), so we can reach in and stop it from
+    // doing any further work — this is what turns "live" into "still image"
+    try {
+      const win = frame.contentWindow;
+      if (!win) return;
+      win.requestAnimationFrame = () => 0;
+      win.setInterval = () => 0;
+      win.setTimeout = () => 0;
+      const doc = frame.contentDocument;
+      if (doc && doc.head) {
+        const style = doc.createElement('style');
+        style.textContent = '*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }';
+        doc.head.appendChild(style);
+      }
+    } catch (e) { /* cross-origin or already torn down — ignore */ }
+  }
+
+  function fillPreviewSlots(){
+    while (activePreviewCount < MAX_ACTIVE_PREVIEWS && previewQueue.length) {
+      const frame = previewQueue.shift();
+      frame.src = frame.dataset.src;
+      activePreviewCount++;
+      frame._freezeTimer = setTimeout(() => freezePreview(frame), FREEZE_AFTER_MS);
+    }
+  }
+
+  function releasePreview(frame){
+    if (frame._freezeTimer) { clearTimeout(frame._freezeTimer); frame._freezeTimer = null; }
+    const qIndex = previewQueue.indexOf(frame);
+    if (qIndex !== -1) previewQueue.splice(qIndex, 1);
+    if (frame.getAttribute('src')) {
+      frame.removeAttribute('src'); // fully unload — frees the memory
+      activePreviewCount = Math.max(0, activePreviewCount - 1);
+    }
+    frame.classList.remove('loaded');
+    fillPreviewSlots();
+  }
+
   if ('IntersectionObserver' in window) {
     const previewIo = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         const frame = entry.target;
         if (entry.isIntersecting) {
-          if (!frame.getAttribute('src')) frame.src = frame.dataset.src;
+          if (!frame.getAttribute('src') && !previewQueue.includes(frame)) {
+            previewQueue.push(frame);
+            fillPreviewSlots();
+          }
         } else {
-          frame.classList.remove('loaded');
-          frame.removeAttribute('src'); // free the memory until it's back in view
+          releasePreview(frame);
         }
       });
-    }, { threshold: 0, rootMargin: '150px 0px' });
+    }, { threshold: 0, rootMargin: '100px 0px' });
     previewFrames.forEach(frame => previewIo.observe(frame));
   } else {
     // no IntersectionObserver support — just load everything up front
     previewFrames.forEach(frame => { frame.src = frame.dataset.src; });
   }
+
 </script>
 
 </body>
