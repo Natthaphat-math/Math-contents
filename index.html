@@ -910,22 +910,19 @@
   }
 
   // Live preview iframes: each one is a full separate webpage (own JS,
-  // canvas, animation loops). Letting several run indefinitely at once is
-  // what was crashing Safari's renderer repeatedly on fast scrolls. Fix:
-  // load a preview, let it draw for a moment, then freeze its animation and
-  // timers so it becomes a still image — and never allow more than a
-  // handful of previews to be "live" (unfrozen) at the same time.
+  // canvas, animation loops). We let every visible preview load, but freeze
+  // its animation/timers almost immediately so it becomes a still image
+  // instead of something that keeps running (and using CPU/GPU) forever.
   const previewFrames = Array.from(document.querySelectorAll('.card-preview iframe[data-src]'));
-  const MAX_ACTIVE_PREVIEWS = 3;   // hard cap on concurrently-live previews
-  const FREEZE_AFTER_MS = 900;     // how long a preview gets to render before it's frozen
-  let activePreviewCount = 0;
-  const previewQueue = [];         // frames waiting for a free "live" slot
+  const FREEZE_AFTER_MS = 350; // brief render window, then frozen to a still frame
 
   previewFrames.forEach(frame => {
     frame.addEventListener('load', () => {
       if (!frame.getAttribute('src')) return; // fires on unload too; ignore that
       if (reduceMotion) { frame.classList.add('loaded'); }
       else { requestAnimationFrame(() => frame.classList.add('loaded')); }
+      if (frame._freezeTimer) clearTimeout(frame._freezeTimer);
+      frame._freezeTimer = setTimeout(() => freezePreview(frame), FREEZE_AFTER_MS);
     });
   });
 
@@ -947,25 +944,12 @@
     } catch (e) { /* cross-origin or already torn down — ignore */ }
   }
 
-  function fillPreviewSlots(){
-    while (activePreviewCount < MAX_ACTIVE_PREVIEWS && previewQueue.length) {
-      const frame = previewQueue.shift();
-      frame.src = frame.dataset.src;
-      activePreviewCount++;
-      frame._freezeTimer = setTimeout(() => freezePreview(frame), FREEZE_AFTER_MS);
-    }
-  }
-
   function releasePreview(frame){
     if (frame._freezeTimer) { clearTimeout(frame._freezeTimer); frame._freezeTimer = null; }
-    const qIndex = previewQueue.indexOf(frame);
-    if (qIndex !== -1) previewQueue.splice(qIndex, 1);
     if (frame.getAttribute('src')) {
       frame.removeAttribute('src'); // fully unload — frees the memory
-      activePreviewCount = Math.max(0, activePreviewCount - 1);
     }
     frame.classList.remove('loaded');
-    fillPreviewSlots();
   }
 
   if ('IntersectionObserver' in window) {
@@ -973,10 +957,7 @@
       entries.forEach(entry => {
         const frame = entry.target;
         if (entry.isIntersecting) {
-          if (!frame.getAttribute('src') && !previewQueue.includes(frame)) {
-            previewQueue.push(frame);
-            fillPreviewSlots();
-          }
+          if (!frame.getAttribute('src')) frame.src = frame.dataset.src;
         } else {
           releasePreview(frame);
         }
@@ -987,6 +968,7 @@
     // no IntersectionObserver support — just load everything up front
     previewFrames.forEach(frame => { frame.src = frame.dataset.src; });
   }
+
 
 </script>
 
