@@ -1,0 +1,54 @@
+name: Generate game thumbnails
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Game pages can live at the repo root or in any topic folder, so
+      # watch every HTML file; the script only screenshots pages actually
+      # referenced by a data-src="..." in index.html.
+      - '**/*.html'
+      - 'scripts/generate-thumbnails.mjs'
+      - 'package.json'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: thumbnails-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate thumbnails
+        run: npm run generate-thumbnails
+
+      - name: Commit thumbnails if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add thumbnails
+          if git diff --cached --quiet; then
+            echo "No thumbnail changes to commit."
+          else
+            git commit -m "chore: update game thumbnails [skip ci]"
+            git push
+          fi
