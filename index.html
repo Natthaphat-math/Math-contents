@@ -313,8 +313,6 @@
   .level-tag.lvl-uni{ color:var(--lvl-uni); background:var(--lvl-uni-soft); }
   .level-tag.lvl-other{ color:var(--lvl-other); background:var(--lvl-other-soft); }
 
-  /* live scaled-down iframe preview: iframe renders at 4x the box size,
-     then is scaled to 25% so it always fills the box responsively without JS */
   .card-preview{
     position:relative;
     width:100%;
@@ -328,36 +326,11 @@
     background-color:#F1EFE6;
     border:1px solid var(--card-border);
   }
-  .card-preview iframe{
-    position:absolute; top:0; left:0;
-    width:400%; height:400%;
-    transform:scale(0.25);
-    transform-origin:top left;
-    border:0;
-    background:#fff;
-    pointer-events:none;
-    touch-action:none;
-    opacity:0;
-    transition:opacity .5s ease;
-  }
-  .card-preview iframe.loaded{ opacity:1; }
-  /* iOS Safari can let touch drags reach into an iframe's own scrollable
-     content even with pointer-events:none on the iframe itself. This
-     transparent shield sits on top and catches the touch first, so a drag
-     over a preview always scrolls the page instead of the embedded page. */
-  .preview-shield{
-    position:absolute; inset:0;
-  }
-  .preview-badge{
-    position:absolute; right:8px; bottom:8px;
-    font-family:var(--font-mono);
-    font-size:10px;
-    letter-spacing:.05em;
-    color:var(--chalk-white);
-    background:rgba(19,41,34,0.72);
-    padding:3px 9px;
-    border-radius:100px;
-    pointer-events:none;
+  .card-preview img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
   }
   .card-preview + .tag-row{ margin-top:16px; }
 
@@ -515,9 +488,7 @@
       <a class="card" href="P1-6/origin-area.html" target="_blank" aria-label="เปิดที่มาของสูตรพื้นที่" data-categories="สื่อการสอน" data-level="ประถม">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="P1-6/origin-area.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/P1-6/origin-area.png" loading="lazy" alt="เปิดที่มาของสูตรพื้นที่">
         </div>
         <div class="tag-row"><span class="tag">พื้นที่</span><span class="level-tag lvl-ps">ประถม</span></div>
         <h3>ที่มาของสูตรพื้นที่</h3>
@@ -530,9 +501,7 @@
       <a class="card" href="General/multi-dimension.html" target="_blank" aria-label="เปิดมิติที่สูงขึ้น" data-categories="สื่อการสอน" data-level="อื่น ๆ">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="General/multi-dimension.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/General/multi-dimension.png" loading="lazy" alt="เปิดมิติที่สูงขึ้น">
         </div>
         <div class="tag-row"><span class="tag">มิติ</span><span class="level-tag lvl-other">อื่น ๆ</span></div>
         <h3>มิติที่สูงขึ้น</h3>
@@ -545,9 +514,7 @@
       <a class="card" href="M1-3/sqrt2-paper.html" target="_blank" aria-label="เปิดจํานวนในกระดาษ" data-categories="สื่อการสอน" data-level="ม.ต้น">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M1-3/sqrt2-paper.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M1-3/sqrt2-paper.png" loading="lazy" alt="เปิดจํานวนในกระดาษ">
         </div>
         <div class="tag-row"><span class="tag">จํานวนอตรรกยะ</span><span class="level-tag lvl-jh">ม.ต้น</span></div>
         <h3>จํานวนในกระดาษ</h3>
@@ -560,9 +527,7 @@
       <a class="card" href="matrix-multiplication-trainer.html" target="_blank" aria-label="เปิดฝึกคูณเมทริกซ์" data-categories="สื่อการสอน" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="matrix-multiplication-trainer.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/matrix-multiplication-trainer.png" loading="lazy" alt="เปิดฝึกคูณเมทริกซ์">
         </div>
         <div class="tag-row"><span class="tag">เมทริกซ์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>ฝึกการคูณเมทริกซ์</h3>
@@ -575,9 +540,7 @@
       <a class="card" href="M4-6/logic-connectives.html" target="_blank" aria-label="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์" data-categories="สื่อการสอน" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/logic-connectives.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/logic-connectives.png" loading="lazy" alt="เปิดบทเรียนตัวเชื่อมประพจน์ตรรกศาสตร์">
         </div>
         <div class="tag-row"><span class="tag">ตรรกศาสตร์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>ตัวเชื่อมประพจน์ตรรกศาสตร์</h3>
@@ -590,9 +553,7 @@
       <a class="card" href="M4-6/logic-parlor.html" target="_blank" aria-label="เปิดเกมการ์ดตรรกศาสตร์" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/logic-parlor.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/logic-parlor.png" loading="lazy" alt="เปิดเกมการ์ดตรรกศาสตร์">
         </div>
         <div class="tag-row"><span class="tag">ตรรกศาสตร์</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมการ์ดตรรกศาสตร์</h3>
@@ -605,9 +566,7 @@
       <a class="card" href="M4-6/casino-expected-value.html" target="_blank" aria-label="เปิดเกมค่าคาดหมาย" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/casino-expected-value.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/casino-expected-value.png" loading="lazy" alt="เปิดเกมค่าคาดหมาย">
         </div>
         <div class="tag-row"><span class="tag">ค่าคาดหมาย</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมค่าคาดหมาย และตัวแปรสุ่ม</h3>
@@ -620,9 +579,7 @@
       <a class="card" href="M4-6/Cube-folding.html" target="_blank" aria-label="เปิดโจทย์พับกล่อง" data-categories="สื่อการสอน เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/Cube-folding.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/Cube-folding.png" loading="lazy" alt="เปิดโจทย์พับกล่อง">
         </div>
         <div class="tag-row"><span class="tag">TGAT2</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>โจทย์พับกล่อง</h3>
@@ -635,9 +592,7 @@
       <a class="card" href="M4-6/complex-roots-explorer.html" target="_blank" aria-label="เปิดรากเชิงซ้อน" data-categories="สื่อการสอน" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/complex-roots-explorer.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/complex-roots-explorer.png" loading="lazy" alt="เปิดรากเชิงซ้อน">
         </div>
         <div class="tag-row"><span class="tag">จํานวนเชิงซ้อน</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>รากเชิงซ้อน</h3>
@@ -650,9 +605,7 @@
       <a class="card" href="University/intro-coding-theory.html" target="_blank" aria-label="เปิดทฤษฎีรหัส" data-categories="สื่อการสอน" data-level="มหาลัย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="University/intro-coding-theory.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/University/intro-coding-theory.png" loading="lazy" alt="เปิดทฤษฎีรหัส">
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีรหัส</span><span class="level-tag lvl-uni">มหาลัย</span></div>
         <h3>การเข้ารหัส</h3>
@@ -665,9 +618,7 @@
       <a class="card" href="University/simple-take-away-game.html" target="_blank" aria-label="เปิดเกมนับเลข" data-categories="เกม" data-level="มหาลัย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="University/simple-take-away-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/University/simple-take-away-game.png" loading="lazy" alt="เปิดเกมนับเลข">
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-uni">มหาลัย</span></div>
         <h3>เกมนับเลข (Take-away game)</h3>
@@ -680,9 +631,7 @@
       <a class="card" href="University/nim.html" target="_blank" aria-label="เปิดเกมนิม" data-categories="เกม" data-level="มหาลัย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="University/nim.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/University/nim.png" loading="lazy" alt="เปิดเกมนิม">
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-uni">มหาลัย</span></div>
         <h3>เกมนิม หยิบเหรียญ</h3>
@@ -695,9 +644,7 @@
       <a class="card" href="University/turning-turtles.html" target="_blank" aria-label="เปิดเกมกลับเต่า" data-categories="เกม" data-level="มหาลัย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="University/turning-turtles.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/University/turning-turtles.png" loading="lazy" alt="เปิดเกมกลับเต่า">
         </div>
         <div class="tag-row"><span class="tag">ทฤษฎีเกม</span><span class="level-tag lvl-uni">มหาลัย</span></div>
         <h3>เกมพลิกเต่า (Turning turtles)</h3>
@@ -710,9 +657,7 @@
       <a class="card" href="M4-6/pizza-trig.html" target="_blank" aria-label="เปิดพิซซ่าตรีโกณ" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/pizza-trig.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/pizza-trig.png" loading="lazy" alt="เปิดพิซซ่าตรีโกณ">
         </div>
         <div class="tag-row"><span class="tag">ฟังก์ชันตรีโกณมิติ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>พิซซ่าตรีโกณมิติ</h3>
@@ -725,9 +670,7 @@
       <a class="card" href="General/Birthday-math-trick.html" target="_blank" aria-label="เปิดทายใจวันเกิด" data-categories="เกม" data-level="อื่น ๆ">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="General/Birthday-math-trick.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/General/Birthday-math-trick.png" loading="lazy" alt="เปิดทายใจวันเกิด">
         </div>
         <div class="tag-row"><span class="tag">เกมทายใจ</span><span class="level-tag lvl-other">อื่น ๆ</span></div>
         <h3>ทายใจวันเกิด</h3>
@@ -740,9 +683,7 @@
       <a class="card" href="M4-6/Math-card-game.html" target="_blank" aria-label="เปิดเกมไพ่คณิตศาสตร์" data-categories="เกม" data-level="ม.ปลาย">
         <span class="hole"></span>
         <div class="card-preview">
-          <iframe data-src="M4-6/Math-card-game.html" tabindex="-1" aria-hidden="true" sandbox="allow-scripts allow-same-origin"></iframe>
-          <div class="preview-shield"></div>
-          <span class="preview-badge">ตัวอย่าง</span>
+          <img src="thumbnails/M4-6/Math-card-game.png" loading="lazy" alt="เปิดเกมไพ่คณิตศาสตร์">
         </div>
         <div class="tag-row"><span class="tag">เกมฝึกทักษะ</span><span class="level-tag lvl-sh">ม.ปลาย</span></div>
         <h3>เกมไพ่คณิตศาสตร์</h3>
@@ -908,68 +849,6 @@
     }, { threshold: 0.15 });
     cards.forEach(c => io.observe(c));
   }
-
-  // Live preview iframes: each one is a full separate webpage (own JS,
-  // canvas, animation loops). We let every visible preview load, but freeze
-  // its animation/timers almost immediately so it becomes a still image
-  // instead of something that keeps running (and using CPU/GPU) forever.
-  const previewFrames = Array.from(document.querySelectorAll('.card-preview iframe[data-src]'));
-  const FREEZE_AFTER_MS = 350; // brief render window, then frozen to a still frame
-
-  previewFrames.forEach(frame => {
-    frame.addEventListener('load', () => {
-      if (!frame.getAttribute('src')) return; // fires on unload too; ignore that
-      if (reduceMotion) { frame.classList.add('loaded'); }
-      else { requestAnimationFrame(() => frame.classList.add('loaded')); }
-      if (frame._freezeTimer) clearTimeout(frame._freezeTimer);
-      frame._freezeTimer = setTimeout(() => freezePreview(frame), FREEZE_AFTER_MS);
-    });
-  });
-
-  function freezePreview(frame){
-    // same-origin (allow-same-origin), so we can reach in and stop it from
-    // doing any further work — this is what turns "live" into "still image"
-    try {
-      const win = frame.contentWindow;
-      if (!win) return;
-      win.requestAnimationFrame = () => 0;
-      win.setInterval = () => 0;
-      win.setTimeout = () => 0;
-      const doc = frame.contentDocument;
-      if (doc && doc.head) {
-        const style = doc.createElement('style');
-        style.textContent = '*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }';
-        doc.head.appendChild(style);
-      }
-    } catch (e) { /* cross-origin or already torn down — ignore */ }
-  }
-
-  function releasePreview(frame){
-    if (frame._freezeTimer) { clearTimeout(frame._freezeTimer); frame._freezeTimer = null; }
-    if (frame.getAttribute('src')) {
-      frame.removeAttribute('src'); // fully unload — frees the memory
-    }
-    frame.classList.remove('loaded');
-  }
-
-  if ('IntersectionObserver' in window) {
-    const previewIo = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const frame = entry.target;
-        if (entry.isIntersecting) {
-          if (!frame.getAttribute('src')) frame.src = frame.dataset.src;
-        } else {
-          releasePreview(frame);
-        }
-      });
-    }, { threshold: 0, rootMargin: '100px 0px' });
-    previewFrames.forEach(frame => previewIo.observe(frame));
-  } else {
-    // no IntersectionObserver support — just load everything up front
-    previewFrames.forEach(frame => { frame.src = frame.dataset.src; });
-  }
-
-
 </script>
 
 </body>

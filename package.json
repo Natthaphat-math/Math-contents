@@ -1,0 +1,11 @@
+{
+  "name": "math-contents",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate-thumbnails": "node scripts/generate-thumbnails.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
