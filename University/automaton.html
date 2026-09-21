@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deterministic Finite Automata — an interactive introduction</title>
+<style>
+/* =====================================================================
+   THEME TOKENS
+   Light by default, dark via prefers-color-scheme. Every colour used by
+   the page (including inside the SVG diagrams) comes from here, so the
+   two themes stay in sync.
+   ===================================================================== */
+:root{
+  color-scheme: light dark;
+  --bg:#f4f5fa;
+  --panel:#ffffff;
+  --panel-2:#eef0f8;
+  --ink:#14161d;
+  --muted:#535a6b;
+  --line:#c7cbdb;
+  --line-soft:#e3e6ef;
+  --accent:#4338ca;
+  --accent-2:#0e7490;
+  --accent-soft:#e7e6ff;
+  --on-accent:#ffffff;
+  --good:#0a6b46;
+  --good-soft:#dcf2e7;
+  --bad:#a5180f;
+  --bad-soft:#fce7e5;
+  --warn:#845000;
+  --warn-soft:#fbeed3;
+  --hl:#b34700;              /* diagram highlight (active state / edge)  */
+  --hl-soft:#ffe8cf;
+  --node:#ffffff;
+  --shadow:0 1px 2px rgba(18,20,30,.08), 0 6px 18px rgba(18,20,30,.06);
+  --radius:14px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#11131a;
+    --panel:#191c25;
+    --panel-2:#212532;
+    --ink:#eef0f6;
+    --muted:#a8b0c2;
+    --line:#3a4054;
+    --line-soft:#2a2f3d;
+    --accent:#a5b4fc;
+    --accent-2:#67e8f9;
+    --accent-soft:#2b3050;
+    --on-accent:#11131a;
+    --good:#6ee7b7;
+    --good-soft:#123227;
+    --bad:#fca5a5;
+    --bad-soft:#3a1d1c;
+    --warn:#fcd34d;
+    --warn-soft:#3a2f14;
+    --hl:#fbbf24;
+    --hl-soft:#40300f;
+    --node:#232838;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+
+/* =====================================================================
+   BASE
+   ===================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:17px; line-height:1.6;
+}
+h1,h2,h3,h4{line-height:1.25; margin:0 0 .5em}
+h1{font-size:1.6rem; letter-spacing:-.02em}
+h2{font-size:1.45rem; letter-spacing:-.01em; margin-top:0}
+h3{font-size:1.15rem}
+h4{font-size:1rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
+p{margin:0 0 1em}
+ul,ol{margin:0 0 1em; padding-left:1.35em}
+li{margin:.3em 0}
+a{color:var(--accent)}
+code,kbd,samp{font-family:var(--mono); font-size:.92em}
+.mono{font-family:var(--mono)}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:4px}
+.skip{
+  position:absolute; left:-9999px; top:0; background:var(--accent); color:var(--on-accent);
+  padding:.6em 1em; z-index:50; border-radius:0 0 8px 0;
+}
+.skip:focus{left:0}
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+/* =====================================================================
+   PAGE FRAME + TABS
+   ===================================================================== */
+header.top{
+  position:sticky; top:0; z-index:20;
+  background:color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.top-inner{max-width:1120px; margin:0 auto; padding:.7rem 1rem .1rem}
+.brand{display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap}
+.brand h1{margin:0; font-size:1.15rem}
+.brand .sub{color:var(--muted); font-size:.85rem}
+.tabs{display:flex; gap:.25rem; overflow-x:auto; padding:.5rem 0 .35rem; scrollbar-width:thin; position:relative}
+.tab{
+  flex:0 0 auto; border:1px solid transparent; background:none; color:var(--muted);
+  font:inherit; font-size:.95rem; font-weight:600; padding:.45em .9em;
+  border-radius:999px; cursor:pointer; white-space:nowrap;
+}
+.tab:hover{background:var(--panel-2); color:var(--ink)}
+.tab[aria-selected="true"], .tab[aria-pressed="true"]{background:var(--accent); color:var(--on-accent); border-color:var(--accent)}
+.tab .num{opacity:.65; margin-right:.35em; font-variant-numeric:tabular-nums}
+main{max-width:1120px; margin:0 auto; padding:1.2rem 1rem 4rem}
+.panel[hidden]{display:none}
+.lede{font-size:1.06rem; color:var(--muted); max-width:62ch}
+
+/* cards + layout helpers */
+.card{
+  background:var(--panel); border:1px solid var(--line-soft); border-radius:var(--radius);
+  padding:1.1rem 1.2rem; margin:0 0 1.1rem; box-shadow:var(--shadow);
+}
+.card > :last-child{margin-bottom:0}
+.card h3:first-child, .card h2:first-child{margin-top:0}
+.grid{display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fit,minmax(min(310px,100%),1fr))}
+.grid > *{min-width:0}
+.row{display:flex; gap:.5rem; flex-wrap:wrap; align-items:center}
+.stack{display:flex; flex-direction:column; gap:.75rem}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+.tight{margin-bottom:.35em}
+
+/* callouts */
+.note{
+  border-left:4px solid var(--accent); background:var(--accent-soft);
+  padding:.75rem 1rem; border-radius:0 10px 10px 0; margin:0 0 1em;
+}
+.note.warn{border-color:var(--warn); background:var(--warn-soft)}
+.note.good{border-color:var(--good); background:var(--good-soft)}
+.note p:last-child{margin-bottom:0}
+.note .tag{font-weight:700; letter-spacing:.02em}
+
+/* buttons */
+button{font:inherit}
+.btn{
+  background:var(--panel); color:var(--ink); border:1px solid var(--line);
+  border-radius:9px; padding:.42em .85em; cursor:pointer; font-weight:600; font-size:.95rem;
+}
+.btn:hover:not(:disabled){background:var(--panel-2)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.primary{background:var(--accent); color:var(--on-accent); border-color:var(--accent)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.08)}
+.btn.ghost{border-color:transparent; background:transparent; text-decoration:underline}
+.btn.small{font-size:.85rem; padding:.3em .6em}
+.btn.danger{color:var(--bad); border-color:var(--line)}
+.chip{
+  background:var(--panel-2); border:1px solid var(--line); border-radius:999px;
+  padding:.25em .7em; font-family:var(--mono); font-size:.88rem; cursor:pointer;
+}
+.chip:hover{border-color:var(--accent)}
+input[type=text], input[type=search], select{
+  font:inherit; font-family:var(--mono); background:var(--panel); color:var(--ink);
+  border:1px solid var(--line); border-radius:9px; padding:.42em .6em; min-width:0;
+}
+label{font-weight:600}
+
+/* tables */
+table{border-collapse:collapse; font-size:.95rem}
+.ttable{width:auto; min-width:min(100%,320px)}
+.ttable caption{text-align:left; font-weight:700; padding-bottom:.4em; color:var(--muted); font-size:.9rem}
+.ttable th,.ttable td{border:1px solid var(--line); padding:.35em .7em; text-align:center}
+.ttable th{background:var(--panel-2); font-weight:700; white-space:nowrap}
+.ttable th[scope=row]{text-align:left; font-family:var(--mono); white-space:nowrap}
+.ttable td{font-family:var(--mono)}
+.ttable td.meaning{font-family:var(--sans); text-align:left; color:var(--muted); font-size:.88rem; max-width:24ch}
+.ttable .mark{color:var(--accent); font-weight:700}
+.ttable tr.row-active th,.ttable tr.row-active td{background:var(--hl-soft)}
+.ttable td.cell-active{outline:2px solid var(--hl); outline-offset:-2px; font-weight:700}
+.ttable .emph{background:var(--accent-soft); outline:2px solid var(--accent); outline-offset:-2px}
+/* position:relative makes these the containing block for the absolutely
+   positioned .sr-only labels inside them, so a wide table cannot push
+   those 1px boxes past the viewport and create a page-wide scrollbar. */
+.scroll-x{overflow-x:auto; -webkit-overflow-scrolling:touch; position:relative}
+
+/* =====================================================================
+   SVG DIAGRAM STYLES
+   Meaning is never carried by colour alone: the active state also gets a
+   thick ring and is named in the text status line; accept states use the
+   standard double circle; "not allowed" edges are dashed with an ✗ badge.
+   ===================================================================== */
+.diagram{display:block; width:100%; height:auto; touch-action:pan-y}
+.diagram .st-ring{fill:var(--node); stroke:var(--ink); stroke-width:2}
+.diagram .st-inner{fill:none; stroke:var(--ink); stroke-width:2}
+.diagram .st-label{font-family:var(--mono); font-size:15px; fill:var(--ink); text-anchor:middle; dominant-baseline:central}
+.diagram .edge{fill:none; stroke:var(--muted); stroke-width:2}
+.diagram .edge-label{font-family:var(--mono); font-size:14px; fill:var(--ink); text-anchor:middle; dominant-baseline:central;
+  paint-order:stroke; stroke:var(--panel); stroke-width:5px; stroke-linejoin:round}
+.diagram .start-label{font-family:var(--sans); font-size:12px; fill:var(--muted); text-anchor:middle}
+.diagram .arrow{fill:var(--muted)}
+.diagram .arrow-hi{fill:var(--hl)}
+.diagram .arrow-em{fill:var(--accent)}
+/* active (during a simulation) */
+.diagram .st-ring.active{stroke:var(--hl); stroke-width:5; fill:var(--hl-soft)}
+.diagram .st-inner.active{stroke:var(--hl); stroke-width:3}
+.diagram .pulse{fill:none; stroke:var(--hl); stroke-width:2; opacity:.9}
+.diagram .edge.active{stroke:var(--hl); stroke-width:4}
+.diagram .edge-label .sym.active{fill:var(--hl); font-weight:700}
+/* emphasis (tuple explorer) */
+.diagram .st-ring.emph{stroke:var(--accent); stroke-width:5}
+.diagram .st-inner.emph{stroke:var(--accent); stroke-width:3}
+.diagram .edge.emph{stroke:var(--accent); stroke-width:3.5}
+.diagram .edge-label.emph{fill:var(--accent); font-weight:700}
+/* verdict tint of the final state */
+.diagram .st-ring.verdict-accept{stroke:var(--good); stroke-width:5; fill:var(--good-soft)}
+.diagram .st-ring.verdict-reject{stroke:var(--bad); stroke-width:5; fill:var(--bad-soft)}
+.diagram .st-inner.verdict-accept{stroke:var(--good)}
+.diagram .bad-edge{stroke:var(--bad); stroke-dasharray:6 4}
+.diagram .bad-badge{font-family:var(--sans); font-size:15px; font-weight:700; fill:var(--bad); text-anchor:middle}
+.diagram-wrap{background:var(--panel-2); border:1px solid var(--line-soft); border-radius:12px; padding:.4rem}
+@media (prefers-reduced-motion: no-preference){
+  .diagram .pulse{animation:pulse 1.6s ease-out infinite}
+}
+@keyframes pulse{
+  0%{r:30px; opacity:.75} 100%{r:44px; opacity:0}
+}
+
+/* =====================================================================
+   TESTER / SIMULATOR
+   ===================================================================== */
+.tester{display:grid; gap:.9rem}
+.tape{display:flex; flex-wrap:wrap; gap:4px; align-items:center; min-height:44px;
+  font-family:var(--mono); padding:.35rem; background:var(--panel-2); border-radius:10px; border:1px solid var(--line-soft)}
+.tape .sym{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:30px; height:34px; border-radius:7px; border:1px solid var(--line);
+  background:var(--panel); font-size:1rem;
+}
+.tape .sym.done{opacity:.5}
+.tape .sym.next{border-color:var(--hl); border-width:3px; background:var(--hl-soft); font-weight:700}
+.tape .eps{color:var(--muted); font-style:italic; padding:0 .5em}
+.tape .caret{color:var(--hl); font-weight:700}
+.readout{display:grid; gap:.3rem; font-size:.95rem}
+.readout .big{font-size:1.05rem}
+.readout .state-now{font-family:var(--mono); font-weight:700; background:var(--hl-soft); border:1px solid var(--hl);
+  border-radius:7px; padding:.05em .45em}
+.verdict{font-weight:700; border-radius:10px; padding:.5rem .8rem; border:2px solid var(--line); background:var(--panel-2)}
+.verdict.accept{border-color:var(--good); background:var(--good-soft); color:var(--good)}
+.verdict.reject{border-color:var(--bad); background:var(--bad-soft); color:var(--bad)}
+.verdict .glyph{font-size:1.1em; margin-right:.35em}
+.msg{min-height:1.4em; font-size:.9rem}
+.msg.err{color:var(--bad); font-weight:600}
+.msg.ok{color:var(--good)}
+.samples{display:flex; gap:.35rem; flex-wrap:wrap; align-items:center}
+
+/* =====================================================================
+   TUPLE EXPLORER
+   ===================================================================== */
+.tuple{font-family:var(--mono); font-size:1.15rem; display:flex; flex-wrap:wrap; align-items:center; gap:.15em}
+.tuple .part{
+  border:1px solid var(--line); background:var(--panel-2); color:var(--ink);
+  border-radius:8px; padding:.1em .4em; cursor:pointer; font-family:var(--mono); font-size:1rem;
+}
+.tuple .part:hover{border-color:var(--accent)}
+.tuple .part[aria-pressed="true"]{background:var(--accent); color:var(--on-accent); border-color:var(--accent)}
+.explain{min-height:4.5em; background:var(--panel-2); border-radius:10px; padding:.7rem .9rem; font-size:.95rem}
+.explain code{background:var(--panel); padding:.05em .3em; border-radius:4px}
+
+/* =====================================================================
+   BUILDER (exercises)
+   ===================================================================== */
+.builder-table{width:100%; border-collapse:collapse; font-size:.92rem}
+.builder-table th,.builder-table td{border:1px solid var(--line); padding:.3em .4em; text-align:center}
+.builder-table th{background:var(--panel-2)}
+.builder-table input[type=text]{width:6.5em; text-align:center}
+.builder-table select{font-family:var(--mono); padding:.25em .3em}
+.checks{list-style:none; padding:0; margin:.2rem 0 0; font-size:.92rem}
+.checks li{display:flex; gap:.5em; align-items:flex-start; margin:.25em 0}
+.checks .g{font-weight:700; width:1.3em; flex:0 0 auto; text-align:center}
+.checks li.ok .g{color:var(--good)}
+.checks li.no .g{color:var(--bad)}
+.checks li.no{color:var(--bad)}
+.progress-list{display:flex; gap:.4rem; flex-wrap:wrap; list-style:none; padding:0; margin:0}
+.progress-list li{font-size:.85rem; border:1px solid var(--line); border-radius:999px; padding:.2em .7em; background:var(--panel-2)}
+.progress-list li.solved{background:var(--good-soft); border-color:var(--good); color:var(--good); font-weight:700}
+.progress-list li.seen{background:var(--warn-soft); border-color:var(--warn); color:var(--warn)}
+.ex-nav{display:flex; gap:.3rem; flex-wrap:wrap}
+.ex-nav{gap:.35rem}
+.ex-nav .tab{font-size:.9rem; border:1px solid var(--line); white-space:normal; text-align:left; max-width:100%}
+.hint{background:var(--panel-2); border-radius:10px; padding:.6rem .85rem; margin:.4rem 0; border-left:3px solid var(--accent)}
+.result-card{border:2px solid var(--line); border-radius:12px; padding:.8rem 1rem; margin-top:.8rem}
+.result-card.pass{border-color:var(--good); background:var(--good-soft)}
+.result-card.fail{border-color:var(--bad); background:var(--bad-soft)}
+.result-card.invalid{border-color:var(--warn); background:var(--warn-soft)}
+.trace-line{font-family:var(--mono); font-size:.9rem; overflow-x:auto; white-space:nowrap; padding-bottom:.2em}
+
+/* quiz */
+.quiz{border:1px dashed var(--line); border-radius:12px; padding:.8rem 1rem; background:var(--panel)}
+.quiz legend{font-weight:700; padding:0 .4em; font-size:.95rem}
+.quiz .opt{display:flex; gap:.5em; align-items:flex-start; margin:.3em 0; font-weight:400}
+.quiz .opt input{margin-top:.35em}
+.quiz .fb{margin-top:.5em; font-size:.92rem; min-height:1.2em}
+.quiz .fb.right{color:var(--good); font-weight:600}
+.quiz .fb.wrong{color:var(--bad); font-weight:600}
+
+/* misc */
+.kbd{border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:.05em .4em; font-family:var(--mono); font-size:.85em; background:var(--panel-2)}
+.two-col{display:grid; gap:1rem; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start}
+.two-col > *, .stack > *, .tester > *{min-width:0}
+.tester, .stack{min-width:0}
+@media (max-width:760px){ .two-col{grid-template-columns:minmax(0,1fr)} body{font-size:16px} }
+.app-demo{display:grid; gap:.8rem}
+.gate{font-size:2.6rem; text-align:center; line-height:1.1}
+.log{font-family:var(--mono); font-size:.85rem; max-height:7.5em; overflow-y:auto; background:var(--panel-2); border-radius:8px; padding:.4rem .6rem}
+.scan-out{font-family:var(--mono); font-size:1.05rem; line-height:2; word-break:break-all}
+.scan-out .c{padding:.05em .05em; border-bottom:3px solid transparent}
+.scan-out .c.hit{background:var(--good-soft); border-bottom-color:var(--good); font-weight:700}
+.scan-out .c.cur{outline:2px solid var(--hl); border-radius:3px}
+footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--muted); font-size:.9rem; border-top:1px solid var(--line-soft)}
+.next-row{display:flex; justify-content:flex-end; margin-top:1.2rem}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>Deterministic Finite Automata</h1>
+      <span class="sub">an interactive introduction · alphabet Σ = {0, 1}</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-def"  aria-controls="panel-def"  aria-selected="true"><span class="num">1</span>Definition</button>
+      <button class="tab" role="tab" id="tab-ex"   aria-controls="panel-ex"   aria-selected="false"><span class="num">2</span>Examples</button>
+      <button class="tab" role="tab" id="tab-app"  aria-controls="panel-app"  aria-selected="false"><span class="num">3</span>Applications</button>
+      <button class="tab" role="tab" id="tab-lab"  aria-controls="panel-lab"  aria-selected="false"><span class="num">4</span>Build one yourself</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ===================================================================
+     SECTION 1 — DEFINITION
+     =================================================================== -->
+<section class="panel" id="panel-def" role="tabpanel" aria-labelledby="tab-def" tabindex="-1">
+
+  <h2>1 · What is a finite automaton?</h2>
+  <p class="lede">
+    An <strong>automaton</strong> is an imaginary machine that is deliberately as simple as possible:
+    it reads an input one symbol at a time, and the only thing it remembers is which
+    <strong>state</strong> it is currently in. There is no scratch paper, no counter, no memory of
+    what it read three symbols ago — unless that fact is baked into the state it moved to.
+  </p>
+
+  <div class="card">
+    <h3>The job of a DFA: answer one yes/no question</h3>
+    <p>
+      A <strong>deterministic finite automaton</strong> (DFA) is a machine that <em>decides</em> a
+      question about strings. You hand it a string; it reads the string left to right and finally
+      says <strong>accept</strong> (yes, this string has the property) or <strong>reject</strong> (no, it does not).
+    </p>
+    <p>
+      Think of a bouncer with a very short memory, checking a rule like
+      “does this string end with a 1?” or “does this string contain <span class="mono">01</span> somewhere?”.
+      The bouncer cannot remember the whole string — only a small fixed set of facts, one per state.
+      The art of building a DFA is choosing <em>what each state should remember</em>.
+    </p>
+
+    <h4>Vocabulary (we will use these words constantly)</h4>
+    <ul>
+      <li><strong>Symbol</strong> — one character the machine can read. Ours are <span class="mono">0</span> and <span class="mono">1</span>.</li>
+      <li><strong>Alphabet</strong> (<span class="mono">Σ</span>, “sigma”) — the finite set of allowed symbols. On this page <span class="mono">Σ = {0, 1}</span> everywhere.</li>
+      <li><strong>String</strong> — a finite sequence of symbols, e.g. <span class="mono">1001</span>. The <strong>empty string</strong> is written <span class="mono">ε</span> (“epsilon”) and has length 0. It is a perfectly legal input!</li>
+      <li><strong>Language</strong> — a <em>set</em> of strings. “All strings ending in 1” is a language. A DFA’s whole purpose is to define one.</li>
+      <li><span class="mono">Σ*</span> — the set of <em>all</em> strings over Σ, including <span class="mono">ε</span>. A language is always some subset of <span class="mono">Σ*</span>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>The formal definition</h3>
+    <p>
+      A DFA is written as a <strong>5-tuple</strong> — five pieces of data that together pin the machine down completely:
+    </p>
+    <p class="mono" style="font-size:1.3rem; margin:.2em 0 1em">M = (Q, Σ, δ, q<sub>0</sub>, F)</p>
+    <div class="grid">
+      <div>
+        <table class="ttable">
+          <caption>The five parts</caption>
+          <tbody>
+            <tr><th scope="row">Q</th><td class="meaning">A <strong>finite</strong> set of states. Finite is the whole point: the machine has a fixed, bounded memory.</td></tr>
+            <tr><th scope="row">Σ</th><td class="meaning">The input <strong>alphabet</strong>, a finite set of symbols. Here always <span class="mono">{0,1}</span>.</td></tr>
+            <tr><th scope="row">δ</th><td class="meaning">The <strong>transition function</strong> <span class="mono">δ : Q × Σ → Q</span>. Given a state and a symbol, it names the next state. It is a <em>function</em>, so it gives exactly one answer for every input pair.</td></tr>
+            <tr><th scope="row">q<sub>0</sub></th><td class="meaning">The <strong>start state</strong>, an element of Q. Exactly one, and the machine is in it before reading anything.</td></tr>
+            <tr><th scope="row">F</th><td class="meaning">The set of <strong>accept states</strong> (also called final states), a subset of Q. Ending in one of these means “yes”.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="note">
+          <p><span class="tag">Read δ out loud.</span>
+          <span class="mono">δ(q<sub>1</sub>, 0) = q<sub>2</sub></span> is read
+          “from state q<sub>1</sub>, reading a 0, go to state q<sub>2</sub>”.</p>
+        </div>
+        <div class="note warn">
+          <p><span class="tag">F may be empty, or all of Q.</span>
+          If <span class="mono">F = ∅</span> the machine accepts nothing — its language is the empty set ∅.
+          If <span class="mono">F = Q</span> it accepts everything — its language is all of <span class="mono">Σ*</span>.
+          Both are legal DFAs. (Note: ∅ and <span class="mono">{ε}</span> are different languages — one contains no strings at all, the other contains exactly one string, the empty one.)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>What makes it <em>deterministic</em>?</h3>
+    <p>“Deterministic” means there is never a choice and never a dead end: from any state, reading any symbol, the machine’s next move is completely determined. Formally, three requirements:</p>
+    <ol>
+      <li><strong>Exactly one start state.</strong> Not zero, not two.</li>
+      <li><strong>Exactly one transition out of every state for every symbol.</strong> With <span class="mono">Σ = {0,1}</span>, every state needs an arrow for <span class="mono">0</span> <em>and</em> an arrow for <span class="mono">1</span> — no missing transitions, no two arrows with the same label leaving the same state. (This is just another way of saying δ is a total function.)</li>
+      <li><strong>No ε-transitions.</strong> The machine may not change state “for free” without consuming a symbol. Every move eats exactly one input symbol.</li>
+    </ol>
+    <p class="small muted">Drop any of these and you get a <em>nondeterministic</em> finite automaton (NFA) — a useful machine, but a different one, and the subject of a later lecture.</p>
+    <div id="bad-examples" class="grid" style="margin-top:.6rem"></div>
+    <p class="small muted" style="margin-top:.6rem">
+      A consequence of rule 2 that surprises people: if you want a DFA to “give up”, you cannot simply omit the arrow.
+      You must send it to a <strong>trap state</strong> (also called a dead state) — a non-accepting state whose arrows all loop back to itself.
+      You will build one in Exercise 3.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>How a DFA computes</h3>
+    <p>The whole procedure, with no cleverness at all:</p>
+    <ol>
+      <li>Start in <span class="mono">q<sub>0</sub></span> with the read head at the leftmost symbol.</li>
+      <li>Read the current symbol <span class="mono">a</span>; move to state <span class="mono">δ(current, a)</span>; advance one symbol.</li>
+      <li>Repeat until the input is used up.</li>
+      <li>If the state you land in is in <span class="mono">F</span>, <strong>accept</strong>; otherwise <strong>reject</strong>.</li>
+    </ol>
+    <p>
+      Notice that the machine <em>always</em> halts, after exactly <span class="mono">|w|</span> steps for an input of length
+      <span class="mono">|w|</span>. It cannot loop forever, and it cannot stop early — it must consume the whole string.
+      A DFA in an accept state half-way through has not accepted anything; only the state at the very end counts.
+    </p>
+    <p>
+      <strong>The empty string.</strong> Running <span class="mono">ε</span> means taking zero steps, so the machine is still in
+      <span class="mono">q<sub>0</sub></span> when the input runs out. Therefore
+      <em><span class="mono">ε</span> is accepted exactly when the start state is an accept state</em>. That single fact settles a
+      surprising number of exercises.
+    </p>
+    <p>
+      <strong>The language of a machine.</strong> We write
+      <span class="mono">L(M) = { w ∈ Σ* : M accepts w }</span> —
+      the set of all strings the machine says yes to. Two different-looking machines can have the same language;
+      when they do, we call them <strong>equivalent</strong>. (The “Check my answer” button in section 4 is exactly an
+      equivalence test.)
+    </p>
+    <div id="quiz-compute"></div>
+  </div>
+
+  <div class="card">
+    <h3>Three ways to write down the same machine</h3>
+    <p>
+      Below is a small DFA for the language <strong>“strings that contain at least one 1”</strong>.
+      Click any part of the tuple to see which part of the diagram and which part of the table it corresponds to.
+    </p>
+    <div id="tuple-explorer"></div>
+
+    <h4 style="margin-top:1.4rem">Reading a state diagram</h4>
+    <ul class="small">
+      <li>A <strong>circle</strong> is a state, labelled with its name.</li>
+      <li>A <strong>double circle</strong> is an accept state. (The table also spells out “accept”, so you never have to rely on spotting the extra ring.)</li>
+      <li>An arrow coming from nowhere, labelled <em>start</em>, points at the start state.</li>
+      <li>A labelled arrow from <span class="mono">p</span> to <span class="mono">q</span> with label <span class="mono">a</span> means <span class="mono">δ(p, a) = q</span>.</li>
+      <li>An arrow can carry <em>several</em> labels: <span class="mono">0, 1</span> on one arrow is shorthand for two transitions that happen to have the same destination.</li>
+      <li>An arrow from a state back to itself (a <strong>self-loop</strong>) means “stay put, and remember nothing new”.</li>
+    </ul>
+    <h4>Reading a transition table</h4>
+    <ul class="small">
+      <li>One row per state, one column per symbol; the cell holds <span class="mono">δ(state, symbol)</span>.</li>
+      <li><span class="mark mono">→</span> marks the start state; <span class="mark mono">*</span> marks accept states.</li>
+      <li>The table is the safest of the three notations: a missing cell is impossible to overlook, whereas a missing arrow in a diagram is easy to miss.</li>
+    </ul>
+    <div id="quiz-notation"></div>
+  </div>
+
+  <div class="next-row"><button class="btn primary" data-goto="tab-ex">Next: worked examples →</button></div>
+</section>
+
+<!-- ===================================================================
+     SECTION 2 — WORKED EXAMPLES WITH A STEP-BY-STEP SIMULATOR
+     =================================================================== -->
+<section class="panel" id="panel-ex" role="tabpanel" aria-labelledby="tab-ex" tabindex="-1" hidden>
+  <h2>2 · Four machines, taken apart</h2>
+  <p class="lede">
+    Each example shows the same machine in every notation, plus a simulator you can single-step.
+    Try to predict the next state before you press <em>Step</em> — that is where the learning happens.
+  </p>
+  <nav class="ex-nav" id="example-nav" aria-label="Choose an example"></nav>
+  <div id="example-host" style="margin-top:1rem"></div>
+  <div class="next-row"><button class="btn primary" data-goto="tab-app">Next: where DFAs show up →</button></div>
+</section>
+
+<!-- ===================================================================
+     SECTION 3 — APPLICATIONS
+     =================================================================== -->
+<section class="panel" id="panel-app" role="tabpanel" aria-labelledby="tab-app" tabindex="-1" hidden>
+  <h2>3 · Where these things actually live</h2>
+  <p class="lede">
+    Finite automata are not only a blackboard exercise. Any system with a small number of
+    situations, driven by a stream of events, <em>is</em> a finite automaton — whether or not its
+    author knew the word. Here are three you can poke at, and a list of others.
+  </p>
+
+  <div class="card">
+    <h3>Demo 1 · A turnstile</h3>
+    <p>
+      The classic. Two states — <strong>Locked</strong> and <strong>Unlocked</strong> — and two events:
+      insert a coin, or push the arm. We encode the events as our alphabet:
+      <span class="mono">0 = coin</span>, <span class="mono">1 = push</span>. (Σ can be any finite set of
+      symbols; calling them 0 and 1 is just a naming choice.)
+    </p>
+    <p class="small muted">
+      Press the buttons and watch the state move. In a control application like this, the interesting
+      output is the <em>state itself</em>, not an accept/reject verdict — but if we do declare
+      <span class="mono">F = {Unlocked}</span>, then L(M) is exactly the set of event sequences that leave the gate open.
+    </p>
+    <div id="demo-turnstile" class="app-demo"></div>
+  </div>
+
+  <div class="card">
+    <h3>Demo 2 · Input validation: is this a well-formed binary numeral?</h3>
+    <p>
+      Every compiler and every form validator contains code shaped like this. Our rule: a binary
+      numeral is either the single digit <span class="mono">0</span>, or a string of digits that
+      starts with <span class="mono">1</span>. So <span class="mono">0</span>, <span class="mono">1</span>,
+      <span class="mono">1011</span> are fine; <span class="mono">00</span>, <span class="mono">011</span>,
+      and the empty string are not (no leading zeros, no empty literal).
+    </p>
+    <p class="small muted">
+      Type and watch the verdict update on every keystroke, with the path through the machine shown live.
+      This machine needs a <strong>trap state</strong>: once a leading zero is followed by anything, no
+      later input can rescue the string.
+    </p>
+    <div id="demo-validator" class="app-demo"></div>
+  </div>
+
+  <div class="card">
+    <h3>Demo 3 · Text search: finding every occurrence of <span class="mono">0110</span></h3>
+    <p>
+      Search tools and regex engines compile a pattern into an automaton once, then scan the text in a
+      single left-to-right pass, never backing up. The machine below remembers <em>how much of the
+      pattern has just matched</em>: state <span class="mono">k</span> means “the last <span class="mono">k</span>
+      symbols are the first <span class="mono">k</span> symbols of <span class="mono">0110</span>, and no longer prefix matches”.
+      Reaching state 4 means a match just ended here.
+    </p>
+    <div id="demo-scanner" class="app-demo"></div>
+    <p class="small muted" style="margin-top:.8rem">
+      Notice what happens after a failed partial match — e.g. in <span class="mono">0101</span><wbr><span class="mono">10</span>.
+      The machine never re-reads a symbol; it just falls back to the longest prefix that is still alive.
+      That is the Knuth–Morris–Pratt idea, and it is why this scan is linear time.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>More of the same idea</h3>
+    <div class="grid">
+      <div>
+        <h4>Vending machine</h4>
+        <p class="small">States track the amount deposited so far (0¢, 25¢, 50¢…). Coins are the input symbols; the “dispense” state is the accept state. Finite because the machine only needs to count up to the price.</p>
+        <h4>Traffic lights</h4>
+        <p class="small">Green → Yellow → Red → Green is a three-state automaton driven by timer ticks and sensor events. Pedestrian buttons add inputs, not memory.</p>
+        <h4>Lexical analysis</h4>
+        <p class="small">The first phase of every compiler chops source text into tokens (identifiers, numbers, operators) using one big DFA, usually generated automatically from regular expressions by tools like <span class="mono">lex</span>/<span class="mono">flex</span>.</p>
+      </div>
+      <div>
+        <h4>Regular expressions</h4>
+        <p class="small">Every regex without back-references denotes a language a DFA can decide — that is Kleene’s theorem. Fast engines (RE2, grep) really do build automata.</p>
+        <h4>Network protocols</h4>
+        <p class="small">TCP’s connection lifecycle (LISTEN, SYN-SENT, ESTABLISHED, FIN-WAIT-1…) is specified as a state machine, and drawn as one in RFC 793.</p>
+        <h4>UI and game logic</h4>
+        <p class="small">“Idle → Walking → Jumping → Falling”, or a dialog box’s enabled/disabled states. Modelling these as an explicit automaton is what stops the bug where two flags contradict each other.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The honest limitation</h3>
+    <p>
+      A DFA has finitely many states, and that is a real ceiling: <strong>a DFA cannot count without bound</strong>.
+      No DFA accepts the language <span class="mono">{ 0<sup>n</sup>1<sup>n</sup> : n ≥ 0 }</span>
+      (<span class="mono">01</span>, <span class="mono">0011</span>, <span class="mono">000111</span>, …).
+      The intuition: after reading the 0s the machine must remember exactly how many it saw, but with
+      <span class="mono">k</span> states it can only distinguish <span class="mono">k</span> different counts, so two
+      different prefixes <span class="mono">0<sup>i</sup></span> and <span class="mono">0<sup>j</sup></span> must land in the
+      same state — and then the machine gives the same answer to <span class="mono">0<sup>i</sup>1<sup>i</sup></span>
+      and <span class="mono">0<sup>j</sup>1<sup>i</sup></span>, one of which it should reject.
+      Balanced parentheses and “palindromes” fail for the same reason.
+    </p>
+    <p>
+      That argument, made precise, is the <strong>pumping lemma</strong>. And the languages that <em>are</em>
+      within reach have a name: the <strong>regular languages</strong>. Coming next in your course:
+      <strong>NFAs</strong> (allow choice and ε-moves — surprisingly, no extra power),
+      <strong>regular expressions</strong> (the same class again, in text form), and
+      <strong>pushdown automata</strong> (add a stack, and <span class="mono">0<sup>n</sup>1<sup>n</sup></span> becomes easy).
+    </p>
+    <div id="quiz-limits"></div>
+  </div>
+
+  <div class="next-row"><button class="btn primary" data-goto="tab-lab">Next: build your own →</button></div>
+</section>
+
+<!-- ===================================================================
+     SECTION 4 — EXERCISES / BUILDER
+     =================================================================== -->
+<section class="panel" id="panel-lab" role="tabpanel" aria-labelledby="tab-lab" tabindex="-1" hidden>
+  <h2>4 · Build your own DFA</h2>
+  <p class="lede">
+    Your turn. For each task, design a machine, check it is a legal DFA, test some strings by hand,
+    then submit it. The checker compares your machine against the target language exactly — if they
+    differ on any string at all, it will hand you the shortest one.
+  </p>
+
+  <div class="card" style="padding:.8rem 1.1rem">
+    <div class="row" style="justify-content:space-between">
+      <strong class="small">Progress this session</strong>
+      <ul class="progress-list" id="progress-list" aria-label="Exercise progress"></ul>
+    </div>
+  </div>
+
+  <nav class="ex-nav" id="lab-nav" aria-label="Choose an exercise"></nav>
+  <div id="lab-host" style="margin-top:1rem"></div>
+</section>
+
+</main>
+
+<footer class="bot">
+  <p>
+    Built as a single self-contained HTML file — no network, no build step, no dependencies.
+    Every diagram is drawn from the machine’s own data, so the picture can never disagree with the table.
+  </p>
+</footer>
+
+<!-- ===================================================================
+     CORE LIBRARY — pure logic, no DOM.
+       §1 data model   §2 validator   §3 simulator
+       §4 answer checker (brute force + exact equivalence)
+       §5 catalogue of machines (examples, applications, exercises)
+     Exposed as globalThis.DFALib so that both the page UI and the
+     offline Node test-suite exercise exactly the same code.
+     =================================================================== -->
+<script id="dfa-core">
+(function (root) {
+'use strict';
+
+/* =====================================================================
+   §1  DATA MODEL
+   A machine is a plain object:
+     { id, name, states:[id...], alphabet:['0','1'], start:id,
+       accept:[id...], delta:{ state: { symbol: state } },
+       meaning:{ state: 'what this state remembers' },
+       layout:{ state:[x,y] }, viewBox:[w,h], bend:{ 'p>q': number } }
+   Everything else in the file is a function of this object.
+   ===================================================================== */
+
+var SIGMA = ['0', '1'];
+
+function makeDFA(spec) {
+  var dfa = {
+    id: spec.id || 'm',
+    name: spec.name || '',
+    states: spec.states.slice(),
+    alphabet: (spec.alphabet || SIGMA).slice(),
+    start: spec.start,
+    accept: (spec.accept || []).slice(),
+    delta: {},
+    symbolNames: spec.symbolNames || null,   // e.g. {'0':'coin','1':'push'}
+    meaning: spec.meaning || {},
+    layout: spec.layout || null,
+    viewBox: spec.viewBox || null,
+    bend: spec.bend || {},
+    loopBelow: spec.loopBelow || null
+  };
+  dfa.states.forEach(function (q) {
+    dfa.delta[q] = {};
+    dfa.alphabet.forEach(function (a) {
+      var row = spec.delta[q];
+      dfa.delta[q][a] = row ? row[a] : undefined;
+    });
+  });
+  return dfa;
+}
+
+function step(dfa, q, a) {
+  var row = dfa.delta[q];
+  return row ? row[a] : undefined;
+}
+function isAccept(dfa, q) { return dfa.accept.indexOf(q) !== -1; }
+
+/* A deep-ish copy, used when loading a solution into the builder. */
+function cloneDFA(dfa) {
+  return makeDFA({
+    id: dfa.id, name: dfa.name, states: dfa.states, alphabet: dfa.alphabet,
+    start: dfa.start, accept: dfa.accept, delta: dfa.delta,
+    meaning: dfa.meaning, layout: dfa.layout, viewBox: dfa.viewBox, bend: dfa.bend, loopBelow: dfa.loopBelow
+  });
+}
+
+/* Human-readable description, used as the accessible text of a diagram. */
+function describe(dfa) {
+  var parts = [];
+  parts.push('State diagram with ' + dfa.states.length + ' state' + (dfa.states.length === 1 ? '' : 's') + ': ' + dfa.states.join(', ') + '.');
+  parts.push('Start state: ' + (dfa.start || 'none') + '.');
+  parts.push(dfa.accept.length ? 'Accept states: ' + dfa.accept.join(', ') + '.' : 'There are no accept states.');
+  dfa.states.forEach(function (q) {
+    dfa.alphabet.forEach(function (a) {
+      var t = step(dfa, q, a);
+      parts.push('From ' + q + ' on ' + a + ' go to ' + (t === undefined ? 'nowhere (undefined)' : t) + '.');
+    });
+  });
+  return parts.join(' ');
+}
+
+/* =====================================================================
+   §2  VALIDATOR — "is this actually a DFA?"
+   Returns a checklist so the builder UI can show every requirement,
+   passing or failing, rather than just the first error.
+   ===================================================================== */
+function validate(dfa) {
+  var checks = [];
+  function add(key, label, ok, detail) { checks.push({ key: key, label: label, ok: ok, detail: detail || '' }); }
+
+  add('nonempty', 'Has at least one state', dfa.states.length > 0,
+      dfa.states.length ? '' : 'Add a state to get started.');
+
+  var names = {}, dupes = [], blanks = 0;
+  dfa.states.forEach(function (q) {
+    if (!String(q).trim()) blanks++;
+    if (names[q]) { if (dupes.indexOf(q) === -1) dupes.push(q); }
+    names[q] = true;
+  });
+  add('names', 'State names are non-empty and unique', dupes.length === 0 && blanks === 0,
+      dupes.length ? 'Duplicated name(s): ' + dupes.join(', ') + '.' : (blanks ? 'A state has a blank name.' : ''));
+
+  var startOK = !!dfa.start && dfa.states.indexOf(dfa.start) !== -1;
+  add('start', 'Exactly one start state', startOK,
+      startOK ? '' : 'Mark one state as the start state — a DFA has exactly one.');
+
+  var missing = [], bad = [];
+  dfa.states.forEach(function (q) {
+    dfa.alphabet.forEach(function (a) {
+      var t = step(dfa, q, a);
+      if (t === undefined || t === null || t === '') missing.push('δ(' + q + ', ' + a + ')');
+      else if (dfa.states.indexOf(t) === -1) bad.push('δ(' + q + ', ' + a + ') = ' + t);
+    });
+  });
+  add('total', 'Every state has exactly one transition on 0 and on 1', missing.length === 0,
+      missing.length ? 'Still undefined: ' + missing.slice(0, 6).join(', ') + (missing.length > 6 ? ' …' : '') +
+      '. An incomplete machine is not a DFA — send unwanted symbols to a trap state instead.' : '');
+  add('targets', 'Every transition points at a state that exists', bad.length === 0,
+      bad.length ? 'Dangling: ' + bad.join(', ') : '');
+
+  var accOK = dfa.accept.every(function (q) { return dfa.states.indexOf(q) !== -1; });
+  add('accept', 'Accept states are real states (F ⊆ Q; F may be empty)', accOK,
+      accOK ? '' : 'An accept state refers to a deleted state.');
+
+  return { valid: checks.every(function (c) { return c.ok; }), checks: checks };
+}
+
+/* =====================================================================
+   §3  SIMULATOR
+   run() returns the full trace so the UI can scrub forwards and back.
+     states[i]       = state after reading i symbols  (states[0] = q0)
+     transitions[i]  = { from, sym, to } for the i-th symbol
+   ===================================================================== */
+function run(dfa, input) {
+  var symbols = String(input).split('');
+  var bad = [];
+  symbols.forEach(function (c) {
+    if (dfa.alphabet.indexOf(c) === -1 && bad.indexOf(c) === -1) bad.push(c);
+  });
+  if (bad.length) return { ok: false, reason: 'alphabet', badChars: bad };
+  if (!dfa.start || dfa.states.indexOf(dfa.start) === -1) return { ok: false, reason: 'nostart' };
+
+  var states = [dfa.start], transitions = [], cur = dfa.start;
+  for (var i = 0; i < symbols.length; i++) {
+    var to = step(dfa, cur, symbols[i]);
+    if (to === undefined || to === null || to === '' || dfa.states.indexOf(to) === -1) {
+      return { ok: false, reason: 'undefined', at: i, state: cur, sym: symbols[i],
+               states: states, transitions: transitions };
+    }
+    transitions.push({ from: cur, sym: symbols[i], to: to });
+    states.push(to);
+    cur = to;
+  }
+  return { ok: true, input: symbols, states: states, transitions: transitions,
+           end: cur, accepted: isAccept(dfa, cur) };
+}
+
+function accepts(dfa, w) { var r = run(dfa, w); return r.ok && r.accepted; }
+
+/* A readable trace: q0 --1--> q1 --0--> q1  ⇒ reject */
+function traceString(dfa, w) {
+  var r = run(dfa, w);
+  if (!r.ok) return 'no run (' + r.reason + ')';
+  var s = r.states[0];
+  r.transitions.forEach(function (t) { s += ' --' + t.sym + '--> ' + t.to; });
+  return s + '   ⇒ ' + (r.accepted ? 'accept' : 'reject') + ' (ended in ' + r.end +
+         ', which is ' + (r.accepted ? 'an accept state' : 'not an accept state') + ')';
+}
+
+/* =====================================================================
+   §4  ANSWER CHECKER
+   Two independent methods, because correctness is the whole point:
+     (a) brute force — try every string up to a length bound;
+     (b) exact equivalence — breadth-first search of the product of the
+         student machine and the reference machine, which finds the
+         shortest distinguishing string if one exists, with no bound.
+   ===================================================================== */
+
+/* All strings over the alphabet, shortest first, lexicographic within a
+   length. Calls fn(w) until it returns true (which stops the walk). */
+function forEachString(alphabet, maxLen, fn) {
+  var level = [''];
+  for (var len = 0; len <= maxLen; len++) {
+    var next = [];
+    for (var i = 0; i < level.length; i++) {
+      if (fn(level[i]) === true) return;
+      if (len < maxLen) {
+        for (var k = 0; k < alphabet.length; k++) next.push(level[i] + alphabet[k]);
+      }
+    }
+    level = next;
+  }
+}
+
+/* First (shortest, then lexicographically first) string where the machine
+   disagrees with a predicate. null when they agree up to maxLen. */
+function bruteForce(dfa, predicate, maxLen) {
+  var found = null;
+  forEachString(dfa.alphabet, maxLen, function (w) {
+    var got = accepts(dfa, w), want = !!predicate(w);
+    if (got !== want) { found = { w: w, expected: want, got: got }; return true; }
+  });
+  return found;
+}
+
+/* Exact equivalence via product BFS. Returns the shortest string on which
+   the two machines disagree, or null if they are equivalent. Both must be
+   complete DFAs over the same alphabet. */
+function findDifference(a, b) {
+  var startKey = a.start + '\u0000' + b.start;
+  var seen = {}, queue = [[a.start, b.start]], parent = {};
+  seen[startKey] = true;
+  while (queue.length) {
+    var cur = queue.shift();
+    var key = cur[0] + '\u0000' + cur[1];
+    if (isAccept(a, cur[0]) !== isAccept(b, cur[1])) {
+      var w = '', k = key;
+      while (parent[k]) { w = parent[k].sym + w; k = parent[k].key; }
+      return { w: w, expected: isAccept(b, cur[1]), got: isAccept(a, cur[0]) };
+    }
+    for (var i = 0; i < a.alphabet.length; i++) {
+      var s = a.alphabet[i];
+      var na = step(a, cur[0], s), nb = step(b, cur[1], s);
+      if (na === undefined || nb === undefined) continue;
+      var nk = na + '\u0000' + nb;
+      if (!seen[nk]) { seen[nk] = true; parent[nk] = { key: key, sym: s }; queue.push([na, nb]); }
+    }
+  }
+  return null;
+}
+
+var BRUTE_LEN = 12;   // "all strings up to length 12" = 8191 strings
+
+/* The full grading routine used by the Check-my-answer button. */
+function checkAnswer(student, exercise) {
+  var v = validate(student);
+  if (!v.valid) return { status: 'invalid', validation: v };
+
+  var solution = exercise.solution;
+  var diff = findDifference(student, solution);          // exact
+  var brute = bruteForce(student, exercise.predicate, BRUTE_LEN); // independent
+  var ce = diff || brute;
+  if (brute && diff && brute.w.length < diff.w.length) ce = brute;
+
+  if (!ce) return { status: 'pass', validation: v, method: 'equivalence' };
+  return {
+    status: 'fail', validation: v, counterexample: ce,
+    trace: traceString(student, ce.w),
+    runOnCE: run(student, ce.w)
+  };
+}
+
+/* =====================================================================
+   §5  CATALOGUE
+   Each entry carries a predicate: an independent, obviously-correct
+   implementation of the language, used both by the checker and by the
+   offline test-suite to verify the machines themselves.
+   ===================================================================== */
+var count = function (w, c) { var n = 0; for (var i = 0; i < w.length; i++) if (w[i] === c) n++; return n; };
+
+/* --- the little machine used by the notation explorer in section 1 --- */
+var INTRO = makeDFA({
+  id: 'intro', name: 'contains at least one 1',
+  states: ['q0', 'q1'], start: 'q0', accept: ['q1'],
+  delta: { q0: { '0': 'q0', '1': 'q1' }, q1: { '0': 'q1', '1': 'q1' } },
+  meaning: { q0: 'no 1 seen yet', q1: 'a 1 has been seen — nothing can undo that' },
+  layout: { q0: [160, 130], q1: [400, 130] }, viewBox: [560, 240]
+});
+INTRO.predicate = function (w) { return w.indexOf('1') !== -1; };
+
+/* --- section 2 examples ------------------------------------------- */
+var EXAMPLES = [
+  {
+    id: 'ends1', tab: 'Ends in 1',
+    title: 'Strings that end in 1',
+    english: 'Accept exactly those strings whose last symbol is a 1. The empty string has no last symbol, so it is rejected.',
+    idea: 'The machine only ever needs to know one thing: was the symbol I just read a 1?',
+    predicate: function (w) { return w.length > 0 && w[w.length - 1] === '1'; },
+    samples: ['', '1', '0', '11', '10', '0101', '1110', '00011'],
+    dfa: makeDFA({
+      id: 'ends1', states: ['q0', 'q1'], start: 'q0', accept: ['q1'],
+      delta: { q0: { '0': 'q0', '1': 'q1' }, q1: { '0': 'q0', '1': 'q1' } },
+      meaning: { q0: 'last symbol was 0, or nothing has been read yet', q1: 'last symbol was 1' },
+      layout: { q0: [160, 130], q1: [400, 130] }, viewBox: [560, 240]
+    })
+  },
+  {
+    id: 'sub01', tab: 'Contains 01',
+    title: 'Strings containing the substring 01',
+    english: 'Accept strings in which a 0 is immediately followed by a 1 somewhere — 01 appears as a contiguous block.',
+    idea: 'Track how much of the pattern 01 has just matched: nothing, a pending 0, or “found it”. Once found, the answer can never change back, so that state absorbs everything.',
+    predicate: function (w) { return w.indexOf('01') !== -1; },
+    samples: ['', '0', '01', '10', '0011', '1000', '111000', '00101'],
+    dfa: makeDFA({
+      id: 'sub01', states: ['q0', 'q1', 'q2'], start: 'q0', accept: ['q2'],
+      delta: { q0: { '0': 'q1', '1': 'q0' }, q1: { '0': 'q1', '1': 'q2' }, q2: { '0': 'q2', '1': 'q2' } },
+      meaning: { q0: 'no 0 pending — the last symbol was a 1, or nothing was read', q1: 'a 0 has just been read; a 1 now would complete 01', q2: '01 has been found (trap for “yes”)' },
+      layout: { q0: [100, 130], q1: [280, 130], q2: [460, 130] }, viewBox: [560, 250]
+    })
+  },
+  {
+    id: 'odd0', tab: 'Odd number of 0s',
+    title: 'Strings with an odd number of 0s',
+    english: 'Count the 0s (1s are irrelevant). Accept when that count is odd.',
+    idea: 'You do not need the count, only its parity — one bit of memory, so two states. This is the trick behind half of all DFA exercises.',
+    predicate: function (w) { return count(w, '0') % 2 === 1; },
+    samples: ['', '0', '1', '00', '010', '1011', '000', '110011'],
+    dfa: makeDFA({
+      id: 'odd0', states: ['even', 'odd'], start: 'even', accept: ['odd'],
+      delta: { even: { '0': 'odd', '1': 'even' }, odd: { '0': 'even', '1': 'odd' } },
+      meaning: { even: 'an even number of 0s so far (0 counts as even)', odd: 'an odd number of 0s so far' },
+      layout: { even: [160, 130], odd: [400, 130] }, viewBox: [560, 240]
+    })
+  },
+  {
+    id: 'div3', tab: 'Divisible by 3',
+    title: 'Binary numbers divisible by 3',
+    english: 'Read the string as a binary numeral, most-significant bit first (leading zeros allowed). Accept when its value is a multiple of 3. The empty string is read as the number 0, which is divisible by 3, so it is accepted.',
+    idea: 'Each state is a remainder. Appending a bit b to a number of value v makes the value 2v + b, so the remainder rule is r ↦ (2r + b) mod 3 — a complete recipe for δ, without ever storing the number itself.',
+    predicate: function (w) { var r = 0; for (var i = 0; i < w.length; i++) r = (2 * r + (w[i] === '1' ? 1 : 0)) % 3; return r === 0; },
+    samples: ['', '0', '11', '110', '1001', '101', '1111', '10100'],
+    dfa: makeDFA({
+      id: 'div3', states: ['r0', 'r1', 'r2'], start: 'r0', accept: ['r0'],
+      delta: { r0: { '0': 'r0', '1': 'r1' }, r1: { '0': 'r2', '1': 'r0' }, r2: { '0': 'r1', '1': 'r2' } },
+      meaning: { r0: 'value so far ≡ 0 (mod 3)', r1: 'value so far ≡ 1 (mod 3)', r2: 'value so far ≡ 2 (mod 3)' },
+      layout: { r0: [280, 75], r1: [440, 200], r2: [120, 200] }, viewBox: [560, 280]
+    })
+  }
+];
+
+/* --- section 3 application machines -------------------------------- */
+var TURNSTILE = makeDFA({
+  id: 'turnstile', states: ['Locked', 'Unlocked'], start: 'Locked', accept: ['Unlocked'],
+  delta: { Locked: { '0': 'Unlocked', '1': 'Locked' }, Unlocked: { '0': 'Unlocked', '1': 'Locked' } },
+  symbolNames: { '0': 'coin', '1': 'push' },
+  meaning: { Locked: 'arm is locked; pushing does nothing', Unlocked: 'a coin is paid for; the next push lets one person through' },
+  layout: { Locked: [150, 120], Unlocked: [410, 120] }, viewBox: [560, 230]
+});
+TURNSTILE.predicate = function (w) { return w.length > 0 && w[w.length - 1] === '0'; };
+
+var VALIDATOR = makeDFA({
+  id: 'numlit', states: ['start', 'zero', 'lead1', 'trap'], start: 'start', accept: ['zero', 'lead1'],
+  delta: {
+    start: { '0': 'zero',  '1': 'lead1' },
+    zero:  { '0': 'trap',  '1': 'trap' },
+    lead1: { '0': 'lead1', '1': 'lead1' },
+    trap:  { '0': 'trap',  '1': 'trap' }
+  },
+  meaning: { start: 'nothing read yet — the empty literal is not valid', zero: 'read exactly "0" — a valid literal, but nothing may follow', lead1: 'starts with 1 — any digits may follow', trap: 'invalid: a leading zero was followed by more digits' },
+  layout: { start: [80, 130], lead1: [270, 62], zero: [270, 198], trap: [460, 130] }, viewBox: [560, 285],
+  loopBelow: { trap: true }
+});
+VALIDATOR.predicate = function (w) { return w === '0' || (w.length > 0 && w[0] === '1'); };
+
+var SCANNER = makeDFA({
+  id: 'scan0110', states: ['k0', 'k1', 'k2', 'k3', 'k4'], start: 'k0', accept: ['k4'],
+  delta: {
+    k0: { '0': 'k1', '1': 'k0' },
+    k1: { '0': 'k1', '1': 'k2' },
+    k2: { '0': 'k1', '1': 'k3' },
+    k3: { '0': 'k4', '1': 'k0' },
+    k4: { '0': 'k1', '1': 'k2' }
+  },
+  meaning: { k0: 'no prefix of 0110 matched', k1: 'last symbol matches "0"', k2: 'last two match "01"', k3: 'last three match "011"', k4: 'a full match of 0110 just ended here' },
+  layout: { k0: [70, 125], k1: [200, 125], k2: [330, 125], k3: [460, 125], k4: [580, 125] },
+  viewBox: [650, 290],
+  bend: { 'k3>k0': -100, 'k4>k1': -190, 'k4>k2': 150 }
+});
+SCANNER.predicate = function (w) { return w.length >= 4 && w.slice(-4) === '0110'; };
+
+/* --- section 4 exercises ------------------------------------------- */
+var EXERCISES = [
+  {
+    id: 'even1', tab: '1', level: 'warm-up',
+    title: 'Even number of 1s',
+    prompt: 'Build a DFA that accepts exactly those strings containing an even number of 1s. For example 1001101 has four 1s, so it is accepted; 10 has one 1, so it is rejected. Remember that ε contains zero 1s, and zero is even.',
+    predicate: function (w) { return count(w, '1') % 2 === 0; },
+    samples: ['', '1', '11', '1001101', '10', '0000', '0110'],
+    hints: [
+      'After reading part of the string, what is the smallest piece of information you must carry forward? Not the number of 1s — something much smaller.',
+      'The exact count never matters; only whether it is even or odd. Two possibilities means two states are enough.',
+      'A 0 never changes the parity, so both 0-arrows should be self-loops. Each 1 flips you to the other state. Finally: ε has zero 1s (even), and ε lands in the start state — so the start state must be an accept state.'
+    ],
+    solution: makeDFA({
+      id: 'even1-sol', states: ['even', 'odd'], start: 'even', accept: ['even'],
+      delta: { even: { '0': 'even', '1': 'odd' }, odd: { '0': 'odd', '1': 'even' } },
+      meaning: { even: 'an even number of 1s so far', odd: 'an odd number of 1s so far' },
+      layout: { even: [160, 130], odd: [400, 130] }, viewBox: [560, 240]
+    }),
+    explanation: 'Two states, one bit of memory: the parity of the number of 1s seen so far. Reading 0 leaves the parity alone (self-loops); reading 1 flips it. The start state is “even”, because before reading anything you have seen zero 1s — and it is accepting, which is exactly what makes ε accepted.'
+  },
+  {
+    id: 'two0', tab: '2', level: 'counting',
+    title: 'At least two 0s',
+    prompt: 'Build a DFA that accepts exactly those strings containing at least two 0s. 0100 is accepted (three 0s); 0111 is rejected (one 0); ε is rejected.',
+    predicate: function (w) { return count(w, '0') >= 2; },
+    samples: ['', '0', '00', '0111', '0100', '111', '1010'],
+    hints: [
+      'You must count 0s — but how high do you ever need to count before the answer stops changing?',
+      'Three situations are enough: “no 0 yet”, “exactly one 0 so far”, and “two or more”. Reading a 1 never moves you between them.',
+      'The third state is absorbing: once two 0s have been seen the string is accepted no matter what follows, so both of its arrows loop back to itself, and it is the only accept state.'
+    ],
+    solution: makeDFA({
+      id: 'two0-sol', states: ['z0', 'z1', 'z2'], start: 'z0', accept: ['z2'],
+      delta: { z0: { '0': 'z1', '1': 'z0' }, z1: { '0': 'z2', '1': 'z1' }, z2: { '0': 'z2', '1': 'z2' } },
+      meaning: { z0: 'no 0 seen yet', z1: 'exactly one 0 seen', z2: 'two or more 0s seen — accepted forever' },
+      layout: { z0: [100, 130], z1: [280, 130], z2: [460, 130] }, viewBox: [560, 250]
+    }),
+    explanation: 'Count, but cap the counter. The states mean “0 zeros”, “1 zero”, “≥2 zeros”. Because the condition is “at least”, the last state can never be left — that is why both of its transitions are self-loops. Capping a count at the point where it stops mattering is the standard way to make an unbounded-looking requirement fit in finitely many states.'
+  },
+  {
+    id: 'start011', tab: '3', level: 'trap states',
+    title: 'Starts with 011',
+    prompt: 'Build a DFA that accepts exactly those strings whose first three symbols are 0, 1, 1 — in that order. So 011, 0110, 011000 are accepted; 01, 0101, 111, and ε are rejected.',
+    predicate: function (w) { return w.slice(0, 3) === '011'; },
+    samples: ['', '0', '01', '011', '0110', '0101', '111', '01101'],
+    hints: [
+      'Only the first three symbols decide the answer. After those, the verdict is locked in — for better or for worse.',
+      'You need states for “read nothing”, “read 0”, “read 01”, and “read 011 — accepted whatever follows”. But think carefully about what happens when a symbol arrives that does not match the pattern.',
+      'A DFA must define a transition for every state and every symbol, so a wrong symbol cannot simply “have no arrow”. Add a fifth state — a trap (dead) state — that is not accepting and loops to itself on both 0 and 1. Every mismatch goes there.'
+    ],
+    solution: makeDFA({
+      id: 'start011-sol', states: ['s0', 's1', 's2', 'ok', 'dead'], start: 's0', accept: ['ok'],
+      delta: {
+        s0:   { '0': 's1',   '1': 'dead' },
+        s1:   { '0': 'dead', '1': 's2' },
+        s2:   { '0': 'dead', '1': 'ok' },
+        ok:   { '0': 'ok',   '1': 'ok' },
+        dead: { '0': 'dead', '1': 'dead' }
+      },
+      meaning: { s0: 'nothing read yet', s1: 'read 0 — the prefix is on track', s2: 'read 01 — on track', ok: 'read 011 — accepted no matter what follows', dead: 'trap: the prefix went wrong and can never be repaired' },
+      layout: { s0: [80, 95], s1: [225, 95], s2: [370, 95], ok: [515, 95], dead: [300, 225] },
+      viewBox: [600, 315], loopBelow: { dead: true }
+    }),
+    explanation: 'The first three states walk along the required prefix 0 → 01 → 011. The state “ok” is absorbing because once the prefix is right, nothing later can spoil it. Every symbol that breaks the pattern goes to the trap state “dead”, which is absorbing too — this is the price of determinism: you cannot leave an arrow out, so “failure” needs a state of its own. Note that s0, s1 and s2 are all non-accepting, which correctly rejects ε, 0 and 01: the prefix must be complete.'
+  },
+  {
+    id: 'no11', tab: '4', level: 'optional',
+    title: 'Never two 1s in a row',
+    prompt: 'Optional. Build a DFA that accepts exactly those strings that do NOT contain 11 as a substring. So ε, 0, 1, 0101, 1010 are accepted; 11, 0110, 111 are rejected.',
+    predicate: function (w) { return w.indexOf('11') === -1; },
+    samples: ['', '1', '11', '0101', '1010', '0110', '10101'],
+    hints: [
+      'The forbidden thing is a 1 immediately after a 1. What must you remember about the symbol you just read?',
+      'Two “alive” states: “the last symbol was not a 1” and “the last symbol was a 1”. Both are accepting — a string that has not broken the rule yet is a good string.',
+      'The third state is a trap, entered when a 1 arrives while the last symbol was already a 1. It is not accepting and loops on both symbols. Compare this with exercise 3: a trap for “already failed” rather than for “failed the prefix”.'
+    ],
+    solution: makeDFA({
+      id: 'no11-sol', states: ['safe', 'one1', 'dead'], start: 'safe', accept: ['safe', 'one1'],
+      delta: { safe: { '0': 'safe', '1': 'one1' }, one1: { '0': 'safe', '1': 'dead' }, dead: { '0': 'dead', '1': 'dead' } },
+      meaning: { safe: 'no 11 yet, and the last symbol was a 0 (or nothing)', one1: 'no 11 yet, but the last symbol was a 1 — a 1 now would be fatal', dead: 'trap: 11 has occurred' },
+      layout: { safe: [110, 130], one1: [300, 130], dead: [480, 130] }, viewBox: [580, 265], loopBelow: { dead: true }
+    }),
+    explanation: 'Two accepting states track how exposed you are: “last symbol was not 1” is safe, “last symbol was 1” is one step from disaster. A 0 always returns you to safety. The trap state records the permanent failure. This is the same shape as the substring-search machine in section 3 — pattern matching with a memory of the current partial match.'
+  },
+  {
+    id: 'len3', tab: '5', level: 'optional',
+    title: 'Length divisible by 3',
+    prompt: 'Optional. Build a DFA that accepts exactly those strings whose length is a multiple of 3. ε (length 0), 010, 110011 are accepted; 1, 01, 1111 are rejected.',
+    predicate: function (w) { return w.length % 3 === 0; },
+    samples: ['', '0', '01', '010', '1111', '110011', '111111'],
+    hints: [
+      'What actually influences the answer here — which symbols you read, or merely how many?',
+      'You need length mod 3, so three states, and both symbols do the same thing in each state.',
+      'Arrange the three states in a cycle; every symbol advances one step around it. Accept in the state that means “length ≡ 0”, which is also the start state, so ε is accepted.'
+    ],
+    solution: makeDFA({
+      id: 'len3-sol', states: ['m0', 'm1', 'm2'], start: 'm0', accept: ['m0'],
+      delta: { m0: { '0': 'm1', '1': 'm1' }, m1: { '0': 'm2', '1': 'm2' }, m2: { '0': 'm0', '1': 'm0' } },
+      meaning: { m0: 'length ≡ 0 (mod 3)', m1: 'length ≡ 1 (mod 3)', m2: 'length ≡ 2 (mod 3)' },
+      layout: { m0: [280, 75], m1: [440, 200], m2: [120, 200] }, viewBox: [560, 280]
+    }),
+    explanation: 'The machine ignores what it reads and counts only how much it has read, modulo 3. Both arrows out of each state go to the same place — a perfectly legal DFA. The accept state is the start state, so the empty string (length 0) is accepted.'
+  },
+  {
+    id: 'evenboth', tab: '6', level: 'challenge',
+    title: 'Even number of 0s AND even number of 1s',
+    prompt: 'Challenge. Build a DFA that accepts exactly those strings that contain an even number of 0s and, at the same time, an even number of 1s. ε, 0011, 0101, 1100 are accepted; 0, 1, 001 are rejected.',
+    predicate: function (w) { return count(w, '0') % 2 === 0 && count(w, '1') % 2 === 0; },
+    samples: ['', '0', '01', '0011', '0101', '001', '110100'],
+    hints: [
+      'You already know a two-state machine for “even number of 0s” and another for “even number of 1s”. Can you run both at once?',
+      'Track the pair (parity of 0s, parity of 1s). Two choices for each coordinate means 2 × 2 = 4 states.',
+      'Name the states ee, eo, oe, oo where the first letter is the parity of the 0s and the second the parity of the 1s. Reading a 0 flips the first letter; reading a 1 flips the second. Only ee accepts — and it is the start state.'
+    ],
+    solution: makeDFA({
+      id: 'evenboth-sol', states: ['ee', 'oe', 'eo', 'oo'], start: 'ee', accept: ['ee'],
+      delta: {
+        ee: { '0': 'oe', '1': 'eo' },
+        oe: { '0': 'ee', '1': 'oo' },
+        eo: { '0': 'oo', '1': 'ee' },
+        oo: { '0': 'eo', '1': 'oe' }
+      },
+      meaning: { ee: 'even 0s, even 1s', oe: 'odd 0s, even 1s', eo: 'even 0s, odd 1s', oo: 'odd 0s, odd 1s' },
+      layout: { ee: [150, 80], oe: [420, 80], eo: [150, 230], oo: [420, 230] }, viewBox: [570, 310]
+    }),
+    explanation: 'This is the product construction in miniature: run two independent two-state machines side by side and let the combined state be the pair of their states. Reading a 0 moves the “0-parity” coordinate and leaves the other alone; reading a 1 does the reverse. The accept set is the pair where both are even. The same trick turns any two DFAs into one that decides the AND (or OR) of their languages.'
+  }
+];
+
+root.DFALib = {
+  SIGMA: SIGMA, BRUTE_LEN: BRUTE_LEN,
+  makeDFA: makeDFA, cloneDFA: cloneDFA, step: step, isAccept: isAccept, describe: describe,
+  validate: validate, run: run, accepts: accepts, traceString: traceString,
+  forEachString: forEachString, bruteForce: bruteForce, findDifference: findDifference,
+  checkAnswer: checkAnswer,
+  INTRO: INTRO, EXAMPLES: EXAMPLES, EXERCISES: EXERCISES,
+  APPS: { turnstile: TURNSTILE, validator: VALIDATOR, scanner: SCANNER }
+};
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+
+<!-- ===================================================================
+     UI LAYER, PART 1 — diagram renderer, table renderer, simulator
+     widget, quiz widget. Nothing here knows about any particular
+     machine: everything is driven by the data model above.
+     =================================================================== -->
+<script>
+(function () {
+'use strict';
+var L = window.DFALib;
+var SVGNS = 'http://www.w3.org/2000/svg';
+var R = 26;               // state radius, in diagram units
+var uid = 0;
+
+/* --- tiny DOM helpers (textContent only — never innerHTML with data) -- */
+function el(tag, attrs, kids) {
+  var n = document.createElement(tag);
+  apply(n, attrs, kids); return n;
+}
+function svg(tag, attrs, kids) {
+  var n = document.createElementNS(SVGNS, tag);
+  apply(n, attrs, kids); return n;
+}
+function apply(n, attrs, kids) {
+  if (attrs) Object.keys(attrs).forEach(function (k) {
+    if (k === 'text') n.textContent = attrs[k];
+    else if (k === 'html') n.innerHTML = attrs[k];        // only ever static markup
+    else if (k === 'class') n.setAttribute('class', attrs[k]);
+    else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+    else if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  });
+  if (kids) (Array.isArray(kids) ? kids : [kids]).forEach(function (c) {
+    if (c == null) return;
+    n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  });
+  return n;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function show(w) { return w === '' ? 'ε' : w; }
+
+/* =====================================================================
+   DIAGRAM RENDERER
+   Draws any machine from its data. Highlighting is expressed as CSS
+   classes so that the two colour themes, and the "no meaning by colour
+   alone" rule (thick rings + the textual status line), stay consistent.
+   ===================================================================== */
+
+/* Automatic layout for machines with no hand-placed coordinates
+   (i.e. anything the student builds). Start state goes on the left. */
+function autoLayout(dfa) {
+  var order = dfa.states.slice();
+  var si = order.indexOf(dfa.start);
+  if (si > 0) { order.splice(si, 1); order.unshift(dfa.start); }
+  var n = order.length, pos = {}, W, H;
+  if (n === 1) { W = 300; H = 190; pos[order[0]] = [150, 95]; }
+  else if (n === 2) { W = 470; H = 210; pos[order[0]] = [145, 105]; pos[order[1]] = [325, 105]; }
+  else {
+    var rad = Math.min(215, 42 + 28 * n);
+    W = 2 * rad + 180; H = 2 * rad + 140;
+    for (var i = 0; i < n; i++) {
+      var ang = Math.PI + (2 * Math.PI * i) / n;   // first state due left
+      pos[order[i]] = [W / 2 + rad * Math.cos(ang), H / 2 + rad * Math.sin(ang)];
+    }
+  }
+  return { pos: pos, viewBox: [W, H] };
+}
+
+/* Merge parallel transitions: one arrow per (from,to) pair, carrying all
+   the symbols that take that route. */
+function edgeGroups(dfa) {
+  var order = [], map = {};
+  dfa.states.forEach(function (q) {
+    dfa.alphabet.forEach(function (a) {
+      var t = L.step(dfa, q, a);
+      if (t === undefined || t === null || t === '' || dfa.states.indexOf(t) === -1) return;
+      var key = q + '>' + t;
+      if (!map[key]) { map[key] = { from: q, to: t, syms: [], key: key }; order.push(map[key]); }
+      map[key].syms.push(a);
+    });
+  });
+  return order;
+}
+
+function curve(p, q, bend) {
+  var dx = q[0] - p[0], dy = q[1] - p[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+  var nx = -dy / len, ny = dx / len;                       // unit normal
+  var cx = (p[0] + q[0]) / 2 + nx * bend, cy = (p[1] + q[1]) / 2 + ny * bend;
+  var a1 = Math.atan2(cy - p[1], cx - p[0]);
+  var sx = p[0] + R * Math.cos(a1), sy = p[1] + R * Math.sin(a1);
+  var a2 = Math.atan2(cy - q[1], cx - q[0]);
+  var ex = q[0] + (R + 2) * Math.cos(a2), ey = q[1] + (R + 2) * Math.sin(a2);
+  var mx = 0.25 * sx + 0.5 * cx + 0.25 * ex, my = 0.25 * sy + 0.5 * cy + 0.25 * ey;
+  var off = bend === 0 ? -17 : (bend > 0 ? 15 : -15);
+  return { d: 'M' + sx + ',' + sy + ' Q' + cx + ',' + cy + ' ' + ex + ',' + ey,
+           lx: mx + nx * off, ly: my + ny * off };
+}
+
+function selfLoop(p, below) {
+  var k = below ? 1 : -1;
+  var p1 = [p[0] - 0.574 * R, p[1] + k * 0.819 * R], p2 = [p[0] + 0.574 * R, p[1] + k * 0.819 * R];
+  return { d: 'M' + p1[0] + ',' + p1[1] + ' C' + (p1[0] - 24) + ',' + (p1[1] + k * 48) +
+              ' ' + (p2[0] + 24) + ',' + (p2[1] + k * 48) + ' ' + p2[0] + ',' + p2[1],
+           lx: p[0], ly: p[1] + k * (R + 44) };
+}
+
+/* Does the straight line p→q pass through some other state's circle? */
+function needsBend(p, q, pos, from, to) {
+  var worst = 0, sign = 1;
+  Object.keys(pos).forEach(function (k) {
+    if (k === from || k === to) return;
+    var c = pos[k];
+    var dx = q[0] - p[0], dy = q[1] - p[1], len2 = dx * dx + dy * dy || 1;
+    var t = ((c[0] - p[0]) * dx + (c[1] - p[1]) * dy) / len2;
+    if (t < 0.05 || t > 0.95) return;
+    var px = p[0] + t * dx, py = p[1] + t * dy;
+    var dist = Math.sqrt((c[0] - px) * (c[0] - px) + (c[1] - py) * (c[1] - py));
+    if (dist < R + 14 && (worst === 0 || dist < worst)) {
+      worst = dist;
+      var len = Math.sqrt(len2);
+      var side = ((c[0] - p[0]) * (-dy / len) + (c[1] - p[1]) * (dx / len));
+      sign = side > 0 ? -1 : 1;                 // bend away from the obstacle
+    }
+  });
+  return worst ? sign * 62 : 0;
+}
+
+/*  opts = { active, activeEdge:{from,sym}, emph, verdict, caption } */
+function renderDiagram(dfa, opts) {
+  opts = opts || {};
+  var lay = dfa.layout ? { pos: dfa.layout, viewBox: dfa.viewBox || [560, 250] } : autoLayout(dfa);
+  var pos = lay.pos, vb = lay.viewBox, id = 'dg' + (++uid);
+  var emph = opts.emph || null;
+
+  var root = svg('svg', {
+    'class': 'diagram', viewBox: '0 0 ' + vb[0] + ' ' + vb[1],
+    role: 'img', 'aria-label': (opts.caption ? opts.caption + '. ' : '') + L.describe(dfa)
+  });
+  root.style.maxHeight = Math.min(360, vb[1]) + 'px';
+
+  /* arrow-heads: three variants so colour follows the line it belongs to */
+  var defs = svg('defs');
+  [['a', 'arrow'], ['h', 'arrow-hi'], ['e', 'arrow-em']].forEach(function (v) {
+    defs.appendChild(svg('marker', {
+      id: id + '-' + v[0], viewBox: '0 0 12 10', refX: 11, refY: 5,
+      markerWidth: 12, markerHeight: 10, markerUnits: 'userSpaceOnUse', orient: 'auto'
+    }, [svg('path', { d: 'M0,0 L12,5 L0,10 z', 'class': v[1] })]));
+  });
+  root.appendChild(defs);
+
+  var gEdges = svg('g'), gLabels = svg('g'), gStates = svg('g');
+  root.appendChild(gEdges); root.appendChild(gLabels); root.appendChild(gStates);
+
+  /* ---- edges ---- */
+  var groups = edgeGroups(dfa);
+  var haveBoth = {};
+  groups.forEach(function (g) { haveBoth[g.key] = true; });
+  groups.forEach(function (g) {
+    var p = pos[g.from], q = pos[g.to], geom, bend = 0;
+    if (!p || !q) return;
+    if (g.from === g.to) geom = selfLoop(p, !!(dfa.loopBelow && dfa.loopBelow[g.from]));
+    else {
+      var custom = dfa.bend && dfa.bend[g.key];
+      if (typeof custom === 'number') bend = custom;
+      else if (haveBoth[g.to + '>' + g.from]) bend = -34;      // two-way pair: bow apart
+      else bend = needsBend(p, q, pos, g.from, g.to);
+      geom = curve(p, q, bend);
+    }
+    var isActive = !!(opts.activeEdge && opts.activeEdge.from === g.from &&
+                      g.syms.indexOf(opts.activeEdge.sym) !== -1 &&
+                      L.step(dfa, g.from, opts.activeEdge.sym) === g.to);
+    var isEmph = emph === 'delta' || emph === 'Sigma';
+    var cls = 'edge' + (isActive ? ' active' : '') + (isEmph && !isActive ? ' emph' : '');
+    var marker = isActive ? 'h' : (isEmph ? 'e' : 'a');
+    gEdges.appendChild(svg('path', { 'class': cls, d: geom.d, 'marker-end': 'url(#' + id + '-' + marker + ')' }));
+
+    /* label: one tspan per symbol so the active one can be picked out */
+    var lbl = svg('text', { 'class': 'edge-label' + (emph === 'Sigma' ? ' emph' : ''), x: geom.lx, y: geom.ly });
+    g.syms.forEach(function (s, i) {
+      if (i) lbl.appendChild(svg('tspan', { text: ', ' }));
+      var name = dfa.symbolNames ? s + ' (' + dfa.symbolNames[s] + ')' : s;
+      lbl.appendChild(svg('tspan', {
+        'class': 'sym' + (isActive && opts.activeEdge.sym === s ? ' active' : ''), text: name
+      }));
+    });
+    gLabels.appendChild(lbl);
+  });
+
+  /* ---- states ---- */
+  dfa.states.forEach(function (q) {
+    var p = pos[q]; if (!p) return;
+    var acc = L.isAccept(dfa, q), active = opts.active === q;
+    var g = svg('g', { transform: 'translate(' + p[0] + ',' + p[1] + ')' });
+    var extra = '';
+    if (active && opts.verdict === 'accept') extra = ' verdict-accept';
+    else if (active && opts.verdict === 'reject') extra = ' verdict-reject';
+    else if (active) extra = ' active';
+    else if (emph === 'Q' || (emph === 'q0' && q === dfa.start) || (emph === 'F' && acc)) extra = ' emph';
+    if (active && !opts.verdict) g.appendChild(svg('circle', { 'class': 'pulse', r: 30 }));
+    g.appendChild(svg('circle', { 'class': 'st-ring' + extra, r: R }));
+    if (acc) g.appendChild(svg('circle', { 'class': 'st-inner' + (extra ? extra : ''), r: R - 5 }));
+    var fs = q.length <= 3 ? 15 : (q.length <= 5 ? 12 : 10);
+    var room = 2 * (R - 4), est = q.length * 0.62 * fs;       // monospace ≈ 0.62em per glyph
+    var label = svg('text', { 'class': 'st-label', y: 1, 'font-size': fs, text: q });
+    if (est > room) { label.setAttribute('textLength', room); label.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
+    g.appendChild(label);
+    g.appendChild(svg('title', { text: q + (acc ? ' (accept state)' : '') + (dfa.meaning[q] ? ' — ' + dfa.meaning[q] : '') }));
+    gStates.appendChild(g);
+  });
+
+  /* ---- start arrow ---- */
+  if (dfa.start && pos[dfa.start]) {
+    var sp = pos[dfa.start];
+    var emphStart = emph === 'q0';
+    gStates.appendChild(svg('path', {
+      'class': 'edge' + (emphStart ? ' emph' : ''),
+      d: 'M' + (sp[0] - R - 44) + ',' + sp[1] + ' L' + (sp[0] - R - 2) + ',' + sp[1],
+      'marker-end': 'url(#' + id + '-' + (emphStart ? 'e' : 'a') + ')'
+    }));
+    gStates.appendChild(svg('text', { 'class': 'start-label', x: sp[0] - R - 23, y: sp[1] - 11, text: 'start' }));
+  }
+  return root;
+}
+
+/* =====================================================================
+   TRANSITION-TABLE RENDERER
+   ===================================================================== */
+/* opts = { meaning, activeState, activeCell:{state,sym}, emph, caption } */
+function renderTable(dfa, opts) {
+  opts = opts || {};
+  var emph = opts.emph;
+  var t = el('table', { 'class': 'ttable' });
+  if (opts.caption) t.appendChild(el('caption', { text: opts.caption }));
+  var thead = el('thead'), hr = el('tr');
+  hr.appendChild(el('th', { scope: 'col', text: 'State', 'class': emph === 'Q' ? 'emph' : '' }));
+  dfa.alphabet.forEach(function (a) {
+    hr.appendChild(el('th', { scope: 'col', 'class': emph === 'Sigma' ? 'emph' : '',
+      text: 'δ(q, ' + (dfa.symbolNames ? a + '=' + dfa.symbolNames[a] : a) + ')' }));
+  });
+  hr.appendChild(el('th', { scope: 'col', text: 'Accepting?', 'class': emph === 'F' ? 'emph' : '' }));
+  if (opts.meaning) hr.appendChild(el('th', { scope: 'col', text: 'What this state remembers' }));
+  thead.appendChild(hr); t.appendChild(thead);
+
+  var tb = el('tbody');
+  dfa.states.forEach(function (q) {
+    var tr = el('tr', { 'class': opts.activeState === q ? 'row-active' : '' });
+    var isStart = q === dfa.start, acc = L.isAccept(dfa, q);
+    var th = el('th', { scope: 'row', 'class': (emph === 'Q' || (emph === 'q0' && isStart)) ? 'emph' : '' });
+    th.appendChild(el('span', { 'class': 'mark', text: (isStart ? '→' : '  ') + (acc ? '*' : ' ') + ' ' }));
+    th.appendChild(document.createTextNode(q));
+    if (isStart) th.appendChild(el('span', { 'class': 'sr-only', text: ' (start state)' }));
+    tr.appendChild(th);
+    dfa.alphabet.forEach(function (a) {
+      var target = L.step(dfa, q, a);
+      var cls = 'cell';
+      if (opts.activeCell && opts.activeCell.state === q && opts.activeCell.sym === a) cls += ' cell-active';
+      if (emph === 'delta') cls += ' emph';
+      tr.appendChild(el('td', { 'class': cls, 'data-state': q, 'data-sym': a,
+        text: (target === undefined || target === null || target === '') ? '—' : target }));
+    });
+    tr.appendChild(el('td', { 'class': emph === 'F' ? 'emph' : '', text: acc ? '✓ accept' : '— no' }));
+    if (opts.meaning) tr.appendChild(el('td', { 'class': 'meaning', text: dfa.meaning[q] || '' }));
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  var wrap = el('div', { 'class': 'scroll-x' }, [t]);
+  return wrap;
+}
+
+/* Tuple written out in symbols, e.g.  Q = {q0, q1} ... */
+function tupleLines(dfa) {
+  var lines = [];
+  lines.push(['Q', '{' + dfa.states.join(', ') + '}']);
+  lines.push(['Σ', '{' + dfa.alphabet.join(', ') + '}']);
+  var d = [];
+  dfa.states.forEach(function (q) {
+    dfa.alphabet.forEach(function (a) {
+      var t = L.step(dfa, q, a);
+      d.push('δ(' + q + ',' + a + ')=' + (t === undefined ? '?' : t));
+    });
+  });
+  lines.push(['δ', d.join('   ')]);
+  lines.push(['q₀', dfa.start || '—']);
+  lines.push(['F', '{' + dfa.accept.join(', ') + '}' + (dfa.accept.length ? '' : '  (empty)')]);
+  return lines;
+}
+
+/* =====================================================================
+   STEP-BY-STEP SIMULATOR WIDGET
+   Shared by the worked examples, the application demos and the exercise
+   builder, so every simulation on the page behaves identically.
+   ===================================================================== */
+function createTester(cfg) {
+  cfg = cfg || {};
+  var dfa = cfg.dfa || null;
+  var pos = 0, trace = null, timer = null, word = '';
+  var myId = 'tst' + (++uid);
+
+  var input = el('input', { type: 'text', id: myId + '-in', spellcheck: 'false',
+    autocomplete: 'off', autocapitalize: 'off', maxlength: '40',
+    'aria-describedby': myId + '-msg', placeholder: 'e.g. 1011' });
+  var msg = el('p', { 'class': 'msg', id: myId + '-msg', role: 'status', 'aria-live': 'polite' });
+  var samples = el('div', { 'class': 'samples' });
+  var tape = el('div', { 'class': 'tape', 'aria-hidden': 'true' });
+  var readout = el('div', { 'class': 'readout', role: 'status', 'aria-live': 'polite' });
+  var verdict = el('p', { 'class': 'verdict', hidden: 'hidden' });
+  var diagWrap = el('div', { 'class': 'diagram-wrap' });
+  var tableWrap = el('div');
+
+  var bReset = el('button', { 'class': 'btn small', text: '⟲ Reset', onclick: function () { stop(); pos = 0; update(); } });
+  var bBack  = el('button', { 'class': 'btn small', text: '◀ Back', onclick: function () { stop(); if (pos > 0) pos--; update(); } });
+  var bStep  = el('button', { 'class': 'btn primary small', text: 'Step ▶', onclick: function () { stop(); stepOnce(); } });
+  var bPlay  = el('button', { 'class': 'btn small', text: '▶ Play', onclick: togglePlay });
+  var bEnd   = el('button', { 'class': 'btn small', text: '⏭ Run to end', onclick: function () { stop(); if (trace && trace.ok) { pos = word.length; update(); } } });
+  var controls = el('div', { 'class': 'row', role: 'group', 'aria-label': 'Simulation controls' }, [bReset, bBack, bStep, bPlay, bEnd]);
+
+  var root = el('div', { 'class': 'tester' }, [
+    el('div', {}, [
+      el('label', { 'for': myId + '-in', text: cfg.label || 'Input string (0s and 1s only)' }),
+      el('div', { 'class': 'row', style: 'margin-top:.3rem' }, [input]),
+      samples, msg
+    ]),
+    diagWrap,
+    tape,
+    readout,
+    controls,
+    verdict,
+    tableWrap
+  ]);
+
+  (cfg.samples || []).forEach(function (s) {
+    samples.appendChild(el('button', {
+      'class': 'chip', text: s === '' ? 'ε (empty)' : s,
+      'aria-label': s === '' ? 'try the empty string' : 'try ' + s.split('').join(' '),
+      onclick: function () { input.value = s; onInput(); input.focus(); }
+    }));
+  });
+  if ((cfg.samples || []).length) samples.insertBefore(el('span', { 'class': 'small muted', text: 'Try:' }), samples.firstChild);
+
+  input.addEventListener('input', onInput);
+  root.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); stop(); stepOnce(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); stop(); if (pos > 0) pos--; update(); }
+  });
+
+  function stepOnce() { if (trace && trace.ok && pos < word.length) { pos++; update(); } }
+  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.textContent = '▶ Play'; bPlay.setAttribute('aria-pressed', 'false'); } }
+  function togglePlay() {
+    if (timer) { stop(); return; }
+    if (!trace || !trace.ok || word.length === 0) return;
+    if (pos >= word.length) pos = 0;
+    bPlay.textContent = '⏸ Pause'; bPlay.setAttribute('aria-pressed', 'true');
+    timer = setInterval(function () { if (pos >= word.length) { stop(); } else { pos++; update(); } }, 750);
+  }
+
+  function onInput() { stop(); pos = 0; update(); }
+
+  function setDFA(next) { dfa = next; pos = 0; update(); }
+  function setString(s) { input.value = s; onInput(); }
+
+  function update() {
+    word = input.value;
+    clear(msg); msg.className = 'msg';
+    var bad = [];
+    word.split('').forEach(function (c) { if (dfa && dfa.alphabet.indexOf(c) === -1 && bad.indexOf(c) === -1) bad.push(c); });
+
+    if (bad.length) {
+      msg.className = 'msg err';
+      msg.appendChild(document.createTextNode('Not in the alphabet Σ = {0, 1}: ' + bad.map(function (c) { return '“' + c + '”'; }).join(', ') + '. '));
+      msg.appendChild(el('button', { 'class': 'btn small', text: 'Remove them', onclick: function () {
+        input.value = input.value.split('').filter(function (c) { return dfa.alphabet.indexOf(c) !== -1; }).join('');
+        onInput(); input.focus();
+      } }));
+      trace = null;
+    } else {
+      trace = dfa ? L.run(dfa, word) : null;
+      if (trace && !trace.ok && trace.reason === 'undefined') {
+        msg.className = 'msg err';
+        msg.textContent = 'This machine has no transition for δ(' + trace.state + ', ' + trace.sym + '), so it cannot finish. ' +
+                          'An incomplete machine is not a DFA — fill in every cell of the table.';
+      } else if (trace && !trace.ok && trace.reason === 'nostart') {
+        msg.className = 'msg err';
+        msg.textContent = 'This machine has no start state yet.';
+      }
+    }
+
+    var canRun = !!(trace && trace.ok);
+    if (pos > word.length) pos = word.length;
+    bStep.disabled = !canRun || pos >= word.length;
+    bEnd.disabled  = !canRun || pos >= word.length;
+    bPlay.disabled = !canRun || word.length === 0;
+    bBack.disabled = pos === 0;
+    bReset.disabled = pos === 0;
+    if (!canRun) stop();
+
+    /* tape */
+    clear(tape);
+    if (word.length === 0) tape.appendChild(el('span', { 'class': 'eps', text: 'ε — the empty string: zero symbols to read' }));
+    else {
+      word.split('').forEach(function (c, i) {
+        tape.appendChild(el('span', { 'class': 'sym ' + (i < pos ? 'done' : (i === pos ? 'next' : '')), text: c }));
+        if (i === pos - 1) tape.appendChild(el('span', { 'class': 'caret', text: '▲' }));
+      });
+      if (pos === word.length) tape.appendChild(el('span', { 'class': 'small muted', text: ' ⟵ input exhausted' }));
+    }
+
+    /* readout */
+    clear(readout);
+    var cur = canRun ? trace.states[pos] : (dfa ? dfa.start : null);
+    var line1 = el('div', { 'class': 'big' });
+    line1.appendChild(document.createTextNode('Step ' + pos + ' of ' + word.length + ' · current state '));
+    line1.appendChild(el('span', { 'class': 'state-now', text: cur || '—' }));
+    readout.appendChild(line1);
+    if (dfa && cur && dfa.meaning[cur]) readout.appendChild(el('div', { 'class': 'small muted', text: 'meaning: ' + dfa.meaning[cur] }));
+    if (canRun && pos > 0) {
+      var t = trace.transitions[pos - 1];
+      readout.appendChild(el('div', { 'class': 'small mono', text: 'just took  δ(' + t.from + ', ' + t.sym + ') = ' + t.to }));
+    } else if (canRun) {
+      readout.appendChild(el('div', { 'class': 'small muted', text: 'nothing read yet — the machine sits in its start state' }));
+    }
+    var left = canRun ? word.slice(pos) : '';
+    readout.appendChild(el('div', { 'class': 'small mono', text: 'consumed: ' + show(word.slice(0, pos)) + '   ·   remaining: ' + show(left) }));
+
+    /* verdict */
+    var done = canRun && pos === word.length;
+    verdict.hidden = !done;
+    if (done) {
+      verdict.className = 'verdict ' + (trace.accepted ? 'accept' : 'reject');
+      clear(verdict);
+      verdict.appendChild(el('span', { 'class': 'glyph', text: trace.accepted ? '✓' : '✗', 'aria-hidden': 'true' }));
+      verdict.appendChild(document.createTextNode(
+        (trace.accepted ? 'ACCEPTED' : 'REJECTED') + ' — the whole input was read and the machine ended in ' +
+        trace.end + ', which is ' + (trace.accepted ? 'an accept state.' : 'not an accept state.')));
+    }
+
+    /* diagram + table */
+    clear(diagWrap);
+    if (dfa) diagWrap.appendChild(renderDiagram(dfa, {
+      active: cur,
+      activeEdge: (canRun && pos > 0) ? { from: trace.transitions[pos - 1].from, sym: trace.transitions[pos - 1].sym } : null,
+      verdict: done ? (trace.accepted ? 'accept' : 'reject') : null,
+      caption: cfg.caption || ''
+    }));
+    clear(tableWrap);
+    if (dfa && cfg.table !== false) tableWrap.appendChild(renderTable(dfa, {
+      meaning: cfg.meaning !== false,
+      activeState: cur,
+      activeCell: (canRun && pos < word.length) ? { state: cur, sym: word[pos] } : null,
+      caption: 'Transition table' + (canRun && pos < word.length ? ' — outlined cell is the move about to be made' : '')
+    }));
+  }
+
+  update();
+  return { el: root, setDFA: setDFA, setString: setString, update: update, stop: stop };
+}
+
+/* =====================================================================
+   CHECK-YOUR-UNDERSTANDING WIDGET
+   ===================================================================== */
+function createQuiz(cfg) {
+  var name = 'quiz' + (++uid);
+  var fs = el('fieldset', { 'class': 'quiz' });
+  fs.appendChild(el('legend', { text: 'Check your understanding' }));
+  fs.appendChild(el('p', { 'class': 'tight', text: cfg.q }));
+  var fb = el('p', { 'class': 'fb', role: 'status', 'aria-live': 'polite' });
+  cfg.options.forEach(function (o, i) {
+    var id = name + '-' + i;
+    var lab = el('label', { 'class': 'opt', 'for': id }, [
+      el('input', { type: 'radio', name: name, id: id, value: String(i) }),
+      document.createTextNode(o.t)
+    ]);
+    fs.appendChild(lab);
+  });
+  fs.appendChild(el('div', { 'class': 'row', style: 'margin-top:.5rem' }, [
+    el('button', { 'class': 'btn small', text: 'Check', onclick: function () {
+      var picked = fs.querySelector('input[name="' + name + '"]:checked');
+      if (!picked) { fb.className = 'fb'; fb.textContent = 'Pick an answer first.'; return; }
+      var o = cfg.options[+picked.value];
+      fb.className = 'fb ' + (o.correct ? 'right' : 'wrong');
+      fb.textContent = (o.correct ? '✓ Correct. ' : '✗ Not quite. ') + o.why;
+    } })
+  ]));
+  fs.appendChild(fb);
+  return fs;
+}
+
+window.DFAUI = {
+  el: el, svg: svg, apply: apply, clear: clear, show: show,
+  renderDiagram: renderDiagram, renderTable: renderTable, tupleLines: tupleLines,
+  createTester: createTester, createQuiz: createQuiz, autoLayout: autoLayout
+};
+})();
+</script>
+
+<!-- ===================================================================
+     UI LAYER, PART 2 — page assembly: section 1 widgets, the worked
+     examples, and the three application demos.
+     =================================================================== -->
+<script>
+(function () {
+'use strict';
+var L = window.DFALib, U = window.DFAUI;
+var el = U.el, svg = U.svg, clear = U.clear;
+
+/* ---------------------------------------------------------------
+   Small hand-drawn counter-examples: three ways to fail to be a DFA
+   --------------------------------------------------------------- */
+function mini(cfg) {
+  var r = 22, s = svg('svg', { 'class': 'diagram', viewBox: '0 0 ' + cfg.vb[0] + ' ' + cfg.vb[1],
+    role: 'img', 'aria-label': cfg.alt });
+  s.style.maxHeight = cfg.vb[1] + 'px';
+  var id = 'mn' + Math.random().toString(36).slice(2, 7);
+  var defs = svg('defs');
+  defs.appendChild(svg('marker', { id: id + '-a', viewBox: '0 0 12 10', refX: 11, refY: 5, markerWidth: 11, markerHeight: 9, markerUnits: 'userSpaceOnUse', orient: 'auto' }, [svg('path', { d: 'M0,0 L12,5 L0,10 z', 'class': 'arrow' })]));
+  s.appendChild(defs);
+  var at = {}; cfg.nodes.forEach(function (n) { at[n.id] = [n.x, n.y]; });
+
+  cfg.edges.forEach(function (e) {
+    var p = at[e.from], q = e.to ? at[e.to] : [e.x2, e.y2], d, lx, ly;
+    if (e.self) {
+      d = 'M' + (p[0] - 0.57 * r) + ',' + (p[1] - 0.82 * r) + ' C' + (p[0] - 0.57 * r - 20) + ',' + (p[1] - 0.82 * r - 42) +
+          ' ' + (p[0] + 0.57 * r + 20) + ',' + (p[1] - 0.82 * r - 42) + ' ' + (p[0] + 0.57 * r) + ',' + (p[1] - 0.82 * r);
+      lx = p[0]; ly = p[1] - r - 38;
+    } else {
+      var dx = q[0] - p[0], dy = q[1] - p[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var sx = p[0] + r * dx / len, sy = p[1] + r * dy / len;
+      var ex = e.to ? q[0] - (r + 2) * dx / len : q[0], ey = e.to ? q[1] - (r + 2) * dy / len : q[1];
+      d = 'M' + sx + ',' + sy + ' L' + ex + ',' + ey;
+      lx = (sx + ex) / 2 - dy / len * 13; ly = (sy + ey) / 2 + dx / len * 13;
+    }
+    s.appendChild(svg('path', { 'class': 'edge' + (e.bad ? ' bad-edge' : ''), d: d, 'marker-end': 'url(#' + id + '-a)' }));
+    if (e.label) s.appendChild(svg('text', { 'class': 'edge-label', x: lx, y: ly, text: e.label }));
+  });
+  cfg.nodes.forEach(function (n) {
+    var g = svg('g', { transform: 'translate(' + n.x + ',' + n.y + ')' });
+    g.appendChild(svg('circle', { 'class': 'st-ring', r: r }));
+    if (n.accept) g.appendChild(svg('circle', { 'class': 'st-inner', r: r - 4 }));
+    g.appendChild(svg('text', { 'class': 'st-label', 'font-size': 13, y: 1, text: n.id }));
+    s.appendChild(g);
+  });
+  (cfg.badges || []).forEach(function (b) {
+    s.appendChild(svg('text', { 'class': 'bad-badge', x: b.x, y: b.y, text: b.t }));
+  });
+  return el('div', { 'class': 'card', style: 'margin:0' }, [
+    el('h4', { style: 'color:var(--bad); text-transform:none; font-size:1.02rem', text: '✗ ' + cfg.title }),
+    el('div', { 'class': 'diagram-wrap' }, [s]),
+    el('p', { 'class': 'small', style: 'margin:.6rem 0 0', text: cfg.note })
+  ]);
+}
+
+function buildBadExamples() {
+  var host = document.getElementById('bad-examples');
+  host.appendChild(mini({
+    title: 'Missing transition', vb: [240, 180],
+    alt: 'Two states p and q. An arrow labelled 1 goes from p to q, and q has a self-loop labelled 0, 1. From p there is a dashed arrow labelled 0 that leads nowhere.',
+    nodes: [{ id: 'p', x: 60, y: 80 }, { id: 'q', x: 180, y: 80, accept: true }],
+    edges: [
+      { from: 'p', to: 'q', label: '1' },
+      { from: 'q', self: true, label: '0, 1' },
+      { from: 'p', x2: 60, y2: 140, label: '0', bad: true }
+    ],
+    badges: [{ x: 60, y: 166, t: '?' }],
+    note: 'δ(p, 0) is not defined, so the machine gets stuck on the input 0. Rule 2 says every state needs an arrow for every symbol. Fix: add a trap state.'
+  }));
+  host.appendChild(mini({
+    title: 'Two arrows with the same label', vb: [240, 180],
+    alt: 'State p has two arrows both labelled 0, one going to q and one going to r.',
+    nodes: [{ id: 'p', x: 58, y: 90 }, { id: 'q', x: 186, y: 44 }, { id: 'r', x: 186, y: 136 }],
+    edges: [
+      { from: 'p', to: 'q', label: '0', bad: true },
+      { from: 'p', to: 'r', label: '0', bad: true }
+    ],
+    note: 'Reading a 0 in state p, which arrow does the machine take? A function cannot return two answers. This is a nondeterministic machine (an NFA), not a DFA.'
+  }));
+  host.appendChild(mini({
+    title: 'An ε-transition', vb: [240, 180],
+    alt: 'An arrow labelled epsilon goes from state p to state q without reading a symbol.',
+    nodes: [{ id: 'p', x: 60, y: 90 }, { id: 'q', x: 180, y: 90, accept: true }],
+    edges: [{ from: 'p', to: 'q', label: 'ε', bad: true }],
+    note: 'This arrow moves the machine without consuming an input symbol, so the number of steps is no longer fixed by the length of the input. Allowed in NFAs, forbidden in DFAs.'
+  }));
+}
+
+/* ---------------------------------------------------------------
+   Section 1: the tuple ⇄ diagram ⇄ table explorer
+   --------------------------------------------------------------- */
+var TUPLE_TEXT = {
+  Q: 'Q = {q0, q1} — the set of states. In the diagram these are the two circles; in the table they are the two rows. This machine’s entire memory is which circle it is standing in: “I have not seen a 1 yet” or “I have seen a 1”.',
+  Sigma: 'Σ = {0, 1} — the input alphabet. In the diagram these are the labels on the arrows; in the table they are the two δ columns. Every input string is a sequence of these symbols and nothing else.',
+  delta: 'δ — the transition function, one arrow per (state, symbol) pair. Here: δ(q0,0) = q0, δ(q0,1) = q1, δ(q1,0) = q1, δ(q1,1) = q1. Count them: 2 states × 2 symbols = 4 arrows and 4 inner cells of the table. Not 3, not 5 — that is what determinism means.',
+  q0: 'q₀ = q0 — the start state, shown by the little unattached “start” arrow and by → in the table. Before reading anything, the machine sits here.',
+  F: 'F = {q1} — the accept states, drawn as a double circle and spelled out in the “Accepting?” column. Because q0 ∉ F, the empty string is rejected: ε contains no 1, so rejecting it is correct.'
+};
+function buildTupleExplorer() {
+  var host = document.getElementById('tuple-explorer');
+  var dfa = L.INTRO, emph = null;
+  var diag = el('div', { 'class': 'diagram-wrap' });
+  var tab = el('div');
+  var explain = el('div', { 'class': 'explain', role: 'status', 'aria-live': 'polite' });
+  var line = el('div', { 'class': 'tuple' });
+  var buttons = {};
+
+  function paint() {
+    clear(diag); diag.appendChild(U.renderDiagram(dfa, { emph: emph, caption: 'the machine for “contains at least one 1”' }));
+    clear(tab); tab.appendChild(U.renderTable(dfa, { meaning: true, emph: emph, caption: 'Transition table' }));
+    explain.textContent = emph ? TUPLE_TEXT[emph] : 'Click a part of the tuple above to light it up in the diagram and the table below.';
+    Object.keys(buttons).forEach(function (k) { buttons[k].setAttribute('aria-pressed', String(emph === k)); });
+  }
+  line.appendChild(el('span', { text: 'M = (' }));
+  [['Q', 'Q'], ['Sigma', 'Σ'], ['delta', 'δ'], ['q0', 'q₀'], ['F', 'F']].forEach(function (p, i) {
+    if (i) line.appendChild(el('span', { text: ', ' }));
+    var b = el('button', { 'class': 'part', type: 'button', text: p[1], 'aria-pressed': 'false',
+      'aria-label': 'highlight ' + p[1] + ', part ' + (i + 1) + ' of the tuple',
+      onclick: function () { emph = (emph === p[0]) ? null : p[0]; paint(); } });
+    buttons[p[0]] = b; line.appendChild(b);
+  });
+  line.appendChild(el('span', { text: ')' }));
+
+  host.appendChild(line);
+  host.appendChild(explain);
+  host.appendChild(el('div', { 'class': 'two-col', style: 'margin-top:1rem' }, [diag, tab]));
+  host.appendChild(el('details', { style: 'margin-top:.8rem' }, [
+    el('summary', { text: 'See the same machine written out as plain text' }),
+    el('pre', { 'class': 'mono small', style: 'overflow-x:auto', text: U.tupleLines(dfa).map(function (r) { return r[0] + ' = ' + r[1]; }).join('\n') })
+  ]));
+  paint();
+}
+
+/* ---------------------------------------------------------------
+   Section 2: the worked examples
+   --------------------------------------------------------------- */
+function buildExamples() {
+  var nav = document.getElementById('example-nav');
+  var host = document.getElementById('example-host');
+  var built = {}, current = null;
+
+  function select(id) {
+    current = id;
+    Array.prototype.forEach.call(nav.children, function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.id === id));
+    });
+    clear(host);
+    if (!built[id]) built[id] = makeCard(L.EXAMPLES.filter(function (e) { return e.id === id; })[0]);
+    host.appendChild(built[id]);
+  }
+
+  function makeCard(ex) {
+    var card = el('div', { 'class': 'card' });
+    card.appendChild(el('h3', { text: ex.title }));
+    card.appendChild(el('p', { text: ex.english }));
+    card.appendChild(el('div', { 'class': 'note' }, [el('p', {}, [el('span', { 'class': 'tag', text: 'Key idea. ' }), document.createTextNode(ex.idea)])]));
+    var tup = el('div', { 'class': 'card', style: 'background:var(--panel-2); margin:0 0 1rem' });
+    tup.appendChild(el('h4', { text: 'Formal definition' }));
+    var dl = el('div', { 'class': 'mono small', style: 'display:grid; gap:.25rem' });
+    U.tupleLines(ex.dfa).forEach(function (r) {
+      dl.appendChild(el('div', { style: 'overflow-x:auto; white-space:nowrap' }, [
+        el('strong', { text: r[0] + ' = ' }), document.createTextNode(r[1])
+      ]));
+    });
+    tup.appendChild(dl);
+    card.appendChild(tup);
+    card.appendChild(el('h4', { text: 'Run it yourself' }));
+    var t = U.createTester({ dfa: ex.dfa, samples: ex.samples, caption: ex.title });
+    card.appendChild(t.el);
+    return card;
+  }
+
+  L.EXAMPLES.forEach(function (ex) {
+    var b = el('button', { 'class': 'tab', type: 'button', text: ex.tab, 'aria-pressed': 'false' });
+    b.dataset.id = ex.id;
+    b.addEventListener('click', function () { select(ex.id); });
+    nav.appendChild(b);
+  });
+  select(L.EXAMPLES[0].id);
+}
+
+/* ---------------------------------------------------------------
+   Section 3, demo 1: the turnstile
+   --------------------------------------------------------------- */
+function buildTurnstile() {
+  var host = document.getElementById('demo-turnstile');
+  var dfa = L.APPS.turnstile, state = dfa.start, last = null, history = [];
+  var gate = el('div', { 'class': 'gate' });
+  var label = el('p', { 'class': 'readout big', role: 'status', 'aria-live': 'polite' });
+  var diag = el('div', { 'class': 'diagram-wrap' });
+  var log = el('div', { 'class': 'log', role: 'log', 'aria-label': 'event log' });
+  var word = el('p', { 'class': 'small mono' });
+
+  function fire(sym) {
+    var to = L.step(dfa, state, sym);
+    last = { from: state, sym: sym };
+    history.push(sym);
+    var name = dfa.symbolNames[sym];
+    var before = state; state = to;
+    log.insertBefore(el('div', { text: name + ' (' + sym + '): ' + before + ' → ' + state +
+      (before === state ? '   (nothing happens)' : '') }), log.firstChild);
+    paint();
+  }
+  function paint() {
+    var open = state === 'Unlocked';
+    gate.textContent = open ? '🔓' : '🔒';
+    gate.setAttribute('aria-hidden', 'true');
+    clear(label);
+    label.appendChild(document.createTextNode('The turnstile is '));
+    label.appendChild(el('strong', { text: open ? 'UNLOCKED' : 'LOCKED' }));
+    label.appendChild(document.createTextNode(open ? ' — one push will let someone through.' : ' — pushing achieves nothing; insert a coin.'));
+    clear(diag);
+    diag.appendChild(U.renderDiagram(dfa, { active: state, activeEdge: last, caption: 'turnstile controller' }));
+    word.textContent = 'Event string so far: ' + U.show(history.join('')) +
+      '   (length ' + history.length + ', currently ' + (open ? 'in F — accepted' : 'not in F — rejected') + ')';
+  }
+  host.appendChild(el('div', { 'class': 'two-col' }, [
+    el('div', { 'class': 'stack' }, [
+      gate, label,
+      el('div', { 'class': 'row' }, [
+        el('button', { 'class': 'btn primary', text: '🪙 Insert coin (0)', onclick: function () { fire('0'); } }),
+        el('button', { 'class': 'btn', text: '🚶 Push arm (1)', onclick: function () { fire('1'); } }),
+        el('button', { 'class': 'btn ghost small', text: 'Reset', onclick: function () { state = dfa.start; last = null; history = []; clear(log); paint(); } })
+      ]),
+      word, log
+    ]),
+    diag
+  ]));
+  host.appendChild(U.renderTable(dfa, { meaning: true, caption: 'The same controller as a table' }));
+  paint();
+}
+
+/* ---------------------------------------------------------------
+   Section 3, demo 2: live input validation
+   --------------------------------------------------------------- */
+function buildValidator() {
+  var host = document.getElementById('demo-validator');
+  var dfa = L.APPS.validator;
+  var input = el('input', { type: 'text', id: 'val-in', spellcheck: 'false', autocomplete: 'off',
+    maxlength: '20', placeholder: 'type 0s and 1s', value: '1011' });
+  var verdict = el('p', { 'class': 'verdict', role: 'status', 'aria-live': 'polite' });
+  var path = el('p', { 'class': 'trace-line' });
+  var diag = el('div', { 'class': 'diagram-wrap' });
+  var note = el('p', { 'class': 'msg' });
+
+  function paint() {
+    var w = input.value, bad = [];
+    w.split('').forEach(function (c) { if ('01'.indexOf(c) === -1 && bad.indexOf(c) === -1) bad.push(c); });
+    note.className = 'msg' + (bad.length ? ' err' : '');
+    note.textContent = bad.length ? 'Ignoring characters outside Σ = {0,1}: ' + bad.join(', ') : '';
+    var clean = w.split('').filter(function (c) { return '01'.indexOf(c) !== -1; }).join('');
+    var r = L.run(dfa, clean);
+    verdict.className = 'verdict ' + (r.accepted ? 'accept' : 'reject');
+    clear(verdict);
+    verdict.appendChild(el('span', { 'class': 'glyph', 'aria-hidden': 'true', text: r.accepted ? '✓' : '✗' }));
+    verdict.appendChild(document.createTextNode(
+      r.accepted ? '“' + U.show(clean) + '” is a well-formed binary numeral.'
+                 : '“' + U.show(clean) + '” is rejected — ' + ({
+                     start: 'a numeral cannot be empty.',
+                     zero: 'valid.', lead1: 'valid.',
+                     trap: 'it has a leading zero followed by more digits.'
+                   })[r.end]));
+    var line = r.states[0];
+    r.transitions.forEach(function (t) { line += '  --' + t.sym + '-->  ' + t.to; });
+    path.textContent = line;
+    clear(diag);
+    diag.appendChild(U.renderDiagram(dfa, {
+      active: r.end,
+      activeEdge: r.transitions.length ? { from: r.transitions[r.transitions.length - 1].from, sym: r.transitions[r.transitions.length - 1].sym } : null,
+      verdict: r.accepted ? 'accept' : 'reject',
+      caption: 'binary numeral validator'
+    }));
+  }
+  input.addEventListener('input', paint);
+  host.appendChild(el('div', { 'class': 'two-col' }, [
+    el('div', { 'class': 'stack' }, [
+      el('div', {}, [el('label', { 'for': 'val-in', text: 'Candidate literal' }),
+                     el('div', { style: 'margin-top:.3rem' }, [input])]),
+      note, verdict,
+      el('div', {}, [el('h4', { text: 'Path through the machine' }), path]),
+      el('div', { 'class': 'samples' }, ['0', '1', '10', '00', '011', '1111', ''].map(function (s) {
+        return el('button', { 'class': 'chip', text: s === '' ? 'ε (empty)' : s,
+          onclick: function () { input.value = s; paint(); input.focus(); } });
+      }))
+    ]),
+    diag
+  ]));
+  host.appendChild(U.renderTable(dfa, { meaning: true, caption: 'Transition table' }));
+  paint();
+}
+
+/* ---------------------------------------------------------------
+   Section 3, demo 3: scanning text for the pattern 0110
+   --------------------------------------------------------------- */
+function buildScanner() {
+  var host = document.getElementById('demo-scanner');
+  var dfa = L.APPS.scanner, i = 0, timer = null;
+  var input = el('input', { type: 'text', id: 'scan-in', spellcheck: 'false', autocomplete: 'off',
+    maxlength: '40', value: '010110011011000110' });
+  var charLine = el('div', { 'class': 'scan-out', 'aria-hidden': 'true' });
+  var stateLine = el('div', { 'class': 'scan-out', 'aria-hidden': 'true' });
+  var status = el('p', { 'class': 'readout big', role: 'status', 'aria-live': 'polite' });
+  var diag = el('div', { 'class': 'diagram-wrap' });
+  var bStep, bPlay, bReset;
+
+  function text() { return input.value.split('').filter(function (c) { return '01'.indexOf(c) !== -1; }).join(''); }
+  function paint() {
+    var w = text(), r = L.run(dfa, w);
+    if (i > w.length) i = w.length;
+    clear(charLine); clear(stateLine);
+    var hits = [];
+    for (var j = 1; j <= i; j++) if (r.states[j] === 'k4') hits.push(j - 1);   // match ends at index j-1
+    w.split('').forEach(function (c, idx) {
+      var inHit = hits.some(function (h) { return idx <= h && idx > h - 4; });
+      charLine.appendChild(el('span', { 'class': 'c' + (inHit ? ' hit' : '') + (idx === i - 1 ? ' cur' : ''), text: c }));
+      stateLine.appendChild(el('span', { 'class': 'c' + (idx === i - 1 ? ' cur' : ''),
+        text: idx < i ? r.states[idx + 1].slice(1) : '·' }));
+    });
+    clear(status);
+    status.appendChild(document.createTextNode('Read ' + i + ' of ' + w.length + ' symbols · state ' ));
+    status.appendChild(el('span', { 'class': 'state-now', text: r.states[i] }));
+    status.appendChild(document.createTextNode(' · matches found so far: ' + hits.length +
+      (r.states[i] === 'k4' ? ' — a match just completed!' : '')));
+    clear(diag);
+    diag.appendChild(U.renderDiagram(dfa, {
+      active: r.states[i],
+      activeEdge: i > 0 ? { from: r.transitions[i - 1].from, sym: r.transitions[i - 1].sym } : null,
+      caption: 'substring scanner for 0110'
+    }));
+    bStep.disabled = i >= w.length;
+    bReset.disabled = i === 0;
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.textContent = '▶ Scan'; } }
+  bStep = el('button', { 'class': 'btn primary small', text: 'Step ▶', onclick: function () { stop(); if (i < text().length) { i++; paint(); } } });
+  bPlay = el('button', { 'class': 'btn small', text: '▶ Scan', onclick: function () {
+    if (timer) { stop(); return; }
+    if (i >= text().length) i = 0;
+    bPlay.textContent = '⏸ Pause';
+    timer = setInterval(function () { if (i >= text().length) stop(); else { i++; paint(); } }, 380);
+  } });
+  bReset = el('button', { 'class': 'btn small', text: '⟲ Reset', onclick: function () { stop(); i = 0; paint(); } });
+  input.addEventListener('input', function () { stop(); i = 0; paint(); });
+
+  host.appendChild(el('div', { 'class': 'two-col' }, [
+    el('div', { 'class': 'stack' }, [
+      el('div', {}, [el('label', { 'for': 'scan-in', text: 'Text to scan' }), el('div', { style: 'margin-top:.3rem' }, [input])]),
+      el('div', {}, [
+        el('div', { 'class': 'small muted', text: 'text:' }), charLine,
+        el('div', { 'class': 'small muted', style: 'margin-top:.3rem', text: 'state after each symbol:' }), stateLine
+      ]),
+      status,
+      el('div', { 'class': 'row' }, [bStep, bPlay, bReset])
+    ]),
+    diag
+  ]));
+  paint();
+}
+
+/* ---------------------------------------------------------------
+   Quizzes sprinkled through the page
+   --------------------------------------------------------------- */
+function buildQuizzes() {
+  document.getElementById('quiz-compute').appendChild(U.createQuiz({
+    q: 'A DFA has start state q₀, and q₀ is NOT an accept state. What does the machine do with the empty string ε?',
+    options: [
+      { t: 'Rejects it.', correct: true, why: 'Running ε takes zero steps, so the machine finishes where it started — in q₀ — and q₀ ∉ F means reject.' },
+      { t: 'Accepts it, because there is nothing to disagree with.', why: 'Acceptance is decided only by the state you end in, and with no input you end in the start state.' },
+      { t: 'Crashes — ε is not a legal input.', why: 'ε is a perfectly legal string of length 0. Every DFA has a defined answer for it.' },
+      { t: 'It depends on δ.', why: 'δ is never consulted: there are no symbols to read.' }
+    ]
+  }));
+  document.getElementById('quiz-notation').appendChild(U.createQuiz({
+    q: 'A DFA over Σ = {0,1} has 5 states. Exactly how many arrows (transitions) does its diagram contain, counting an arrow labelled “0, 1” as two?',
+    options: [
+      { t: '10', correct: true, why: '|Q| × |Σ| = 5 × 2 = 10. δ is a total function, so every state contributes exactly one transition per symbol — no more, no fewer.' },
+      { t: '5', why: 'That would be one arrow per state, leaving one symbol undefined in each.' },
+      { t: '25', why: 'That would be an arrow from every state to every state; δ only needs one target per (state, symbol) pair.' },
+      { t: 'It depends on the machine.', why: 'The count is forced by determinism: |Q| × |Σ| exactly, for every DFA over this alphabet.' }
+    ]
+  }));
+  document.getElementById('quiz-limits').appendChild(U.createQuiz({
+    q: 'Which of these languages over {0,1} can a DFA decide?',
+    options: [
+      { t: 'Strings with an even number of 0s.', correct: true, why: 'One bit of memory (parity) is enough, and one bit fits in finitely many states.' },
+      { t: 'Strings of the form 0ⁿ1ⁿ.', why: 'This needs an unbounded counter: the machine would have to remember n exactly, and n is unbounded.' },
+      { t: 'Strings that are palindromes.', why: 'To check a palindrome you must remember the whole first half, which is unbounded.' },
+      { t: 'Strings with equally many 0s and 1s.', why: 'Same problem as 0ⁿ1ⁿ — the difference between the counts is unbounded, so no finite memory tracks it.' }
+    ]
+  }));
+}
+
+window.DFAPage1 = { buildBadExamples: buildBadExamples, buildTupleExplorer: buildTupleExplorer,
+  buildExamples: buildExamples, buildTurnstile: buildTurnstile, buildValidator: buildValidator,
+  buildScanner: buildScanner, buildQuizzes: buildQuizzes };
+})();
+</script>
+
+<!-- ===================================================================
+     UI LAYER, PART 3 — the exercise laboratory (DFA builder, live
+     validation, answer checking, hints, progress) and page start-up.
+     =================================================================== -->
+<script>
+(function () {
+'use strict';
+var L = window.DFALib, U = window.DFAUI, P = window.DFAPage1;
+var el = U.el, clear = U.clear;
+
+var STORE_KEY = 'dfa-intro-v1';
+var progress = {}, models = {}, hintsShown = {}, currentEx = L.EXERCISES[0].id;
+
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ p: progress, m: models, h: hintsShown })); }
+  catch (e) { /* file:// or private mode — progress simply stays in memory */ }
+}
+function load() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    if (d && d.p) { progress = d.p; models = d.m || {}; hintsShown = d.h || {}; }
+  } catch (e) { progress = {}; models = {}; hintsShown = {}; }
+}
+
+/* =====================================================================
+   BUILDER MODEL
+   States carry a stable internal id plus a display name, so renaming a
+   state never breaks the transitions that point at it.
+   ===================================================================== */
+function newModel() {
+  return {
+    seq: 2,
+    states: [{ id: 's1', name: 'q0' }, { id: 's2', name: 'q1' }],
+    start: 's1', accept: [],
+    delta: { s1: { '0': null, '1': null }, s2: { '0': null, '1': null } }
+  };
+}
+function modelFor(exId) {
+  if (!models[exId]) models[exId] = newModel();
+  return models[exId];
+}
+/* Turn the editable model into a machine the core library understands. */
+function toDFA(model) {
+  var ids = model.states.map(function (s) { return s.id; });
+  var names = model.states.map(function (s) { return (s.name || '').trim(); });
+  var unique = names.every(function (n) { return n.length > 0; }) &&
+               names.filter(function (n, i) { return names.indexOf(n) !== i; }).length === 0;
+  var label = {};
+  model.states.forEach(function (s) { label[s.id] = unique ? s.name.trim() : s.id; });
+  var spec = { id: 'student', states: model.states.map(function (s) { return label[s.id]; }),
+    start: (model.start && ids.indexOf(model.start) !== -1) ? label[model.start] : null,
+    accept: model.accept.filter(function (id) { return ids.indexOf(id) !== -1; }).map(function (id) { return label[id]; }),
+    delta: {}, meaning: {} };
+  model.states.forEach(function (s) {
+    var row = model.delta[s.id] || {};
+    spec.delta[label[s.id]] = {
+      '0': (row['0'] && ids.indexOf(row['0']) !== -1) ? label[row['0']] : undefined,
+      '1': (row['1'] && ids.indexOf(row['1']) !== -1) ? label[row['1']] : undefined
+    };
+  });
+  var dfa = L.makeDFA(spec);
+  dfa.namesUnique = unique;
+  return dfa;
+}
+/* Validation shown to the student: the library's checks, plus a
+   name-uniqueness check that only matters in the editor. */
+function builderChecks(model, dfa) {
+  var names = model.states.map(function (s) { return (s.name || '').trim(); });
+  var blank = names.some(function (n) { return !n; });
+  var dup = names.filter(function (n, i) { return n && names.indexOf(n) !== i; });
+  var mine = { key: 'names', label: 'Every state has a distinct, non-empty name', ok: !blank && dup.length === 0,
+    detail: blank ? 'One state has an empty name.' : (dup.length ? 'Repeated name: ' + dup[0] : '') };
+  var rest = L.validate(dfa).checks.filter(function (c) { return c.key !== 'names'; });
+  return [mine].concat(rest);
+}
+
+/* =====================================================================
+   THE EXERCISE PANEL
+   ===================================================================== */
+function buildLab() {
+  var nav = document.getElementById('lab-nav');
+  var host = document.getElementById('lab-host');
+
+  L.EXERCISES.forEach(function (ex) {
+    var b = el('button', { 'class': 'tab', type: 'button', 'aria-pressed': 'false' });
+    b.dataset.id = ex.id;
+    b.appendChild(el('span', { 'class': 'num', text: ex.tab }));
+    b.appendChild(document.createTextNode(ex.title));
+    b.appendChild(el('span', { 'class': 'sr-only', text: ' (' + ex.level + ')' }));
+    b.addEventListener('click', function () { openExercise(ex.id); });
+    nav.appendChild(b);
+  });
+  renderProgress();
+  openExercise(currentEx);
+
+  function renderProgress() {
+    var list = document.getElementById('progress-list');
+    clear(list);
+    L.EXERCISES.forEach(function (ex) {
+      var st = progress[ex.id];
+      var li = el('li', { 'class': st === 'solved' ? 'solved' : (st ? 'seen' : '') });
+      li.textContent = (st === 'solved' ? '✓ ' : (st === 'revealed' ? '👁 ' : (st ? '… ' : '○ '))) + ex.tab + '. ' + ex.title;
+      li.appendChild(el('span', { 'class': 'sr-only', text: ' — ' +
+        (st === 'solved' ? 'solved' : st === 'revealed' ? 'solution viewed' : st ? 'attempted' : 'not started') }));
+      list.appendChild(li);
+    });
+    Array.prototype.forEach.call(nav.children, function (b) {
+      var st = progress[b.dataset.id];
+      b.setAttribute('aria-label', (st === 'solved' ? 'solved: ' : '') + b.textContent);
+    });
+  }
+
+  function openExercise(id) {
+    currentEx = id;
+    Array.prototype.forEach.call(nav.children, function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.id === id));
+    });
+    clear(host);
+    host.appendChild(makePanel(L.EXERCISES.filter(function (e) { return e.id === id; })[0]));
+    save();
+  }
+
+  /* ---------------- one exercise ---------------- */
+  function makePanel(ex) {
+    var model = modelFor(ex.id);
+    var card = el('div', { 'class': 'card' });
+    card.appendChild(el('h3', {}, [
+      document.createTextNode('Exercise ' + ex.tab + ' · ' + ex.title + ' '),
+      el('span', { 'class': 'small muted', text: '(' + ex.level + ')' })
+    ]));
+    card.appendChild(el('p', { text: ex.prompt }));
+
+    var checksList = el('ul', { 'class': 'checks', role: 'status', 'aria-live': 'polite', 'aria-label': 'DFA validity' });
+    var tableHost = el('div', { 'class': 'scroll-x' });
+    var resultHost = el('div');
+    var hintHost = el('div');
+    var solutionHost = el('div');
+    var tester = U.createTester({ dfa: toDFA(model), samples: ex.samples, table: false, meaning: false,
+      label: 'Test a string on YOUR machine', caption: 'your machine' });
+
+    /* --- the editable transition table --- */
+    var optionRefs = [];      // <option> elements to relabel when a name changes
+    function sync(rebuildTable) {
+      var dfa = toDFA(model);
+      tester.setDFA(dfa);
+      renderChecks(builderChecks(model, dfa));
+      if (rebuildTable) renderBuilderTable();
+      save();
+    }
+    function renderChecks(checks) {
+      clear(checksList);
+      checks.forEach(function (c) {
+        var li = el('li', { 'class': c.ok ? 'ok' : 'no' });
+        li.appendChild(el('span', { 'class': 'g', 'aria-hidden': 'true', text: c.ok ? '✓' : '✗' }));
+        var txt = el('span', {}, [el('strong', { text: c.ok ? '' : 'Not yet: ' }), document.createTextNode(c.label)]);
+        if (c.detail) { txt.appendChild(el('br')); txt.appendChild(el('span', { 'class': 'small', text: c.detail })); }
+        li.appendChild(txt);
+        checksList.appendChild(li);
+      });
+      var allOK = checks.every(function (c) { return c.ok; });
+      checkBtn.disabled = !allOK;
+      checkBtn.title = allOK ? '' : 'Finish the machine first — the checklist says what is missing.';
+    }
+    function renderBuilderTable() {
+      optionRefs = [];
+      clear(tableHost);
+      var t = el('table', { 'class': 'builder-table' });
+      var head = el('tr');
+      ['State name', 'Start', 'Accept', 'δ(·, 0)', 'δ(·, 1)', ''].forEach(function (h, i) {
+        head.appendChild(el('th', { scope: 'col' }, [i === 5 ? el('span', { 'class': 'sr-only', text: 'Delete' }) : document.createTextNode(h)]));
+      });
+      t.appendChild(el('thead', {}, [head]));
+      var body = el('tbody');
+      model.states.forEach(function (s, idx) {
+        var tr = el('tr');
+        /* name */
+        var nameIn = el('input', { type: 'text', value: s.name, 'aria-label': 'name of state ' + (idx + 1) });
+        nameIn.addEventListener('input', function () {
+          s.name = nameIn.value;
+          optionRefs.forEach(function (o) { if (o.value === s.id) o.textContent = s.name || '(unnamed)'; });
+          sync(false);
+        });
+        tr.appendChild(el('td', {}, [nameIn]));
+        /* start */
+        var radio = el('input', { type: 'radio', name: 'start-' + ex.id, 'aria-label': 'make ' + (s.name || 'state ' + (idx + 1)) + ' the start state' });
+        radio.checked = model.start === s.id;
+        radio.addEventListener('change', function () { model.start = s.id; sync(false); });
+        tr.appendChild(el('td', {}, [radio]));
+        /* accept */
+        var acc = el('input', { type: 'checkbox', 'aria-label': 'make ' + (s.name || 'state ' + (idx + 1)) + ' an accept state' });
+        acc.checked = model.accept.indexOf(s.id) !== -1;
+        acc.addEventListener('change', function () {
+          var i = model.accept.indexOf(s.id);
+          if (acc.checked && i === -1) model.accept.push(s.id);
+          if (!acc.checked && i !== -1) model.accept.splice(i, 1);
+          sync(false);
+        });
+        tr.appendChild(el('td', {}, [acc]));
+        /* transitions */
+        ['0', '1'].forEach(function (sym) {
+          var sel = el('select', { 'aria-label': 'delta of ' + (s.name || 'state ' + (idx + 1)) + ' on ' + sym });
+          sel.appendChild(el('option', { value: '', text: '— choose —' }));
+          model.states.forEach(function (o) {
+            var opt = el('option', { value: o.id, text: o.name || '(unnamed)' });
+            optionRefs.push(opt);
+            sel.appendChild(opt);
+          });
+          sel.value = model.delta[s.id][sym] || '';
+          sel.addEventListener('change', function () { model.delta[s.id][sym] = sel.value || null; sync(false); });
+          tr.appendChild(el('td', {}, [sel]));
+        });
+        /* delete */
+        var del = el('button', { 'class': 'btn small danger', text: '✕',
+          'aria-label': 'delete state ' + (s.name || idx + 1), disabled: model.states.length <= 1 ? 'disabled' : null,
+          onclick: function () { deleteState(s.id); } });
+        tr.appendChild(el('td', {}, [del]));
+        body.appendChild(tr);
+      });
+      t.appendChild(body);
+      tableHost.appendChild(t);
+    }
+    function deleteState(id) {
+      model.states = model.states.filter(function (s) { return s.id !== id; });
+      delete model.delta[id];
+      model.accept = model.accept.filter(function (a) { return a !== id; });
+      if (model.start === id) model.start = null;
+      model.states.forEach(function (s) {
+        ['0', '1'].forEach(function (sym) { if (model.delta[s.id][sym] === id) model.delta[s.id][sym] = null; });
+      });
+      sync(true);
+    }
+    function addState() {
+      if (model.states.length >= 8) return;
+      model.seq++;
+      var id = 's' + model.seq + '_' + Math.random().toString(36).slice(2, 5);
+      var name = 'q' + (model.states.length);
+      while (model.states.some(function (s) { return s.name === name; })) name += "'";
+      model.states.push({ id: id, name: name });
+      model.delta[id] = { '0': null, '1': null };
+      sync(true);
+    }
+
+    var checkBtn = el('button', { 'class': 'btn primary', text: '✓ Check my answer', onclick: doCheck });
+
+    /* --- answer checking --- */
+    function doCheck() {
+      var dfa = toDFA(model);
+      var res = L.checkAnswer(dfa, ex);
+      clear(resultHost);
+      if (res.status === 'invalid') {
+        var c = el('div', { 'class': 'result-card invalid' });
+        c.appendChild(el('h4', { text: 'Not a DFA yet' }));
+        c.appendChild(el('p', { 'class': 'small', text: 'Fix these before submitting: ' +
+          res.validation.checks.filter(function (x) { return !x.ok; }).map(function (x) { return x.label; }).join('; ') + '.' }));
+        resultHost.appendChild(c);
+        if (progress[ex.id] !== 'solved') progress[ex.id] = 'attempted';
+      } else if (res.status === 'pass') {
+        var p = el('div', { 'class': 'result-card pass' });
+        p.appendChild(el('h4', { text: '✓ Correct — that machine is exactly right' }));
+        p.appendChild(el('p', { 'class': 'small', text:
+          'Checked two independent ways: an exact equivalence test against a reference machine (a breadth-first search of the product automaton, which would find a disagreement of any length), and brute force over all ' +
+          '8191 strings of length ≤ 12. No string is classified differently. Your machine may look nothing like the reference one — different machines can define the same language.' }));
+        p.appendChild(el('button', { 'class': 'btn small', text: 'Compare with the reference solution', onclick: showSolution }));
+        resultHost.appendChild(p);
+        progress[ex.id] = 'solved';
+      } else {
+        var f = el('div', { 'class': 'result-card fail' });
+        var ce = res.counterexample;
+        f.appendChild(el('h4', { text: '✗ Not yet — here is the shortest string you get wrong' }));
+        var line = el('p');
+        line.appendChild(document.createTextNode('On the input '));
+        line.appendChild(el('strong', { 'class': 'mono', text: ce.w === '' ? 'ε (the empty string)' : ce.w }));
+        line.appendChild(document.createTextNode(' your machine says '));
+        line.appendChild(el('strong', { text: ce.got ? 'ACCEPT' : 'REJECT' }));
+        line.appendChild(document.createTextNode(', but the language says it should be '));
+        line.appendChild(el('strong', { text: ce.expected ? 'ACCEPTED' : 'REJECTED' }));
+        line.appendChild(document.createTextNode('.'));
+        f.appendChild(line);
+        f.appendChild(el('h4', { text: 'How your machine runs it' }));
+        f.appendChild(el('p', { 'class': 'trace-line', text: res.trace }));
+        f.appendChild(el('button', { 'class': 'btn small', text: 'Load this string into the tester',
+          onclick: function () { tester.setString(ce.w); tester.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }));
+        resultHost.appendChild(f);
+        if (progress[ex.id] !== 'solved') progress[ex.id] = 'attempted';
+      }
+      renderProgress(); save();
+      resultHost.firstChild.setAttribute('tabindex', '-1');
+      resultHost.firstChild.focus();
+    }
+
+    /* --- hints --- */
+    function showHint() {
+      var n = (hintsShown[ex.id] || 0);
+      if (n >= ex.hints.length) return;
+      hintsShown[ex.id] = n + 1;
+      var h = el('div', { 'class': 'hint' });
+      h.appendChild(el('strong', { text: 'Hint ' + (n + 1) + ' of ' + ex.hints.length + '. ' }));
+      h.appendChild(document.createTextNode(ex.hints[n]));
+      hintHost.appendChild(h);
+      hintBtn.textContent = (n + 1 >= ex.hints.length) ? 'No more hints' : 'Hint ' + (n + 2) + ' →';
+      hintBtn.disabled = (n + 1 >= ex.hints.length);
+      if (!progress[ex.id]) progress[ex.id] = 'attempted';
+      renderProgress(); save();
+    }
+    var hintBtn = el('button', { 'class': 'btn', onclick: showHint });
+    (function initHints() {
+      var n = hintsShown[ex.id] || 0;
+      hintsShown[ex.id] = 0;
+      for (var i = 0; i < n; i++) showHint();
+      hintBtn.textContent = n >= ex.hints.length ? 'No more hints' : 'Hint ' + (n + 1) + ' →';
+      hintBtn.disabled = n >= ex.hints.length;
+    })();
+
+    /* --- reference solution --- */
+    function showSolution() {
+      clear(solutionHost);
+      var s = el('div', { 'class': 'card', style: 'background:var(--panel-2)' });
+      s.appendChild(el('h4', { text: 'One correct machine' }));
+      s.appendChild(el('p', { text: ex.explanation }));
+      s.appendChild(el('div', { 'class': 'two-col' }, [
+        el('div', { 'class': 'diagram-wrap' }, [U.renderDiagram(ex.solution, { caption: 'reference solution for ' + ex.title })]),
+        U.renderTable(ex.solution, { meaning: true, caption: 'Reference solution' })
+      ]));
+      s.appendChild(el('p', { 'class': 'small muted', style: 'margin-top:.7rem',
+        text: 'This is only one correct answer. Any machine that accepts exactly the same set of strings is equally right, and the checker will say so.' }));
+      s.appendChild(el('button', { 'class': 'btn small', text: 'Load this machine into my builder', onclick: function () {
+        var sol = ex.solution, m = { seq: 0, states: [], start: null, accept: [], delta: {} };
+        var idOf = {};
+        sol.states.forEach(function (q, i) { var id = 'sol' + i; idOf[q] = id; m.states.push({ id: id, name: q }); m.delta[id] = { '0': null, '1': null }; });
+        sol.states.forEach(function (q) { m.delta[idOf[q]] = { '0': idOf[L.step(sol, q, '0')], '1': idOf[L.step(sol, q, '1')] }; });
+        m.start = idOf[sol.start];
+        m.accept = sol.accept.map(function (q) { return idOf[q]; });
+        m.seq = sol.states.length;
+        models[ex.id] = m; model = m;
+        sync(true);
+      } }));
+      solutionHost.appendChild(s);
+      if (progress[ex.id] !== 'solved') progress[ex.id] = 'revealed';
+      renderProgress(); save();
+    }
+
+    /* --- assemble the panel --- */
+    var left = el('div', { 'class': 'stack' }, [
+      el('div', {}, [
+        el('h4', { text: 'Your machine' }),
+        el('p', { 'class': 'small muted', style: 'margin:.2em 0 .6em',
+          text: 'Edit the transition table directly: name your states, pick the start state, tick the accept states, and choose where each symbol leads. The diagram on the right redraws itself as you type.' }),
+        tableHost,
+        el('div', { 'class': 'row', style: 'margin-top:.6rem' }, [
+          el('button', { 'class': 'btn small', text: '+ Add state', onclick: addState }),
+          el('button', { 'class': 'btn small ghost', text: 'Start over', onclick: function () {
+            models[ex.id] = newModel(); model = models[ex.id]; sync(true);
+          } })
+        ])
+      ]),
+      el('div', {}, [el('h4', { text: 'Is it a valid DFA?' }), checksList])
+    ]);
+    var right = el('div', {}, [el('h4', { text: 'Try it out' }), tester.el]);
+    card.appendChild(el('div', { 'class': 'two-col' }, [left, right]));
+    card.appendChild(el('div', { 'class': 'row', style: 'margin-top:1rem' }, [
+      checkBtn, hintBtn,
+      el('button', { 'class': 'btn', text: '👁 Show a solution', onclick: showSolution })
+    ]));
+    card.appendChild(resultHost);
+    card.appendChild(hintHost);
+    card.appendChild(solutionHost);
+
+    renderBuilderTable();
+    sync(false);
+    return card;
+  }
+}
+
+/* =====================================================================
+   TAB NAVIGATION + START-UP
+   ===================================================================== */
+function initTabs() {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs .tab'));
+  function activate(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      var panel = document.getElementById(t.getAttribute('aria-controls'));
+      panel.hidden = !on;
+    });
+    if (focus) tab.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  tabs.forEach(function (t, i) {
+    t.tabIndex = t.getAttribute('aria-selected') === 'true' ? 0 : -1;
+    t.addEventListener('click', function () { activate(t, false); });
+    t.addEventListener('keydown', function (e) {
+      var j = null;
+      if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') j = 0;
+      else if (e.key === 'End') j = tabs.length - 1;
+      if (j !== null) { e.preventDefault(); activate(tabs[j], true); }
+    });
+  });
+  document.querySelectorAll('[data-goto]').forEach(function (b) {
+    b.addEventListener('click', function () { activate(document.getElementById(b.dataset.goto), true); });
+  });
+}
+
+function init() {
+  load();
+  P.buildBadExamples();
+  P.buildTupleExplorer();
+  P.buildQuizzes();
+  P.buildExamples();
+  P.buildTurnstile();
+  P.buildValidator();
+  P.buildScanner();
+  buildLab();
+  initTabs();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+})();
+</script>
+</body>
+</html>
