@@ -1,0 +1,3411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal Lab — the math behind your feed</title>
+<meta name="description" content="An interactive explainer: the linear algebra, probability and optimisation behind recommendation feeds. Every model on this page is computed live in your browser.">
+<style>
+:root{
+  --bg:#07080c; --bg2:#0c0e14; --panel:#11141c; --panel2:#171b26; --panel3:#1d2230;
+  --line:#242a38; --line2:#36405a;
+  --ink:#eaedf5; --ink2:#a9b1c6; --ink3:#767f96;
+  --you:#ffa53d; --you-dim:#5a3c14;
+  --machine:#45d9ef; --machine-dim:#12414c;
+  --good:#5fe3a4; --bad:#ff6d7d; --warn:#ffd166; --violet:#a98bff; --pink:#ff7aa8;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --t-cook:#ffa53d; --t-skate:#ff7aa8; --t-synth:#a98bff;
+  --t-cats:#45d9ef; --t-climb:#5fe3a4; --t-math:#ffd166;
+  --hdr:58px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:17px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(1100px 560px at 78% -8%, rgba(69,217,239,.10), transparent 62%),
+    radial-gradient(900px 480px at 8% 4%, rgba(255,165,61,.09), transparent 60%);
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{line-height:1.12; letter-spacing:-.022em; margin:0}
+a{color:var(--machine); text-underline-offset:3px}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+[tabindex]:focus-visible,summary:focus-visible{
+  outline:2px solid var(--you); outline-offset:2px; border-radius:4px;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.prose{max-width:67ch}
+.prose p{margin:0 0 1.05em}
+.prose ul{margin:0 0 1.05em; padding-left:1.25em}
+.prose li{margin:.3em 0}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+strong{color:#fff;font-weight:650}
+em.term{font-style:normal;color:var(--machine);font-weight:600;
+  border-bottom:1px dotted rgba(69,217,239,.45)}
+code{font-family:var(--mono);font-size:.88em;background:var(--panel2);
+  padding:.1em .38em;border-radius:4px;border:1px solid var(--line)}
+
+/* ---------- header ---------- */
+header.top{
+  position:sticky; top:0; z-index:60; height:var(--hdr);
+  background:rgba(7,8,12,.86); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.top-in{max-width:1180px;margin:0 auto;padding:0 16px;height:var(--hdr);
+  display:flex;align-items:center;gap:14px}
+.brand{font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink2);white-space:nowrap;
+  display:flex;align-items:center;gap:8px}
+.brand b{color:var(--ink);font-weight:700}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--you);
+  box-shadow:0 0 12px var(--you)}
+nav.chips{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;
+  display:flex;gap:4px;mask-image:linear-gradient(90deg,#000 92%,transparent)}
+nav.chips::-webkit-scrollbar{display:none}
+nav.chips a{
+  font-family:var(--mono);font-size:11px;letter-spacing:.07em;color:var(--ink3);
+  text-decoration:none;padding:5px 9px;border-radius:999px;white-space:nowrap;
+  border:1px solid transparent}
+nav.chips a:hover{color:var(--ink);background:var(--panel2)}
+nav.chips a.on{color:var(--bg);background:var(--machine);font-weight:700}
+.hud{display:flex;align-items:center;gap:9px;padding:5px 10px;border-radius:999px;
+  background:var(--panel);border:1px solid var(--line)}
+.hud-l{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3)}
+.hud-bars{display:flex;align-items:flex-end;gap:3px;height:22px}
+.hud-bars i{display:block;width:6px;border-radius:2px 2px 1px 1px;min-height:2px;
+  transition:height .35s cubic-bezier(.2,.8,.2,1)}
+.progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--you);width:0;
+  box-shadow:0 0 10px var(--you)}
+@media (max-width:820px){ .hud{display:none} }
+@media (max-width:1200px){ .brand span.long{display:none} }
+
+/* ---------- hero ---------- */
+.hero{padding:74px 0 34px;position:relative;overflow:hidden}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--you);margin-bottom:20px}
+.hero h1{font-size:clamp(38px,7.4vw,86px);font-weight:800;letter-spacing:-.04em;
+  max-width:17ch}
+.hero h1 .g{background:linear-gradient(96deg,var(--you),var(--pink) 45%,var(--machine));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lede{margin:26px 0 0;font-size:clamp(17px,2.1vw,21px);color:var(--ink2);max-width:60ch}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink2);
+  border:1px solid var(--line2);border-radius:999px;padding:6px 12px;background:var(--panel)}
+.pill b{color:var(--you)}
+.rule{height:1px;background:linear-gradient(90deg,var(--line2),transparent);margin:46px 0 0}
+
+/* ---------- sections ---------- */
+section.sec{padding:66px 0 10px;scroll-margin-top:calc(var(--hdr) + 12px)}
+.sec-h{display:grid;grid-template-columns:auto 1fr;gap:0 18px;margin-bottom:26px;align-items:start}
+.sec-n{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.1em;
+  color:var(--bg);background:var(--machine);border-radius:6px;padding:3px 7px;margin-top:9px}
+.sec-h h2{grid-column:2;font-size:clamp(27px,4.3vw,44px);font-weight:750}
+.sec-h .sub{grid-column:2;margin:12px 0 0;color:var(--ink2);font-size:clamp(16px,1.9vw,19px);max-width:62ch}
+@media (max-width:560px){
+  .sec-h{grid-template-columns:1fr}
+  .sec-h h2,.sec-h .sub{grid-column:1}
+  .sec-n{justify-self:start;margin:0 0 10px}
+}
+
+/* ---------- lab panels ---------- */
+.lab{margin:30px 0 8px;border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(180deg,var(--panel),#0e1017);overflow:hidden;
+  box-shadow:0 22px 50px -30px rgba(0,0,0,.95)}
+.lab-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:13px 18px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.015)}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.16em;font-weight:700;
+  color:var(--bg);background:var(--you);padding:3px 7px;border-radius:4px}
+.tag.alt{background:var(--machine)}
+.lab-h h3{font-size:15.5px;font-weight:650;letter-spacing:-.01em}
+.lab-h .spacer{flex:1}
+.lab-b{padding:18px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+.grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.grid2.narrow{grid-template-columns:minmax(0,1fr) minmax(0,.62fr)}
+@media (max-width:880px){.grid2,.grid2.even,.grid2.narrow{grid-template-columns:1fr}}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.grid2>.viz{align-self:start}
+.hint{font-size:13px;color:var(--ink3);line-height:1.5;margin:0}
+.hint b{color:var(--ink2);font-weight:600}
+
+/* controls */
+.ctl{display:block;margin:0 0 13px}
+.ctl-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+.ctl-lab{font-size:12.5px;color:var(--ink2);font-weight:600;letter-spacing:.01em}
+.ctl-val{font-family:var(--mono);font-size:12.5px;color:var(--you);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl-val.m{color:var(--machine)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;
+  margin:0;cursor:pointer;display:block}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;
+  background:var(--panel3);border:1px solid var(--line)}
+input[type=range]::-moz-range-track{height:5px;border-radius:3px;
+  background:var(--panel3);border:1px solid var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+  border-radius:50%;background:var(--you);margin-top:-7px;border:2px solid #0b0d13;
+  box-shadow:0 0 0 1px var(--you),0 2px 8px rgba(0,0,0,.6)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
+  background:var(--you);border:2px solid #0b0d13;box-shadow:0 0 0 1px var(--you)}
+input[type=range].m::-webkit-slider-thumb{background:var(--machine);box-shadow:0 0 0 1px var(--machine),0 2px 8px rgba(0,0,0,.6)}
+input[type=range].m::-moz-range-thumb{background:var(--machine);box-shadow:0 0 0 1px var(--machine)}
+input[type=range]:disabled{opacity:.35;cursor:not-allowed}
+
+button, .btn{
+  font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);
+  background:var(--panel2);border:1px solid var(--line2);border-radius:8px;
+  padding:7px 13px;cursor:pointer;transition:background .14s,border-color .14s,color .14s;
+  line-height:1.3}
+button:hover:not(:disabled){background:var(--panel3);border-color:#4a5672}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--you);color:#1a1205;border-color:var(--you);font-weight:700}
+button.primary:hover:not(:disabled){background:#ffb85f;border-color:#ffb85f}
+button.mach{background:var(--machine);color:#04222a;border-color:var(--machine);font-weight:700}
+button.mach:hover:not(:disabled){background:#6de6f8;border-color:#6de6f8}
+button.ghost{background:transparent}
+button.sm{font-size:12px;padding:5px 9px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;
+  background:var(--panel2);flex-wrap:wrap}
+.seg button{border:0;border-radius:0;background:transparent;font-size:12.5px;padding:7px 12px;
+  color:var(--ink2)}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button[aria-pressed=true]{background:var(--machine);color:#04222a;font-weight:700}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);
+  cursor:pointer;user-select:none}
+.chk input{accent-color:var(--you);width:16px;height:16px;cursor:pointer}
+
+/* readouts */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:9px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.stat .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink3);display:block;margin-bottom:3px}
+.stat .v{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--ink);
+  font-variant-numeric:tabular-nums;display:block;line-height:1.18}
+.stat .v.you{color:var(--you)} .stat .v.mach{color:var(--machine)}
+.stat .v.good{color:var(--good)} .stat .v.bad{color:var(--bad)}
+.stat .u{font-size:11px;color:var(--ink3);font-family:var(--mono)}
+
+table.data{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px;
+  font-variant-numeric:tabular-nums}
+table.data th{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);
+  font-weight:600;text-align:right;padding:5px 7px;border-bottom:1px solid var(--line)}
+table.data th:first-child{text-align:left}
+table.data td{padding:5px 7px;text-align:right;border-bottom:1px solid rgba(36,42,56,.55);color:var(--ink2)}
+table.data td:first-child{text-align:left;color:var(--ink)}
+table.data tr.hi td{background:rgba(69,217,239,.08);color:var(--ink)}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+svg{display:block;width:100%;height:auto;touch-action:none}
+svg text{font-family:var(--mono);fill:var(--ink3);font-size:10px}
+.viz{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+canvas{display:block;width:100%;height:auto;border-radius:10px}
+
+/* math */
+.eq{font-family:var(--mono);font-size:14px;color:var(--ink);background:var(--panel2);
+  border:1px solid var(--line);border-left:3px solid var(--machine);border-radius:0 8px 8px 0;
+  padding:12px 15px;margin:16px 0;overflow-x:auto;line-height:2.05}
+.eq.you{border-left-color:var(--you)}
+.eq .cm{color:var(--ink3)}
+.eq b{color:var(--you);font-weight:600}
+.eq i{color:var(--machine);font-style:normal}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;
+  margin:0 .25em;line-height:1.24;font-size:.94em}
+.frac>span:first-child{border-bottom:1px solid currentColor;padding:0 .35em}
+.frac>span:last-child{padding:0 .35em}
+.sq{border-top:1px solid currentColor;padding:0 .2em}
+sub,sup{font-size:.72em;line-height:0}
+
+.note{border:1px solid var(--line);border-left:3px solid var(--warn);
+  background:rgba(255,209,102,.045);border-radius:0 10px 10px 0;padding:13px 16px;margin:20px 0;
+  font-size:14.5px;color:var(--ink2);line-height:1.58}
+.note b{color:var(--warn);font-weight:700;letter-spacing:.02em}
+.note.real{border-left-color:var(--good);background:rgba(95,227,164,.045)}
+.note.real b{color:var(--good)}
+
+/* topic chips */
+.tchip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.06em;padding:2px 7px 2px 5px;border-radius:999px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--ink2);white-space:nowrap}
+.tchip i{width:7px;height:7px;border-radius:2px;display:block}
+
+/* feed cards */
+.feedlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;position:relative}
+.fcard{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;
+  will-change:transform}
+.fcard .rank{font-family:var(--mono);font-size:11px;color:var(--ink3);text-align:center}
+.fcard .ttl{font-size:13.5px;color:var(--ink);line-height:1.3;min-width:0}
+.fcard .meta{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+.fcard .sc{font-family:var(--mono);font-size:13px;color:var(--machine);
+  font-variant-numeric:tabular-nums;text-align:right}
+.fcard .sc small{display:block;color:var(--ink3);font-size:9.5px;letter-spacing:.08em}
+.fcard.new{border-color:var(--you)}
+
+/* matrix */
+.matrix{border-collapse:separate;border-spacing:3px;font-family:var(--mono);font-size:13px}
+.matrix th{font-size:10px;letter-spacing:.07em;color:var(--ink3);font-weight:600;padding:2px 4px;
+  text-align:center;white-space:nowrap}
+.matrix th.rowh{text-align:right;padding-right:7px}
+.matrix th.rowh button{font-family:var(--mono);font-size:11px;padding:2px 7px;background:transparent;
+  border:1px solid transparent;color:var(--ink3)}
+.matrix th.rowh button[aria-pressed=true]{color:var(--bg);background:var(--you);border-color:var(--you);font-weight:700}
+.cell{width:38px;height:34px;border-radius:6px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--ink);font-family:var(--mono);font-size:13.5px;
+  padding:0;cursor:pointer;font-variant-numeric:tabular-nums}
+.cell.empty{color:var(--ink3);background:#0b0d13;border-style:dashed}
+.cell.pred{color:var(--machine);border-color:var(--machine-dim);background:rgba(69,217,239,.07);cursor:default}
+.cell.target{box-shadow:0 0 0 2px var(--you) inset}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--ink3);font-family:var(--mono)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:block;border:1px solid var(--line)}
+
+.footer{margin-top:80px;border-top:1px solid var(--line);padding:42px 0 70px;color:var(--ink3);font-size:14px}
+.footer h3{font-size:19px;color:var(--ink);margin-bottom:14px}
+.footer ul{padding-left:1.15em;line-height:1.75}
+.footer li{margin:.35em 0}
+details.src{margin:14px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0}
+details.src summary{cursor:pointer;padding:12px 16px;font-size:14px;color:var(--ink2);font-weight:600;
+  list-style:none;display:flex;align-items:center;gap:9px}
+details.src summary::-webkit-details-marker{display:none}
+details.src summary::before{content:"+";font-family:var(--mono);color:var(--you);font-weight:700}
+details.src[open] summary::before{content:"−"}
+details.src .inner{padding:0 16px 14px;font-size:14px;color:var(--ink2)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.dragpt{cursor:grab}
+.dragpt:active{cursor:grabbing}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="dot" aria-hidden="true"></span><b>SIGNAL&nbsp;LAB</b><span class="long">&nbsp;· the math behind your feed</span></div>
+    <nav class="chips" aria-label="Sections">
+      <a href="#s1">01 Funnel</a>
+      <a href="#feed">Feed Lab</a>
+      <a href="#s2">02 Vectors</a>
+      <a href="#s3">03 Fast search</a>
+      <a href="#s4">04 Collab. filtering</a>
+      <a href="#s5">05 Factorization</a>
+      <a href="#s6">06 Ranking</a>
+      <a href="#s7">07 Explore</a>
+      <a href="#s8">08 Diversity</a>
+      <a href="#s9">09 Loops</a>
+      <a href="#s10">10 Evaluation</a>
+    </nav>
+    <div class="hud" title="Your taste vector, built from what you do in the Feed Lab">
+      <span class="hud-l">TASTE</span>
+      <div class="hud-bars" id="hudBars" aria-hidden="true"></div>
+      <span class="sr" id="hudSr" aria-live="polite"></span>
+    </div>
+    <div class="progress" id="prog"></div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">Linear algebra · probability · optimisation</div>
+    <h1>The math that picks <span class="g">what you see next</span>.</h1>
+    <p class="lede">A feed is not magic and it is not a mind reader. It is a pile of arithmetic run over
+    a few billion candidates, several hundred times a second. This page takes that arithmetic apart —
+    and lets you turn every knob in it.</p>
+    <div class="hero-meta">
+      <span class="pill"><b>10</b> interactive sections</span>
+      <span class="pill">every number computed <b>live</b></span>
+      <span class="pill">no network, no libraries</span>
+      <span class="pill">drag · slide · step · reseed</span>
+    </div>
+    <div class="rule"></div>
+  </div>
+
+  <div class="prose" style="margin-top:34px">
+    <p>Instagram and TikTok have never published their ranking systems, and this page does not
+    pretend to know them. What <em>is</em> public is the family of techniques the whole industry
+    builds on — described in research papers and engineering blog posts from Google, Meta, Netflix,
+    Spotify and ByteDance. Those techniques are what you will meet here.</p>
+    <p>Every model below is a <strong>toy</strong>: small enough to watch, real enough that the
+    arithmetic is genuinely being done in your browser as you move the controls. Where a toy departs
+    from production reality, there is a note saying so. Two colours run through the page:
+    <span style="color:var(--you);font-weight:600">amber is you</span> —
+    your actions, your taste, the things you control —
+    and <span style="color:var(--machine);font-weight:600">cyan is the system</span> — its estimates,
+    its scores, its guesses about you.</p>
+  </div>
+
+  <!-- ============ 01 FUNNEL ============ -->
+  <section class="sec" id="s1">
+    <div class="sec-h">
+      <span class="sec-n">01</span>
+      <h2>Three billion candidates, twenty slots</h2>
+      <p class="sub">Why no feed ever scores everything with its best model — and why that is a
+      deliberate, quantifiable trade.</p>
+    </div>
+
+    <div class="prose">
+      <p>Suppose there are ten million videos you could plausibly be shown. Your best ranking model
+      takes, say, two milliseconds per video. Scoring all ten million takes five and a half hours.
+      You have about 300 milliseconds.</p>
+      <p>So real systems are built as a <em class="term">funnel</em>: a sequence of stages, each one
+      cheaper per item and dumber than the next, each one throwing away most of what it sees.</p>
+      <ul>
+        <li><strong>Retrieval</strong> — millions → thousands. A single dot product per item, often
+        not even that (see §3). Crude, but it runs over everything.</li>
+        <li><strong>Ranking</strong> — thousands → hundreds. A neural network with real features.
+        Expensive per item, affordable on a shortlist.</li>
+        <li><strong>Re-ranking</strong> — hundreds → your screen. Diversity, freshness, policy,
+        de-duplication. Looks at the <em>set</em>, not just each item alone (see §8).</li>
+      </ul>
+      <p>The question a designer actually faces is: how much quality do you lose by letting a dumb
+      model do the first cut? That is not a vibe — it is an integral, and you can move it around.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 01</span><h3>Funnel budget</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="f1Reset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <div class="viz"><svg id="f1Svg" viewBox="0 0 500 300" role="img"
+              aria-label="Funnel diagram showing candidate counts surviving each stage"></svg></div>
+            <div class="viz"><svg id="f1Cost" viewBox="0 0 640 132" role="img"
+              aria-label="Compute cost per stage compared with scoring everything"></svg></div>
+          </div>
+          <div class="stack">
+            <label class="ctl" for="f1N"><span class="ctl-top"><span class="ctl-lab">Corpus size <i>N</i></span>
+              <span class="ctl-val" id="f1NOut">—</span></span>
+              <input type="range" id="f1N" min="0" max="1" step="0.005" value="0.55"></label>
+            <label class="ctl" for="f1K1"><span class="ctl-top"><span class="ctl-lab">Retrieval keeps <i>K</i><sub>1</sub></span>
+              <span class="ctl-val" id="f1K1Out">—</span></span>
+              <input type="range" id="f1K1" min="0" max="1" step="0.005" value="0.5"></label>
+            <label class="ctl" for="f1K2"><span class="ctl-top"><span class="ctl-lab">Ranker keeps <i>K</i><sub>2</sub></span>
+              <span class="ctl-val" id="f1K2Out">—</span></span>
+              <input type="range" id="f1K2" min="0" max="1" step="0.005" value="0.5"></label>
+            <label class="ctl" for="f1S1"><span class="ctl-top"><span class="ctl-lab">Retrieval model noise <i>σ</i><sub>1</sub></span>
+              <span class="ctl-val m" id="f1S1Out">—</span></span>
+              <input type="range" class="m" id="f1S1" min="0.05" max="3" step="0.05" value="1"></label>
+            <label class="ctl" for="f1S2"><span class="ctl-top"><span class="ctl-lab">Ranker model noise <i>σ</i><sub>2</sub></span>
+              <span class="ctl-val m" id="f1S2Out">—</span></span>
+              <input type="range" class="m" id="f1S2" min="0.02" max="2" step="0.02" value="0.3"></label>
+            <label class="ctl" for="f1k"><span class="ctl-top"><span class="ctl-lab">Slots in the feed <i>k</i></span>
+              <span class="ctl-val" id="f1kOut">—</span></span>
+              <input type="range" id="f1k" min="3" max="50" step="1" value="20"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Recall@k</span><span class="v good" id="f1Rec">—</span></div>
+              <div class="stat"><span class="k">Cost</span><span class="v mach" id="f1Cst">—</span><span class="u">dot-product units</span></div>
+              <div class="stat"><span class="k">vs. score-everything</span><span class="v you" id="f1Sav">—</span><span class="u" id="f1SavU">&nbsp;</span></div>
+            </div>
+            <p class="hint"><b>Recall@k</b> is the share of the genuinely best <i>k</i> items that
+            survive both cuts and reach your screen. Drag <i>σ</i><sub>1</sub> to 0.05 and the cheap
+            model becomes clairvoyant; push it to 3 and retrieval is nearly a lottery.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note real"><b>What the model actually is.</b> Each item has a true relevance
+      <span class="num">r ~ N(0,1)</span>. Stage 1 sees <span class="num">r + ε₁</span> with
+      <span class="num">ε₁ ~ N(0, σ₁²)</span> and keeps the top <i>K</i><sub>1</sub>; stage 2 sees
+      <span class="num">r + ε₂</span> and keeps the top <i>K</i><sub>2</sub>; the final re-ranker is
+      assumed exact. The survival probability of an item with relevance <i>r</i> is then
+      <span class="num">Φ((r−t₁)/σ₁)·Φ((r−t₂)/σ₂)</span>, and recall is that quantity integrated over
+      the true top <i>k</i>. The page computes the thresholds <span class="num">t₁, t₂</span> by
+      numerical quadrature and bisection every time you move a slider — nothing here is tabulated.</div>
+
+      <div class="note"><b>Where the toy simplifies.</b> Real retrieval is not one noisy score: it is
+      dozens of parallel sources (embedding neighbours, follows, hashtags, trending pools, fresh-content
+      quotas) unioned together. Real relevance is not a single Gaussian number. And real stage costs
+      depend on batching, caching and hardware. The <em>shape</em> of the trade-off — cheap-and-wide
+      then expensive-and-narrow — is the part that transfers.</div>
+    </div>
+  </section>
+
+  <!-- ============ FEED LAB (running example) ============ -->
+  <section class="sec" id="feed">
+    <div class="sec-h">
+      <span class="sec-n" style="background:var(--you)">★</span>
+      <h2>Feed Lab: be the user</h2>
+      <p class="sub">The running example for the rest of the page. Skip, watch or like a few clips and
+      watch a six-dimensional model of your taste assemble itself out of nothing.</p>
+    </div>
+
+    <div class="prose">
+      <p>There are six topics in this miniature world. Your <em class="term">taste vector</em>
+      <b class="num" style="color:var(--you)">t</b> has one number per topic, and it starts at
+      completely uniform — the system knows nothing about you. Every action you take nudges it. The
+      system's guess at how much you'll like an item is just the dot product
+      <span class="num">t·v</span> of your taste with the item's topic vector.</p>
+      <p>Whatever state you leave this in <strong>follows you down the page</strong>: it is the user
+      vector in §2, the taste-match feature in §6, the relevance scores in §8, and the starting
+      condition in §9. The small bars in the header are it, live.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">RUNNING EXAMPLE</span><h3>Your taste, assembled live</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="fdReseed">Reseed clips</button>
+        <button class="sm ghost" id="fdReset">Reset taste</button></div>
+      <div class="lab-b">
+        <div class="grid2 even">
+          <div class="stack">
+            <div class="viz" style="padding:16px">
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink3)">
+                NOW PLAYING · <span id="fdIdx">1</span></div>
+              <div id="fdTitle" style="font-size:22px;font-weight:700;margin:10px 0 12px;line-height:1.24;min-height:2.5em"></div>
+              <div id="fdChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+              <div style="display:flex;gap:18px;align-items:baseline;margin-bottom:16px">
+                <div><span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;color:var(--ink3);display:block">SYSTEM PREDICTS</span>
+                  <span class="num" id="fdPred" style="font-size:26px;color:var(--machine)">—</span></div>
+                <div><span style="font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;color:var(--ink3);display:block">RANK OF QUEUE</span>
+                  <span class="num" id="fdRank" style="font-size:26px;color:var(--ink2)">—</span></div>
+              </div>
+              <div class="btnrow">
+                <button id="fdSkip">Skip</button>
+                <button id="fdWatch" class="primary">Watch it through</button>
+                <button id="fdLike" class="primary" style="background:var(--pink);border-color:var(--pink);color:#2a0a14">Like</button>
+              </div>
+              <p class="hint" style="margin-top:12px">A skip pushes your taste <i>away</i> from the
+              topic; watching pulls it in a little; a like pulls three times harder. Then the queue
+              is re-scored and re-sorted.</p>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="viz"><svg id="fdBars" viewBox="0 0 360 230" role="img"
+              aria-label="Bar chart of the six components of your taste vector"></svg></div>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Actions</span><span class="v you" id="fdN">0</span></div>
+              <div class="stat"><span class="k">‖t‖ concentration</span><span class="v" id="fdConc">—</span></div>
+              <div class="stat"><span class="k">Top topic</span><span class="v mach" id="fdTop" style="font-size:14px">none yet</span></div>
+            </div>
+            <p class="hint"><b>Concentration</b> is 1 − (entropy of your taste ÷ maximum entropy).
+            0 means "no idea who you are"; 1 means "this person only watches one thing". Watch it
+            climb. §9 is about what happens when it climbs too far.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Where the toy simplifies.</b> A real system's user representation is not
+      six numbers you could print — it is hundreds of learned embedding dimensions, plus counters,
+      plus sequence models over your last few hundred interactions, updated by gradient descent rather
+      than by a hand-written rule. The update rule here is deliberately legible:
+      <span class="num">t ← normalise((1−δ)·t + η·s·v)</span> with <span class="num">s</span> being
+      −1, +1 or +3 for skip, watch, like.</div>
+    </div>
+  </section>
+
+  <!-- ============ 02 VECTORS ============ -->
+  <section class="sec" id="s2">
+    <div class="sec-h">
+      <span class="sec-n">02</span>
+      <h2>Everything is an arrow</h2>
+      <p class="sub">Users and items live in the same space. Once they do, "does this person like this
+      thing?" becomes a multiplication.</p>
+    </div>
+
+    <div class="prose">
+      <p>The founding move of modern recommendation is to represent a user and an item as vectors in
+      the same <em class="term">embedding space</em> — a list of numbers, where the dimensions are not
+      chosen by a human but learned from data. Your taste vector in the Feed Lab is one, with six
+      hand-labelled dimensions so you can read it. Real ones have 64 to 2048 dimensions and nobody
+      knows what any single one means.</p>
+      <p>The payoff: affinity becomes the <em class="term">dot product</em>.</p>
+      <div class="eq"><b>t</b>·<i>v</i> &nbsp;=&nbsp; t<sub>1</sub>v<sub>1</sub> + t<sub>2</sub>v<sub>2</sub> + … + t<sub>d</sub>v<sub>d</sub>
+        &nbsp;=&nbsp; ‖<b>t</b>‖ ‖<i>v</i>‖ cos θ &nbsp;&nbsp;<span class="cm">// big when they point the same way</span></div>
+      <p>The dot product mixes two things: <em>alignment</em> (do they point the same way?) and
+      <em>magnitude</em> (how long are they?). Sometimes you want only the first, and then you divide
+      the magnitudes out:</p>
+      <div class="eq">cos(<b>t</b>, <i>v</i>) = <span class="frac"><span><b>t</b>·<i>v</i></span><span>‖<b>t</b>‖ ‖<i>v</i>‖</span></span>
+        &nbsp;∈ [−1, 1] &nbsp;&nbsp;<span class="cm">// pure direction, ignores length</span></div>
+      <p>The difference matters. Magnitude usually encodes something like popularity or confidence, so
+      a raw dot product quietly favours popular items, while cosine treats a niche item and a blockbuster
+      as equals if they point the same way. Drag the arrows below and watch the two measures disagree.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 02a</span><h3>Drag the arrows</h3>
+        <span class="spacer"></span>
+        <label class="chk"><input type="checkbox" id="v2UseTaste" checked> use my taste vector from the Feed Lab</label>
+        <button class="sm ghost" id="v2Reset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="viz"><svg id="v2Svg" viewBox="0 0 520 400" role="application"
+            aria-label="Draggable 2-D vector plane with one user vector and three item vectors"></svg></div>
+          <div class="stack">
+            <p class="hint"><b>Drag any arrowhead</b> with mouse, finger, or keyboard — tab to a
+            handle and use the arrow keys (hold Shift for bigger steps).</p>
+            <div class="scrollx"><table class="data" id="v2Tbl" aria-live="polite">
+              <thead><tr><th>vector</th><th>t·v</th><th>‖v‖</th><th>cos θ</th><th>θ</th></tr></thead>
+              <tbody></tbody></table></div>
+            <div class="stats">
+              <div class="stat"><span class="k">‖t‖ (your vector)</span><span class="v you" id="v2Un">—</span></div>
+              <div class="stat"><span class="k">Winner by dot</span><span class="v mach" id="v2Wd" style="font-size:15px">—</span></div>
+              <div class="stat"><span class="k">Winner by cosine</span><span class="v good" id="v2Wc" style="font-size:15px">—</span></div>
+            </div>
+            <p class="hint">Try to make the two winners disagree: point one item exactly along your
+            vector but keep it short, and stretch a badly-aligned one until it is long. The short,
+            aligned item wins on cosine; the long one can win on dot product. That is popularity bias
+            arriving in one line of algebra.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <h3 style="font-size:23px;margin:36px 0 12px">Why high dimensions are strange</h3>
+      <p>In two dimensions, two random arrows are often roughly aligned. In 512 dimensions, they are
+      almost certainly perpendicular. For random Gaussian vectors the cosine between them has mean 0
+      and standard deviation <span class="num">1/√d</span> — so at <span class="num">d = 512</span>,
+      a typical cosine is about <span class="num">0.044</span>.</p>
+      <p>This is the reason embeddings work at all: in a big space there is room for millions of
+      distinct "directions of taste" that barely interfere with one another. It is also why a cosine
+      of 0.3 can be a <em>very</em> strong signal in a high-dimensional recommender, and why raw
+      similarity numbers are meaningless without knowing <span class="num">d</span>.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag alt">LAB 02b</span><h3>Concentration of measure</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="v3Reseed">Reseed</button>
+        <button class="sm ghost" id="v3Reset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="viz"><svg id="v3Svg" viewBox="0 0 640 260" role="img"
+            aria-label="Histogram of cosine similarity between random vectors"></svg></div>
+          <div class="stack">
+            <label class="ctl" for="v3D"><span class="ctl-top"><span class="ctl-lab">Dimensions <i>d</i></span>
+              <span class="ctl-val" id="v3DOut">—</span></span>
+              <input type="range" id="v3D" min="0" max="1" step="0.02" value="0"></label>
+            <label class="ctl" for="v3N"><span class="ctl-top"><span class="ctl-lab">Random pairs sampled</span>
+              <span class="ctl-val m" id="v3NOut">—</span></span>
+              <input type="range" class="m" id="v3N" min="200" max="20000" step="200" value="4000"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Measured SD</span><span class="v mach" id="v3Sd">—</span></div>
+              <div class="stat"><span class="k">Theory 1/√d</span><span class="v" id="v3Th">—</span></div>
+              <div class="stat"><span class="k">|cos| &gt; 0.2</span><span class="v you" id="v3Fr">—</span></div>
+            </div>
+            <p class="hint">Sampling is real: <span class="num" id="v3Ops">—</span> multiply-adds per
+            redraw, done in a chunked loop so the page never freezes. The dashed cyan curve is the
+            normal density with SD <span class="num">1/√d</span> — not fitted, just drawn.
+            <br><br><b>Start at d = 2</b>, where the sampled histogram is U-shaped and the normal curve
+            is plainly wrong: in two dimensions the cosine is <span class="num">cos θ</span> for a
+            uniform angle, which piles up at ±1. The normal approximation only earns its keep from
+            about <span class="num">d = 8</span>. By <span class="num">d = 1024</span> the measured SD
+            lands within a percent or so of <span class="num">0.031</span> and essentially no pair
+            exceeds <span class="num">|cos| = 0.2</span>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 ANN ============ -->
+  <section class="sec" id="s3">
+    <div class="sec-h">
+      <span class="sec-n">03</span>
+      <h2>Finding neighbours without looking at everyone</h2>
+      <p class="sub">Retrieval's real trick is not a better score. It is never computing most of the
+      scores at all.</p>
+    </div>
+
+    <div class="prose">
+      <p>Stage 1 of the funnel needs the nearest few thousand items to your taste vector, out of
+      hundreds of millions. Computing every distance is linear in the corpus — hopeless. So production
+      systems use <em class="term">approximate nearest neighbour</em> search, and accept losing a few
+      true neighbours in exchange for touching a thousandth of the data.</p>
+      <p>Two families dominate. <strong>Locality-sensitive hashing</strong> (Indyk &amp; Motwani, 1998)
+      slices the space with random hyperplanes; each point gets a bit-string saying which side of each
+      slice it fell on, and nearby points usually agree on most bits. <strong>Graph methods</strong>
+      like HNSW (Malkov &amp; Yashunin) instead build a navigable graph over the items and greedily
+      walk towards the query. The demo below is LSH, because you can actually see the slices.</p>
+      <p>Each random line you add halves the expected bucket size — faster, but more true neighbours
+      get separated from the query by an unlucky cut. Probing extra buckets (flipping up to <i>p</i>
+      bits of the query's code) buys the recall back and costs you speed. That tension is the whole
+      subject.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 03</span><h3>Speed versus recall</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="a3Reseed">Reseed hyperplanes</button>
+        <button class="sm ghost" id="a3Reset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="viz"><svg id="a3Svg" viewBox="0 0 520 420" role="application"
+            aria-label="Point cloud with LSH hyperplanes and a draggable query point"></svg></div>
+          <div class="stack">
+            <p class="hint"><b>Drag the amber query point.</b> Bright dots are scanned; hollow rings
+            are the true 10 nearest neighbours; a filled ring means the search found it. Keyboard:
+            tab to the query, then arrow keys.</p>
+            <label class="ctl" for="a3H"><span class="ctl-top"><span class="ctl-lab">Random hyperplanes (hash bits)</span>
+              <span class="ctl-val" id="a3HOut">—</span></span>
+              <input type="range" id="a3H" min="1" max="14" step="1" value="6"></label>
+            <label class="ctl" for="a3P"><span class="ctl-top"><span class="ctl-lab">Probe radius (bits we may flip)</span>
+              <span class="ctl-val" id="a3POut">—</span></span>
+              <input type="range" id="a3P" min="0" max="4" step="1" value="1"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Scanned</span><span class="v mach" id="a3Sc">—</span><span class="u">of 1800 items</span></div>
+              <div class="stat"><span class="k">Recall@10</span><span class="v good" id="a3Rc">—</span></div>
+              <div class="stat"><span class="k">Speed-up</span><span class="v you" id="a3Sp">—</span><span class="u">vs. brute force</span></div>
+            </div>
+            <p class="hint">Push hyperplanes to 14 with probe radius 0: you scan well under 1% of the
+            corpus, but <b>move the query around</b> and recall swings between 100% and 0% depending on
+            whether an unlucky cut separates it from its neighbours. Probe radius 2 costs about 2.4% of
+            the corpus and buys recall back to roughly 98%. A query sitting deep inside a dense cluster
+            is easy; one near a boundary is where approximate search actually fails — which is why
+            recall is always reported as an average over many queries, never a single one.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Where the toy simplifies.</b> This is 2-D so you can see it; real LSH runs
+      in hundreds of dimensions where the geometry is far less forgiving, and most large systems now
+      prefer graph indexes (HNSW) or learned quantisation (product quantisation, ScaNN) over plain LSH.
+      The recall and scan counts shown are computed exactly for this point set, not estimated.</div>
+    </div>
+  </section>
+
+  <!-- ============ 04 CF ============ -->
+  <section class="sec" id="s4">
+    <div class="sec-h">
+      <span class="sec-n">04</span>
+      <h2>People like you liked this</h2>
+      <p class="sub">The oldest idea in the field, and still the backbone: predict from the crowd, not
+      from the content.</p>
+    </div>
+
+    <div class="prose">
+      <p><em class="term">Collaborative filtering</em> needs to know nothing about what an item
+      <em>is</em>. It only needs the big sparse matrix <span class="num">R</span> of who interacted
+      with what. If your column of ratings correlates with someone else's, their opinions are evidence
+      about your future opinions.</p>
+      <p>Everything hinges on the similarity measure, and the three standard choices disagree in
+      instructive ways:</p>
+      <div class="eq">cos(<i>u</i>,<i>v</i>) = <span class="frac"><span>Σ<sub>i</sub> r<sub>ui</sub> r<sub>vi</sub></span><span>√(Σ r<sub>ui</sub>²) √(Σ r<sub>vi</sub>²)</span></span>
+        <span class="cm">&nbsp;// angle between rating vectors, blanks treated as 0</span><br>
+        Pearson(<i>u</i>,<i>v</i>) = <span class="frac"><span>Σ<sub>i∈I</sub> (r<sub>ui</sub>−r̄<sub>u</sub>)(r<sub>vi</sub>−r̄<sub>v</sub>)</span><span>√(Σ(r<sub>ui</sub>−r̄<sub>u</sub>)²) √(Σ(r<sub>vi</sub>−r̄<sub>v</sub>)²)</span></span>
+        <span class="cm">&nbsp;// cosine after removing each user's mean</span><br>
+        Jaccard(<i>u</i>,<i>v</i>) = <span class="frac"><span>|I<sub>u</sub> ∩ I<sub>v</sub>|</span><span>|I<sub>u</sub> ∪ I<sub>v</sub>|</span></span>
+        <span class="cm">&nbsp;// ignores the values, only what you both touched</span></div>
+      <p>Pearson exists because some people rate everything 4 and 5 and some rate everything 1 and 2;
+      subtracting each user's mean asks "did you both deviate in the same direction?" rather than "did
+      you both like it?". Jaccard exists because on most platforms there are no ratings at all — only
+      implicit signals like watched / didn't watch.</p>
+      <p>Then the prediction is a similarity-weighted average of how your neighbours deviated:</p>
+      <div class="eq you">r̂<sub>ui</sub> = r̄<sub>u</sub> + <span class="frac">
+        <span>Σ<sub>v∈N(u)</sub> sim(u,v) · (r<sub>vi</sub> − r̄<sub>v</sub>)</span>
+        <span>Σ<sub>v∈N(u)</sub> |sim(u,v)|</span></span></div>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 04</span><h3>Edit the ratings, watch the neighbours move</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="cfReset">Reset matrix</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <div class="btnrow" style="margin-bottom:4px">
+              <span class="ctl-lab">Similarity:</span>
+              <span class="seg" id="cfSim" role="group" aria-label="Similarity measure">
+                <button data-v="cos" aria-pressed="true">Cosine</button>
+                <button data-v="pearson" aria-pressed="false">Pearson</button>
+                <button data-v="jaccard" aria-pressed="false">Jaccard</button></span>
+              <span class="seg" id="cfMode" role="group" aria-label="Neighbourhood type">
+                <button data-v="uu" aria-pressed="true">User–user</button>
+                <button data-v="ii" aria-pressed="false">Item–item</button></span>
+            </div>
+            <div class="viz scrollx" style="padding:14px">
+              <table class="matrix" id="cfTbl"><tbody></tbody></table>
+              <div class="legend" style="margin-top:12px">
+                <span><i style="background:var(--panel2)"></i>rated (click to change)</span>
+                <span><i style="background:#0b0d13;border-style:dashed"></i>not rated</span>
+                <span><i style="background:rgba(69,217,239,.18);border-color:var(--machine)"></i>prediction</span>
+                <span><i style="background:transparent;box-shadow:0 0 0 2px var(--you) inset"></i>target user</span>
+              </div>
+            </div>
+            <p class="hint"><b>Click any cell</b> to cycle blank → 1 → 2 → 3 → 4 → 5 → blank. With a
+            cell focused you can also type a digit, or use ↑/↓. <b>Click a row label</b> to choose
+            whose feed we are predicting.</p>
+          </div>
+          <div class="stack">
+            <label class="ctl" for="cfK"><span class="ctl-top"><span class="ctl-lab">Neighbours used <i>|N(u)|</i></span>
+              <span class="ctl-val" id="cfKOut">—</span></span>
+              <input type="range" id="cfK" min="1" max="5" step="1" value="3"></label>
+            <div class="scrollx"><table class="data" id="cfSimTbl" aria-live="polite">
+              <thead><tr><th>neighbour</th><th>sim</th><th>co-rated</th><th>weight</th></tr></thead>
+              <tbody></tbody></table></div>
+            <div class="scrollx"><table class="data" id="cfPredTbl" aria-live="polite">
+              <thead><tr><th>unrated item</th><th>r̂</th><th>from</th></tr></thead>
+              <tbody></tbody></table></div>
+            <p class="hint">Watch what happens when you blank out most of a user's row: cosine and
+            Jaccard collapse, Pearson can go wild on two co-rated items. Sparsity is not a detail of
+            collaborative filtering — it is the entire difficulty.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Where the toy simplifies.</b> A real interaction matrix is roughly
+      99.99% empty, has hundreds of millions of rows, and contains implicit signals (watch time,
+      skips) rather than stars. Nobody computes all-pairs user similarity at that size; item–item
+      neighbourhoods are precomputed offline because items are fewer and their similarities change
+      slowly. That observation — item–item is cheaper and more stable — is the practical reason the
+      Amazon-style item–item recommender became an industry default.</div>
+    </div>
+  </section>
+
+  <!-- ============ 05 MF ============ -->
+  <section class="sec" id="s5">
+    <div class="sec-h">
+      <span class="sec-n">05</span>
+      <h2>Learning the hidden dimensions</h2>
+      <p class="sub">Instead of comparing rows, factor the whole matrix — and let gradient descent
+      invent the taste dimensions for you.</p>
+    </div>
+
+    <div class="prose">
+      <p>Neighbourhood methods compare users directly. <em class="term">Matrix factorization</em> does
+      something better: it assumes the big sparse matrix is secretly the product of two skinny ones.</p>
+      <div class="eq">R &nbsp;≈&nbsp; P Q<sup>T</sup> &nbsp;&nbsp;<span class="cm">// R is n×m, P is n×k, Q is m×k, and k is tiny</span><br>
+        r̂<sub>ui</sub> = μ + b<sub>u</sub> + b<sub>i</sub> + <b>p</b><sub>u</sub>·<b>q</b><sub>i</sub></div>
+      <p>Each user becomes <span class="num">k</span> numbers; each item becomes <span class="num">k</span>
+      numbers; the prediction is their dot product, plus a global average and two bias terms that soak
+      up "this user rates high" and "this item is widely liked". Those <span class="num">k</span>
+      numbers are <em class="term">latent factors</em> — nobody labels them, they fall out of the fit.
+      This is the family of methods that won the Netflix Prize, and it is still the conceptual core of
+      the retrieval stage in §1: item embeddings on one side, user embeddings on the other, dot product
+      in the middle.</p>
+      <p>Training minimises squared error on the cells you <em>do</em> observe, with a regularisation
+      term that stops the factors from exploding:</p>
+      <div class="eq you">L = Σ<sub>(u,i)∈observed</sub> (r<sub>ui</sub> − r̂<sub>ui</sub>)²
+        &nbsp;+&nbsp; λ(‖<b>p</b><sub>u</sub>‖² + ‖<b>q</b><sub>i</sub>‖² + b<sub>u</sub>² + b<sub>i</sub>²)</div>
+      <p>and gradient descent just walks downhill. For a single observed cell with error
+      <span class="num">e = r − r̂</span>:</p>
+      <div class="eq"><b>p</b><sub>u</sub> ← <b>p</b><sub>u</sub> + η(e·<b>q</b><sub>i</sub> − λ<b>p</b><sub>u</sub>)
+        &nbsp;&nbsp;&nbsp; <b>q</b><sub>i</sub> ← <b>q</b><sub>i</sub> + η(e·<b>p</b><sub>u</sub> − λ<b>q</b><sub>i</sub>)</div>
+      <p>That is the entire algorithm. Press play and watch it fill in the blanks.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 05</span><h3>Gradient descent, one epoch at a time</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="mfReseed">Reseed factors</button>
+        <button class="sm ghost" id="mfReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <div class="viz"><svg id="mfLoss" viewBox="0 0 620 220" role="img"
+              aria-label="Training error against epoch"></svg></div>
+            <div class="viz scrollx" style="padding:14px">
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.13em;color:var(--ink3);margin-bottom:8px">
+                RECONSTRUCTION &nbsp;R̂ = μ + b + PQᵀ &nbsp;·&nbsp; <span style="color:var(--ink2)">observed cells show signed error</span></div>
+              <table class="matrix" id="mfTbl"><tbody></tbody></table>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="btnrow">
+              <button id="mfStep">Step 1 epoch</button>
+              <button id="mfStep10" class="ghost">+10</button>
+              <button id="mfPlay" class="mach">Play</button>
+            </div>
+            <label class="ctl" for="mfK"><span class="ctl-top"><span class="ctl-lab">Rank <i>k</i> (latent factors)</span>
+              <span class="ctl-val" id="mfKOut">—</span></span>
+              <input type="range" id="mfK" min="1" max="5" step="1" value="2"></label>
+            <label class="ctl" for="mfLr"><span class="ctl-top"><span class="ctl-lab">Learning rate <i>η</i></span>
+              <span class="ctl-val m" id="mfLrOut">—</span></span>
+              <input type="range" class="m" id="mfLr" min="0" max="1" step="0.01" value="0.40"></label>
+            <label class="ctl" for="mfLam"><span class="ctl-top"><span class="ctl-lab">Regularisation <i>λ</i></span>
+              <span class="ctl-val m" id="mfLamOut">—</span></span>
+              <input type="range" class="m" id="mfLam" min="0" max="0.4" step="0.005" value="0.05"></label>
+            <label class="chk"><input type="checkbox" id="mfBias" checked> include bias terms μ, b<sub>u</sub>, b<sub>i</sub></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Epoch</span><span class="v" id="mfEp">0</span></div>
+              <div class="stat"><span class="k">Train RMSE</span><span class="v good" id="mfRmse">—</span></div>
+              <div class="stat"><span class="k">Held-out RMSE</span><span class="v you" id="mfTest">—</span></div>
+            </div>
+            <div class="viz"><svg id="mfFac" viewBox="0 0 360 200" role="img"
+              aria-label="Learned latent factors for users and items"></svg></div>
+            <p class="hint">Three things to try. Push <i>η</i> past about <b>0.3</b> and training
+            blows up to NaN within a few hundred epochs — the real failure mode, not a cartoon of one;
+            below roughly 0.25 it converges. Set <i>λ</i> = 0 with <i>k</i> = 5 and run 400 epochs:
+            train RMSE reaches <b>0.000</b> while held-out RMSE sits near <b>1.44</b> — the model has
+            memorised the cells it was shown and learned nothing. Put <i>λ</i> back to 0.2 and held-out
+            improves to about <b>1.30</b> while train worsens to 0.29. And notice the matrix is the one
+            <em>you</em> edited in §4.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note real"><b>This is genuine gradient descent.</b> Each epoch runs one pass of
+      stochastic gradient descent over the observed cells in a fixed shuffled order, with the update
+      rule printed above. The loss curve is the actual sequence of RMSE values. Held-out RMSE uses a
+      fixed 20% of observed cells that the optimiser never sees.</div>
+      <div class="note"><b>Where the toy simplifies.</b> Production systems rarely factor a static
+      matrix. They train deep networks on streams of events, with embeddings for hundreds of sparse
+      features, updated continuously — ByteDance's <em>Monolith</em> paper describes exactly this
+      shift, including collisionless hash tables for embeddings and online training that keeps up with
+      the traffic. Matrix factorization is the ancestor and the mental model, not the deployed system.</div>
+    </div>
+  </section>
+
+  <!-- ============ 06 RANKING ============ -->
+  <section class="sec" id="s6">
+    <div class="sec-h">
+      <span class="sec-n">06</span>
+      <h2>Ranking is a pile of probabilities</h2>
+      <p class="sub">The ranker does not predict "how good is this". It predicts "how likely are you to
+      do each specific thing" — and then somebody has to decide what those things are worth.</p>
+    </div>
+
+    <div class="prose">
+      <p>Ask a ranking model for one number and you have hidden a value judgement inside a neural
+      network. So real systems do the opposite: they train a separate head for each action a user can
+      take — <em>like, comment, share, follow, watch to the end, hide, report</em> — and each head
+      outputs a probability.</p>
+      <p>The workhorse is the <em class="term">logistic</em> (sigmoid) function, which squashes any
+      real number into a probability:</p>
+      <div class="eq">z = <b>w</b>·<i>x</i> + b &nbsp;&nbsp;<span class="cm">// the logit: a plain weighted sum of features</span><br>
+        σ(z) = <span class="frac"><span>1</span><span>1 + e<sup>−z</sup></span></span>
+        &nbsp;&nbsp;<span class="cm">// σ(0)=0.5, σ(2)≈0.88, σ(−4)≈0.018</span></div>
+      <p>Training uses <em class="term">cross-entropy loss</em>, which is the negative log-likelihood
+      of the data. It punishes confident mistakes brutally — being 99% sure of something that does not
+      happen costs <span class="num">−ln(0.01) ≈ 4.6</span>, while being merely unsure costs
+      <span class="num">0.69</span>:</p>
+      <div class="eq you">L(y, p) = −[ y·ln p + (1−y)·ln(1−p) ]</div>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 06a</span><h3>Sigmoid and the cost of being wrong</h3>
+        <span class="spacer"></span>
+        <span class="seg" id="rkY" role="group" aria-label="Actual outcome">
+          <button data-v="1" aria-pressed="true">actual: user liked (y=1)</button>
+          <button data-v="0" aria-pressed="false">actual: user didn't (y=0)</button></span>
+        <button class="sm ghost" id="rkSigReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="viz"><svg id="rkSig" viewBox="0 0 620 250" role="application"
+            aria-label="Sigmoid curve with a draggable point showing predicted probability and loss"></svg></div>
+          <div class="stack">
+            <p class="hint"><b>Drag the point along the curve</b> (or tab to it and use ← →) to change
+            the logit the model produces.</p>
+            <label class="ctl" for="rkZ"><span class="ctl-top"><span class="ctl-lab">Logit <i>z</i></span>
+              <span class="ctl-val" id="rkZOut">—</span></span>
+              <input type="range" id="rkZ" min="-6" max="6" step="0.05" value="1"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">p = σ(z)</span><span class="v mach" id="rkP">—</span></div>
+              <div class="stat"><span class="k">Cross-entropy loss</span><span class="v bad" id="rkL">—</span></div>
+              <div class="stat"><span class="k">dL/dz = p − y</span><span class="v you" id="rkG">—</span></div>
+            </div>
+            <p class="hint">The gradient of cross-entropy with respect to the logit is exactly
+            <span class="num">p − y</span> — one subtraction. That astonishing simplicity is why
+            logistic outputs plus cross-entropy is the default pairing in almost every ranker ever
+            shipped.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>Now the part that is a policy decision rather than a modelling one. You have five
+      probabilities per candidate; the feed needs one ordering. Essentially every public description
+      of a production ranker describes the same shape of answer — a <strong>weighted sum of predicted
+      actions</strong>, an expected value where the weights say what each action is worth:</p>
+      <div class="eq you">score(<i>x</i>) = Σ<sub>a</sub> <b>value</b><sub>a</sub> · P(action <i>a</i> | <i>x</i>)
+        &nbsp;&nbsp;<span class="cm">// an expectation, with hand-chosen prices</span></div>
+      <p>Watch the <strong>brevity</strong> column as you do it. In this toy the heads disagree
+      about short clips on purpose — a fifteen-second loop gets finished and shared, a long tutorial
+      gets comments and follows — so turning up "watch to the end" pulls the short items to the top
+      and turning up "follow creator" buries them. That tension between completion-rate metrics and
+      everything else is not invented for this page; it is one of the best-documented headaches in
+      feed design.</p>
+      <p>Those weights are not learned from data. They cannot be — there is no ground truth for how
+      many likes a share is worth. Somebody chooses them, and that choice <em>is</em> the product.
+      Move them and watch the feed rearrange.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 06b</span><h3>What is a share worth?</h3>
+        <span class="spacer"></span>
+        <span class="seg" id="rkPre" role="group" aria-label="Weight presets">
+          <button data-v="bal" aria-pressed="true">Balanced</button>
+          <button data-v="eng" aria-pressed="false">Engagement-max</button>
+          <button data-v="grow" aria-pressed="false">Creator growth</button>
+          <button data-v="calm" aria-pressed="false">Low-stimulation</button></span>
+        <button class="sm ghost" id="rkReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <ul class="feedlist" id="rkFeed" aria-live="polite"></ul>
+          </div>
+          <div class="stack">
+            <div id="rkWeights"></div>
+            <div class="scrollx"><table class="data" id="rkProbs">
+              <thead><tr><th>top item</th><th>like</th><th>comm</th><th>share</th><th>follow</th><th>finish</th></tr></thead>
+              <tbody></tbody></table></div>
+            <p class="hint">The five probabilities come from five logistic models over four features —
+            taste match (from <em>your</em> taste vector), freshness, creator affinity and brevity.
+            Feature values and weights are illustrative, but the arithmetic from features to
+            probabilities to score is exactly as described.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Honesty check.</b> No company publishes its value weights, and this page
+      invents none. What is well documented is the <em>architecture</em>: multi-task prediction heads
+      feeding a weighted combination. The YouTube RecSys 2016 paper describes the candidate-generation
+      / ranking split and training the ranker on expected watch time; Instagram's own public posts
+      describe predicting several explicit actions and combining them. The prices you just moved are
+      the part every platform keeps private — and the part that determines what the platform is.</div>
+    </div>
+  </section>
+
+  <!-- ============ 07 BANDITS ============ -->
+  <section class="sec" id="s7">
+    <div class="sec-h">
+      <span class="sec-n">07</span>
+      <h2>Exploit what works, explore what might</h2>
+      <p class="sub">A ranker that only shows what it already believes in can never discover it was
+      wrong. The cure is a controlled, measurable dose of ignorance.</p>
+    </div>
+
+    <div class="prose">
+      <p>A brand-new video has no history. A brand-new user has no taste vector. This is the
+      <em class="term">cold start</em> problem, and it is not solvable by better prediction — it is
+      solvable only by spending some impressions on things you are uncertain about.</p>
+      <p>Formalised, it is the <em class="term">multi-armed bandit</em>: <span class="num">K</span>
+      arms with unknown success rates, one pull per round, maximise total reward. Performance is
+      measured in <em class="term">regret</em> — how much worse you did than always pulling the best
+      arm:</p>
+      <div class="eq">Regret(T) = T·μ* − Σ<sub>t=1..T</sub> μ<sub>a(t)</sub>
+        &nbsp;&nbsp;<span class="cm">// lower is better; good algorithms grow like ln T, not T</span></div>
+      <p>Three classic strategies, each a different answer to "how do I value not knowing?":</p>
+      <ul>
+        <li><strong>ε-greedy.</strong> With probability <span class="num">ε</span>, pull a uniformly
+        random arm; otherwise pull the best-so-far. Dead simple, and it never stops paying the
+        exploration tax — regret grows linearly forever.</li>
+        <li><strong>UCB1</strong> (Auer, Cesa-Bianchi &amp; Fischer, 2002). Pull the arm maximising
+        <span class="num">μ̂<sub>a</sub> + c·√(2 ln t / n<sub>a</sub>)</span> — optimism in the face of
+        uncertainty. The bonus shrinks as an arm is pulled, so exploration automatically fades.</li>
+        <li><strong>Thompson sampling.</strong> Keep a Beta posterior over each arm's rate, draw one
+        sample from each, pull the argmax. Exploration falls out of the posterior's own width.</li>
+      </ul>
+      <p>The Beta–Bernoulli update is the cleanest piece of Bayesian machinery in the whole field. Start
+      with <span class="num">Beta(1,1)</span> — flat, total ignorance. After
+      <span class="num">s</span> successes and <span class="num">f</span> failures the posterior is
+      exactly <span class="num">Beta(1+s, 1+f)</span>. No integrals, no approximation: counting is the
+      inference.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 07</span><h3>Bandit arena</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="bdReseed">Reseed world</button>
+        <button class="sm ghost" id="bdReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <div class="viz"><svg id="bdPost" viewBox="0 0 620 230" role="img"
+              aria-label="Beta posterior densities for each arm"></svg></div>
+            <div class="viz"><svg id="bdReg" viewBox="0 0 620 210" role="img"
+              aria-label="Cumulative regret over rounds"></svg></div>
+          </div>
+          <div class="stack">
+            <span class="seg" id="bdAlgo" role="group" aria-label="Bandit algorithm">
+              <button data-v="eps" aria-pressed="true">ε-greedy</button>
+              <button data-v="ucb" aria-pressed="false">UCB1</button>
+              <button data-v="ts" aria-pressed="false">Thompson</button></span>
+            <label class="ctl" for="bdPar"><span class="ctl-top"><span class="ctl-lab" id="bdParLab">Exploration ε</span>
+              <span class="ctl-val" id="bdParOut">—</span></span>
+              <input type="range" id="bdPar" min="0" max="1" step="0.01" value="0.1"></label>
+            <label class="ctl" for="bdT"><span class="ctl-top"><span class="ctl-lab">Rounds <i>T</i></span>
+              <span class="ctl-val m" id="bdTOut">—</span></span>
+              <input type="range" class="m" id="bdT" min="50" max="4000" step="50" value="800"></label>
+            <div class="btnrow">
+              <button id="bdStep">Pull 1</button>
+              <button id="bdStep50" class="ghost">+50</button>
+              <button id="bdRun" class="mach">Run T rounds</button>
+              <button id="bdCmp" class="primary">Compare all three</button>
+            </div>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Pulls</span><span class="v" id="bdN">0</span></div>
+              <div class="stat"><span class="k">Regret</span><span class="v bad" id="bdRg">0.0</span></div>
+              <div class="stat"><span class="k">% best arm</span><span class="v good" id="bdBest">—</span></div>
+            </div>
+            <div class="scrollx"><table class="data" id="bdTbl">
+              <thead><tr><th>arm</th><th>true μ</th><th>pulls</th><th>μ̂</th><th>posterior</th></tr></thead>
+              <tbody></tbody></table></div>
+            <p class="hint">The true rates are hidden from the algorithms but shown to you — that is
+            the point of a simulator. <b>Compare all three</b> replays the identical reward tape through
+            each algorithm, so the regret curves differ only by the decisions made.
+            <br><br>Expect a surprise: at the textbook constant <i>c</i> = 1, UCB1 loses badly here
+            (regret near 130 at T = 2000 against about 20 for the others). That constant is chosen to
+            make a worst-case guarantee hold, and on an easy five-arm problem it over-explores.
+            Slide <i>c</i> down to <b>0.2</b> and UCB1 becomes the best of the three. Slide it to 0.05
+            and it collapses into pure greed and locks onto the wrong arm — the whole explore/exploit
+            dial, in one slider.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Where the toy simplifies.</b> A feed is a <em>contextual</em> bandit with
+      millions of arms, non-stationary rewards, delayed feedback and a different user every round —
+      so nobody runs plain UCB1 on videos. But the accounting is the same, and the idea that a
+      deliberate slice of traffic must be spent on uncertainty is universal. Note also that
+      exploration is not charity: it is how the system avoids permanently mis-estimating things it
+      stopped showing.</div>
+    </div>
+  </section>
+
+  <!-- ============ 08 DIVERSITY ============ -->
+  <section class="sec" id="s8">
+    <div class="sec-h">
+      <span class="sec-n">08</span>
+      <h2>The top-k trap</h2>
+      <p class="sub">Sorting by score gives you the best item, then the item most like it, then the
+      item most like that. Ten near-duplicates is a worse feed than eight good ones and two surprises.</p>
+    </div>
+
+    <div class="prose">
+      <p>Every stage so far scored items <em>independently</em>. But a feed is consumed as a set, and
+      the value of the fifth cooking video depends entirely on the four cooking videos above it. Score
+      independently, sort, and take the top <span class="num">k</span>, and you reliably produce a
+      feed that is monotonous.</p>
+      <p>The classic fix is <em class="term">maximal marginal relevance</em> (Carbonell &amp;
+      Goldstein, 1998). Build the list greedily; at each step pick the item that maximises relevance
+      minus its similarity to what you have already chosen:</p>
+      <div class="eq you">MMR = argmax<sub>i∉S</sub> [ λ·rel(i) − (1−λ)·max<sub>j∈S</sub> sim(i, j) ]</div>
+      <p><span class="num">λ = 1</span> is plain top-k. <span class="num">λ = 0</span> ignores
+      relevance entirely and just picks whatever is least like the rest. The interesting behaviour is
+      in between, and it is not subtle — slide it.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 08</span><h3>Relevance versus variety</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="mmrStep">Step selection</button>
+        <button class="sm ghost" id="mmrReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <ul class="feedlist" id="mmrFeed" aria-live="polite"></ul>
+          </div>
+          <div class="stack">
+            <label class="ctl" for="mmrL"><span class="ctl-top"><span class="ctl-lab">λ — relevance weight</span>
+              <span class="ctl-val" id="mmrLOut">—</span></span>
+              <input type="range" id="mmrL" min="0" max="1" step="0.01" value="1"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Mean relevance</span><span class="v mach" id="mmrRel">—</span></div>
+              <div class="stat"><span class="k">Topic entropy</span><span class="v good" id="mmrEnt">—</span><span class="u">of 2.58 max</span></div>
+              <div class="stat"><span class="k">Distinct topics</span><span class="v you" id="mmrTop">—</span></div>
+            </div>
+            <div class="viz"><svg id="mmrSim" viewBox="0 0 340 340" role="img"
+              aria-label="Similarity heat map between candidate items"></svg></div>
+            <p class="hint"><b>If λ seems to do nothing, that is the lesson.</b> With a blank taste
+            vector every candidate is about equally relevant, so plain top-k is already varied and
+            there is nothing for MMR to repair. Go back to the Feed Lab, like three or four clips on
+            one topic, and come back: at λ = 1 the shortlist collapses to four topics and 1.55 bits of
+            entropy; drop λ to 0.5 and it recovers to all six topics and 2.50 bits, for about five
+            percent of mean relevance. Re-ranking only earns its keep once the ranker has an opinion.
+            <br><br>The heat map is the full pairwise cosine similarity between candidates. Bright
+            blocks are the clusters MMR is trying to break up. <b>Step selection</b> walks the greedy
+            algorithm one pick at a time so you can see the marginal-relevance number that decided
+            each slot.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Where the toy simplifies.</b> Production re-ranking does far more than MMR:
+      per-creator and per-topic quotas, de-duplication by near-identical media, freshness floors,
+      integrity and policy filters, ad interleaving, and sometimes a model that scores whole slates
+      rather than items. But every one of those is the same structural move — a stage that considers
+      the set, applied to a shortlist small enough to afford it.</div>
+    </div>
+  </section>
+
+  <!-- ============ 09 FEEDBACK LOOPS ============ -->
+  <section class="sec" id="s9">
+    <div class="sec-h">
+      <span class="sec-n">09</span>
+      <h2>The system is also training you</h2>
+      <p class="sub">Your behaviour is the training data for the model that decides your behaviour.
+      Close that loop and you get a dynamical system, with all the drift and lock-in that implies.</p>
+    </div>
+
+    <div class="prose">
+      <p>Everything so far assumed a fixed world: items have relevance, users have taste, the model
+      estimates them. But the estimate changes what gets shown, what gets shown changes what gets
+      clicked, and what gets clicked becomes tomorrow's training data. There is no neutral observer
+      anywhere in this diagram.</p>
+      <p>The simulation below closes that loop with three dials. <strong>Popularity bias</strong> mixes
+      <span class="num">log(1 + views)</span> into the score, so things that were shown get shown
+      (a rich-get-richer process — the same preferential-attachment mechanism that produces power-law
+      popularity in almost every media system ever measured). <strong>Conformity</strong> controls how
+      fast your taste vector moves toward whatever you were served. <strong>Interest decay</strong>
+      pulls your taste vector back toward neutral each round, so an interest the feed stops serving
+      quietly fades instead of persisting forever.</p>
+      <p>Then there is the fourth dial, which is about what you are <em>optimising</em>. The simulation
+      tracks two quantities: engagement (did the user interact?) and a "novelty satisfaction" proxy
+      (how unlike the last ten items was this?). The score can be told to care about the second one.
+      Watch what the first one does when you stop caring.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 09</span><h3>Closed-loop simulation</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="dyReseed">Reseed</button>
+        <button class="sm ghost" id="dyReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <div class="viz"><svg id="dyArea" viewBox="0 0 620 230" role="img"
+              aria-label="Stacked area chart of topic share of the feed over time"></svg></div>
+            <div class="viz"><svg id="dyLines" viewBox="0 0 620 210" role="img"
+              aria-label="Engagement, feed diversity and novelty satisfaction over time"></svg></div>
+          </div>
+          <div class="stack">
+            <div class="btnrow">
+              <button id="dyStep">Step 10 rounds</button>
+              <button id="dyPlay" class="mach">Play</button>
+            </div>
+            <label class="ctl" for="dyAl"><span class="ctl-top"><span class="ctl-lab">Conformity <i>α</i> — how fast taste follows the feed</span>
+              <span class="ctl-val" id="dyAlOut">—</span></span>
+              <input type="range" id="dyAl" min="0" max="0.6" step="0.01" value="0.18"></label>
+            <label class="ctl" for="dyBe"><span class="ctl-top"><span class="ctl-lab">Popularity bias <i>β</i></span>
+              <span class="ctl-val" id="dyBeOut">—</span></span>
+              <input type="range" id="dyBe" min="0" max="1" step="0.01" value="0.25"></label>
+            <label class="ctl" for="dyDe"><span class="ctl-top"><span class="ctl-lab">Interest decay <i>δ</i> — old interests fade to neutral</span>
+              <span class="ctl-val" id="dyDeOut">—</span></span>
+              <input type="range" id="dyDe" min="0" max="0.6" step="0.01" value="0.05"></label>
+            <label class="ctl" for="dyEps"><span class="ctl-top"><span class="ctl-lab">Exploration <i>ε</i></span>
+              <span class="ctl-val m" id="dyEpsOut">—</span></span>
+              <input type="range" class="m" id="dyEps" min="0" max="0.5" step="0.01" value="0.05"></label>
+            <label class="ctl" for="dyNov"><span class="ctl-top"><span class="ctl-lab">Weight on novelty satisfaction <i>w</i></span>
+              <span class="ctl-val m" id="dyNovOut">—</span></span>
+              <input type="range" class="m" id="dyNov" min="0" max="1" step="0.01" value="0"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Round</span><span class="v" id="dyT">0</span></div>
+              <div class="stat"><span class="k">Engagement</span><span class="v mach" id="dyEng">—</span></div>
+              <div class="stat"><span class="k">Novelty satisf.</span><span class="v good" id="dySat">—</span></div>
+              <div class="stat"><span class="k">Feed entropy</span><span class="v you" id="dyEnt">—</span><span class="u">bits, max 2.58</span></div>
+              <div class="stat"><span class="k">Catalogue reach</span><span class="v bad" id="dyGini">—</span><span class="u">of 120 items</span></div>
+            </div>
+            <p class="hint">Start from your Feed Lab taste. For a clean collapse set <i>α</i> = 0.6,
+            <i>β</i> = 0, <i>δ</i> = 0, <i>ε</i> = 0 and step 100 rounds: topic entropy falls to
+            <b>0.00 bits</b>, the feed reaches only about <b>13</b> of the 120 items, and engagement
+            sits near 0.97 — the bubble looks like a triumph from inside the metrics.
+            <br><br>Now raise <i>ε</i> to 0.25: entropy recovers to roughly 0.8 bits, reach jumps to
+            about 80 items, and engagement falls to 0.90. That drop is the price, and it is why
+            exploration is a product decision rather than a free lunch. Interest decay <i>δ</i> helps
+            too but far more weakly — the feed simply re-teaches the taste it just decayed. And note
+            what popularity bias <i>β</i> does: it <em>raises</em> topic entropy, because chasing
+            global hits pulls you off your own track, while narrowing what the catalogue ever shows
+            anyone. Two different pathologies, not one.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>Goodhart's law, on a slider.</b> "When a measure becomes a target, it ceases
+      to be a good measure." Turn the novelty weight to 0 and engagement climbs while satisfaction
+      falls — the system is optimising the thing it can count. This is a toy, and a toy cannot prove
+      anything about a real platform. What it can do is show that the divergence between a proxy and
+      the thing you actually wanted is a <em>structural</em> property of closed-loop optimisation, not
+      a bug someone forgot to fix. Researchers have studied this seriously: Chaney, Stewart and
+      Engelhardt's "algorithmic confounding" work (RecSys 2018) shows recommenders trained on their own
+      outputs increase homogeneity and can decrease utility.</div>
+    </div>
+  </section>
+
+  <!-- ============ 10 EVALUATION ============ -->
+  <section class="sec" id="s10">
+    <div class="sec-h">
+      <span class="sec-n">10</span>
+      <h2>How do you know it got better?</h2>
+      <p class="sub">Offline metrics that reward putting good things near the top, online experiments
+      that are noisier than anyone would like, and a measure that is never quite the goal.</p>
+    </div>
+
+    <div class="prose">
+      <p>Offline, you have a ranked list and some notion of which items were actually relevant. The
+      standard metrics differ mainly in how much they care about <em>position</em>:</p>
+      <ul>
+        <li><strong>Precision@k</strong> — of the <span class="num">k</span> shown, what fraction were
+        relevant? Ignores order within the top <span class="num">k</span> entirely.</li>
+        <li><strong>Recall@k</strong> — of all relevant items, what fraction made the top
+        <span class="num">k</span>?</li>
+        <li><strong>NDCG@k</strong> — discounts each item by <span class="num">1/log₂(rank+1)</span>
+        and allows graded relevance, then normalises by the best possible arrangement. Rank 1 is worth
+        about 2.6× rank 10.</li>
+      </ul>
+      <div class="eq">DCG@k = Σ<sub>i=1..k</sub> <span class="frac"><span>2<sup>rel<sub>i</sub></sup> − 1</span><span>log<sub>2</sub>(i + 1)</span></span>
+        &nbsp;&nbsp;&nbsp; NDCG@k = <span class="frac"><span>DCG@k</span><span>IDCG@k</span></span>
+        &nbsp;&nbsp;<span class="cm">// IDCG = DCG of the perfect ordering</span></div>
+      <p>Reorder the list and watch which metrics notice.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag">LAB 10a</span><h3>Reorder the list</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="evPerf">Sort perfectly</button>
+        <button class="sm ghost" id="evShuf">Shuffle</button>
+        <button class="sm ghost" id="evReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="stack">
+            <ul class="feedlist" id="evList" aria-live="polite"></ul>
+            <p class="hint"><b>Use the ▲▼ buttons</b> to move an item, and <b>click a grade</b> to
+            change how relevant it really is (0 = irrelevant, 3 = perfect). Everything below
+            recomputes instantly.</p>
+          </div>
+          <div class="stack">
+            <label class="ctl" for="evK"><span class="ctl-top"><span class="ctl-lab">Cut-off <i>k</i></span>
+              <span class="ctl-val" id="evKOut">—</span></span>
+              <input type="range" id="evK" min="1" max="10" step="1" value="5"></label>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Precision@k</span><span class="v mach" id="evP">—</span></div>
+              <div class="stat"><span class="k">Recall@k</span><span class="v good" id="evR">—</span></div>
+              <div class="stat"><span class="k">NDCG@k</span><span class="v you" id="evN">—</span></div>
+              <div class="stat"><span class="k">AP (whole list)</span><span class="v" id="evA">—</span></div>
+            </div>
+            <div class="eq" id="evWork" style="font-size:12px;line-height:1.85"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <p>Online, you split traffic and compare. The awkward truth is that feed metrics move by
+      fractions of a percent, and noise is large. With a per-user click rate around
+      <span class="num">p</span> and <span class="num">n</span> users per arm, the standard error of
+      the observed difference is</p>
+      <div class="eq">SE = √( <span class="frac"><span>p<sub>A</sub>(1−p<sub>A</sub>)</span><span>n</span></span>
+        + <span class="frac"><span>p<sub>B</sub>(1−p<sub>B</sub>)</span><span>n</span></span> )
+        &nbsp;&nbsp;&nbsp; z = <span class="frac"><span>p̂<sub>B</sub> − p̂<sub>A</sub></span><span>SE</span></span></div>
+      <p>Set the true lift to zero and run a few hundred experiments: about 5% will come back
+      "significant" at <span class="num">p &lt; 0.05</span>. That is not a bug in the statistics, it is
+      the definition — and it is why a platform running thousands of experiments a year finds a great
+      many exciting results that do not replicate.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-h"><span class="tag alt">LAB 10b</span><h3>A/B test roulette</h3>
+        <span class="spacer"></span>
+        <button class="sm ghost" id="abReseed">Reseed</button>
+        <button class="sm ghost" id="abReset">Reset</button></div>
+      <div class="lab-b">
+        <div class="grid2">
+          <div class="viz"><svg id="abSvg" viewBox="0 0 620 260" role="img"
+            aria-label="Distribution of observed lifts across repeated experiments"></svg></div>
+          <div class="stack">
+            <label class="ctl" for="abP"><span class="ctl-top"><span class="ctl-lab">Baseline rate <i>p<sub>A</sub></i></span>
+              <span class="ctl-val" id="abPOut">—</span></span>
+              <input type="range" id="abP" min="0.01" max="0.5" step="0.005" value="0.12"></label>
+            <label class="ctl" for="abLift"><span class="ctl-top"><span class="ctl-lab">True relative lift</span>
+              <span class="ctl-val" id="abLiftOut">—</span></span>
+              <input type="range" id="abLift" min="-0.1" max="0.1" step="0.002" value="0"></label>
+            <label class="ctl" for="abN"><span class="ctl-top"><span class="ctl-lab">Users per arm <i>n</i></span>
+              <span class="ctl-val m" id="abNOut">—</span></span>
+              <input type="range" class="m" id="abN" min="0" max="1" step="0.01" value="0.74"></label>
+            <div class="btnrow">
+              <button id="abOne">Run one experiment</button>
+              <button id="abMany" class="mach">Run 400</button>
+            </div>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><span class="k">Last p̂<sub>A</sub> / p̂<sub>B</sub></span><span class="v" id="abObs" style="font-size:14px">—</span></div>
+              <div class="stat"><span class="k">z</span><span class="v mach" id="abZ">—</span></div>
+              <div class="stat"><span class="k">two-sided p</span><span class="v you" id="abPv">—</span></div>
+              <div class="stat"><span class="k">"significant" rate</span><span class="v bad" id="abSig">—</span><span class="u" id="abSigN">of 0 runs</span></div>
+            </div>
+            <p class="hint">Every experiment is a fresh pair of binomial draws from a seeded generator —
+            the histogram is real sampling noise, not a drawn bell curve. With <i>n</i> = 5,000 and a
+            true lift of 2%, note how often the experiment reports the wrong sign.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose">
+      <div class="note"><b>And the metric is never the goal.</b> Engagement is measurable; time well
+      spent is not. Every number on this page is a proxy that was chosen because it could be counted,
+      and §9 shows what optimisation does to proxies. The honest summary of the mathematics of
+      recommendation is that it is extremely good at maximising whatever it is pointed at, and
+      completely silent on where to point it.</div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <h3>What is real here, and what is not</h3>
+    <div class="prose" style="color:var(--ink2)">
+      <p><strong>Real:</strong> every number on this page is computed in JavaScript from the controls
+      you moved — the Gaussian quadrature in §1, the sampled cosines in §2, the exact recall counts in
+      §3, the similarity formulas in §4, the SGD updates in §5, the sigmoids in §6, the seeded bandit
+      simulations in §7, the greedy MMR selection in §8, the closed-loop dynamics in §9, and the
+      binomial draws in §10. Nothing is pre-scripted or tabulated. Random simulations use a seeded
+      generator (mulberry32), so a given seed always replays identically.</p>
+      <p><strong>Not real:</strong> the models themselves. They are small enough to watch, which means
+      they are far smaller than anything deployed. The specific feature values, weights and priors are
+      invented for legibility. Nothing here reflects any company's internal system, and none of these
+      numbers should be quoted as if it did.</p>
+      <p><strong>Unknowable:</strong> Instagram and TikTok have not published their ranking systems.
+      Both have published qualitative overviews — Adam Mosseri's "Shedding more light on how Instagram
+      works" (2021) and TikTok's newsroom post "How TikTok recommends videos #ForYou" (2020) — which
+      describe signal types and the general shape, and no formulas. Anyone quoting exact weights is
+      guessing.</p>
+    </div>
+
+    <details class="src">
+      <summary>Further reading — papers and posts I am confident exist</summary>
+      <div class="inner">
+        <ul>
+          <li>Covington, Adams &amp; Sargin, <em>Deep Neural Networks for YouTube Recommendations</em>,
+          RecSys 2016 — the candidate-generation / ranking split of §1, and training a ranker on
+          expected watch time.</li>
+          <li>Koren, Bell &amp; Volinsky, <em>Matrix Factorization Techniques for Recommender
+          Systems</em>, IEEE Computer, 2009 — §5, including the bias terms.</li>
+          <li>Liu et al., <em>Monolith: Real Time Recommendation System With Collisionless Embedding
+          Table</em>, ByteDance, 2022 — online training and embedding tables at feed scale.</li>
+          <li>Indyk &amp; Motwani, <em>Approximate Nearest Neighbors: Towards Removing the Curse of
+          Dimensionality</em>, STOC 1998 — LSH, §3.</li>
+          <li>Malkov &amp; Yashunin, <em>Efficient and robust approximate nearest neighbor search using
+          Hierarchical Navigable Small World graphs</em>, 2016/2018 — the graph-based alternative.</li>
+          <li>Auer, Cesa-Bianchi &amp; Fischer, <em>Finite-time Analysis of the Multiarmed Bandit
+          Problem</em>, Machine Learning 47, 2002 — UCB1, §7.</li>
+          <li>Chapelle &amp; Li, <em>An Empirical Evaluation of Thompson Sampling</em>, NIPS 2011.</li>
+          <li>Carbonell &amp; Goldstein, <em>The Use of MMR, Diversity-Based Reranking for Reordering
+          Documents and Producing Summaries</em>, SIGIR 1998 — §8.</li>
+          <li>Järvelin &amp; Kekäläinen, <em>Cumulated gain-based evaluation of IR techniques</em>,
+          ACM TOIS 2002 — NDCG, §10.</li>
+          <li>Chaney, Stewart &amp; Engelhardt, <em>How Algorithmic Confounding in Recommendation
+          Systems Increases Homogeneity and Decreases Utility</em>, RecSys 2018 — §9.</li>
+        </ul>
+      </div>
+    </details>
+
+    <p style="margin-top:26px;font-size:13px;color:var(--ink3)">Signal Lab · a single self-contained
+    HTML file · no network, no libraries, no tracking. View source: all of it is there.</p>
+  </div>
+
+</div>
+</main>
+
+<script>
+"use strict";
+/* =====================================================================
+   Signal Lab — everything below computes its own numbers.
+   No library code, no lookup tables, no pre-baked animations.
+   ===================================================================== */
+(function(){
+
+/* ---------- tiny utilities ---------- */
+var $  = function(s,r){ return (r||document).querySelector(s); };
+var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gaussFrom(rnd){
+  var u = 0, v = 0;
+  while(u === 0) u = rnd();
+  while(v === 0) v = rnd();
+  return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+function fmt(x,d){ if(!isFinite(x)) return '—'; return x.toFixed(d===undefined?2:d); }
+function human(n){
+  if(!isFinite(n)) return '—';
+  var a = Math.abs(n);
+  if(a >= 1e12) return (n/1e12).toFixed(a>=1e13?0:1)+'T';
+  if(a >= 1e9)  return (n/1e9 ).toFixed(a>=1e10?0:1)+'B';
+  if(a >= 1e6)  return (n/1e6 ).toFixed(a>=1e7 ?0:1)+'M';
+  if(a >= 1e3)  return (n/1e3 ).toFixed(a>=1e4 ?0:1)+'k';
+  return String(Math.round(n));
+}
+function logMap(v, lo, hi){ return lo * Math.pow(hi/lo, v); }
+function logInv(x, lo, hi){ return Math.log(x/lo) / Math.log(hi/lo); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* Abramowitz & Stegun 7.1.26, |err| < 1.5e-7 */
+function erf(x){
+  var s = x < 0 ? -1 : 1; x = Math.abs(x);
+  var t = 1/(1 + 0.3275911*x);
+  var y = 1 - ((((1.061405429*t - 1.453152027)*t + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+function Phi(x){ return 0.5*(1 + erf(x/Math.SQRT2)); }
+function phiPdf(x){ return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
+/* Acklam's inverse normal CDF, refined with one Halley step */
+function probit(p){
+  if(p <= 0) return -8; if(p >= 1) return 8;
+  var a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00],
+      b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01],
+      c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00],
+      d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  var pl = 0.02425, q, r, x;
+  if(p < pl){ q = Math.sqrt(-2*Math.log(p));
+    x = (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  } else if(p <= 1-pl){ q = p-0.5; r = q*q;
+    x = (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  } else { q = Math.sqrt(-2*Math.log(1-p));
+    x = -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+  var e = Phi(x) - p, u = e*Math.sqrt(2*Math.PI)*Math.exp(x*x/2);
+  return x - u/(1 + x*u/2);
+}
+function entropy(p){
+  var h = 0;
+  for(var i=0;i<p.length;i++){ if(p[i] > 1e-12) h -= p[i]*Math.log(p[i]); }
+  return h;
+}
+function dot(a,b){ var s=0; for(var i=0;i<a.length;i++) s += a[i]*b[i]; return s; }
+function norm(a){ return Math.sqrt(dot(a,a)); }
+function cosSim(a,b){ var n = norm(a)*norm(b); return n>1e-12 ? dot(a,b)/n : 0; }
+
+/* ---------- a very small SVG chart helper ---------- */
+function svgChart(el, o){
+  var W = o.W || 620, H = o.H || 220;
+  el.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var m = { l:(o.ml!==undefined?o.ml:46), r:(o.mr!==undefined?o.mr:14),
+            t:(o.mt!==undefined?o.mt:16), b:(o.mb!==undefined?o.mb:30) };
+  var X0 = m.l, X1 = W - m.r, Y0 = H - m.b, Y1 = m.t;
+  var xmin=o.xmin, xmax=o.xmax, ymin=o.ymin, ymax=o.ymax;
+  if(xmax - xmin < 1e-12) xmax = xmin + 1;
+  if(ymax - ymin < 1e-12) ymax = ymin + 1;
+  function sx(v){ return X0 + (v-xmin)/(xmax-xmin)*(X1-X0); }
+  function sy(v){ return Y0 - (v-ymin)/(ymax-ymin)*(Y0-Y1); }
+  var s = '';
+  s += '<rect x="'+X0+'" y="'+Y1+'" width="'+(X1-X0)+'" height="'+(Y0-Y1)+'" fill="none" stroke="#242a38"/>';
+  (o.yticks||[]).forEach(function(t){
+    var y = sy(t.v);
+    if(y < Y1-0.5 || y > Y0+0.5) return;
+    s += '<line x1="'+X0+'" x2="'+X1+'" y1="'+y+'" y2="'+y+'" stroke="#1b2130"/>';
+    s += '<text x="'+(X0-6)+'" y="'+(y+3.5)+'" text-anchor="end">'+esc(t.l)+'</text>';
+  });
+  (o.xticks||[]).forEach(function(t){
+    var x = sx(t.v);
+    if(x < X0-0.5 || x > X1+0.5) return;
+    s += '<line y1="'+Y1+'" y2="'+Y0+'" x1="'+x+'" x2="'+x+'" stroke="#1b2130"/>';
+    s += '<text x="'+x+'" y="'+(Y0+15)+'" text-anchor="middle">'+esc(t.l)+'</text>';
+  });
+  (o.series||[]).forEach(function(se){
+    if(!se.pts || !se.pts.length) return;
+    var i, d;
+    if(se.type === 'area'){
+      d = 'M'+sx(se.pts[0][0])+' '+sy(se.base===undefined?ymin:se.base);
+      for(i=0;i<se.pts.length;i++) d += 'L'+sx(se.pts[i][0])+' '+sy(se.pts[i][1]);
+      d += 'L'+sx(se.pts[se.pts.length-1][0])+' '+sy(se.base===undefined?ymin:se.base)+'Z';
+      s += '<path d="'+d+'" fill="'+se.color+'" opacity="'+(se.opacity||0.25)+'"/>';
+      if(se.stroke) s += '<path d="'+d+'" fill="none" stroke="'+se.color+'" stroke-width="'+(se.width||1.5)+'"/>';
+    } else if(se.type === 'bars'){
+      var bw = se.bw || Math.max(1, (X1-X0)/se.pts.length - 1);
+      for(i=0;i<se.pts.length;i++){
+        var yv = sy(se.pts[i][1]), yb = sy(ymin);
+        s += '<rect x="'+(sx(se.pts[i][0])-bw/2)+'" y="'+Math.min(yv,yb)+'" width="'+bw+
+             '" height="'+Math.abs(yb-yv)+'" fill="'+se.color+'" opacity="'+(se.opacity||0.85)+'"/>';
+      }
+    } else if(se.type === 'dots'){
+      for(i=0;i<se.pts.length;i++)
+        s += '<circle cx="'+sx(se.pts[i][0])+'" cy="'+sy(se.pts[i][1])+'" r="'+(se.width||2.5)+'" fill="'+se.color+'"/>';
+    } else {
+      d = '';
+      for(i=0;i<se.pts.length;i++) d += (i?'L':'M')+sx(se.pts[i][0]).toFixed(2)+' '+sy(se.pts[i][1]).toFixed(2);
+      s += '<path d="'+d+'" fill="none" stroke="'+se.color+'" stroke-width="'+(se.width||2)+
+           '" stroke-linejoin="round" stroke-linecap="round"'+(se.dash?' stroke-dasharray="'+se.dash+'"':'')+
+           (se.opacity?' opacity="'+se.opacity+'"':'')+'/>';
+    }
+  });
+  if(o.xlabel) s += '<text x="'+((X0+X1)/2)+'" y="'+(H-4)+'" text-anchor="middle" fill="#767f96">'+esc(o.xlabel)+'</text>';
+  if(o.ylabel) s += '<text transform="translate(11,'+((Y0+Y1)/2)+') rotate(-90)" text-anchor="middle" fill="#767f96">'+esc(o.ylabel)+'</text>';
+  if(o.extra) s += o.extra;
+  el.innerHTML = s;
+  return { sx:sx, sy:sy, X0:X0, X1:X1, Y0:Y0, Y1:Y1 };
+}
+function ticks(lo, hi, n, dec){
+  var out = [], step = (hi-lo)/n;
+  for(var i=0;i<=n;i++){ var v = lo + i*step; out.push({ v:v, l:v.toFixed(dec===undefined?1:dec) }); }
+  return out;
+}
+
+/* ---------- drag / keyboard handle plumbing ---------- */
+function svgPt(svg, e){
+  var r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+  return { x:(e.clientX-r.left)/r.width*vb.width, y:(e.clientY-r.top)/r.height*vb.height };
+}
+function dragSurface(svg, onMove){
+  var active = null;
+  svg.addEventListener('pointerdown', function(e){
+    var h = e.target.closest ? e.target.closest('[data-handle]') : null;
+    if(!h) return;
+    active = h.getAttribute('data-handle');
+    svg.dataset.focus = active;
+    try{ svg.setPointerCapture(e.pointerId); }catch(_){}
+    e.preventDefault();
+    onMove(active, svgPt(svg,e));
+  });
+  svg.addEventListener('pointermove', function(e){
+    if(active === null) return;
+    onMove(active, svgPt(svg,e));
+  });
+  function end(e){
+    if(active === null) return;
+    active = null;
+    try{ svg.releasePointerCapture(e.pointerId); }catch(_){}
+  }
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('lostpointercapture', end);
+}
+function setHTMLKeepFocus(svg, html){
+  var id = document.activeElement && document.activeElement.closest &&
+           document.activeElement.closest('[data-handle]');
+  id = id ? id.getAttribute('data-handle') : null;
+  svg.innerHTML = html;
+  if(id){
+    var n = svg.querySelector('[data-handle="'+id+'"]');
+    if(n && n.focus) n.focus();
+  }
+}
+function handleKeys(svg, onKey){
+  svg.addEventListener('keydown', function(e){
+    var h = e.target.closest ? e.target.closest('[data-handle]') : null;
+    if(!h) return;
+    var dx = 0, dy = 0, big = e.shiftKey ? 5 : 1;
+    if(e.key === 'ArrowLeft')  dx = -big;
+    else if(e.key === 'ArrowRight') dx =  big;
+    else if(e.key === 'ArrowUp')    dy = -big;
+    else if(e.key === 'ArrowDown')  dy =  big;
+    else return;
+    e.preventDefault();
+    onKey(h.getAttribute('data-handle'), dx, dy);
+  });
+}
+
+/* =====================================================================
+   SHARED WORLD — topics, items, and your taste vector
+   ===================================================================== */
+var TOPICS = [
+  { id:'cook',  name:'Cooking',  c:'#ffa53d' },
+  { id:'skate', name:'Skate',    c:'#ff7aa8' },
+  { id:'synth', name:'Synths',   c:'#a98bff' },
+  { id:'cats',  name:'Cats',     c:'#45d9ef' },
+  { id:'climb', name:'Climbing', c:'#5fe3a4' },
+  { id:'math',  name:'Math',     c:'#ffd166' }
+];
+var ND = TOPICS.length;
+var TITLES = [
+  ['60-second garlic noodles','Sourdough, day four','Knife skills: the claw','One-pot ramen broth','Why your pan sticks'],
+  ['First kickflip, attempt 400','Ledge lines at dawn','Board setup teardown','Slam compilation','Manual pad basics'],
+  ['Patching a very fat bass','Eurorack on a budget','Reverb as an instrument','Arpeggio tricks','Tape wobble by hand'],
+  ['Cat decides the box fits','Kitten versus cucumber','Three cats, one sunbeam','The 4am zoomies','Cat meets robot vacuum'],
+  ['Crimp strength ladder','Reading a boulder problem','Heel hook, explained','Outdoor versus plastic','How to fall well'],
+  ['Why e shows up here','A proof without words','Dot products, visually','The birthday problem','Infinity has sizes']
+];
+
+var ITEM_SEED = 20260921;
+var ITEMS = [];
+function buildItems(seed){
+  var rnd = mulberry32(seed), out = [], ti, j;
+  for(ti=0; ti<ND; ti++){
+    for(j=0; j<TITLES[ti].length; j++){
+      var v = new Array(ND).fill(0);
+      v[ti] = 1;
+      var sec = Math.floor(rnd()*ND); if(sec === ti) sec = (sec+1)%ND;
+      v[sec] = 0.2 + rnd()*0.5;
+      var n = norm(v);
+      for(var q=0;q<ND;q++) v[q] /= n;
+      out.push({
+        id: out.length, title: TITLES[ti][j], topic: ti, sec: sec, v: v,
+        fresh: rnd(), creator: rnd(), brev: rnd(), pop: rnd()
+      });
+    }
+  }
+  return out;
+}
+ITEMS = buildItems(ITEM_SEED);
+
+var taste = new Array(ND).fill(1/Math.sqrt(ND));
+var tasteSubs = [];
+function onTaste(fn){ tasteSubs.push(fn); }
+function emitTaste(){ for(var i=0;i<tasteSubs.length;i++) tasteSubs[i](); }
+function tasteProbs(){
+  var s = 0, i, p = [];
+  for(i=0;i<ND;i++) s += taste[i]*taste[i];
+  for(i=0;i<ND;i++) p.push(s>0 ? taste[i]*taste[i]/s : 1/ND);
+  return p;
+}
+function tasteConcentration(){
+  return 1 - entropy(tasteProbs())/Math.log(ND);
+}
+function topicChip(ti, extra){
+  return '<span class="tchip"><i style="background:'+TOPICS[ti].c+'"></i>'+TOPICS[ti].name+(extra||'')+'</span>';
+}
+
+/* ---------- header HUD ---------- */
+var hudBars = $('#hudBars'), hudSr = $('#hudSr');
+(function(){
+  for(var i=0;i<ND;i++){
+    var b = document.createElement('i');
+    b.style.background = TOPICS[i].c;
+    hudBars.appendChild(b);
+  }
+})();
+function drawHUD(){
+  var mx = Math.max.apply(null, taste) || 1, i;
+  for(i=0;i<ND;i++) hudBars.children[i].style.height = (3 + 19*taste[i]/mx) + 'px';
+  var best = 0;
+  for(i=1;i<ND;i++) if(taste[i] > taste[best]) best = i;
+  hudSr.textContent = 'Taste vector: strongest topic ' + TOPICS[best].name +
+    ', concentration ' + fmt(tasteConcentration(), 2);
+}
+onTaste(drawHUD);
+
+/* =====================================================================
+   FEED LAB — the running example
+   ===================================================================== */
+var fdSeen = {}, fdCurrent = null, fdActions = 0, fdSeed = 7, fdRnd = mulberry32(fdSeed), fdRankShown = 1;
+function fdScore(it){ return dot(taste, it.v); }
+function fdPick(){
+  var pool = ITEMS.filter(function(it){ return !fdSeen[it.id]; });
+  if(!pool.length){ fdSeen = {}; pool = ITEMS.slice(); }
+  pool.sort(function(a,b){ return fdScore(b) - fdScore(a); });
+  var idx = 0;
+  if(fdRnd() < 0.15) idx = Math.floor(fdRnd()*Math.min(pool.length, 12));   /* a dash of exploration, cf. §7 */
+  fdCurrent = pool[idx];
+  fdRankShown = idx + 1;
+}
+function fdRender(){
+  $('#fdIdx').textContent = String(fdActions + 1);
+  $('#fdTitle').textContent = fdCurrent.title;
+  $('#fdChips').innerHTML = topicChip(fdCurrent.topic) + ' ' +
+    topicChip(fdCurrent.sec, ' <span style="opacity:.6">·' + fmt(fdCurrent.v[fdCurrent.sec],2) + '</span>');
+  $('#fdPred').textContent = fmt(fdScore(fdCurrent), 3);
+  $('#fdRank').textContent = '#' + fdRankShown;
+  $('#fdN').textContent = String(fdActions);
+  $('#fdConc').textContent = fmt(tasteConcentration(), 3);
+  var best = 0, i;
+  for(i=1;i<ND;i++) if(taste[i] > taste[best]) best = i;
+  $('#fdTop').textContent = fdActions ? TOPICS[best].name : 'none yet';
+  $('#fdTop').style.color = fdActions ? TOPICS[best].c : '';
+  drawFdBars();
+}
+function drawFdBars(){
+  var W = 360, H = 230, base = H - 34, top = 20, mx = Math.max(0.65, Math.max.apply(null, taste));
+  var s = '<text x="6" y="12" fill="#767f96">taste vector t — unit length, ‖t‖ = ' + fmt(norm(taste),3) + '</text>';
+  for(var i=0;i<ND;i++){
+    var x = 22 + i*56, h = (taste[i]/mx)*(base-top), y = base - h;
+    s += '<rect x="'+x+'" y="'+y+'" width="36" height="'+Math.max(1,h)+'" rx="3" fill="'+TOPICS[i].c+'" opacity="0.88"/>';
+    s += '<text x="'+(x+18)+'" y="'+(y-5)+'" text-anchor="middle" fill="#eaedf5">'+fmt(taste[i],2)+'</text>';
+    s += '<text x="'+(x+18)+'" y="'+(base+13)+'" text-anchor="middle" font-size="9">'+TOPICS[i].name+'</text>';
+  }
+  s += '<line x1="14" x2="346" y1="'+base+'" y2="'+base+'" stroke="#36405a"/>';
+  $('#fdBars').innerHTML = s;
+}
+function fdAct(signal){
+  var eta = 0.28, decay = 0.04, i;
+  for(i=0;i<ND;i++) taste[i] = Math.max(0, (1-decay)*taste[i] + eta*signal*fdCurrent.v[i]);
+  var n = norm(taste);
+  if(n < 1e-6){ for(i=0;i<ND;i++) taste[i] = 1/Math.sqrt(ND); }
+  else { for(i=0;i<ND;i++) taste[i] /= n; }
+  fdSeen[fdCurrent.id] = 1;
+  fdActions++;
+  fdPick();
+  fdRender();
+  emitTaste();
+}
+$('#fdSkip').addEventListener('click', function(){ fdAct(-1); });
+$('#fdWatch').addEventListener('click', function(){ fdAct(1); });
+$('#fdLike').addEventListener('click', function(){ fdAct(3); });
+$('#fdReset').addEventListener('click', function(){
+  for(var i=0;i<ND;i++) taste[i] = 1/Math.sqrt(ND);
+  fdSeen = {}; fdActions = 0; fdRnd = mulberry32(fdSeed);
+  fdPick(); fdRender(); emitTaste();
+});
+$('#fdReseed').addEventListener('click', function(){
+  fdSeed = (fdSeed*1103515245 + 12345) >>> 8;
+  ITEM_SEED = (ITEM_SEED + 7919) | 0;
+  ITEMS = buildItems(ITEM_SEED);
+  fdSeen = {}; fdActions = 0; fdRnd = mulberry32(fdSeed);
+  fdPick(); fdRender(); emitTaste();
+});
+
+/* =====================================================================
+   01 — FUNNEL
+   ===================================================================== */
+var F1 = { N:0.55, K1:0.5, K2:0.5, s1:1, s2:0.3, k:20 };
+var C_RETR = 1, C_RANK = 180, C_RERANK = 900;
+
+function funnelParams(){
+  var N  = Math.round(logMap(+$('#f1N').value,  1e4, 1e8));
+  var K1 = Math.round(logMap(+$('#f1K1').value, 100, 2e5));
+  var K2 = Math.round(logMap(+$('#f1K2').value, 20,  5e3));
+  var k  = Math.round(+$('#f1k').value);
+  K1 = clamp(K1, 10, Math.max(20, Math.floor(N*0.5)));
+  K2 = clamp(K2, 5, Math.max(10, Math.floor(K1*0.5)));
+  k  = clamp(k, 1, Math.max(1, Math.floor(K2*0.5)));
+  return { N:N, K1:K1, K2:K2, k:k, s1:+$('#f1S1').value, s2:+$('#f1S2').value };
+}
+/* Recall of the true top-k after two noisy cuts, by numerical quadrature. */
+function funnelRecall(p){
+  var lo = -5.5, hi = 8.5, M = 1400, dr = (hi-lo)/M, i, r;
+  var pr = new Float64Array(M+1), g = new Float64Array(M+1), p1 = new Float64Array(M+1);
+  var t1 = Math.sqrt(1 + p.s1*p.s1) * probit(1 - p.K1/p.N);
+  var gsum = 0;
+  for(i=0;i<=M;i++){
+    r = lo + i*dr;
+    pr[i] = phiPdf(r);
+    p1[i] = Phi((r - t1)/p.s1);
+    g[i] = pr[i]*p1[i];
+    gsum += g[i]*dr;
+  }
+  if(gsum < 1e-14) gsum = 1e-14;
+  for(i=0;i<=M;i++) g[i] /= gsum;
+  /* find t2 with P_{r~g}(r + e2 > t2) = K2/K1  */
+  var target = p.K2/p.K1, a = -9, b = 12, mid, tail;
+  function tailAbove(t){
+    var s = 0;
+    for(var j=0;j<=M;j++) s += g[j]*Phi((lo + j*dr - t)/p.s2)*dr;
+    return s;
+  }
+  for(var it=0; it<50; it++){
+    mid = 0.5*(a+b); tail = tailAbove(mid);
+    if(tail > target) a = mid; else b = mid;
+  }
+  var t2 = 0.5*(a+b);
+  var rk = probit(1 - p.k/p.N), num = 0, den = 0;
+  for(i=0;i<=M;i++){
+    r = lo + i*dr;
+    if(r < rk) continue;
+    den += pr[i]*dr;
+    num += pr[i]*p1[i]*Phi((r - t2)/p.s2)*dr;
+  }
+  return { recall: den > 1e-14 ? clamp(num/den, 0, 1) : 0, t1:t1, t2:t2 };
+}
+function drawFunnel(){
+  var p = funnelParams(), res = funnelRecall(p);
+  var cost = p.N*C_RETR + p.K1*C_RANK + p.K2*C_RERANK;
+  var brute = p.N*C_RANK;
+
+  $('#f1NOut').textContent  = human(p.N) + ' items';
+  $('#f1K1Out').textContent = human(p.K1);
+  $('#f1K2Out').textContent = human(p.K2);
+  $('#f1S1Out').textContent = 'σ₁ = ' + fmt(p.s1,2);
+  $('#f1S2Out').textContent = 'σ₂ = ' + fmt(p.s2,2);
+  $('#f1kOut').textContent  = p.k;
+  $('#f1Rec').textContent   = fmt(100*res.recall,1) + '%';
+  $('#f1Rec').className     = 'v ' + (res.recall > 0.6 ? 'good' : res.recall > 0.3 ? '' : 'bad');
+  $('#f1Cst').textContent   = human(cost);
+  var ratio = brute/cost;
+  $('#f1Sav').textContent  = (ratio >= 1 ? ratio.toFixed(ratio>=10?0:1) : (1/ratio).toFixed(1)) + '×';
+  $('#f1SavU').textContent = ratio >= 1 ? 'cheaper' : 'more expensive';
+
+  var W = 500, H = 300, stages = [
+    { n:p.N,  lab:'corpus',            sub:'everything eligible',        c:'#36405a' },
+    { n:p.K1, lab:'after retrieval',   sub:'σ₁ = '+fmt(p.s1,2)+' · cheap', c:'#45d9ef' },
+    { n:p.K2, lab:'after ranking',     sub:'σ₂ = '+fmt(p.s2,2)+' · costly', c:'#a98bff' },
+    { n:p.k,  lab:'your feed',         sub:'re-ranked',                  c:'#ffa53d' }
+  ];
+  var maxW = 330, cx = 176, s = '', y = 26, bandH = 46, gap = 18;
+  var lg = function(v){ return Math.log10(Math.max(1,v)); };
+  var top = lg(p.N);
+  for(var i=0;i<stages.length;i++){
+    var wThis = Math.max(9, maxW*lg(stages[i].n)/top);
+    var wNext = i < stages.length-1 ? Math.max(9, maxW*lg(stages[i+1].n)/top) : wThis*0.55;
+    s += '<path d="M'+(cx-wThis/2)+' '+y+'H'+(cx+wThis/2)+'L'+(cx+wNext/2)+' '+(y+bandH)+
+         'H'+(cx-wNext/2)+'Z" fill="'+stages[i].c+'" opacity="0.22" stroke="'+stages[i].c+'" stroke-width="1.2"/>';
+    s += '<text x="'+cx+'" y="'+(y+bandH/2+1)+'" text-anchor="middle" font-size="15" fill="#eaedf5" font-weight="600">'+
+         human(stages[i].n)+'</text>';
+    s += '<text x="'+(cx+maxW/2+16)+'" y="'+(y+bandH/2-3)+'" fill="'+stages[i].c+'" font-size="11">'+esc(stages[i].lab)+'</text>';
+    s += '<text x="'+(cx+maxW/2+16)+'" y="'+(y+bandH/2+11)+'" font-size="9.5">'+esc(stages[i].sub)+'</text>';
+    if(i < stages.length-1){
+      var keep = 100*stages[i+1].n/stages[i].n;
+      s += '<text x="'+(cx+14)+'" y="'+(y+bandH+gap/2+4)+'" text-anchor="start" font-size="9.5">keeps '+
+           (keep < 0.01 ? keep.toExponential(1) : fmt(keep,2))+'%</text>';
+      s += '<path d="M'+cx+' '+(y+bandH+2)+'v'+(gap-6)+'" stroke="#36405a" stroke-width="1.5" marker-end="url(#f1ar)"/>';
+    }
+    y += bandH + gap;
+  }
+  s = '<defs><marker id="f1ar" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">'+
+      '<path d="M0 0 L8 4 L0 8 z" fill="#36405a"/></marker></defs>' + s;
+  var sv = $('#f1Svg');
+  sv.setAttribute('viewBox','0 0 '+W+' '+H);
+  sv.innerHTML = s;
+
+  /* cost comparison on a log axis */
+  var cmin = 4, cmax = Math.max(7, Math.ceil(Math.log10(Math.max(cost, brute))) + 0.3);
+  var segs = [
+    { v:p.N*C_RETR,   c:'#45d9ef', l:'retrieval' },
+    { v:p.K1*C_RANK,  c:'#a98bff', l:'ranking' },
+    { v:p.K2*C_RERANK,c:'#ffa53d', l:'re-rank' }
+  ];
+  var CW = 640, CH = 132, bx0 = 92, bx1 = 600;
+  var lx = function(v){ return bx0 + (Math.log10(Math.max(10,v)) - cmin)/(cmax - cmin)*(bx1-bx0); };
+  var cs = '';
+  for(var g=Math.ceil(cmin); g<=cmax; g++){
+    cs += '<line x1="'+lx(Math.pow(10,g))+'" x2="'+lx(Math.pow(10,g))+'" y1="16" y2="104" stroke="#1b2130"/>';
+    cs += '<text x="'+lx(Math.pow(10,g))+'" y="118" text-anchor="middle">10<tspan dy="-4" font-size="7">'+g+'</tspan></text>';
+  }
+  var acc = 0, prevX = bx0;
+  for(var q=0;q<segs.length;q++){
+    acc += segs[q].v;
+    var xEnd = lx(acc);
+    cs += '<rect x="'+prevX+'" y="26" width="'+Math.max(1,xEnd-prevX)+'" height="24" fill="'+segs[q].c+'" opacity="0.8"/>';
+    if(xEnd - prevX > 42)
+      cs += '<text x="'+((prevX+xEnd)/2)+'" y="42" text-anchor="middle" font-size="9" fill="#07080c">'+segs[q].l+'</text>';
+    prevX = xEnd;
+  }
+  cs += '<text x="86" y="43" text-anchor="end" fill="#eaedf5" font-size="11">funnel</text>';
+  cs += '<rect x="'+bx0+'" y="62" width="'+Math.max(1,lx(brute)-bx0)+'" height="24" fill="#ff6d7d" opacity="0.55"/>';
+  cs += '<text x="86" y="79" text-anchor="end" fill="#ff6d7d" font-size="11">score all</text>';
+  cs += '<text x="'+(lx(Math.max(cost,brute))+8)+'" y="43" fill="#767f96" font-size="9.5">'+human(cost)+'</text>';
+  cs += '<text x="'+(lx(brute)+8)+'" y="79" fill="#767f96" font-size="9.5">'+human(brute)+'</text>';
+  cs += '<text x="6" y="12" fill="#767f96" font-size="9.5">COMPUTE COST · log scale · units of one dot product '+
+        '(ranker = '+C_RANK+', re-ranker = '+C_RERANK+')</text>';
+  var cv = $('#f1Cost');
+  cv.setAttribute('viewBox','0 0 '+CW+' '+CH);
+  cv.innerHTML = cs;
+}
+['f1N','f1K1','f1K2','f1S1','f1S2','f1k'].forEach(function(id){
+  $('#'+id).addEventListener('input', drawFunnel);
+});
+$('#f1Reset').addEventListener('click', function(){
+  $('#f1N').value = 0.55; $('#f1K1').value = 0.5; $('#f1K2').value = 0.5;
+  $('#f1S1').value = 1;   $('#f1S2').value = 0.3; $('#f1k').value = 20;
+  drawFunnel();
+});
+
+/* =====================================================================
+   02a — VECTORS ON A PLANE
+   ===================================================================== */
+var V2 = {
+  ox:230, oy:210, sc:78,
+  u:{ x:0.9, y:0.55 },
+  items:[ { n:'A', x:1.35, y:0.35, c:'#45d9ef' },
+          { n:'B', x:0.42, y:1.25, c:'#a98bff' },
+          { n:'C', x:-0.75, y:0.95, c:'#5fe3a4' } ]
+};
+var V2_AX1 = [0.55, 1.0, -0.65, -0.35, 1.0, -0.95];
+var V2_AX2 = [0.15, 1.0, 0.45, -0.75, 0.6, -0.9];
+function v2UserVec(){
+  if($('#v2UseTaste').checked){
+    return { x: dot(taste, V2_AX1)*1.9, y: dot(taste, V2_AX2)*1.9 };
+  }
+  return V2.u;
+}
+function v2px(v){ return { x: V2.ox + v.x*V2.sc, y: V2.oy - v.y*V2.sc }; }
+function v2un(px, py){ return { x:(px - V2.ox)/V2.sc, y:(V2.oy - py)/V2.sc }; }
+function drawV2(){
+  var u = v2UserVec(), W = 520, H = 400, s = '', i;
+  s += '<defs>';
+  ['#ffa53d','#45d9ef','#a98bff','#5fe3a4'].forEach(function(c,ci){
+    s += '<marker id="v2m'+ci+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">'+
+         '<path d="M0 0 L10 5 L0 10 z" fill="'+c+'"/></marker>';
+  });
+  s += '</defs>';
+  for(var g=-3;g<=3;g++){
+    var gx = V2.ox + g*V2.sc, gy = V2.oy - g*V2.sc;
+    s += '<line x1="'+gx+'" x2="'+gx+'" y1="14" y2="386" stroke="#151a25"/>';
+    s += '<line y1="'+gy+'" y2="'+gy+'" x1="14" x2="506" stroke="#151a25"/>';
+  }
+  s += '<line x1="14" x2="506" y1="'+V2.oy+'" y2="'+V2.oy+'" stroke="#36405a"/>';
+  s += '<line y1="14" y2="386" x1="'+V2.ox+'" x2="'+V2.ox+'" stroke="#36405a"/>';
+  s += '<text x="500" y="'+(V2.oy+15)+'" text-anchor="end" font-size="9">physical ▸</text>';
+  s += '<text x="22" y="'+(V2.oy+15)+'" font-size="9">◂ screen-based</text>';
+  s += '<text x="'+(V2.ox+8)+'" y="22" font-size="9">▴ hype</text>';
+  s += '<text x="'+(V2.ox+8)+'" y="382" font-size="9">▾ calm</text>';
+  var up = v2px(u);
+  /* angle wedges between u and each item */
+  for(i=0;i<V2.items.length;i++){
+    var it = V2.items[i], ip = v2px(it);
+    s += '<line x1="'+V2.ox+'" y1="'+V2.oy+'" x2="'+ip.x+'" y2="'+ip.y+'" stroke="'+it.c+
+         '" stroke-width="2.4" marker-end="url(#v2m'+(i+1)+')"/>';
+    s += '<circle data-handle="i'+i+'" tabindex="0" role="slider" aria-label="Item vector '+it.n+
+         ', x '+fmt(it.x,2)+', y '+fmt(it.y,2)+'" cx="'+ip.x+'" cy="'+ip.y+'" r="11" fill="'+it.c+
+         '" fill-opacity="0.18" stroke="'+it.c+'" stroke-width="1.5" class="dragpt"/>';
+    s += '<text x="'+(ip.x+14)+'" y="'+(ip.y+4)+'" fill="'+it.c+'" font-size="12" font-weight="700">'+it.n+'</text>';
+  }
+  s += '<line x1="'+V2.ox+'" y1="'+V2.oy+'" x2="'+up.x+'" y2="'+up.y+
+       '" stroke="#ffa53d" stroke-width="3.4" marker-end="url(#v2m0)"/>';
+  s += '<circle data-handle="u" tabindex="'+($('#v2UseTaste').checked?'-1':'0')+'" role="slider" aria-label="Your vector t, x '+
+       fmt(u.x,2)+', y '+fmt(u.y,2)+'" cx="'+up.x+'" cy="'+up.y+'" r="12" fill="#ffa53d" fill-opacity="0.2" stroke="#ffa53d" stroke-width="2" class="dragpt"/>';
+  s += '<text x="'+(up.x+15)+'" y="'+(up.y+4)+'" fill="#ffa53d" font-size="13" font-weight="700">t</text>';
+  setHTMLKeepFocus($('#v2Svg'), s);
+
+  var rows = '', bestD = -Infinity, bestC = -Infinity, nd = '—', nc = '—';
+  for(i=0;i<V2.items.length;i++){
+    var t = V2.items[i];
+    var d = u.x*t.x + u.y*t.y, nv = Math.hypot(t.x,t.y), nu = Math.hypot(u.x,u.y);
+    var cs = (nv*nu > 1e-9) ? d/(nv*nu) : 0;
+    if(d > bestD){ bestD = d; nd = t.n; }
+    if(cs > bestC){ bestC = cs; nc = t.n; }
+    rows += '<tr data-n="'+t.n+'"><td><span style="color:'+t.c+'">■</span> '+t.n+'</td><td>'+fmt(d,3)+
+            '</td><td>'+fmt(nv,3)+'</td><td>'+fmt(cs,3)+'</td><td>'+fmt(Math.acos(clamp(cs,-1,1))*180/Math.PI,1)+'°</td></tr>';
+  }
+  $('#v2Tbl').querySelector('tbody').innerHTML = rows;
+  $('#v2Un').textContent = fmt(Math.hypot(u.x,u.y),3);
+  $('#v2Wd').textContent = nd + ' (' + fmt(bestD,2) + ')';
+  $('#v2Wc').textContent = nc + ' (' + fmt(bestC,2) + ')';
+}
+dragSurface($('#v2Svg'), function(id, p){
+  var v = v2un(p.x, p.y);
+  v.x = clamp(v.x,-2.6,3.4); v.y = clamp(v.y,-2.3,2.3);
+  if(id === 'u'){
+    if($('#v2UseTaste').checked){ $('#v2UseTaste').checked = false; }
+    V2.u = v;
+  } else { var k = +id.slice(1); V2.items[k].x = v.x; V2.items[k].y = v.y; }
+  drawV2();
+});
+handleKeys($('#v2Svg'), function(id, dx, dy){
+  var st = 0.06;
+  var tgt = id === 'u' ? ($('#v2UseTaste').checked ? ($('#v2UseTaste').checked = false, V2.u = v2UserVec(), V2.u) : V2.u)
+                       : V2.items[+id.slice(1)];
+  tgt.x = clamp(tgt.x + dx*st, -2.6, 3.4);
+  tgt.y = clamp(tgt.y - dy*st, -2.3, 2.3);
+  drawV2();
+});
+$('#v2UseTaste').addEventListener('change', function(){
+  if(!this.checked) V2.u = v2UserVec();
+  drawV2();
+});
+$('#v2Reset').addEventListener('click', function(){
+  V2.u = { x:0.9, y:0.55 };
+  V2.items[0].x = 1.35; V2.items[0].y = 0.35;
+  V2.items[1].x = 0.42; V2.items[1].y = 1.25;
+  V2.items[2].x = -0.75; V2.items[2].y = 0.95;
+  $('#v2UseTaste').checked = true;
+  drawV2();
+});
+onTaste(function(){ if($('#v2UseTaste').checked) drawV2(); });
+
+/* =====================================================================
+   02b — CONCENTRATION OF MEASURE (chunked sampling)
+   ===================================================================== */
+var V3 = { seed:11, job:null };
+function v3Dim(){ return Math.max(2, Math.round(2*Math.pow(2, +$('#v3D').value * 9))); }
+function runV3(){
+  if(V3.job) cancelAnimationFrame(V3.job.raf);
+  var d = v3Dim(), n = Math.round(+$('#v3N').value);
+  $('#v3DOut').textContent = d;
+  $('#v3NOut').textContent = human(n);
+  $('#v3Ops').textContent  = human(n*d*3);
+  var BINS = 81, hist = new Float64Array(BINS), rnd = mulberry32(V3.seed);
+  var done = 0, sum = 0, sum2 = 0, big = 0;
+  var job = { raf:0 };
+  V3.job = job;
+  function chunk(){
+    var budget = 220000, spent = 0;
+    while(done < n && spent < budget){
+      var a = new Float64Array(d), b = new Float64Array(d), i, na = 0, nb = 0, dp = 0;
+      for(i=0;i<d;i++){ a[i] = gaussFrom(rnd); b[i] = gaussFrom(rnd); }
+      for(i=0;i<d;i++){ na += a[i]*a[i]; nb += b[i]*b[i]; dp += a[i]*b[i]; }
+      var c = dp/Math.sqrt(na*nb);
+      var bi = Math.min(BINS-1, Math.max(0, Math.floor((c+1)/2*BINS)));
+      hist[bi]++; sum += c; sum2 += c*c; if(Math.abs(c) > 0.2) big++;
+      done++; spent += d*3;
+    }
+    drawV3(hist, done, sum, sum2, big, d, n);
+    if(done < n) job.raf = requestAnimationFrame(chunk);
+    else V3.job = null;
+  }
+  chunk();
+}
+function drawV3(hist, done, sum, sum2, big, d, n){
+  var BINS = hist.length, bw = 2/BINS, pts = [], i, mx = 0;
+  for(i=0;i<BINS;i++){ var dens = hist[i]/(done*bw); pts.push([-1 + (i+0.5)*bw, dens]); if(dens > mx) mx = dens; }
+  var sd = Math.sqrt(Math.max(0, sum2/done - (sum/done)*(sum/done)));
+  var th = 1/Math.sqrt(d), theory = [];
+  for(i=-200;i<=200;i++){ var x = i/200; theory.push([x, Math.exp(-0.5*(x/th)*(x/th))/(th*Math.sqrt(2*Math.PI))]); }
+  var ymax = Math.max(mx, 0.6) * 1.12;
+  svgChart($('#v3Svg'), {
+    W:640, H:260, xmin:-1, xmax:1, ymin:0, ymax:ymax,
+    xticks:[{v:-1,l:'−1'},{v:-0.5,l:'−0.5'},{v:0,l:'0'},{v:0.5,l:'0.5'},{v:1,l:'1'}],
+    yticks:ticks(0, ymax, 4, ymax>20?0:1),
+    xlabel:'cosine similarity between two random vectors', ylabel:'density',
+    series:[
+      { type:'bars', pts:pts, color:'#ffa53d', opacity:0.75, bw:Math.max(2,(580)/BINS - 1) },
+      { type:'line', pts:theory, color:'#45d9ef', width:1.8, dash:'5 4' }
+    ],
+    extra:'<text x="590" y="30" text-anchor="end" fill="#45d9ef" font-size="10">normal, SD = 1/√d</text>'+
+          '<text x="590" y="44" text-anchor="end" fill="#ffa53d" font-size="10">sampled, d = '+d+'</text>'+
+          (done<n?'<text x="590" y="58" text-anchor="end" fill="#767f96" font-size="10">sampling… '+
+             Math.round(100*done/n)+'%</text>':'')
+  });
+  $('#v3Sd').textContent = fmt(sd,4);
+  $('#v3Th').textContent = fmt(th,4);
+  $('#v3Fr').textContent = fmt(100*big/done,1) + '%';
+}
+$('#v3D').addEventListener('input', runV3);
+$('#v3N').addEventListener('input', runV3);
+$('#v3Reseed').addEventListener('click', function(){ V3.seed = (V3.seed*16807 + 17) % 2147483647; runV3(); });
+$('#v3Reset').addEventListener('click', function(){
+  $('#v3D').value = 0; $('#v3N').value = 4000; V3.seed = 11; runV3();
+});
+
+/* =====================================================================
+   03 — LSH: SPEED VS RECALL
+   ===================================================================== */
+var A3 = { seed:5, pts:[], planes:[], codes:[], buckets:null, q:{x:0.5,y:0.5}, nH:6, N:1800 };
+function a3Build(){
+  var rnd = mulberry32(A3.seed ^ 0x9e37), i, j;
+  var centres = [];
+  for(i=0;i<7;i++) centres.push([0.16 + rnd()*0.68, 0.16 + rnd()*0.68, 0.045 + rnd()*0.075]);
+  A3.pts = [];
+  for(i=0;i<A3.N;i++){
+    var x, y;
+    if(rnd() < 0.82){
+      var c = centres[Math.floor(rnd()*centres.length)];
+      x = c[0] + gaussFrom(rnd)*c[2]; y = c[1] + gaussFrom(rnd)*c[2];
+    } else { x = rnd(); y = rnd(); }
+    A3.pts.push([clamp(x,0.01,0.99), clamp(y,0.01,0.99)]);
+  }
+  A3.planes = [];
+  for(i=0;i<14;i++){
+    var th = rnd()*Math.PI*2;
+    A3.planes.push({ nx:Math.cos(th), ny:Math.sin(th), b:(Math.cos(th)+Math.sin(th))*0.5 + (rnd()-0.5)*0.85 });
+  }
+  a3Hash();
+}
+function a3Hash(){
+  var h = A3.nH, i, j;
+  A3.codes = new Int32Array(A3.N);
+  A3.buckets = new Map();
+  for(i=0;i<A3.N;i++){
+    var code = 0;
+    for(j=0;j<h;j++){
+      var pl = A3.planes[j];
+      if(A3.pts[i][0]*pl.nx + A3.pts[i][1]*pl.ny > pl.b) code |= (1<<j);
+    }
+    A3.codes[i] = code;
+    if(!A3.buckets.has(code)) A3.buckets.set(code, []);
+    A3.buckets.get(code).push(i);
+  }
+}
+function a3QueryCode(){
+  var code = 0;
+  for(var j=0;j<A3.nH;j++){
+    var pl = A3.planes[j];
+    if(A3.q.x*pl.nx + A3.q.y*pl.ny > pl.b) code |= (1<<j);
+  }
+  return code;
+}
+function a3Flips(code, h, p){
+  var out = [code], lvl = [code], i, j, k;
+  for(i=1;i<=p;i++){
+    var next = [];
+    for(j=0;j<lvl.length;j++)
+      for(k=0;k<h;k++){
+        var c = lvl[j] ^ (1<<k);
+        if(out.indexOf(c) === -1){ out.push(c); next.push(c); }
+      }
+    lvl = next;
+  }
+  return out;
+}
+function drawA3(){
+  A3.nH = +$('#a3H').value;
+  var probe = +$('#a3P').value;
+  $('#a3HOut').textContent = A3.nH + ' → ' + Math.pow(2,A3.nH) + ' buckets';
+  $('#a3POut').textContent = probe + ' bit' + (probe===1?'':'s');
+  a3Hash();
+
+  var i, d2 = new Array(A3.N);
+  for(i=0;i<A3.N;i++){
+    var dx = A3.pts[i][0]-A3.q.x, dy = A3.pts[i][1]-A3.q.y;
+    d2[i] = { i:i, d:dx*dx + dy*dy };
+  }
+  d2.sort(function(a,b){ return a.d - b.d; });
+  var trueTop = {}, topList = [];
+  for(i=0;i<10;i++){ trueTop[d2[i].i] = 1; topList.push(d2[i].i); }
+
+  var codes = a3Flips(a3QueryCode(), A3.nH, Math.min(probe, A3.nH));
+  var scannedSet = new Uint8Array(A3.N), scanned = 0;
+  for(i=0;i<codes.length;i++){
+    var b = A3.buckets.get(codes[i]);
+    if(!b) continue;
+    for(var j=0;j<b.length;j++){ if(!scannedSet[b[j]]){ scannedSet[b[j]] = 1; scanned++; } }
+  }
+  var found = 0;
+  for(i=0;i<topList.length;i++) if(scannedSet[topList[i]]) found++;
+
+  var W = 520, H = 420, PX = function(v){ return 20 + v*480; }, PY = function(v){ return 400 - v*380; };
+  var s = '<rect x="20" y="20" width="480" height="380" fill="#0a0c12" stroke="#242a38"/>';
+  for(i=0;i<A3.nH;i++){
+    var pl = A3.planes[i], seg = [];
+    [[0,0],[1,0],[1,1],[0,1],[0,0]].forEach(function(){});
+    var edges = [[[0,0],[1,0]],[[1,0],[1,1]],[[1,1],[0,1]],[[0,1],[0,0]]];
+    for(var e=0;e<4;e++){
+      var p0 = edges[e][0], p1 = edges[e][1];
+      var f0 = p0[0]*pl.nx + p0[1]*pl.ny - pl.b, f1 = p1[0]*pl.nx + p1[1]*pl.ny - pl.b;
+      if(f0 === f1) continue;
+      var tt = f0/(f0-f1);
+      if(tt >= 0 && tt <= 1) seg.push([p0[0] + tt*(p1[0]-p0[0]), p0[1] + tt*(p1[1]-p0[1])]);
+    }
+    if(seg.length >= 2)
+      s += '<line x1="'+PX(seg[0][0])+'" y1="'+PY(seg[0][1])+'" x2="'+PX(seg[1][0])+'" y2="'+PY(seg[1][1])+
+           '" stroke="#ffffff" stroke-opacity="0.085" stroke-width="1"/>';
+  }
+  var dim = '', hot = '';
+  for(i=0;i<A3.N;i++){
+    var cx = PX(A3.pts[i][0]).toFixed(1), cy = PY(A3.pts[i][1]).toFixed(1);
+    if(scannedSet[i]) hot += '<circle cx="'+cx+'" cy="'+cy+'" r="2.3"/>';
+    else dim += '<circle cx="'+cx+'" cy="'+cy+'" r="1.5"/>';
+  }
+  s += '<g fill="#2b3446">'+dim+'</g><g fill="#45d9ef" fill-opacity="0.85">'+hot+'</g>';
+  for(i=0;i<topList.length;i++){
+    var t = topList[i];
+    s += '<circle cx="'+PX(A3.pts[t][0])+'" cy="'+PY(A3.pts[t][1])+'" r="5.5" fill="'+
+         (scannedSet[t]?'#5fe3a4':'none')+'" stroke="#5fe3a4" stroke-width="1.6"/>';
+  }
+  var qx = PX(A3.q.x), qy = PY(A3.q.y);
+  s += '<circle cx="'+qx+'" cy="'+qy+'" r="'+(Math.sqrt(d2[9].d)*480)+'" fill="none" stroke="#5fe3a4" stroke-opacity="0.25" stroke-dasharray="3 4"/>';
+  s += '<circle data-handle="q" tabindex="0" role="slider" aria-label="Query point at '+fmt(A3.q.x,2)+', '+fmt(A3.q.y,2)+
+       '" cx="'+qx+'" cy="'+qy+'" r="9" fill="#ffa53d" fill-opacity="0.35" stroke="#ffa53d" stroke-width="2.2" class="dragpt"/>';
+  s += '<text x="26" y="14" font-size="9.5">'+A3.N+' items · '+codes.length+' bucket'+(codes.length===1?'':'s')+
+       ' probed · bright = distance actually computed</text>';
+  setHTMLKeepFocus($('#a3Svg'), s);
+
+  $('#a3Sc').textContent = human(scanned) + ' (' + fmt(100*scanned/A3.N,1) + '%)';
+  $('#a3Rc').textContent = (found*10) + '%';
+  $('#a3Rc').className = 'v ' + (found >= 8 ? 'good' : found >= 5 ? '' : 'bad');
+  $('#a3Sp').textContent = (A3.N/Math.max(1,scanned)).toFixed(1) + '×';
+}
+dragSurface($('#a3Svg'), function(id, p){
+  A3.q.x = clamp((p.x - 20)/480, 0, 1);
+  A3.q.y = clamp((400 - p.y)/380, 0, 1);
+  drawA3();
+});
+handleKeys($('#a3Svg'), function(id, dx, dy){
+  A3.q.x = clamp(A3.q.x + dx*0.012, 0, 1);
+  A3.q.y = clamp(A3.q.y - dy*0.012, 0, 1);
+  drawA3();
+});
+$('#a3H').addEventListener('input', drawA3);
+$('#a3P').addEventListener('input', drawA3);
+$('#a3Reseed').addEventListener('click', function(){ A3.seed = (A3.seed*16807 + 3) % 2147483647; a3Build(); drawA3(); });
+$('#a3Reset').addEventListener('click', function(){
+  $('#a3H').value = 6; $('#a3P').value = 1; A3.q = { x:0.5, y:0.5 }; A3.seed = 5; a3Build(); drawA3();
+});
+
+/* ---------- segmented-button helper ---------- */
+function segGroup(el, cb){
+  el.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if(!b || !el.contains(b)) return;
+    $$('button', el).forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    cb(b.getAttribute('data-v'));
+  });
+  return function(){ var on = $$('button', el).filter(function(x){ return x.getAttribute('aria-pressed') === 'true'; })[0];
+                     return on ? on.getAttribute('data-v') : null; };
+}
+
+/* =====================================================================
+   04 — COLLABORATIVE FILTERING
+   ===================================================================== */
+var CF_USERS = ['Ana','Bo','Cy','Dee','Eli','Fin'];
+var CF_ITEMS = ['Ramen','Kickflip','Bassline','Sunbeam','Crimp','Proof','Zoomies'];
+var CF_BASE = [
+  [5,0,3,4,0,0,4],
+  [4,1,0,5,2,0,5],
+  [0,5,4,0,5,3,0],
+  [5,0,4,4,1,0,4],
+  [1,4,5,0,4,4,0],
+  [0,3,0,2,5,4,1]
+];
+var CF = { M: CF_BASE.map(function(r){ return r.slice(); }), target:0, metric:'cos', mode:'uu', K:3 };
+var cfMetricGet, cfModeGet;
+
+function cfView(){
+  if(CF.mode === 'uu') return { M:CF.M, rows:CF_USERS, cols:CF_ITEMS, rowWord:'user', colWord:'item' };
+  var T = [], i, j;
+  for(j=0;j<CF_ITEMS.length;j++){ T.push([]); for(i=0;i<CF_USERS.length;i++) T[j].push(CF.M[i][j]); }
+  return { M:T, rows:CF_ITEMS, cols:CF_USERS, rowWord:'item', colWord:'user' };
+}
+function rowMean(r){
+  var s = 0, n = 0;
+  for(var i=0;i<r.length;i++) if(r[i] > 0){ s += r[i]; n++; }
+  return n ? s/n : 0;
+}
+function cfSim(a, b, metric){
+  var i, co = 0, un = 0, na = 0, nb = 0;
+  for(i=0;i<a.length;i++){
+    if(a[i] > 0 && b[i] > 0) co++;
+    if(a[i] > 0 || b[i] > 0) un++;
+    if(a[i] > 0) na++;
+    if(b[i] > 0) nb++;
+  }
+  if(metric === 'jaccard') return { s: un ? co/un : 0, co:co };
+  if(metric === 'cos'){
+    var d = 0, sa = 0, sb = 0;
+    for(i=0;i<a.length;i++){ d += a[i]*b[i]; sa += a[i]*a[i]; sb += b[i]*b[i]; }
+    return { s: (sa>0 && sb>0) ? d/Math.sqrt(sa*sb) : 0, co:co };
+  }
+  var ma = rowMean(a), mb = rowMean(b), num = 0, da = 0, db = 0;
+  if(co < 2) return { s:0, co:co };
+  for(i=0;i<a.length;i++){
+    if(a[i] > 0 && b[i] > 0){
+      num += (a[i]-ma)*(b[i]-mb); da += (a[i]-ma)*(a[i]-ma); db += (b[i]-mb)*(b[i]-mb);
+    }
+  }
+  return { s: (da > 1e-12 && db > 1e-12) ? num/Math.sqrt(da*db) : 0, co:co };
+}
+function cfCompute(){
+  var V = cfView(), t = clamp(CF.target, 0, V.rows.length-1), i;
+  var sims = [];
+  for(i=0;i<V.rows.length;i++){
+    if(i === t) continue;
+    var r = cfSim(V.M[t], V.M[i], CF.metric);
+    sims.push({ i:i, name:V.rows[i], s:r.s, co:r.co });
+  }
+  sims.sort(function(a,b){ return b.s - a.s; });
+  var K = clamp(CF.K, 1, sims.length), nb = sims.slice(0, K);
+  var mt = rowMean(V.M[t]), preds = [];
+  for(var j=0;j<V.cols.length;j++){
+    if(V.M[t][j] > 0) continue;
+    var num = 0, den = 0, used = 0;
+    for(i=0;i<nb.length;i++){
+      var v = nb[i];
+      if(V.M[v.i][j] <= 0 || Math.abs(v.s) < 1e-9) continue;
+      num += v.s*(V.M[v.i][j] - rowMean(V.M[v.i]));
+      den += Math.abs(v.s);
+      used++;
+    }
+    preds.push({ j:j, name:V.cols[j], p: den > 1e-9 ? clamp(mt + num/den, 1, 5) : null, used:used });
+  }
+  return { V:V, t:t, sims:sims, nb:nb, preds:preds, mt:mt };
+}
+function drawCF(){
+  var R = cfCompute(), V = R.V, s = '', i, j;
+  var predBy = {};
+  R.preds.forEach(function(p){ predBy[p.j] = p; });
+  s += '<tr><th></th>';
+  for(j=0;j<V.cols.length;j++) s += '<th>'+esc(V.cols[j])+'</th>';
+  s += '<th style="color:#767f96">mean</th></tr>';
+  for(i=0;i<V.rows.length;i++){
+    s += '<tr><th class="rowh"><button data-row="'+i+'" aria-pressed="'+(i===R.t)+'">'+esc(V.rows[i])+'</button></th>';
+    for(j=0;j<V.cols.length;j++){
+      var v = V.M[i][j];
+      if(v > 0){
+        s += '<td><button class="cell'+(i===R.t?' target':'')+'" data-i="'+i+'" data-j="'+j+
+             '" aria-label="'+esc(V.rows[i])+' rated '+esc(V.cols[j])+' '+v+'. Click to change.">'+v+'</button></td>';
+      } else if(i === R.t && predBy[j] && predBy[j].p !== null){
+        s += '<td><button class="cell pred target" data-i="'+i+'" data-j="'+j+
+             '" aria-label="predicted '+fmt(predBy[j].p,2)+'. Click to set a real rating.">'+fmt(predBy[j].p,1)+'</button></td>';
+      } else {
+        s += '<td><button class="cell empty'+(i===R.t?' target':'')+'" data-i="'+i+'" data-j="'+j+
+             '" aria-label="'+esc(V.rows[i])+' has not rated '+esc(V.cols[j])+'. Click to add a rating.">·</button></td>';
+      }
+    }
+    s += '<td style="color:#767f96;font-size:11px">'+(rowMean(V.M[i])?fmt(rowMean(V.M[i]),2):'—')+'</td></tr>';
+  }
+  $('#cfTbl').querySelector('tbody').innerHTML = s;
+
+  var totW = 0;
+  R.nb.forEach(function(n){ totW += Math.abs(n.s); });
+  var rows = '';
+  R.sims.forEach(function(n, idx){
+    var inN = idx < R.nb.length;
+    rows += '<tr'+(inN?' class="hi"':'')+'><td>'+esc(n.name)+'</td><td>'+fmt(n.s,3)+'</td><td>'+n.co+'</td><td>'+
+            (inN && totW > 1e-9 ? fmt(100*Math.abs(n.s)/totW,0)+'%' : '—')+'</td></tr>';
+  });
+  $('#cfSimTbl').querySelector('tbody').innerHTML = rows;
+
+  var prows = '';
+  R.preds.forEach(function(p){
+    prows += '<tr><td>'+esc(p.name)+'</td><td style="color:'+(p.p===null?'#767f96':'#45d9ef')+'">'+
+             (p.p===null?'no data':fmt(p.p,2))+'</td><td>'+p.used+' of '+R.nb.length+'</td></tr>';
+  });
+  if(!prows) prows = '<tr><td colspan="3" style="color:#767f96">this row has rated everything</td></tr>';
+  $('#cfPredTbl').querySelector('tbody').innerHTML = prows;
+  $('#cfKOut').textContent = CF.K + ' of ' + R.sims.length;
+}
+function cfSet(i, j, v){
+  if(CF.mode === 'uu') CF.M[i][j] = v; else CF.M[j][i] = v;
+  drawCF(); mfReset(true);
+}
+$('#cfTbl').addEventListener('click', function(e){
+  var rb = e.target.closest('button[data-row]');
+  if(rb){ CF.target = +rb.getAttribute('data-row'); drawCF(); return; }
+  var c = e.target.closest('button.cell');
+  if(!c) return;
+  var i = +c.getAttribute('data-i'), j = +c.getAttribute('data-j');
+  var cur = cfView().M[i][j];
+  cfSet(i, j, cur >= 5 ? 0 : cur + 1);
+  var again = $('#cfTbl').querySelector('button.cell[data-i="'+i+'"][data-j="'+j+'"]');
+  if(again) again.focus();
+});
+$('#cfTbl').addEventListener('keydown', function(e){
+  var c = e.target.closest('button.cell');
+  if(!c) return;
+  var i = +c.getAttribute('data-i'), j = +c.getAttribute('data-j'), cur = cfView().M[i][j], nv = null;
+  if(/^[0-5]$/.test(e.key)) nv = +e.key;
+  else if(e.key === 'ArrowUp') nv = Math.min(5, cur + 1);
+  else if(e.key === 'ArrowDown') nv = Math.max(0, cur - 1);
+  else if(e.key === 'Backspace' || e.key === 'Delete') nv = 0;
+  else return;
+  e.preventDefault();
+  cfSet(i, j, nv);
+  var again = $('#cfTbl').querySelector('button.cell[data-i="'+i+'"][data-j="'+j+'"]');
+  if(again) again.focus();
+});
+cfMetricGet = segGroup($('#cfSim'), function(v){ CF.metric = v; drawCF(); });
+cfModeGet   = segGroup($('#cfMode'), function(v){ CF.mode = v; CF.target = 0; drawCF(); });
+$('#cfK').addEventListener('input', function(){ CF.K = +this.value; drawCF(); });
+$('#cfReset').addEventListener('click', function(){
+  CF.M = CF_BASE.map(function(r){ return r.slice(); });
+  CF.target = 0; CF.K = 3; $('#cfK').value = 3;
+  drawCF(); mfReset(true);
+});
+
+/* =====================================================================
+   05 — MATRIX FACTORIZATION
+   ===================================================================== */
+var MF = { P:null, Q:null, bu:null, bi:null, mu:0, k:2, ep:0, hist:[], seed:3,
+           train:[], test:[], order:[], playing:false, raf:0, diverged:false };
+function mfObserved(){
+  var out = [], i, j;
+  for(i=0;i<CF_USERS.length;i++)
+    for(j=0;j<CF_ITEMS.length;j++)
+      if(CF.M[i][j] > 0) out.push({ u:i, i:j, r:CF.M[i][j] });
+  return out;
+}
+function mfReset(keepControls){
+  if(MF.raf) cancelAnimationFrame(MF.raf);
+  MF.playing = false; MF.diverged = false;
+  var btn = $('#mfPlay'); if(btn) btn.textContent = 'Play';
+  MF.k = +$('#mfK').value;
+  var obs = mfObserved(), rnd = mulberry32(MF.seed);
+  MF.train = []; MF.test = [];
+  obs.forEach(function(c, idx){ (idx % 5 === 2 ? MF.test : MF.train).push(c); });
+  if(!MF.train.length){ MF.train = obs.slice(); MF.test = []; }
+  MF.mu = 0;
+  MF.train.forEach(function(c){ MF.mu += c.r; });
+  MF.mu = MF.train.length ? MF.mu/MF.train.length : 3;
+  MF.P = []; MF.Q = [];
+  var i, j;
+  for(i=0;i<CF_USERS.length;i++){ var p = []; for(j=0;j<MF.k;j++) p.push(gaussFrom(rnd)*0.12); MF.P.push(p); }
+  for(i=0;i<CF_ITEMS.length;i++){ var q = []; for(j=0;j<MF.k;j++) q.push(gaussFrom(rnd)*0.12); MF.Q.push(q); }
+  MF.bu = new Array(CF_USERS.length).fill(0);
+  MF.bi = new Array(CF_ITEMS.length).fill(0);
+  MF.ep = 0;
+  MF.order = MF.train.map(function(_, ix){ return ix; });
+  for(i=MF.order.length-1;i>0;i--){ var t = Math.floor(rnd()*(i+1)), tmp = MF.order[i]; MF.order[i] = MF.order[t]; MF.order[t] = tmp; }
+  MF.hist = [{ ep:0, tr:mfRMSE(MF.train), te:mfRMSE(MF.test) }];
+  if(!keepControls) { /* nothing extra */ }
+  drawMF();
+}
+function mfPredict(u, i){
+  var s = 0;
+  for(var f=0;f<MF.k;f++) s += MF.P[u][f]*MF.Q[i][f];
+  if($('#mfBias').checked) s += MF.mu + MF.bu[u] + MF.bi[i];
+  else s += MF.mu;
+  return s;
+}
+function mfRMSE(set){
+  if(!set || !set.length) return NaN;
+  var s = 0;
+  for(var c=0;c<set.length;c++){ var e = set[c].r - mfPredict(set[c].u, set[c].i); s += e*e; }
+  return Math.sqrt(s/set.length);
+}
+function mfEpoch(){
+  if(MF.diverged) return;
+  var eta = logMap(+$('#mfLr').value, 0.001, 5), lam = +$('#mfLam').value, useB = $('#mfBias').checked;
+  for(var o=0;o<MF.order.length;o++){
+    var c = MF.train[MF.order[o]], u = c.u, i = c.i;
+    var e = c.r - mfPredict(u, i);
+    if(useB){ MF.bu[u] += eta*(e - lam*MF.bu[u]); MF.bi[i] += eta*(e - lam*MF.bi[i]); }
+    for(var f=0;f<MF.k;f++){
+      var pf = MF.P[u][f], qf = MF.Q[i][f];
+      MF.P[u][f] = pf + eta*(e*qf - lam*pf);
+      MF.Q[i][f] = qf + eta*(e*pf - lam*qf);
+    }
+  }
+  MF.ep++;
+  var tr = mfRMSE(MF.train), te = mfRMSE(MF.test);
+  if(!isFinite(tr) || tr > 1e6){ MF.diverged = true; MF.playing = false; $('#mfPlay').textContent = 'Play'; }
+  MF.hist.push({ ep:MF.ep, tr:tr, te:te });
+  if(MF.hist.length > 600) MF.hist.shift();
+}
+function drawMF(){
+  $('#mfKOut').textContent = MF.k + (MF.k === 1 ? ' factor' : ' factors');
+  $('#mfLrOut').textContent = 'η = ' + logMap(+$('#mfLr').value, 0.001, 5).toFixed(4);
+  $('#mfLamOut').textContent = 'λ = ' + fmt(+$('#mfLam').value, 3);
+  $('#mfEp').textContent = MF.ep;
+  var tr = mfRMSE(MF.train), te = mfRMSE(MF.test);
+  $('#mfRmse').textContent = MF.diverged ? 'diverged' : (isFinite(tr) ? fmt(tr,4) : '—');
+  $('#mfRmse').className = 'v ' + (MF.diverged ? 'bad' : 'good');
+  $('#mfTest').textContent = MF.diverged ? '—' : (isFinite(te) ? fmt(te,4) : 'n/a');
+
+  var pts = MF.hist.filter(function(h){ return isFinite(h.tr); }).map(function(h){ return [h.ep, h.tr]; });
+  var pts2 = MF.hist.filter(function(h){ return isFinite(h.te); }).map(function(h){ return [h.ep, h.te]; });
+  var ymax = 0.5;
+  pts.concat(pts2).forEach(function(p){ if(p[1] > ymax) ymax = p[1]; });
+  ymax = Math.min(ymax*1.1, 6);
+  svgChart($('#mfLoss'), {
+    W:620, H:220, xmin:0, xmax:Math.max(10, MF.ep), ymin:0, ymax:ymax,
+    xticks:ticks(0, Math.max(10, MF.ep), 5, 0), yticks:ticks(0, ymax, 4, 2),
+    xlabel:'epoch', ylabel:'RMSE',
+    series:[ { type:'line', pts:pts,  color:'#5fe3a4', width:2.2 },
+             { type:'line', pts:pts2, color:'#ffa53d', width:2, dash:'4 4' } ],
+    extra:'<text x="600" y="30" text-anchor="end" fill="#5fe3a4" font-size="10">train</text>'+
+          '<text x="600" y="44" text-anchor="end" fill="#ffa53d" font-size="10">held-out (20%)</text>'+
+          (MF.diverged?'<text x="310" y="115" text-anchor="middle" fill="#ff6d7d" font-size="16">diverged — η is too large</text>':'')
+  });
+
+  var testSet = {};
+  MF.test.forEach(function(c){ testSet[c.u + '_' + c.i] = 1; });
+  var s = '<tr><th></th>', i, j;
+  for(j=0;j<CF_ITEMS.length;j++) s += '<th>'+esc(CF_ITEMS[j])+'</th>';
+  s += '</tr>';
+  for(i=0;i<CF_USERS.length;i++){
+    s += '<tr><th class="rowh" style="color:#767f96;padding-right:7px">'+esc(CF_USERS[i])+'</th>';
+    for(j=0;j<CF_ITEMS.length;j++){
+      var pr = mfPredict(i,j), obs = CF.M[i][j];
+      if(!isFinite(pr)) pr = NaN;
+      if(obs > 0){
+        var err = obs - pr, mag = clamp(Math.abs(err)/2, 0, 1);
+        var col = err >= 0 ? '95,227,164' : '255,109,125';
+        s += '<td><span class="cell" style="display:inline-flex;align-items:center;justify-content:center;'+
+             'background:rgba('+col+','+(0.08 + 0.42*mag).toFixed(2)+');border-color:rgba('+col+',.5);cursor:default" '+
+             'title="'+esc(CF_USERS[i])+' / '+esc(CF_ITEMS[j])+': actual '+obs+', predicted '+fmt(pr,2)+
+             (testSet[i+'_'+j]?' (held out)':'')+'">'+(isFinite(pr)?fmt(pr,1):'!')+'</span></td>';
+      } else {
+        s += '<td><span class="cell pred" style="display:inline-flex;align-items:center;justify-content:center">'+
+             (isFinite(pr)?fmt(pr,1):'!')+'</span></td>';
+      }
+    }
+    s += '</tr>';
+  }
+  $('#mfTbl').querySelector('tbody').innerHTML = s;
+
+  var W = 360, H = 200, fs = '', maxAbs = 0.4, f;
+  for(i=0;i<MF.P.length;i++) for(f=0;f<MF.k;f++) maxAbs = Math.max(maxAbs, Math.abs(MF.P[i][f]));
+  for(i=0;i<MF.Q.length;i++) for(f=0;f<MF.k;f++) maxAbs = Math.max(maxAbs, Math.abs(MF.Q[i][f]));
+  fs += '<text x="4" y="11" font-size="9">P — user factors</text>';
+  fs += '<text x="190" y="11" font-size="9">Q — item factors</text>';
+  function facBlock(mat, labels, x0, colr){
+    var out = '', cw = 158/labels.length;
+    for(var a=0;a<labels.length;a++){
+      for(var b=0;b<MF.k;b++){
+        var v = isFinite(mat[a][b]) ? mat[a][b] : 0;
+        var hgt = Math.abs(v)/maxAbs*26;
+        var yc = 24 + b*40 + 26;
+        out += '<rect x="'+(x0 + a*cw + 1)+'" y="'+(v>=0 ? yc-hgt : yc)+'" width="'+(cw-2)+'" height="'+Math.max(1,hgt)+
+               '" fill="'+(v>=0?colr:'#ff6d7d')+'" opacity="0.8"/>';
+        out += '<line x1="'+(x0 + a*cw)+'" x2="'+(x0 + a*cw + cw)+'" y1="'+yc+'" y2="'+yc+'" stroke="#36405a" stroke-width="0.6"/>';
+      }
+      out += '<text x="'+(x0 + a*cw + cw/2)+'" y="'+(24 + MF.k*40 + 12)+'" text-anchor="middle" font-size="7.5">'+
+             esc(labels[a].slice(0,4))+'</text>';
+    }
+    return out;
+  }
+  fs += facBlock(MF.P, CF_USERS, 6, '#45d9ef');
+  fs += facBlock(MF.Q, CF_ITEMS, 192, '#a98bff');
+  for(f=0;f<MF.k;f++) fs += '<text x="180" y="'+(24 + f*40 + 29)+'" text-anchor="middle" font-size="8" fill="#767f96">f'+(f+1)+'</text>';
+  var fsv = $('#mfFac');
+  fsv.setAttribute('viewBox','0 0 '+W+' '+Math.max(H, 24 + MF.k*40 + 20));
+  fsv.innerHTML = fs;
+}
+$('#mfStep').addEventListener('click', function(){ mfEpoch(); drawMF(); });
+$('#mfStep10').addEventListener('click', function(){ for(var i=0;i<10;i++) mfEpoch(); drawMF(); });
+$('#mfPlay').addEventListener('click', function(){
+  MF.playing = !MF.playing;
+  this.textContent = MF.playing ? 'Pause' : 'Play';
+  if(MF.playing) mfLoop();
+  else if(MF.raf) cancelAnimationFrame(MF.raf);
+});
+function mfLoop(){
+  if(!MF.playing) return;
+  for(var i=0;i<(REDUCED?12:3);i++) mfEpoch();
+  drawMF();
+  if(MF.ep > 4000){ MF.playing = false; $('#mfPlay').textContent = 'Play'; return; }
+  MF.raf = requestAnimationFrame(mfLoop);
+}
+$('#mfK').addEventListener('input', function(){ mfReset(true); });
+$('#mfLr').addEventListener('input', drawMF);
+$('#mfLam').addEventListener('input', drawMF);
+$('#mfBias').addEventListener('change', drawMF);
+$('#mfReset').addEventListener('click', function(){
+  $('#mfK').value = 2; $('#mfLr').value = 0.40; $('#mfLam').value = 0.05; $('#mfBias').checked = true;
+  MF.seed = 3; mfReset();
+});
+$('#mfReseed').addEventListener('click', function(){ MF.seed = (MF.seed*48271 + 11) % 2147483647; mfReset(true); });
+
+/* =====================================================================
+   06a — SIGMOID AND CROSS-ENTROPY
+   ===================================================================== */
+var RK = { z:1, y:1 };
+function sigmoid(z){ return 1/(1 + Math.exp(-z)); }
+function drawSig(){
+  var z = RK.z, p = sigmoid(z), y = RK.y;
+  var loss = -(y*Math.log(Math.max(1e-12,p)) + (1-y)*Math.log(Math.max(1e-12,1-p)));
+  var curve = [], lossC = [], i;
+  for(i=-120;i<=120;i++){
+    var zz = i/20;
+    curve.push([zz, sigmoid(zz)]);
+    var pp = sigmoid(zz);
+    lossC.push([zz, Math.min(1, -(y*Math.log(Math.max(1e-12,pp)) + (1-y)*Math.log(Math.max(1e-12,1-pp)))/5)]);
+  }
+  var g = svgChart($('#rkSig'), {
+    W:620, H:250, xmin:-6, xmax:6, ymin:0, ymax:1.04,
+    xticks:[{v:-6,l:'−6'},{v:-4,l:'−4'},{v:-2,l:'−2'},{v:0,l:'0'},{v:2,l:'2'},{v:4,l:'4'},{v:6,l:'6'}],
+    yticks:[{v:0,l:'0'},{v:0.25,l:'0.25'},{v:0.5,l:'0.5'},{v:0.75,l:'0.75'},{v:1,l:'1'}],
+    xlabel:'logit z = w·x + b', ylabel:'probability',
+    series:[
+      { type:'line', pts:lossC, color:'#ff6d7d', width:1.6, dash:'4 4', opacity:0.85 },
+      { type:'line', pts:curve, color:'#45d9ef', width:2.6 }
+    ]
+  });
+  var px = g.sx(z), py = g.sy(p);
+  var extra = '';
+  extra += '<line x1="'+g.X0+'" x2="'+px+'" y1="'+py+'" y2="'+py+'" stroke="#ffa53d" stroke-dasharray="3 3" stroke-opacity="0.6"/>';
+  extra += '<line x1="'+px+'" x2="'+px+'" y1="'+py+'" y2="'+g.Y0+'" stroke="#ffa53d" stroke-dasharray="3 3" stroke-opacity="0.6"/>';
+  extra += '<circle data-handle="z" tabindex="0" role="slider" aria-label="logit z equals '+fmt(z,2)+
+           ', probability '+fmt(p,3)+'" cx="'+px+'" cy="'+py+'" r="9" fill="#ffa53d" fill-opacity="0.35" stroke="#ffa53d" stroke-width="2.2" class="dragpt"/>';
+  extra += '<text x="'+(px+14)+'" y="'+(py-8)+'" fill="#ffa53d" font-size="11">p = '+fmt(p,3)+'</text>';
+  extra += '<text x="605" y="30" text-anchor="end" fill="#45d9ef" font-size="10">σ(z)</text>';
+  extra += '<text x="605" y="44" text-anchor="end" fill="#ff6d7d" font-size="10">cross-entropy ÷ 5, y = '+y+'</text>';
+  $('#rkSig').insertAdjacentHTML('beforeend', extra);
+  $('#rkZOut').textContent = fmt(z,2);
+  $('#rkP').textContent = fmt(p,4);
+  $('#rkL').textContent = fmt(loss,4);
+  $('#rkG').textContent = (p - y >= 0 ? '+' : '') + fmt(p - y, 4);
+  if(+$('#rkZ').value !== z) $('#rkZ').value = z;
+}
+dragSurface($('#rkSig'), function(id, pt){
+  var W = 620, X0 = 46, X1 = W - 14;
+  RK.z = clamp((pt.x - X0)/(X1 - X0)*12 - 6, -6, 6);
+  drawSig();
+});
+handleKeys($('#rkSig'), function(id, dx){ RK.z = clamp(RK.z + dx*0.15, -6, 6); drawSig(); });
+$('#rkZ').addEventListener('input', function(){ RK.z = +this.value; drawSig(); });
+segGroup($('#rkY'), function(v){ RK.y = +v; drawSig(); });
+$('#rkSigReset').addEventListener('click', function(){
+  RK.z = 1; RK.y = 1;
+  $$('button', $('#rkY')).forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === '1')); });
+  drawSig();
+});
+
+/* =====================================================================
+   06b — MULTI-TASK RANKING
+   ===================================================================== */
+/* Illustrative multi-task heads over x = [taste match, freshness, creator affinity, brevity].
+   The signs on brevity are what make the value weights matter: short clips get finished and
+   shared, long ones get comments and follows. No platform's real weights are known. */
+var ACTIONS = [
+  { id:'like',   name:'Like',            w:[3.2, 0.5, 1.0,  0.3], b:-2.3, c:'#ff7aa8' },
+  { id:'comm',   name:'Comment',         w:[1.4, 0.3, 1.0, -2.2], b:-1.6, c:'#a98bff' },
+  { id:'share',  name:'Share',           w:[2.0, 1.6, 0.4,  1.2], b:-3.6, c:'#45d9ef' },
+  { id:'follow', name:'Follow creator',  w:[1.2, 0.1, 3.2, -1.8], b:-2.4, c:'#5fe3a4' },
+  { id:'finish', name:'Watch to the end',w:[1.8, 0.2, 0.3,  3.4], b:-2.2, c:'#ffa53d' }
+];
+var PRESETS = { bal:[1,3,8,12,2], eng:[1,2,4,3,6], grow:[1,4,6,25,1], calm:[2,6,4,8,0.2] };
+var RKW = PRESETS.bal.slice();
+var RK_ITEMS = [0,3,5,8,11,15,18,22,25,28];
+function rkFeatures(it){
+  return [ clamp(dot(taste, it.v), 0, 1), it.fresh, it.creator, it.brev ];
+}
+function rkProbs(it){
+  var x = rkFeatures(it);
+  return ACTIONS.map(function(a){ return sigmoid(dot(a.w, x) + a.b); });
+}
+function rkScored(){
+  return RK_ITEMS.map(function(ix){
+    var it = ITEMS[ix % ITEMS.length], ps = rkProbs(it), sc = 0;
+    for(var i=0;i<ACTIONS.length;i++) sc += RKW[i]*ps[i];
+    return { it:it, ps:ps, sc:sc };
+  }).sort(function(a,b){ return b.sc - a.sc; });
+}
+function buildWeightSliders(){
+  var h = '<div style="font-size:12.5px;color:#a9b1c6;font-weight:600;margin-bottom:8px">Value of each action (arbitrary units)</div>';
+  ACTIONS.forEach(function(a, i){
+    h += '<label class="ctl" for="rkw'+i+'"><span class="ctl-top"><span class="ctl-lab">'+
+         '<span style="color:'+a.c+'">■</span> '+a.name+'</span>'+
+         '<span class="ctl-val" id="rkwOut'+i+'">'+fmt(RKW[i],1)+'</span></span>'+
+         '<input type="range" id="rkw'+i+'" min="0" max="30" step="0.1" value="'+RKW[i]+'"></label>';
+  });
+  $('#rkWeights').innerHTML = h;
+  ACTIONS.forEach(function(a, i){
+    $('#rkw'+i).addEventListener('input', function(){ RKW[i] = +this.value; drawRank(); });
+  });
+}
+function flipList(ul, html){
+  if(REDUCED){ ul.innerHTML = html; return; }
+  var before = {};
+  $$('li', ul).forEach(function(li){ before[li.getAttribute('data-id')] = li.getBoundingClientRect().top; });
+  ul.innerHTML = html;
+  $$('li', ul).forEach(function(li){
+    var id = li.getAttribute('data-id');
+    if(before[id] === undefined) return;
+    var dy = before[id] - li.getBoundingClientRect().top;
+    if(Math.abs(dy) < 1) return;
+    li.style.transition = 'none';
+    li.style.transform = 'translateY(' + dy + 'px)';
+    requestAnimationFrame(function(){
+      li.style.transition = 'transform .42s cubic-bezier(.2,.85,.25,1)';
+      li.style.transform = '';
+    });
+  });
+}
+function drawRank(){
+  ACTIONS.forEach(function(a, i){
+    var o = $('#rkwOut'+i); if(o) o.textContent = fmt(RKW[i],1);
+    var s = $('#rkw'+i); if(s && +s.value !== RKW[i]) s.value = RKW[i];
+  });
+  var rows = rkScored(), h = '', mx = rows.length ? rows[0].sc : 1;
+  rows.forEach(function(r, n){
+    h += '<li class="fcard" data-id="'+r.it.id+'">'+
+         '<span class="rank">'+(n+1)+'</span>'+
+         '<span class="ttl">'+esc(r.it.title)+
+         '<span class="meta">'+topicChip(r.it.topic)+
+         '<span class="tchip">taste '+fmt(rkFeatures(r.it)[0],2)+'</span>'+
+         '<span class="tchip">fresh '+fmt(r.it.fresh,2)+'</span>'+
+         '<span class="tchip">brevity '+fmt(r.it.brev,2)+'</span></span></span>'+
+         '<span class="sc">'+fmt(r.sc,2)+'<small>SCORE</small></span></li>';
+  });
+  flipList($('#rkFeed'), h);
+  var t = '';
+  rows.slice(0,5).forEach(function(r){
+    t += '<tr><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(r.it.title)+'</td>';
+    r.ps.forEach(function(p){ t += '<td>'+fmt(p,3)+'</td>'; });
+    t += '</tr>';
+  });
+  $('#rkProbs').querySelector('tbody').innerHTML = t;
+  if(window.__mmrDraw) window.__mmrDraw();
+}
+segGroup($('#rkPre'), function(v){ RKW = PRESETS[v].slice(); drawRank(); });
+$('#rkReset').addEventListener('click', function(){
+  RKW = PRESETS.bal.slice();
+  $$('button', $('#rkPre')).forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === 'bal')); });
+  drawRank();
+});
+onTaste(function(){ drawRank(); });
+
+/* =====================================================================
+   07 — BANDITS
+   ===================================================================== */
+function lgamma(x){
+  var g = [676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,
+           12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x < 0.5) return Math.log(Math.PI/Math.sin(Math.PI*x)) - lgamma(1-x);
+  x -= 1;
+  var a = 0.99999999999980993, t = x + 7.5;
+  for(var i=0;i<8;i++) a += g[i]/(x + i + 1);
+  return 0.5*Math.log(2*Math.PI) + (x+0.5)*Math.log(t) - t + Math.log(a);
+}
+function betaPdf(x, a, b){
+  if(x <= 0 || x >= 1) return 0;
+  return Math.exp((a-1)*Math.log(x) + (b-1)*Math.log(1-x) - (lgamma(a)+lgamma(b)-lgamma(a+b)));
+}
+function gammaSample(a, rnd){
+  if(a < 1) return gammaSample(a+1, rnd)*Math.pow(rnd(), 1/a);
+  var d = a - 1/3, c = 1/Math.sqrt(9*d);
+  for(;;){
+    var x = gaussFrom(rnd), v = 1 + c*x;
+    if(v <= 0) continue;
+    v = v*v*v;
+    var u = rnd();
+    if(u < 1 - 0.0331*x*x*x*x) return d*v;
+    if(Math.log(u) < 0.5*x*x + d*(1 - v + Math.log(v))) return d*v;
+  }
+}
+function betaSample(a, b, rnd){
+  var x = gammaSample(a, rnd), y = gammaSample(b, rnd);
+  return x/(x+y);
+}
+var BD = { seed:23, arms:[], live:null, cmp:null, algo:'eps' };
+function bdBuild(){
+  var rnd = mulberry32(BD.seed);
+  BD.arms = [];
+  for(var i=0;i<ND;i++) BD.arms.push({ name:TOPICS[i].name, c:TOPICS[i].c, mu: 0.05 + rnd()*0.32 });
+  BD.arms = BD.arms.slice(0,5);
+  bdResetLive();
+}
+function bdNewState(){
+  return { counts:new Array(BD.arms.length).fill(0), succ:new Array(BD.arms.length).fill(0),
+           t:0, regret:0, hist:[[0,0]] };
+}
+function bdResetLive(){ BD.live = bdNewState(); BD.cmp = null; }
+function bdBestMu(){ return Math.max.apply(null, BD.arms.map(function(a){ return a.mu; })); }
+function bdChoose(st, algo, par, rnd){
+  var K = BD.arms.length, i, best = 0, bv = -Infinity, v;
+  if(algo === 'ucb'){
+    for(i=0;i<K;i++) if(st.counts[i] === 0) return i;
+    for(i=0;i<K;i++){
+      v = st.succ[i]/st.counts[i] + par*Math.sqrt(2*Math.log(Math.max(2, st.t))/st.counts[i]);
+      if(v > bv){ bv = v; best = i; }
+    }
+    return best;
+  }
+  if(algo === 'ts'){
+    for(i=0;i<K;i++){
+      v = betaSample(1 + st.succ[i], 1 + (st.counts[i] - st.succ[i]), rnd);
+      if(v > bv){ bv = v; best = i; }
+    }
+    return best;
+  }
+  if(rnd() < par) return Math.floor(rnd()*K);
+  for(i=0;i<K;i++){
+    v = st.counts[i] ? st.succ[i]/st.counts[i] : 0;
+    if(v > bv){ bv = v; best = i; }
+  }
+  return best;
+}
+/* Shared reward tape: every algorithm meets the same world, round for round.
+   Uses a splitmix32 finaliser — seeding mulberry32 per draw would correlate
+   neighbouring rounds, because its first output barely moves with its seed. */
+function hash01(x){
+  x = (x + 0x9e3779b9) | 0;
+  x = Math.imul(x ^ (x >>> 16), 0x21f0aaad);
+  x = Math.imul(x ^ (x >>> 15), 0x735a2d97);
+  return ((x ^ (x >>> 15)) >>> 0) / 4294967296;
+}
+function bdReward(t, arm){
+  return hash01((Math.imul(BD.seed, 0x9e3779b1) ^ Math.imul(t + 1, 0x85ebca6b) ^ Math.imul(arm + 1, 0xc2b2ae35)) | 0)
+         < BD.arms[arm].mu ? 1 : 0;
+}
+function bdPull(st, algo, par, rnd){
+  var a = bdChoose(st, algo, par, rnd);
+  var r = bdReward(st.t, a);
+  st.counts[a]++; st.succ[a] += r; st.t++;
+  st.regret += bdBestMu() - BD.arms[a].mu;
+  st.hist.push([st.t, st.regret]);
+  return a;
+}
+function bdSimulate(algo, par, T){
+  var st = bdNewState(), rnd = mulberry32(BD.seed ^ 0x5bf03635);
+  for(var i=0;i<T;i++) bdPull(st, algo, par, rnd);
+  return st;
+}
+var bdRnd = mulberry32(BD.seed ^ 0x5bf03635);
+function bdPar(){
+  var v = +$('#bdPar').value;
+  return BD.algo === 'ucb' ? 0.05 + v*2.95 : v;
+}
+function drawBD(){
+  var par = bdPar();
+  $('#bdParLab').innerHTML = BD.algo === 'eps' ? 'Exploration ε' :
+                             BD.algo === 'ucb' ? 'Confidence multiplier c' : 'Prior — Beta(1,1), uniform';
+  $('#bdParOut').textContent = BD.algo === 'ts' ? 'no knob' :
+                               (BD.algo === 'ucb' ? 'c = ' + fmt(par,2) : 'ε = ' + fmt(par,2));
+  $('#bdPar').disabled = (BD.algo === 'ts');
+  $('#bdTOut').textContent = Math.round(+$('#bdT').value) + ' rounds';
+
+  var st = BD.live, K = BD.arms.length, i;
+  $('#bdN').textContent = st.t;
+  $('#bdRg').textContent = fmt(st.regret,1);
+  var bestArm = 0;
+  for(i=1;i<K;i++) if(BD.arms[i].mu > BD.arms[bestArm].mu) bestArm = i;
+  $('#bdBest').textContent = st.t ? fmt(100*st.counts[bestArm]/st.t,1) + '%' : '—';
+
+  var series = [], ymax = 0.2;
+  for(i=0;i<K;i++){
+    var a = 1 + st.succ[i], b = 1 + (st.counts[i] - st.succ[i]), pts = [];
+    for(var x=1;x<400;x++){
+      var xx = x/400, d = betaPdf(xx, a, b);
+      if(isFinite(d)){ pts.push([xx, d]); if(d > ymax) ymax = d; }
+    }
+    series.push({ type:'line', pts:pts, color:BD.arms[i].c, width:1.9 });
+  }
+  ymax = Math.min(ymax*1.08, 45);
+  var marks = '';
+  svgChart($('#bdPost'), {
+    W:620, H:230, xmin:0, xmax:0.75, ymin:0, ymax:ymax,
+    xticks:ticks(0, 0.75, 5, 2), yticks:ticks(0, ymax, 3, 0),
+    xlabel:'success rate', ylabel:'posterior density', series:series
+  });
+  var g = { X0:46, X1:606, Y0:200, Y1:16 };
+  for(i=0;i<K;i++){
+    var mx = g.X0 + (BD.arms[i].mu/0.75)*(g.X1-g.X0);
+    marks += '<line x1="'+mx+'" x2="'+mx+'" y1="'+g.Y1+'" y2="'+g.Y0+'" stroke="'+BD.arms[i].c+
+             '" stroke-dasharray="2 4" stroke-opacity="0.55"/>';
+  }
+  marks += '<text x="600" y="28" text-anchor="end" font-size="9.5">dashed = true rate (hidden from the algorithm)</text>';
+  $('#bdPost').insertAdjacentHTML('beforeend', marks);
+
+  var rs = [], rmax = 1;
+  function addReg(h, c, dash){
+    if(!h || h.length < 2) return;
+    for(var q=0;q<h.length;q++) if(h[q][1] > rmax) rmax = h[q][1];
+    rs.push({ type:'line', pts:h, color:c, width:2, dash:dash });
+  }
+  if(BD.cmp){
+    addReg(BD.cmp.eps.hist, '#ffa53d');
+    addReg(BD.cmp.ucb.hist, '#a98bff');
+    addReg(BD.cmp.ts.hist,  '#5fe3a4');
+  } else {
+    addReg(st.hist, '#45d9ef');
+  }
+  var xmaxR = BD.cmp ? BD.cmp.T : Math.max(20, st.t);
+  svgChart($('#bdReg'), {
+    W:620, H:210, xmin:0, xmax:xmaxR, ymin:0, ymax:rmax*1.1,
+    xticks:ticks(0, xmaxR, 5, 0), yticks:ticks(0, rmax*1.1, 4, 1),
+    xlabel:'rounds', ylabel:'cumulative regret', series:rs,
+    extra: BD.cmp
+      ? '<text x="56" y="30" fill="#ffa53d" font-size="10">ε-greedy '+fmt(BD.cmp.eps.regret,1)+'</text>'+
+        '<text x="56" y="44" fill="#a98bff" font-size="10">UCB1 '+fmt(BD.cmp.ucb.regret,1)+'</text>'+
+        '<text x="56" y="58" fill="#5fe3a4" font-size="10">Thompson '+fmt(BD.cmp.ts.regret,1)+'</text>'
+      : '<text x="56" y="30" fill="#45d9ef" font-size="10">live run</text>'
+  });
+
+  var rows = '';
+  for(i=0;i<K;i++){
+    var aa = 1 + st.succ[i], bb = 1 + (st.counts[i] - st.succ[i]);
+    rows += '<tr'+(i===bestArm?' class="hi"':'')+'><td><span style="color:'+BD.arms[i].c+'">■</span> '+
+            esc(BD.arms[i].name)+'</td><td>'+fmt(BD.arms[i].mu,3)+'</td><td>'+st.counts[i]+'</td><td>'+
+            (st.counts[i] ? fmt(st.succ[i]/st.counts[i],3) : '—')+'</td><td>Beta('+aa+','+bb+')</td></tr>';
+  }
+  $('#bdTbl').querySelector('tbody').innerHTML = rows;
+}
+segGroup($('#bdAlgo'), function(v){
+  BD.algo = v;
+  $('#bdPar').value = (v === 'ucb') ? (1 - 0.05)/2.95 : 0.1;
+  bdResetLive(); drawBD();
+});
+$('#bdPar').addEventListener('input', function(){ bdResetLive(); drawBD(); });
+$('#bdT').addEventListener('input', drawBD);
+$('#bdStep').addEventListener('click', function(){ BD.cmp = null; bdPull(BD.live, BD.algo, bdPar(), bdRnd); drawBD(); });
+$('#bdStep50').addEventListener('click', function(){
+  BD.cmp = null;
+  for(var i=0;i<50;i++) bdPull(BD.live, BD.algo, bdPar(), bdRnd);
+  drawBD();
+});
+$('#bdRun').addEventListener('click', function(){
+  BD.cmp = null;
+  BD.live = bdSimulate(BD.algo, bdPar(), Math.round(+$('#bdT').value));
+  bdRnd = mulberry32(BD.seed ^ 0x5bf03635);
+  drawBD();
+});
+$('#bdCmp').addEventListener('click', function(){
+  var T = Math.round(+$('#bdT').value);
+  var epsPar = BD.algo === 'eps' ? bdPar() : 0.1;
+  var ucbPar = BD.algo === 'ucb' ? bdPar() : 1;
+  BD.cmp = { T:T, eps:bdSimulate('eps', epsPar, T), ucb:bdSimulate('ucb', ucbPar, T), ts:bdSimulate('ts', 0, T) };
+  BD.live = BD.cmp[BD.algo];
+  drawBD();
+});
+$('#bdReset').addEventListener('click', function(){
+  $('#bdPar').value = 0.1; $('#bdT').value = 800;
+  BD.algo = 'eps';
+  $$('button', $('#bdAlgo')).forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === 'eps')); });
+  BD.seed = 23; bdBuild(); bdRnd = mulberry32(BD.seed ^ 0x5bf03635); drawBD();
+});
+$('#bdReseed').addEventListener('click', function(){
+  BD.seed = (BD.seed*48271 + 13) % 2147483647;
+  bdBuild(); bdRnd = mulberry32(BD.seed ^ 0x5bf03635); drawBD();
+});
+
+/* =====================================================================
+   08 — MMR RE-RANKING
+   ===================================================================== */
+var MMR = { step:8, cand:[], sim:[] };
+function mmrCandidates(){
+  var all = ITEMS.map(function(it){
+    var ps = rkProbs(it), sc = 0;
+    for(var a=0;a<ACTIONS.length;a++) sc += RKW[a]*ps[a];
+    return { it:it, sc:sc };
+  }).sort(function(a,b){ return b.sc - a.sc; });
+  var rows = all.slice(0, 12), mx = rows.length ? rows[0].sc : 1, i, j;
+  var cand = rows.map(function(r){ return { it:r.it, rel: mx > 1e-9 ? r.sc/mx : 0, raw:r.sc }; });
+  var sim = [];
+  for(i=0;i<cand.length;i++){
+    sim.push([]);
+    for(j=0;j<cand.length;j++) sim[i].push(cosSim(cand[i].it.v, cand[j].it.v));
+  }
+  return { cand:cand, sim:sim };
+}
+function mmrSelect(cand, sim, lam, n){
+  var chosen = [], used = new Array(cand.length).fill(false), i, j;
+  for(var s=0;s<n && s<cand.length;s++){
+    var best = -1, bv = -Infinity, bsim = 0;
+    for(i=0;i<cand.length;i++){
+      if(used[i]) continue;
+      var mxs = 0;
+      for(j=0;j<chosen.length;j++) mxs = Math.max(mxs, sim[i][chosen[j].i]);
+      var v = lam*cand[i].rel - (1-lam)*mxs;
+      if(v > bv){ bv = v; best = i; bsim = mxs; }
+    }
+    if(best < 0) break;
+    used[best] = true;
+    chosen.push({ i:best, v:bv, maxSim:bsim });
+  }
+  return chosen;
+}
+function drawMMR(){
+  var lam = +$('#mmrL').value, R = mmrCandidates();
+  MMR.cand = R.cand; MMR.sim = R.sim;
+  $('#mmrLOut').textContent = 'λ = ' + fmt(lam,2) + (lam === 1 ? ' (plain top-k)' : lam === 0 ? ' (pure novelty)' : '');
+  var n = clamp(MMR.step, 1, 8);
+  var chosen = mmrSelect(R.cand, R.sim, lam, n), h = '', relSum = 0;
+  var counts = new Array(ND).fill(0);
+  chosen.forEach(function(c, idx){
+    var it = R.cand[c.i].it;
+    relSum += R.cand[c.i].rel;
+    counts[it.topic]++;
+    h += '<li class="fcard'+(MMR.step < 8 && idx === n-1 ? ' new' : '')+'" data-id="'+it.id+'">'+
+         '<span class="rank">'+(idx+1)+'</span>'+
+         '<span class="ttl">'+esc(it.title)+
+         '<span class="meta">'+topicChip(it.topic)+
+         '<span class="tchip">rel '+fmt(R.cand[c.i].rel,2)+'</span>'+
+         '<span class="tchip">max sim '+fmt(c.maxSim,2)+'</span></span></span>'+
+         '<span class="sc">'+fmt(c.v,3)+'<small>MMR</small></span></li>';
+  });
+  if(MMR.step < 8) h += '<li class="fcard" style="opacity:.45;border-style:dashed" data-id="ghost">'+
+    '<span class="rank">'+(n+1)+'</span><span class="ttl">next pick — press “Step selection”</span><span class="sc"></span></li>';
+  flipList($('#mmrFeed'), h);
+
+  var tot = chosen.length, ps = [], distinct = 0;
+  for(var i=0;i<ND;i++){ if(counts[i]) distinct++; if(counts[i]) ps.push(counts[i]/tot); }
+  var H = 0;
+  ps.forEach(function(p){ H -= p*Math.log2(p); });
+  $('#mmrRel').textContent = tot ? fmt(relSum/tot,3) : '—';
+  $('#mmrEnt').textContent = fmt(H,2);
+  $('#mmrTop').textContent = distinct + ' / 6';
+
+  var N = R.cand.length, cell = 300/N, s = '', chosenIdx = {};
+  chosen.forEach(function(c){ chosenIdx[c.i] = 1; });
+  for(var a=0;a<N;a++){
+    for(var b=0;b<N;b++){
+      var v = clamp(R.sim[a][b], 0, 1);
+      s += '<rect x="'+(24 + b*cell)+'" y="'+(24 + a*cell)+'" width="'+(cell-1)+'" height="'+(cell-1)+
+           '" fill="rgba(69,217,239,'+(0.06 + 0.9*v*v).toFixed(3)+')"/>';
+    }
+    var col = chosenIdx[a] ? '#ffa53d' : '#3a4256';
+    s += '<rect x="12" y="'+(24 + a*cell)+'" width="8" height="'+(cell-1)+'" fill="'+col+'"/>';
+    s += '<rect x="'+(24 + a*cell)+'" y="12" width="'+(cell-1)+'" height="8" fill="'+col+'"/>';
+  }
+  s += '<text x="24" y="336" font-size="9">amber ticks = chosen by MMR · brighter cell = more similar pair</text>';
+  $('#mmrSim').innerHTML = s;
+}
+window.__mmrDraw = drawMMR;
+$('#mmrL').addEventListener('input', drawMMR);
+$('#mmrStep').addEventListener('click', function(){ MMR.step = MMR.step >= 8 ? 1 : MMR.step + 1; drawMMR(); });
+$('#mmrReset').addEventListener('click', function(){ MMR.step = 8; $('#mmrL').value = 1; drawMMR(); });
+
+/* =====================================================================
+   09 — FEEDBACK LOOPS
+   ===================================================================== */
+var DY = { t:null, views:null, hist:[], round:0, playing:false, raf:0, seed:31, rnd:null,
+           recent:[], pool:[], entNow:0 };
+/* A wider catalogue than the Feed Lab's 30, so the feed can actually move as taste drifts. */
+function dyBuildPool(){
+  var rnd = mulberry32(DY.seed ^ 0x1d872b41), out = [], i, j;
+  for(i=0;i<120;i++){
+    var v = new Array(ND).fill(0), prim = i % ND;
+    v[prim] = 1;
+    var sec = Math.floor(rnd()*ND); if(sec === prim) sec = (sec+1)%ND;
+    v[sec] = 0.15 + rnd()*0.55;
+    var thr = Math.floor(rnd()*ND);
+    if(thr !== prim && thr !== sec) v[thr] = rnd()*0.3;
+    var n = norm(v);
+    for(j=0;j<ND;j++) v[j] /= n;
+    out.push({ v:v, topic:prim });
+  }
+  DY.pool = out;
+}
+function dyReset(){
+  if(DY.raf) cancelAnimationFrame(DY.raf);
+  DY.playing = false;
+  var pb = $('#dyPlay'); if(pb) pb.textContent = 'Play';
+  dyBuildPool();
+  DY.t = taste.slice();
+  DY.views = new Array(DY.pool.length).fill(0);
+  DY.hist = []; DY.round = 0; DY.recent = []; DY.entNow = 0;
+  DY.rnd = mulberry32(DY.seed);
+  drawDY();
+}
+function dyRound(){
+  var al = +$('#dyAl').value, be = +$('#dyBe').value, de = +$('#dyDe').value,
+      eps = +$('#dyEps').value, wNov = +$('#dyNov').value, m = 5, i, j;
+  var maxV = 1;
+  for(i=0;i<DY.views.length;i++) if(DY.views[i] > maxV) maxV = DY.views[i];
+  var scored = [];
+  for(i=0;i<DY.pool.length;i++){
+    var rel = dot(DY.t, DY.pool[i].v);
+    var pop = Math.log(1 + DY.views[i])/Math.log(1 + maxV);
+    /* novelty = 1 − similarity to the most similar of the last 5 things shown */
+    var mxs = 0;
+    for(j=0;j<DY.recent.length;j++) mxs = Math.max(mxs, cosSim(DY.pool[i].v, DY.pool[DY.recent[j]].v));
+    var nov = DY.recent.length ? 1 - mxs : 1;
+    scored.push({ i:i, s:(1-be)*rel + be*pop + wNov*nov, rel:rel, nov:nov });
+  }
+  scored.sort(function(a,b){ return b.s - a.s; });
+  var shown = [];
+  for(i=0;i<m;i++){
+    if(DY.rnd() < eps) shown.push(scored[Math.floor(DY.rnd()*scored.length)]);
+    else shown.push(scored[i]);
+  }
+  var engaged = 0, novSum = 0, counts = new Array(ND).fill(0), delta = new Array(ND).fill(0);
+  for(i=0;i<shown.length;i++){
+    var it = DY.pool[shown[i].i];
+    DY.views[shown[i].i]++;
+    counts[it.topic]++;
+    novSum += shown[i].nov;
+    DY.recent.push(shown[i].i);
+    if(DY.recent.length > 5) DY.recent.shift();
+    var pe = sigmoid(7*(shown[i].rel - 0.45));
+    if(DY.rnd() < pe){ engaged++; for(j=0;j<ND;j++) delta[j] += it.v[j]; }
+  }
+  var flat = 1/Math.sqrt(ND);
+  for(j=0;j<ND;j++) DY.t[j] = Math.max(0, (1-de)*DY.t[j] + de*flat + al*delta[j]/m);
+  var n = norm(DY.t);
+  if(n < 1e-6) for(j=0;j<ND;j++) DY.t[j] = 1/Math.sqrt(ND);
+  else for(j=0;j<ND;j++) DY.t[j] /= n;
+
+  var ps = counts.map(function(c){ return c/m; });
+  DY.round++;
+  DY.hist.push({ t:DY.round, share:ps, eng:engaged/m, sat:novSum/m });
+  if(DY.hist.length > 400) DY.hist.shift();
+}
+function drawDY(){
+  $('#dyAlOut').textContent  = 'α = ' + fmt(+$('#dyAl').value,2);
+  $('#dyBeOut').textContent  = 'β = ' + fmt(+$('#dyBe').value,2);
+  $('#dyDeOut').textContent  = 'δ = ' + fmt(+$('#dyDe').value,3);
+  $('#dyEpsOut').textContent = 'ε = ' + fmt(+$('#dyEps').value,2);
+  $('#dyNovOut').textContent = 'w = ' + fmt(+$('#dyNov').value,2);
+  $('#dyT').textContent = DY.round;
+
+  var H = DY.hist, W = 620, Hh = 230, i, j;
+  var xmax = Math.max(40, H.length);
+  var sm = [], win = 6;
+  for(i=0;i<H.length;i++){
+    var acc = new Array(ND).fill(0), n = 0;
+    for(j=Math.max(0,i-win+1); j<=i; j++){ for(var q=0;q<ND;q++) acc[q] += H[j].share[q]; n++; }
+    sm.push(acc.map(function(v){ return v/n; }));
+  }
+  var s = '<rect x="46" y="16" width="560" height="170" fill="#0a0c12" stroke="#242a38"/>';
+  if(sm.length > 1){
+    var cum = new Array(sm.length).fill(0);
+    for(var tIdx=0;tIdx<ND;tIdx++){
+      var d = '';
+      for(i=0;i<sm.length;i++){
+        var x = 46 + (i/(xmax-1))*560, y = 186 - cum[i]*170;
+        d += (i?'L':'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+      }
+      for(i=sm.length-1;i>=0;i--){
+        var x2 = 46 + (i/(xmax-1))*560, y2 = 186 - (cum[i] + sm[i][tIdx])*170;
+        d += 'L' + x2.toFixed(1) + ' ' + y2.toFixed(1);
+      }
+      d += 'Z';
+      s += '<path d="'+d+'" fill="'+TOPICS[tIdx].c+'" opacity="0.78"/>';
+      for(i=0;i<sm.length;i++) cum[i] += sm[i][tIdx];
+    }
+  }
+  s += '<text x="6" y="12" font-size="9">TOPIC SHARE OF THE FEED (6-round moving average, 120-item catalogue)</text>';
+  for(i=0;i<ND;i++)
+    s += '<rect x="'+(50 + i*92)+'" y="196" width="8" height="8" fill="'+TOPICS[i].c+'"/>'+
+         '<text x="'+(62 + i*92)+'" y="204" font-size="9">'+TOPICS[i].name+'</text>';
+  var av = $('#dyArea');
+  av.setAttribute('viewBox','0 0 '+W+' '+Hh);
+  av.innerHTML = s;
+
+  var eng = [], sat = [], ent = [];
+  for(i=0;i<H.length;i++){
+    var a0 = Math.max(0, i-5), e = 0, sa = 0, c = 0;
+    for(j=a0;j<=i;j++){ e += H[j].eng; sa += H[j].sat; c++; }
+    eng.push([H[i].t, e/c]); sat.push([H[i].t, sa/c]);
+    var hw = 0;
+    for(var q=0;q<ND;q++) if(sm[i][q] > 1e-9) hw -= sm[i][q]*Math.log2(sm[i][q]);
+    ent.push([H[i].t, hw/Math.log2(ND)]);
+    DY.entNow = hw;
+  }
+  svgChart($('#dyLines'), {
+    W:620, H:210, xmin:0, xmax:xmax, ymin:0, ymax:1.05,
+    xticks:ticks(0, xmax, 5, 0), yticks:ticks(0, 1, 4, 2),
+    xlabel:'round', ylabel:'rate (smoothed)',
+    series:[
+      { type:'line', pts:eng, color:'#45d9ef', width:2 },
+      { type:'line', pts:sat, color:'#5fe3a4', width:2 },
+      { type:'line', pts:ent, color:'#ffa53d', width:1.6, dash:'4 4' }
+    ],
+    extra:'<text x="600" y="28" text-anchor="end" fill="#45d9ef" font-size="10">engagement</text>'+
+          '<text x="600" y="42" text-anchor="end" fill="#5fe3a4" font-size="10">novelty satisfaction</text>'+
+          '<text x="600" y="56" text-anchor="end" fill="#ffa53d" font-size="10">topic entropy over 6 rounds (normalised)</text>'
+  });
+
+  var last = H.length ? H[H.length-1] : null;
+  $('#dyEng').textContent = last ? fmt(eng[eng.length-1][1],2) : '—';
+  $('#dySat').textContent = last ? fmt(sat[sat.length-1][1],2) : '—';
+  $('#dyEnt').textContent = last ? fmt(DY.entNow,2) : '—';
+  var reach = 0;
+  for(i=0;i<DY.views.length;i++) if(DY.views[i] > 0) reach++;
+  $('#dyGini').textContent = DY.round ? String(reach) : '—';
+}
+$('#dyStep').addEventListener('click', function(){ for(var i=0;i<10;i++) dyRound(); drawDY(); });
+$('#dyPlay').addEventListener('click', function(){
+  DY.playing = !DY.playing;
+  this.textContent = DY.playing ? 'Pause' : 'Play';
+  if(DY.playing) dyLoop(); else if(DY.raf) cancelAnimationFrame(DY.raf);
+});
+function dyLoop(){
+  if(!DY.playing) return;
+  for(var i=0;i<2;i++) dyRound();
+  drawDY();
+  if(DY.round > 400){ DY.playing = false; $('#dyPlay').textContent = 'Play'; return; }
+  DY.raf = requestAnimationFrame(dyLoop);
+}
+['dyAl','dyBe','dyDe','dyEps','dyNov'].forEach(function(id){
+  $('#'+id).addEventListener('input', drawDY);
+});
+$('#dyReset').addEventListener('click', function(){
+  $('#dyAl').value = 0.18; $('#dyBe').value = 0.25; $('#dyDe').value = 0.05;
+  $('#dyEps').value = 0.05; $('#dyNov').value = 0; DY.seed = 31; dyReset();
+});
+$('#dyReseed').addEventListener('click', function(){ DY.seed = (DY.seed*48271 + 5) % 2147483647; dyReset(); });
+
+/* =====================================================================
+   10a — RANKING METRICS
+   ===================================================================== */
+var EV_BASE = [
+  { n:'Sourdough, day four',    g:3 }, { n:'Cat meets robot vacuum', g:0 },
+  { n:'Heel hook, explained',   g:2 }, { n:'Tape wobble by hand',    g:1 },
+  { n:'60-second garlic noodles', g:3 }, { n:'Slam compilation',     g:0 },
+  { n:'The birthday problem',   g:1 }, { n:'Reading a boulder problem', g:2 },
+  { n:'Eurorack on a budget',   g:0 }, { n:'Three cats, one sunbeam', g:1 }
+];
+var EV = { list:null };
+function evReset(){
+  EV.list = EV_BASE.map(function(x, i){ return { n:x.n, g:x.g, id:i }; });
+  var rnd = mulberry32(99);
+  for(var i=EV.list.length-1;i>0;i--){
+    var j = Math.floor(rnd()*(i+1)), t = EV.list[i]; EV.list[i] = EV.list[j]; EV.list[j] = t;
+  }
+  drawEV();
+}
+function drawEV(){
+  var k = +$('#evK').value, L = EV.list, i;
+  $('#evKOut').textContent = 'k = ' + k;
+  var h = '';
+  for(i=0;i<L.length;i++){
+    var inK = i < k;
+    h += '<li class="fcard" data-id="'+L[i].id+'" style="'+(inK?'':'opacity:.42')+
+         (inK?'border-color:#36405a':'')+'">'+
+         '<span class="rank">'+(i+1)+'</span>'+
+         '<span class="ttl">'+esc(L[i].n)+'</span>'+
+         '<span style="display:flex;gap:5px;align-items:center">'+
+         '<button class="sm" data-grade="'+i+'" style="font-family:var(--mono);min-width:54px" '+
+         'aria-label="relevance grade of '+esc(L[i].n)+' is '+L[i].g+', click to change">rel '+L[i].g+'</button>'+
+         '<button class="sm" data-up="'+i+'" aria-label="move '+esc(L[i].n)+' up"'+(i===0?' disabled':'')+'>▲</button>'+
+         '<button class="sm" data-down="'+i+'" aria-label="move '+esc(L[i].n)+' down"'+(i===L.length-1?' disabled':'')+'>▼</button>'+
+         '</span></li>';
+  }
+  flipList($('#evList'), h);
+
+  var relTotal = 0;
+  for(i=0;i<L.length;i++) if(L[i].g > 0) relTotal++;
+  var hits = 0, dcg = 0, apSum = 0, apHits = 0;
+  var terms = [];
+  for(i=0;i<k;i++){
+    if(L[i].g > 0){ hits++; apHits++; apSum += apHits/(i+1); }
+    var gain = (Math.pow(2, L[i].g) - 1)/Math.log2(i + 2);
+    dcg += gain;
+    if(i < 5) terms.push('(2<sup>'+L[i].g+'</sup>−1)/log₂('+(i+2)+') = '+fmt(gain,3));
+  }
+  var ideal = L.map(function(x){ return x.g; }).sort(function(a,b){ return b-a; });
+  var idcg = 0;
+  for(i=0;i<k;i++) idcg += (Math.pow(2, ideal[i]) - 1)/Math.log2(i + 2);
+  var apAll = 0, hAll = 0;
+  for(i=0;i<L.length;i++) if(L[i].g > 0){ hAll++; apAll += hAll/(i+1); }
+  $('#evP').textContent = fmt(hits/k, 3);
+  $('#evR').textContent = relTotal ? fmt(hits/relTotal, 3) : '—';
+  $('#evN').textContent = idcg > 1e-9 ? fmt(dcg/idcg, 3) : '—';
+  $('#evA').textContent = hAll ? fmt(apAll/hAll, 3) : '—';
+  $('#evWork').innerHTML =
+    '<span class="cm">// DCG@'+k+' terms, first five</span><br>' + terms.join('<br>') +
+    (k > 5 ? '<br><span class="cm">…</span>' : '') +
+    '<br>DCG@'+k+' = <b>'+fmt(dcg,3)+'</b> &nbsp; IDCG@'+k+' = <i>'+fmt(idcg,3)+'</i>' +
+    '<br>NDCG@'+k+' = '+fmt(dcg,3)+' / '+fmt(idcg,3)+' = <b>'+(idcg>1e-9?fmt(dcg/idcg,3):'—')+'</b>';
+}
+$('#evList').addEventListener('click', function(e){
+  var b = e.target.closest('button');
+  if(!b) return;
+  var i;
+  if(b.hasAttribute('data-up')){
+    i = +b.getAttribute('data-up');
+    if(i > 0){ var t = EV.list[i]; EV.list[i] = EV.list[i-1]; EV.list[i-1] = t; }
+    drawEV();
+    var f1 = $('#evList').querySelector('[data-up="'+Math.max(0,i-1)+'"]'); if(f1) f1.focus();
+  } else if(b.hasAttribute('data-down')){
+    i = +b.getAttribute('data-down');
+    if(i < EV.list.length-1){ var u = EV.list[i]; EV.list[i] = EV.list[i+1]; EV.list[i+1] = u; }
+    drawEV();
+    var f2 = $('#evList').querySelector('[data-down="'+Math.min(EV.list.length-1,i+1)+'"]'); if(f2) f2.focus();
+  } else if(b.hasAttribute('data-grade')){
+    i = +b.getAttribute('data-grade');
+    EV.list[i].g = (EV.list[i].g + 1) % 4;
+    drawEV();
+    var f3 = $('#evList').querySelector('[data-grade="'+i+'"]'); if(f3) f3.focus();
+  }
+});
+$('#evK').addEventListener('input', drawEV);
+$('#evPerf').addEventListener('click', function(){
+  EV.list.sort(function(a,b){ return b.g - a.g; });
+  drawEV();
+});
+$('#evShuf').addEventListener('click', function(){
+  var rnd = mulberry32((Date.now() & 0xffff) + 1);
+  for(var i=EV.list.length-1;i>0;i--){
+    var j = Math.floor(rnd()*(i+1)), t = EV.list[i]; EV.list[i] = EV.list[j]; EV.list[j] = t;
+  }
+  drawEV();
+});
+$('#evReset').addEventListener('click', function(){ $('#evK').value = 5; evReset(); });
+
+/* =====================================================================
+   10b — A/B TESTING
+   ===================================================================== */
+var AB = { seed:77, rnd:null, runs:[], sig:0, last:null, job:null };
+function abN(){ return Math.round(logMap(+$('#abN').value, 100, 20000)); }
+function abOne(){
+  var pA = +$('#abP').value, lift = +$('#abLift').value, pB = clamp(pA*(1+lift), 0, 1), n = abN(), i;
+  var a = 0, b = 0;
+  for(i=0;i<n;i++){ if(AB.rnd() < pA) a++; if(AB.rnd() < pB) b++; }
+  var phA = a/n, phB = b/n;
+  var se = Math.sqrt(phA*(1-phA)/n + phB*(1-phB)/n);
+  var z = se > 1e-12 ? (phB - phA)/se : 0;
+  var pv = 2*(1 - Phi(Math.abs(z)));
+  var rec = { phA:phA, phB:phB, z:z, pv:pv, rel: phA > 0 ? (phB-phA)/phA : 0 };
+  AB.runs.push(rec);
+  if(AB.runs.length > 4000) AB.runs.shift();
+  if(pv < 0.05) AB.sig++;
+  AB.last = rec;
+  return rec;
+}
+function drawAB(){
+  var pA = +$('#abP').value, lift = +$('#abLift').value, n = abN();
+  $('#abPOut').textContent    = fmt(100*pA,1) + '%';
+  $('#abLiftOut').textContent = (lift >= 0 ? '+' : '') + fmt(100*lift,1) + '%  →  p_B = ' + fmt(100*pA*(1+lift),2) + '%';
+  $('#abNOut').textContent    = human(n);
+  if(AB.last){
+    $('#abObs').textContent = fmt(100*AB.last.phA,2) + '% / ' + fmt(100*AB.last.phB,2) + '%';
+    $('#abZ').textContent   = fmt(AB.last.z,2);
+    $('#abPv').textContent  = AB.last.pv < 0.0001 ? '<0.0001' : fmt(AB.last.pv,4);
+    $('#abPv').className    = 'v ' + (AB.last.pv < 0.05 ? 'good' : 'you');
+  } else {
+    $('#abObs').textContent = '—'; $('#abZ').textContent = '—'; $('#abPv').textContent = '—';
+  }
+  $('#abSig').textContent  = AB.runs.length ? fmt(100*AB.sig/AB.runs.length,1) + '%' : '—';
+  $('#abSigN').textContent = 'of ' + AB.runs.length + ' runs';
+
+  /* axis spans ±3.2 standard errors of the relative lift, so nothing piles into the end bins */
+  var seRel = Math.sqrt(2*(1-pA)/Math.max(1e-9, pA*n));
+  var lim = Math.max(0.01, Math.abs(lift) + 3.2*seRel), BINS = 41;
+  var hist = new Float64Array(BINS), i, mx = 1;
+  AB.runs.forEach(function(r){
+    var bi = Math.floor((clamp(r.rel, -lim, lim) + lim)/(2*lim)*BINS);
+    hist[Math.min(BINS-1, Math.max(0, bi))]++;
+  });
+  for(i=0;i<BINS;i++) if(hist[i] > mx) mx = hist[i];
+  var pts = [];
+  for(i=0;i<BINS;i++) pts.push([-lim + (i+0.5)*(2*lim/BINS), hist[i]]);
+  svgChart($('#abSvg'), {
+    W:620, H:260, xmin:-lim, xmax:lim, ymin:0, ymax:mx*1.12,
+    xticks:ticks(-lim, lim, 4, lim<0.1?3:2), yticks:ticks(0, mx*1.12, 4, 0),
+    xlabel:'observed relative lift', ylabel:'experiments',
+    series:[{ type:'bars', pts:pts, color:'#45d9ef', opacity:0.8, bw:Math.max(2, 560/BINS - 1.5) }],
+    extra:'<text x="600" y="28" text-anchor="end" fill="#ffa53d" font-size="10">true lift '+
+          (lift>=0?'+':'')+fmt(100*lift,1)+'% (amber line)</text>'
+  });
+  var X0 = 46, X1 = 606;
+  var tx = X0 + (lift + lim)/(2*lim)*(X1 - X0);
+  $('#abSvg').insertAdjacentHTML('beforeend',
+    '<line x1="'+tx+'" x2="'+tx+'" y1="16" y2="230" stroke="#ffa53d" stroke-width="1.6" stroke-dasharray="4 3"/>');
+}
+$('#abOne').addEventListener('click', function(){ abOne(); drawAB(); });
+$('#abMany').addEventListener('click', function(){
+  var btn = this, left = 400;
+  btn.disabled = true;
+  function chunk(){
+    for(var i=0;i<25 && left>0;i++, left--) abOne();
+    drawAB();
+    if(left > 0) requestAnimationFrame(chunk);
+    else btn.disabled = false;
+  }
+  chunk();
+});
+['abP','abLift','abN'].forEach(function(id){
+  $('#'+id).addEventListener('input', function(){ AB.runs = []; AB.sig = 0; AB.last = null; drawAB(); });
+});
+function abReset(hard){
+  if(hard){ $('#abP').value = 0.12; $('#abLift').value = 0; $('#abN').value = 0.74; AB.seed = 77; }
+  AB.rnd = mulberry32(AB.seed); AB.runs = []; AB.sig = 0; AB.last = null; drawAB();
+}
+$('#abReset').addEventListener('click', function(){ abReset(true); });
+$('#abReseed').addEventListener('click', function(){ AB.seed = (AB.seed*48271 + 19) % 2147483647; abReset(false); });
+
+/* =====================================================================
+   NAV: scroll spy + progress
+   ===================================================================== */
+(function(){
+  var links = $$('nav.chips a'), secs = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); });
+  var prog = $('#prog'), ticking = false;
+  function upd(){
+    ticking = false;
+    var y = window.scrollY + window.innerHeight*0.32, best = 0, i;
+    for(i=0;i<secs.length;i++) if(secs[i] && secs[i].offsetTop <= y) best = i;
+    links.forEach(function(a, ix){ a.classList.toggle('on', ix === best); });
+    var h = document.body.scrollHeight - window.innerHeight;
+    prog.style.width = (h > 0 ? clamp(window.scrollY/h, 0, 1)*100 : 0) + '%';
+    var on = links[best];
+    if(on && on.offsetLeft !== undefined){
+      var nav = on.parentElement;
+      if(on.offsetLeft < nav.scrollLeft || on.offsetLeft + on.offsetWidth > nav.scrollLeft + nav.clientWidth)
+        nav.scrollTo({ left: Math.max(0, on.offsetLeft - 60), behavior: REDUCED ? 'auto' : 'smooth' });
+    }
+  }
+  window.addEventListener('scroll', function(){ if(!ticking){ ticking = true; requestAnimationFrame(upd); } }, { passive:true });
+  window.addEventListener('resize', upd);
+  if(!REDUCED) document.documentElement.style.scrollBehavior = 'smooth';
+  upd();
+})();
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+drawHUD();
+fdPick(); fdRender();
+drawFunnel();
+drawV2();
+runV3();
+a3Build(); drawA3();
+drawCF();
+mfReset(true);
+drawSig();
+buildWeightSliders(); drawRank();
+bdBuild(); drawBD();
+drawMMR();
+dyReset();
+evReset();
+abReset(true);
+
+})();
+</script>
+</body>
+</html>
