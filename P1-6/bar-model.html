@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en" data-theme="0">
+<html lang="th" data-theme="0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bar Model Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Mali:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 /* ============ THEME TOKENS ============ */
 :root{
@@ -22,6 +22,7 @@
   --screen-ink:#11120f;
   --dim:#8f9585;
   --ghost:#50554a;
+  --muted:#6b675e;
 
   --bw:4px;
   --bw-s:3px;
@@ -31,11 +32,17 @@
   --lo:inset 0 -5px 0 rgba(27,26,23,.16);
   --r:18px;
   --gap:24px;
-  --f-head:"Outfit",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"Share Tech Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* Outfit for Latin; Mali (a looped Thai face, the style Thai schools teach reading with) fills in Thai glyphs */
+  --f-head:"Outfit","Mali","Loma",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Share Tech Mono","Mali",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --micro-ls:.2em;
+  --micro-size:10.5px;
 }
 html[data-theme="1"]{ --bg:#aaa3b8; --hero:#7a3cf0; --accent:#ff7a1a; --secondary:#34d399; }
 html[data-theme="2"]{ --bg:#bdae92; --hero:#009e96; --accent:#ff4d6d; --secondary:#ffd23f; }
+/* Thai: no wide tracking (it pulls tone marks off their consonants), bigger micro text, taller lines */
+html:lang(th){ --micro-ls:.03em; --micro-size:12px; }
+html:lang(th) body{line-height:1.6}
 
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -56,11 +63,12 @@ button:disabled{cursor:not-allowed}
 .micro{
   font-family:var(--f-head);
   font-weight:800;
-  font-size:10.5px;
-  letter-spacing:.2em;
+  font-size:var(--micro-size);
+  letter-spacing:var(--micro-ls);
   text-transform:uppercase;
-  line-height:1;
+  line-height:1.1;
 }
+html:lang(th) .micro{line-height:1.35;font-weight:700}
 .mono{font-family:var(--f-mono)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
@@ -70,25 +78,25 @@ button:disabled{cursor:not-allowed}
   margin:0 auto;
   padding:var(--gap);
   display:grid;
-  grid-template-columns:250px minmax(0,1fr) 390px;
+  grid-template-columns:minmax(0,250px) minmax(0,1fr) minmax(0,390px);
   grid-template-areas:"top top top" "rail stage side";
   gap:var(--gap);
   align-items:start;
 }
+.app > *{min-width:0}
 .topbar{grid-area:top}
-.rail{grid-area:rail;display:grid;gap:var(--gap)}
-.stage{grid-area:stage;min-width:0}
-.side{grid-area:side;display:grid;gap:var(--gap);min-width:0}
+.rail{grid-area:rail;display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gap)}
+.stage{grid-area:stage}
+.side{grid-area:side;display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gap)}
+.rail > *, .side > *{min-width:0}
 
+/* tablets: rail on the left, device + question stacked on the right (no dead space under the device) */
 @media (max-width:1240px){
-  .app{grid-template-columns:240px minmax(0,1fr);grid-template-areas:"top top" "rail stage" "side side"}
-  .side{grid-template-columns:1fr 1fr}
-  .side .log-panel{grid-column:1 / -1}
+  .app{grid-template-columns:minmax(0,240px) minmax(0,1fr);grid-template-areas:"top top" "rail stage" "rail side"}
 }
 @media (max-width:860px){
   :root{--gap:18px}
   .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "side" "rail";padding:16px}
-  .side{grid-template-columns:minmax(0,1fr)}
   .rail{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 }
 
@@ -99,15 +107,17 @@ button:disabled{cursor:not-allowed}
   border:var(--bw) solid var(--ink);
   border-radius:var(--r);
   box-shadow:var(--hi),var(--lo),var(--shadow);
-  padding:26px 20px 20px;
+  padding:28px 20px 20px;
+  min-width:0;
 }
 .tag{
   position:absolute;
-  top:-13px;left:16px;
+  top:-14px;left:16px;
   background:var(--ink);
   color:var(--cream);
   border-radius:999px;
   padding:6px 12px 5px;
+  white-space:nowrap;
 }
 
 /* ============ TOP BAR ============ */
@@ -116,7 +126,7 @@ button:disabled{cursor:not-allowed}
   gap:18px 28px;
   padding:16px 20px;
 }
-.brand{display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
 .logo{
   width:54px;height:54px;flex:none;
   background:var(--hero);
@@ -131,7 +141,7 @@ h1{
   font-weight:900;
   font-size:clamp(22px,2.4vw,30px);
   letter-spacing:-.01em;
-  line-height:1;
+  line-height:1.15;
 }
 .brand .micro{margin-top:6px;color:#5d5a52}
 
@@ -147,6 +157,7 @@ h1{
 }
 .stat-row{display:flex;align-items:center;gap:10px}
 .stat strong{font-weight:900;font-size:24px;line-height:1}
+.stat .micro.note{color:var(--muted)}
 .swatches{display:flex;gap:8px}
 .swatch{
   width:38px;height:38px;padding:0;
@@ -160,6 +171,25 @@ h1{
 .swatch span:first-child{grid-row:1 / 3}
 .swatch:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
 .swatch[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:3px}
+
+/* language segmented switch */
+.langs{
+  display:flex;
+  border:var(--bw-s) solid var(--ink);
+  border-radius:999px;
+  background:var(--cream);
+  padding:3px;
+  gap:3px;
+  box-shadow:2px 2px 0 var(--ink);
+}
+.langs button{
+  border:0;border-radius:999px;
+  background:transparent;
+  padding:5px 12px 4px;
+  font-weight:900;font-size:14px;line-height:1.2;
+}
+.langs button[aria-pressed="true"]{background:var(--ink);color:var(--cream);box-shadow:inset 0 2px 0 rgba(255,255,255,.2)}
+.langs button:active{transform:translateY(1px)}
 
 .meter{display:flex;gap:4px}
 .seg{
@@ -189,6 +219,7 @@ h1{
 /* ============ BUTTONS ============ */
 .pill{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  max-width:100%;
   background:var(--cream);
   border:var(--bw) solid var(--ink);
   border-radius:999px;
@@ -199,17 +230,17 @@ h1{
   text-transform:uppercase;
   box-shadow:var(--hi),var(--lo),var(--shadow);
   transition:transform .06s,box-shadow .06s;
-  white-space:nowrap;
 }
+html:lang(th) .pill{letter-spacing:.02em;font-size:16px;padding:10px 22px 9px}
 .pill:active:not(:disabled){transform:translate(4px,4px);box-shadow:var(--hi),var(--lo),0 0 0 var(--ink)}
 .pill:disabled{opacity:.45}
-.pill .dot{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--ink);background:var(--hero)}
+.pill .dot{flex:none;width:12px;height:12px;border-radius:50%;border:2.5px solid var(--ink);background:var(--hero)}
 .pill.block{width:100%}
 .pill.glow .dot{animation:blink 1s steps(2) infinite}
 
 .choice{
   display:flex;align-items:center;gap:12px;
-  width:100%;
+  width:100%;min-width:0;
   text-align:left;
   background:var(--cream);
   border:var(--bw) solid var(--ink);
@@ -226,11 +257,12 @@ h1{
   border:var(--bw-s) solid var(--ink);
   box-shadow:inset 0 2px 0 rgba(255,255,255,.5);
 }
-.choice .sub{display:block;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b675e;margin-top:2px}
+.choice .sub{display:block;font-weight:700;font-size:12px;letter-spacing:var(--micro-ls);text-transform:uppercase;color:var(--muted);margin-top:2px}
+html:lang(th) .choice .sub{font-size:13.5px}
 .choice.wrong{background:var(--cream-2);opacity:.6}
 .choice.wrong .main{text-decoration:line-through;text-decoration-thickness:3px}
-.choices{display:grid;gap:12px}
-.choices.two{grid-template-columns:1fr 1fr}
+.choices{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .op-choice{justify-content:center;flex-direction:column;gap:4px;padding:16px 10px 14px;text-align:center}
 .op-choice .sym{
   width:46px;height:46px;border-radius:50%;
@@ -244,9 +276,9 @@ h1{
 @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 
 /* ============ LEFT RAIL ============ */
-.levels{display:grid;gap:10px}
+.levels{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 .lvl{
-  display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:12px;
+  display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;
   width:100%;text-align:left;
   background:var(--cream);
   border:var(--bw-s) solid var(--ink);
@@ -263,8 +295,8 @@ h1{
   display:grid;place-items:center;
   font-weight:900;font-size:20px;
 }
-.lvl .nm{font-weight:900;font-size:15px;line-height:1.1;display:block;white-space:nowrap}
-.lvl .ds{display:block;margin-top:4px;font-size:9.5px;letter-spacing:.12em;color:#6b675e;white-space:nowrap}
+.lvl .nm{font-weight:900;font-size:15px;line-height:1.2;display:block}
+.lvl .ds{display:block;margin-top:3px;color:var(--muted)}
 .lvl[aria-current="true"]{background:var(--ink);color:var(--cream)}
 .lvl[aria-current="true"] .num{background:var(--hero);color:var(--cream)}
 .lvl[aria-current="true"] .ds{color:#bdb8ab}
@@ -324,9 +356,9 @@ h1{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
   margin:0 18px 16px;
 }
-.plate-name{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.plate-name{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;min-width:0}
 .plate-name b{font-weight:900;font-size:20px;letter-spacing:.04em}
-.plate-name .micro{color:#6b675e}
+.plate-name .micro{color:var(--muted)}
 .knobs{display:flex;align-items:center;gap:12px}
 .power{width:14px;height:14px;border-radius:50%;background:var(--secondary);border:3px solid var(--ink);box-shadow:inset 0 2px 0 rgba(255,255,255,.7)}
 .knob{
@@ -356,7 +388,8 @@ h1{
   margin-bottom:6px;
   min-height:32px;
 }
-.status .blinker{width:10px;height:10px;border-radius:50%;background:var(--secondary);animation:blink 1.2s steps(2) infinite}
+html:lang(th) .status{letter-spacing:.02em;font-size:16px}
+.status .blinker{flex:none;width:10px;height:10px;border-radius:50%;background:var(--secondary);animation:blink 1.2s steps(2) infinite}
 @keyframes blink{50%{opacity:.15}}
 #model svg{display:block;width:100%;height:auto}
 
@@ -370,6 +403,7 @@ h1{
   box-shadow:inset 0 0 0 2px #2c3028;
 }
 .readout .lbl{display:flex;align-items:center;gap:7px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.readout .lbl .t{overflow:hidden;text-overflow:ellipsis}
 .readout .lbl i{flex:none;width:10px;height:10px;border-radius:3px;border:2px solid var(--ink)}
 .readout .val{
   display:block;margin-top:6px;
@@ -406,9 +440,12 @@ h1{
 .chip-tab.ghost{fill:var(--ghost)}
 .chip-tab{stroke:var(--ink);stroke-width:2}
 .chip-name{font:900 17px var(--f-head);fill:var(--ink)}
-.chip-micro{font:800 8.5px var(--f-head);letter-spacing:.18em;fill:#6b675e}
+.chip-micro{font:800 8.5px var(--f-head);letter-spacing:.18em;fill:var(--muted)}
+html:lang(th) .chip-name{font-size:19px;font-weight:700}
+html:lang(th) .chip-micro{font-size:11.5px;letter-spacing:0;font-weight:700}
 .dchip{fill:var(--secondary);stroke:var(--ink);stroke-width:3}
 .dchip-t{font:900 12px var(--f-head);letter-spacing:.14em;fill:var(--ink)}
+html:lang(th) .dchip-t{font-size:14px;letter-spacing:0;font-weight:700}
 .val-t{font:900 26px var(--f-head);fill:var(--cream);stroke:var(--ink);stroke-width:5;paint-order:stroke;stroke-linejoin:round}
 .val-t.small-t{font-size:21px}
 .qm{font:900 34px var(--f-head);fill:var(--cream);stroke:var(--ink);stroke-width:6;paint-order:stroke;stroke-linejoin:round}
@@ -427,7 +464,9 @@ h1{
 .cover{fill:url(#stripes);stroke:var(--ink);stroke-width:4}
 .cover-plate{fill:var(--cream);stroke:var(--ink);stroke-width:4}
 .cover-t{font:900 24px var(--f-head);fill:var(--ink);letter-spacing:.06em}
-.cover-m{font:800 10px var(--f-head);fill:#6b675e;letter-spacing:.2em}
+.cover-m{font:800 10px var(--f-head);fill:var(--muted);letter-spacing:.2em}
+html:lang(th) .cover-t{letter-spacing:0;font-weight:700}
+html:lang(th) .cover-m{letter-spacing:0;font-size:14px;font-weight:700}
 
 /* icon sprite classes */
 .i-o{stroke:var(--ink);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
@@ -448,25 +487,31 @@ h1{
 }
 .thumb svg{width:34px;height:34px}
 .problem-meta{flex:1;min-width:0}
-.problem-meta .micro{color:#6b675e}
+.problem-meta .micro{color:var(--muted)}
 .problem-meta strong{display:block;font-weight:900;font-size:16px;margin-top:4px}
-.problem-text{font-size:20px;line-height:1.5;margin:0 0 18px;font-weight:600}
-.problem-text b{font-weight:900;display:block;margin-top:6px}
+.problem-text{font-size:20px;line-height:1.5;margin:0 0 18px;font-weight:600;overflow-wrap:anywhere}
+html:lang(th) .problem-text{font-size:21px;line-height:1.75}
+.problem-text .q{font-weight:900;display:block;margin-top:6px}
+.problem-text .nm{font-weight:800;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px;text-decoration-color:var(--secondary)}
 
-.pips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px}
+.pips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:16px}
 .pip{
   border:var(--bw-s) solid var(--ink);
   border-radius:9px;
   padding:6px 4px 5px;
   text-align:center;
   background:var(--cream-2);
-  font-size:9px;
-  color:#6b675e;
+  color:var(--muted);
+  min-width:0;
+  overflow-wrap:anywhere;
 }
+.pips .pip.micro{font-size:9.5px}
+html:lang(th) .pips .pip.micro{font-size:12px}
 .pip.now{background:var(--hero);color:var(--cream);box-shadow:inset 0 2px 0 rgba(255,255,255,.45)}
 .pip.done{background:var(--ink);color:var(--cream)}
-.prompt{font-weight:900;font-size:22px;line-height:1.2;margin:0 0 4px}
+.prompt{font-weight:900;font-size:22px;line-height:1.25;margin:0 0 6px}
 .prompt-sub{margin:0 0 16px;color:#57534b;font-size:15px}
+html:lang(th) .prompt-sub{font-size:16px}
 
 .why{
   background:var(--cream-2);
@@ -483,7 +528,7 @@ h1{
 .eq-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
 .eq-row .expr{font-family:var(--f-mono);font-size:30px;line-height:1}
 .answer{
-  width:150px;
+  width:150px;max-width:100%;
   font-family:var(--f-mono);font-size:30px;line-height:1;
   padding:9px 12px 8px;
   background:#fff;
@@ -503,12 +548,13 @@ h1{
 
 .log{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-height:340px;overflow:auto;padding-right:4px}
 .log li{
-  display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;
   font-size:14.5px;
   padding-bottom:10px;border-bottom:2px dashed #cfc8b8;
 }
+html:lang(th) .log li{font-size:15.5px}
 .log li:last-child{border-bottom:0}
-.log li.sep{grid-template-columns:1fr;border-bottom:0;padding:2px 0 0;color:#8a857a}
+.log li.sep{grid-template-columns:minmax(0,1fr);border-bottom:0;padding:2px 0 0;color:#8a857a}
 .badge{
   font-size:9.5px;
   border:2px solid var(--ink);
@@ -517,6 +563,7 @@ h1{
   min-width:52px;text-align:center;
   margin-top:1px;
 }
+html:lang(th) .badge{font-size:12px;padding:2px 8px 1px}
 .b-ok{background:var(--secondary)}
 .b-no{background:var(--hero);color:var(--cream)}
 .b-hint{background:var(--cream-2)}
@@ -538,7 +585,7 @@ h1{
   .device{padding:18px 12px 22px}
   .plate{margin:0 10px 12px}
   .screen{padding:10px 8px 12px}
-  .choices.two{grid-template-columns:1fr}
+  .choices.two{grid-template-columns:minmax(0,1fr)}
   .feet{padding:0 36px}
 }
 </style>
@@ -595,70 +642,77 @@ h1{
         </svg>
       </div>
       <div>
-        <h1>BAR MODEL LAB</h1>
-        <div class="micro">Picture it · then solve it</div>
+        <h1 data-i18n="title"></h1>
+        <div class="micro" data-i18n="tagline"></div>
       </div>
     </div>
 
     <div class="top-right">
       <div class="stat">
-        <span class="micro">Theme</span>
-        <div class="swatches" id="swatches" role="group" aria-label="Color theme"></div>
+        <span class="micro" data-i18n="language"></span>
+        <div class="langs" role="group" aria-label="Language / ภาษา">
+          <button data-lang="th" lang="th" aria-pressed="true">ไทย</button>
+          <button data-lang="en" lang="en" aria-pressed="false">EN</button>
+        </div>
       </div>
       <div class="stat">
-        <span class="micro">Level</span>
+        <span class="micro" data-i18n="theme"></span>
+        <div class="swatches" id="swatches" role="group"></div>
+      </div>
+      <div class="stat">
+        <span class="micro" data-i18n="level"></span>
         <div class="stat-row">
           <strong id="lvlNum">1</strong>
           <div class="meter" id="meter" aria-hidden="true"></div>
         </div>
-        <span class="micro" id="meterLbl" style="color:#6b675e">4 to unlock</span>
+        <span class="micro note" id="meterLbl"></span>
       </div>
       <div class="stat">
-        <span class="micro">Streak</span>
+        <span class="micro" data-i18n="streak"></span>
         <div class="stat-row">
           <div class="leds" id="leds" aria-hidden="true"></div>
           <strong id="streakNum">0</strong>
         </div>
-        <span class="micro" style="color:#6b675e">Best <span id="bestNum">0</span></span>
+        <span class="micro note"><span data-i18n="best"></span> <span id="bestNum">0</span></span>
       </div>
       <div class="stat">
-        <span class="micro">Score</span>
+        <span class="micro" data-i18n="score"></span>
         <strong id="scoreNum" class="mono">0000</strong>
       </div>
     </div>
   </header>
 
   <!-- ============ LEFT RAIL ============ -->
-  <aside class="rail" aria-label="Controls">
+  <aside class="rail">
     <section class="panel">
-      <span class="tag micro">Level</span>
+      <span class="tag micro" data-i18n="level"></span>
       <div class="levels" id="levels"></div>
-      <p>Get <b>4 in a row</b> right on the first try to unlock the next level.</p>
+      <p data-i18n-html="unlockNote"></p>
     </section>
 
     <section class="panel">
-      <span class="tag micro">Bar model</span>
+      <span class="tag micro" data-i18n="barModel"></span>
       <div class="toggle-row">
         <div class="switch-label">
-          <span class="micro" style="color:#6b675e">Picture</span>
-          <strong id="toggleTxt">Shown</strong>
+          <span class="micro" style="color:var(--muted)" data-i18n="picture"></span>
+          <strong id="toggleTxt"></strong>
         </div>
-        <button class="switch" id="toggle" role="switch" aria-checked="true" aria-label="Show bar model"></button>
+        <button class="switch" id="toggle" role="switch" aria-checked="true"></button>
       </div>
     </section>
 
     <section class="panel">
-      <span class="tag micro">Stuck?</span>
-      <button class="pill block" id="hintBtn"><span class="dot" aria-hidden="true"></span>Hint</button>
-      <p>Hints point you back to the picture — not to a keyword.</p>
+      <span class="tag micro" data-i18n="stuck"></span>
+      <button class="pill block" id="hintBtn"><span class="dot" aria-hidden="true"></span><span data-i18n="hint"></span></button>
+      <p data-i18n="hintNote"></p>
     </section>
 
     <section class="panel">
-      <span class="tag micro">Key</span>
+      <span class="tag micro" data-i18n="key"></span>
       <ul class="legend">
-        <li><span class="sw" style="background:var(--hero)"></span>Has more → long bar</li>
-        <li><span class="sw" style="background:var(--accent)"></span>Has less → short bar</li>
-        <li><span class="sw gap"></span>Difference → the gap</li>
+        <li><span class="sw" style="background:var(--hero)"></span><span data-i18n="keyMore"></span></li>
+        <li><span class="sw" style="background:var(--accent)"></span><span data-i18n="keyLess"></span></li>
+        <li><span class="sw gap"></span><span data-i18n="keyGap"></span></li>
       </ul>
     </section>
   </aside>
@@ -669,17 +723,17 @@ h1{
       <span class="screw tl"></span><span class="screw tr"></span>
       <span class="screw bl"></span><span class="screw br"></span>
       <div class="plate">
-        <div class="plate-name"><b>COMPARE-O-METER</b><span class="micro">Model BM-5 · Bar gauge</span></div>
+        <div class="plate-name"><b>COMPARE-O-METER</b><span class="micro" data-i18n="modelPlate"></span></div>
         <div class="knobs" aria-hidden="true"><span class="power"></span><span class="knob"></span><span class="knob b"></span></div>
       </div>
       <div class="screen" id="screen">
-        <div class="status" aria-live="polite"><span class="blinker" aria-hidden="true"></span><span id="status">READY</span></div>
+        <div class="status" aria-live="polite"><span class="blinker" aria-hidden="true"></span><span id="status"></span></div>
         <div id="model"></div>
         <div class="readouts">
-          <div class="readout" id="roBig"><span class="micro lbl"><i style="background:var(--hero)"></i><span class="t">Long bar</span></span><span class="val off">--</span></div>
-          <div class="readout" id="roSmall"><span class="micro lbl"><i style="background:var(--accent)"></i><span class="t">Short bar</span></span><span class="val off">--</span></div>
-          <div class="readout diffro" id="roDiff"><span class="micro lbl"><i style="background:var(--secondary)"></i><span class="t">Difference</span></span><span class="val off">--</span></div>
-          <div class="readout eq" id="roEq"><span class="micro lbl">Equation</span><span class="val off">— — —</span></div>
+          <div class="readout" id="roBig"><span class="micro lbl"><i style="background:var(--hero)"></i><span class="t"></span></span><span class="val off">--</span></div>
+          <div class="readout" id="roSmall"><span class="micro lbl"><i style="background:var(--accent)"></i><span class="t"></span></span><span class="val off">--</span></div>
+          <div class="readout diffro" id="roDiff"><span class="micro lbl"><i style="background:var(--secondary)"></i><span class="t"></span></span><span class="val off">--</span></div>
+          <div class="readout eq" id="roEq"><span class="micro lbl" data-i18n="equation"></span><span class="val off">— — —</span></div>
         </div>
       </div>
       <div class="feet" aria-hidden="true"><span></span><span></span></div>
@@ -689,27 +743,27 @@ h1{
   <!-- ============ RIGHT SIDE ============ -->
   <section class="side">
     <section class="panel">
-      <span class="tag micro">Problem</span>
+      <span class="tag micro" data-i18n="problem"></span>
       <div class="problem-head">
         <div class="thumb" id="thumb" aria-hidden="true"></div>
         <div class="problem-meta">
-          <span class="micro" id="probNo">Problem #1</span>
-          <strong id="probLvl">Level 1 · Tiny Numbers</strong>
+          <span class="micro" id="probNo"></span>
+          <strong id="probLvl"></strong>
         </div>
       </div>
       <p class="problem-text" id="problemText"></p>
-      <button class="pill" id="newBtn"><span class="dot" aria-hidden="true"></span>New problem</button>
+      <button class="pill" id="newBtn"><span class="dot" aria-hidden="true"></span><span data-i18n="newProblem"></span></button>
     </section>
 
     <section class="panel">
-      <span class="tag micro">Question</span>
+      <span class="tag micro" data-i18n="question"></span>
       <div class="pips" id="pips"></div>
       <div id="why"></div>
       <div id="question"></div>
     </section>
 
     <section class="panel log-panel">
-      <span class="tag micro">Feedback log</span>
+      <span class="tag micro" data-i18n="feedback"></span>
       <ul class="log" id="log" aria-live="polite"></ul>
     </section>
   </section>
@@ -729,26 +783,86 @@ const MINUS = '−';
 const UNLOCK = 4;       // correct-in-a-row needed to unlock the next level
 const LED_COUNT = 8;
 const THEMES = [
-  { name:'Tangerine',  bg:'#a3b09c', hero:'#ff5a1f', acc:'#2b5cff' },
-  { name:'Grape Soda', bg:'#aaa3b8', hero:'#7a3cf0', acc:'#ff7a1a' },
-  { name:'Lagoon',     bg:'#bdae92', hero:'#009e96', acc:'#ff4d6d' },
+  { en:'Tangerine',  th:'ส้ม',    bg:'#a3b09c', hero:'#ff5a1f', acc:'#2b5cff' },
+  { en:'Grape Soda', th:'องุ่น',  bg:'#aaa3b8', hero:'#7a3cf0', acc:'#ff7a1a' },
+  { en:'Lagoon',     th:'ทะเล',   bg:'#bdae92', hero:'#009e96', acc:'#ff4d6d' },
 ];
-const LEVELS = [null,
-  { name:'Tiny Numbers', sub:'1–9 · objects' },
-  { name:'Two Digits',   sub:'10–99 · objects' },
-  { name:'Money Match',  sub:'$100–$999' },
-  { name:'Mix Master',   sub:'Mixed · no model' },
-];
+
+/* Names: parallel lists, so switching language swaps the pair. Thai names are common,
+   short nicknames with simple spelling that teachers and kids read at a glance. */
+const NAMES = {
+  en:['Maya','Leo','Ava','Sam','Noor','Ben','Kai','Zoe','Ivy','Omar','Rosa','Theo','Mia','Jin','Ella','Raj','Lucy','Finn'],
+  th:['ต้น','ฝน','แพร','เก่ง','ปลา','นิว','ฟ้า','ข้าว','บีม','บอล','ดาว','มุก','ภู','ออม','แตง','เอก','ขิม','กาย'],
+};
 const OBJECTS = [
-  { id:'apple',  sg:'apple',  pl:'apples'  },
-  { id:'marble', sg:'marble', pl:'marbles' },
-  { id:'coin',   sg:'coin',   pl:'coins'   },
+  { id:'apple',  en:{ sg:'apple',  pl:'apples'  }, th:{ n:'แอปเปิล', c:'ผล' } },
+  { id:'marble', en:{ sg:'marble', pl:'marbles' }, th:{ n:'ลูกแก้ว',  c:'ลูก' } },
+  { id:'coin',   en:{ sg:'coin',   pl:'coins'   }, th:{ n:'เหรียญ',   c:'เหรียญ' } },
 ];
-const NAMES = ['Maya','Leo','Ava','Sam','Noor','Ben','Kai','Zoe','Ivy','Omar','Rosa','Theo','Mia','Jin','Ella','Raj','Lucy','Finn'];
-const STEP_LABELS = ['More?','Unknown','+ / −','Answer'];
+
+/* ---------- UI strings ---------- */
+const UI = {
+  en:{
+    title:'BAR MODEL LAB', tagline:'Picture it · then solve it',
+    language:'Language', theme:'Theme', level:'Level', streak:'Streak', best:'Best', score:'Score',
+    unlockNote:'Get <b>4 in a row</b> right on the first try to unlock the next level.',
+    barModel:'Bar model', picture:'Picture', shown:'Shown', hidden:'Hidden', showModelAria:'Show bar model',
+    stuck:'Stuck?', hint:'Hint', hintNote:'Hints point you back to the picture — not to a keyword.',
+    key:'Key', keyMore:'Has more → long bar', keyLess:'Has less → short bar', keyGap:'Difference → the gap',
+    modelPlate:'Model BM-5 · Bar gauge', equation:'Equation',
+    longBar:'Long bar', shortBar:'Short bar', difference:'Difference',
+    problem:'Problem', newProblem:'New problem', question:'Question', feedback:'Feedback log',
+    problemNo:n => `Problem #${n}`, levelName:(n, name) => `Level ${n} · ${name}`,
+    toUnlock:n => `${n} to unlock`, unlocked:'Unlocked!', lvOpen:n => `L${n} open`, mastered:'Mastered!', toMaster:n => `${n} to master`,
+    locked:'locked', themeLabel:n => `Theme: ${n}`,
+    levels:[null,
+      { name:'Tiny Numbers', sub:'1–9 · objects' },
+      { name:'Two Digits',   sub:'10–99 · objects' },
+      { name:'Money Match',  sub:'$100–$999' },
+      { name:'Mix Master',   sub:'Mixed · no model' }],
+    steps:['More?','Unknown','+ / −','Answer'],
+    status:['STEP 1/4 · WHO HAS MORE?','STEP 2/4 · FIND THE UNKNOWN PART','STEP 3/4 · ADD OR SUBTRACT?','STEP 4/4 · SOLVE IT','SOLVED ✓ · PRESS NEW PROBLEM'],
+    modelOff:'MODEL OFF · ',
+    hasMore:'HAS MORE', hasLess:'HAS LESS', who:'WHO?', diffChip:'DIFFERENCE',
+    coverT:'MODEL HIDDEN', coverM:'FLIP THE BAR MODEL SWITCH TO PEEK',
+    badges:{ ok:'Yes', no:'Hmm', hint:'Hint', why:'Why', star:'Wow' },
+    welcome:'Welcome',
+    welcomeMsg:'Every problem gets a <b>picture</b> first. Figure out who has more, find the unknown part, then decide: add or subtract? The picture tells you — not the keywords.',
+    langSep:'English',
+  },
+  th:{
+    title:'ห้องแล็บบาร์โมเดล', tagline:'วาดภาพก่อน · แล้วค่อยแก้โจทย์',
+    language:'ภาษา', theme:'ธีมสี', level:'ระดับ', streak:'ถูกติดกัน', best:'สูงสุด', score:'คะแนน',
+    unlockNote:'ตอบถูกในครั้งแรก <b>4 ข้อติดกัน</b> เพื่อปลดล็อกระดับถัดไป',
+    barModel:'บาร์โมเดล', picture:'รูปภาพ', shown:'แสดง', hidden:'ซ่อน', showModelAria:'แสดงบาร์โมเดล',
+    stuck:'ติดอยู่ใช่ไหม?', hint:'คำใบ้', hintNote:'คำใบ้จะพากลับไปดูรูป ไม่ใช่ให้จำคำสำคัญ',
+    key:'สัญลักษณ์', keyMore:'มีมากกว่า → แท่งยาว', keyLess:'มีน้อยกว่า → แท่งสั้น', keyGap:'ผลต่าง → ส่วนที่ยื่นเกิน',
+    modelPlate:'รุ่น BM-5 · เครื่องวัดแท่ง', equation:'ประโยคสัญลักษณ์',
+    longBar:'แท่งยาว', shortBar:'แท่งสั้น', difference:'ผลต่าง',
+    problem:'โจทย์', newProblem:'โจทย์ใหม่', question:'คำถาม', feedback:'บันทึกผล',
+    problemNo:n => `โจทย์ข้อที่ ${n}`, levelName:(n, name) => `ระดับ ${n} · ${name}`,
+    toUnlock:n => `อีก ${n} ข้อปลดล็อก`, unlocked:'ปลดล็อกแล้ว!', lvOpen:n => `ระดับ ${n} เปิดแล้ว`, mastered:'เก่งมาก!', toMaster:n => `อีก ${n} ข้อ`,
+    locked:'ล็อกอยู่', themeLabel:n => `ธีมสี: ${n}`,
+    levels:[null,
+      { name:'เลขหลักเดียว', sub:'1–9 · สิ่งของ' },
+      { name:'เลขสองหลัก',   sub:'10–99 · สิ่งของ' },
+      { name:'เรื่องเงิน',     sub:'100–999 บาท' },
+      { name:'รวมมิตร',       sub:'คละแบบ · ซ่อนรูป' }],
+    steps:['ใครมาก?','ไม่รู้ค่า','+ / −','คำตอบ'],
+    status:['ขั้นที่ 1/4 · ใครมีมากกว่า?','ขั้นที่ 2/4 · หาส่วนที่ยังไม่รู้','ขั้นที่ 3/4 · บวกหรือลบ?','ขั้นที่ 4/4 · หาคำตอบ','เสร็จแล้ว ✓ · กดโจทย์ใหม่'],
+    modelOff:'ปิดรูป · ',
+    hasMore:'มีมากกว่า', hasLess:'มีน้อยกว่า', who:'ใคร?', diffChip:'ผลต่าง',
+    coverT:'ซ่อนรูปอยู่', coverM:'เปิดสวิตช์บาร์โมเดลเพื่อดูรูป',
+    badges:{ ok:'ถูก', no:'อืม', hint:'ใบ้', why:'ทำไม', star:'เยี่ยม' },
+    welcome:'ยินดีต้อนรับ',
+    welcomeMsg:'ทุกโจทย์จะมี<b>รูป</b>ให้ดูก่อน หาว่าใครมีมากกว่า หาส่วนที่ยังไม่รู้ แล้วตัดสินใจว่าจะบวกหรือลบ รูปจะบอกเราเอง ไม่ต้องจำคำสำคัญ',
+    langSep:'ภาษาไทย',
+  },
+};
 
 /* ---------- state ---------- */
 const S = {
+  lang:'th',
   level:1, unlocked:1, theme:0,
   score:0, streak:0, best:0,
   lvStreak:[0,0,0,0,0],
@@ -756,6 +870,8 @@ const S = {
   p:null, step:0, attempts:0, firstTry:true,
   count:0, animate:false, justScored:false, lastKey:'', freshUnlock:0,
 };
+const T = () => UI[S.lang];
+const TH = () => S.lang === 'th';
 
 function load(){
   try{
@@ -763,13 +879,14 @@ function load(){
     if (Number.isInteger(d.unlocked) && d.unlocked >= 1 && d.unlocked <= 4) S.unlocked = d.unlocked;
     if (Number.isInteger(d.theme) && d.theme >= 0 && d.theme < THEMES.length) S.theme = d.theme;
     if (Number.isInteger(d.best) && d.best >= 0) S.best = d.best;
+    if (d.lang === 'en' || d.lang === 'th') S.lang = d.lang;
   }catch(e){}
 }
 function save(){
-  try{ localStorage.setItem('barModelLab.v1', JSON.stringify({unlocked:S.unlocked, theme:S.theme, best:S.best})); }catch(e){}
+  try{ localStorage.setItem('barModelLab.v1', JSON.stringify({unlocked:S.unlocked, theme:S.theme, best:S.best, lang:S.lang})); }catch(e){}
 }
 
-/* ---------- problem generator ---------- */
+/* ---------- problem generator (language-neutral; text is built at render time) ---------- */
 function numbersFor(lv){
   let s, d;
   if (lv === 1){ s = rnd(1,5); d = rnd(2,4); }                  // bigger ≤ 9, gap always obvious
@@ -781,12 +898,11 @@ function numbersFor(lv){
 function makeProblem(lv){
   const numLv = lv === 4 ? pick([2,3,3]) : lv;
   const money = lv === 3 || (lv === 4 && Math.random() < .5);
-  const obj = money ? { id: numLv >= 3 ? 'cash' : 'coin', sg:'dollar', pl:'dollars' } : pick(OBJECTS);
+  const obj = money ? { id: numLv >= 3 ? 'cash' : 'coin', money:true } : pick(OBJECTS);
   const { s, d, b } = numbersFor(numLv);
 
-  const a = pick(NAMES);
-  let c = pick(NAMES); while (c === a) c = pick(NAMES);
-  const B = a, Sm = c;   // B has more, Sm has less
+  const bi = rnd(0, NAMES.en.length - 1);
+  let si = rnd(0, NAMES.en.length - 1); while (si === bi) si = rnd(0, NAMES.en.length - 1);
 
   // choose a variant, avoiding an exact repeat of the last one
   let type, phr, key, tries = 0;
@@ -801,78 +917,128 @@ function makeProblem(lv){
   S.lastKey = key;
 
   const trick = (type==='big' && phr==='less') || (type==='small' && phr==='more') || (type==='diff' && phr==='more');
-  const op = type === 'big' ? 'add' : 'sub';
-  const answer = type === 'big' ? b : type === 'small' ? s : d;
-  const kw = phr === 'more' ? 'more' : (money ? 'less' : 'fewer');
-
-  const amt = n => money ? `$${n}` : `${n} ${n === 1 ? obj.sg : obj.pl}`;
-  const has = (n, v) => `${n} has ${amt(v)}.`;
-  const ifHas = (n, v) => `If ${n} has ${amt(v)},`;
-  const ask = n => money ? `How much money does ${n} have?` : `How many ${obj.pl} does ${n} have?`;
-  const askLow = n => money ? `how much money does ${n} have?` : `how many ${obj.pl} does ${n} have?`;
-  const relMore = money ? `${B} has $${d} more than ${Sm}.` : `${B} has ${d} more ${obj.pl} than ${Sm}.`;
-  const relLess = money ? `${Sm} has $${d} less than ${B}.` : `${Sm} has ${d} fewer ${obj.pl} than ${B}.`;
-
-  let lines, rel = null, question;
-  if (type === 'diff'){
-    question = phr === 'more'
-      ? (money ? `How much more money does ${B} have than ${Sm}?` : `How many more ${obj.pl} does ${B} have than ${Sm}?`)
-      : (money ? `How much less money does ${Sm} have than ${B}?` : `How many fewer ${obj.pl} does ${Sm} have than ${B}?`);
-    const facts = Math.random() < .5 ? [has(B,b), has(Sm,s)] : [has(Sm,s), has(B,b)];
-    lines = [...facts];
-  } else {
-    rel = phr === 'more' ? relMore : relLess;
-    const [kn, kv, un] = type === 'big' ? [Sm, s, B] : [B, b, Sm];
-    const layout = rnd(0,2);
-    if (layout === 0){ lines = [rel, has(kn,kv)]; question = ask(un); }
-    else if (layout === 1){ lines = [has(kn,kv), rel]; question = ask(un); }
-    else { lines = [rel]; question = `${ifHas(kn,kv)} ${askLow(un)}`; }
-  }
-
   return {
-    lv, numLv, money, obj, type, phr, trick, op, answer, kw, rel, question, lines,
-    big:{ name:B, val:b }, small:{ name:Sm, val:s }, diff:d,
-    order: Math.random() < .5 ? [B, Sm] : [Sm, B],   // button order for step 1
+    lv, numLv, money, obj, type, phr, trick,
+    op: type === 'big' ? 'add' : 'sub',
+    answer: type === 'big' ? b : type === 'small' ? s : d,
+    bi, si, b, s, diff:d,
+    layout: rnd(0,2),
+    bigFirst: Math.random() < .5,
+    order: Math.random() < .5 ? ['big','small'] : ['small','big'],   // button order for step 1
   };
 }
 
-const fmt = (p, n) => p.money ? `$${n}` : String(n);
-const partVal = (p, part) => part === 'big' ? p.big.val : part === 'small' ? p.small.val : p.diff;
-const partDesc = (p, part) => part === 'big' ? `${p.big.name}'s amount (the long bar)`
-  : part === 'small' ? `${p.small.name}'s amount (the short bar)` : 'the difference (the gap)';
+/* ---------- language-aware text builders ---------- */
+const nameOf = (p, who) => NAMES[S.lang][who === 'big' ? p.bi : p.si];
+const valOf = (p, part) => part === 'big' ? p.b : part === 'small' ? p.s : p.diff;
+/* compact number for bars, readouts, equations */
+const fmt = (p, n) => p.money && !TH() ? `$${n}` : String(n);
+/* number with unit, for sentences */
+const qty = (p, n) => TH() ? (p.money ? `${n} บาท` : `${n}`) : fmt(p, n);
+const kwOf = p => TH() ? (p.phr === 'more' ? 'มากกว่า' : 'น้อยกว่า') : (p.phr === 'more' ? 'more' : (p.money ? 'less' : 'fewer'));
+const opWord = op => TH() ? (op === 'add' ? 'บวก' : 'ลบ') : (op === 'add' ? 'ADD' : 'SUBTRACT');
+
+/* Returns {lines:[...], question, rel} — each string plain text (escaped at render). */
+function problemText(p){
+  const B = nameOf(p,'big'), Sm = nameOf(p,'small'), b = p.b, s = p.s, d = p.diff;
+  let facts, rel = null, question;
+  if (TH()){
+    const o = p.obj.th || {};
+    const has = (n, v) => p.money ? `${n}มีเงิน ${v} บาท` : `${n}มี${o.n} ${v} ${o.c}`;
+    const ask = n => p.money ? `${n}มีเงินกี่บาท` : `${n}มี${o.n}กี่${o.c}`;
+    const relMore = p.money ? `${B}มีเงินมากกว่า${Sm} ${d} บาท` : `${B}มี${o.n}มากกว่า${Sm} ${d} ${o.c}`;
+    const relLess = p.money ? `${Sm}มีเงินน้อยกว่า${B} ${d} บาท` : `${Sm}มี${o.n}น้อยกว่า${B} ${d} ${o.c}`;
+    if (p.type === 'diff'){
+      facts = p.bigFirst ? [has(B,b), has(Sm,s)] : [has(Sm,s), has(B,b)];
+      question = p.phr === 'more'
+        ? (p.money ? `${B}มีเงินมากกว่า${Sm}กี่บาท` : `${B}มี${o.n}มากกว่า${Sm}กี่${o.c}`)
+        : (p.money ? `${Sm}มีเงินน้อยกว่า${B}กี่บาท` : `${Sm}มี${o.n}น้อยกว่า${B}กี่${o.c}`);
+    } else {
+      rel = p.phr === 'more' ? relMore : relLess;
+      const [kn, kv, un] = p.type === 'big' ? [Sm, s, B] : [B, b, Sm];
+      if (p.layout === 0){ facts = [rel, has(kn,kv)]; question = ask(un); }
+      else if (p.layout === 1){ facts = [has(kn,kv), rel]; question = ask(un); }
+      else { facts = [rel]; question = `ถ้า${has(kn,kv)} ${ask(un)}`; }
+    }
+    return { lines:facts, question, rel };
+  }
+  const o = p.obj.en || {};
+  const amt = n => p.money ? `$${n}` : `${n} ${n === 1 ? o.sg : o.pl}`;
+  const has = (n, v) => `${n} has ${amt(v)}.`;
+  const ask = n => p.money ? `How much money does ${n} have?` : `How many ${o.pl} does ${n} have?`;
+  const askLow = n => p.money ? `how much money does ${n} have?` : `how many ${o.pl} does ${n} have?`;
+  const relMore = p.money ? `${B} has $${d} more than ${Sm}.` : `${B} has ${d} more ${o.pl} than ${Sm}.`;
+  const relLess = p.money ? `${Sm} has $${d} less than ${B}.` : `${Sm} has ${d} fewer ${o.pl} than ${B}.`;
+  if (p.type === 'diff'){
+    facts = p.bigFirst ? [has(B,b), has(Sm,s)] : [has(Sm,s), has(B,b)];
+    question = p.phr === 'more'
+      ? (p.money ? `How much more money does ${B} have than ${Sm}?` : `How many more ${o.pl} does ${B} have than ${Sm}?`)
+      : (p.money ? `How much less money does ${Sm} have than ${B}?` : `How many fewer ${o.pl} does ${Sm} have than ${B}?`);
+  } else {
+    rel = p.phr === 'more' ? relMore : relLess;
+    const [kn, kv, un] = p.type === 'big' ? [Sm, s, B] : [B, b, Sm];
+    if (p.layout === 0){ facts = [rel, has(kn,kv)]; question = ask(un); }
+    else if (p.layout === 1){ facts = [has(kn,kv), rel]; question = ask(un); }
+    else { facts = [rel]; question = `If ${kn} has ${amt(kv)}, ${askLow(un)}`; }
+  }
+  return { lines:facts, question, rel };
+}
+
+/* Escape a sentence and emphasise the two names so kids can find who is who. */
+function markNames(p, text){
+  let h = esc(text);
+  [nameOf(p,'big'), nameOf(p,'small')].forEach(n => { h = h.split(esc(n)).join(`<span class="nm">${esc(n)}</span>`); });
+  return h;
+}
+
+function partDesc(p, part){
+  const B = nameOf(p,'big'), Sm = nameOf(p,'small');
+  if (TH()) return part === 'big' ? `จำนวนของ${B} (แท่งยาว)` : part === 'small' ? `จำนวนของ${Sm} (แท่งสั้น)` : 'ผลต่าง (ส่วนที่ยื่นเกิน)';
+  return part === 'big' ? `${B}'s amount (the long bar)` : part === 'small' ? `${Sm}'s amount (the short bar)` : 'the difference (the gap)';
+}
 function exprOf(p){
-  if (p.type === 'big')   return `${fmt(p,p.small.val)} + ${fmt(p,p.diff)}`;
-  if (p.type === 'small') return `${fmt(p,p.big.val)} ${MINUS} ${fmt(p,p.diff)}`;
-  return `${fmt(p,p.big.val)} ${MINUS} ${fmt(p,p.small.val)}`;
+  if (p.type === 'big')   return `${fmt(p,p.s)} + ${fmt(p,p.diff)}`;
+  if (p.type === 'small') return `${fmt(p,p.b)} ${MINUS} ${fmt(p,p.diff)}`;
+  return `${fmt(p,p.b)} ${MINUS} ${fmt(p,p.s)}`;
 }
 function answerSentence(p){
-  const u = p.money ? '' : ` ${p.answer === 1 ? p.obj.sg : p.obj.pl}`;
-  if (p.type === 'big')   return `${p.big.name} has ${fmt(p,p.answer)}${u}.`;
-  if (p.type === 'small') return `${p.small.name} has ${fmt(p,p.answer)}${u}.`;
-  return p.money ? `${p.big.name} has $${p.answer} more than ${p.small.name}.`
-                 : `${p.big.name} has ${p.answer} more ${p.obj.pl} than ${p.small.name}.`;
+  const B = nameOf(p,'big'), Sm = nameOf(p,'small'), n = p.answer;
+  if (TH()){
+    const o = p.obj.th || {};
+    if (p.type === 'diff') return p.money ? `${B}มีเงินมากกว่า${Sm} ${n} บาท` : `${B}มี${o.n}มากกว่า${Sm} ${n} ${o.c}`;
+    const who = p.type === 'big' ? B : Sm;
+    return p.money ? `${who}มีเงิน ${n} บาท` : `${who}มี${o.n} ${n} ${o.c}`;
+  }
+  const o = p.obj.en || {};
+  const u = p.money ? '' : ` ${n === 1 ? o.sg : o.pl}`;
+  if (p.type === 'big')   return `${B} has ${fmt(p,n)}${u}.`;
+  if (p.type === 'small') return `${Sm} has ${fmt(p,n)}${u}.`;
+  return p.money ? `${B} has $${n} more than ${Sm}.` : `${B} has ${n} more ${o.pl} than ${Sm}.`;
 }
 function whyText(p){
-  if (p.type === 'big')
-    return `The <b>long bar = short bar + gap</b>. The unknown is the <b>whole long bar</b>, so we put the two pieces together: <b>ADD</b>. &nbsp;${esc(exprOf(p))}`;
-  if (p.type === 'small')
-    return `The <b>short bar = long bar ${MINUS} gap</b>. The unknown is a <b>piece</b> of the long bar, so we take the gap away: <b>SUBTRACT</b>. &nbsp;${esc(exprOf(p))}`;
-  return `The <b>gap = long bar ${MINUS} short bar</b>. The gap is what's left when you take the short bar away from the long bar: <b>SUBTRACT</b>. &nbsp;${esc(exprOf(p))}`;
+  const e = esc(exprOf(p));
+  if (TH()){
+    if (p.type === 'big')   return `<b>แท่งยาว = แท่งสั้น + ผลต่าง</b> ส่วนที่ไม่รู้คือ<b>แท่งยาวทั้งแท่ง</b> เราจึงนำสองส่วนมารวมกัน คือ <b>บวก</b> &nbsp;${e}`;
+    if (p.type === 'small') return `<b>แท่งสั้น = แท่งยาว ${MINUS} ผลต่าง</b> ส่วนที่ไม่รู้เป็น<b>ชิ้นส่วนหนึ่ง</b>ของแท่งยาว เราจึงเอาผลต่างออก คือ <b>ลบ</b> &nbsp;${e}`;
+    return `<b>ผลต่าง = แท่งยาว ${MINUS} แท่งสั้น</b> ผลต่างคือส่วนที่เหลือเมื่อเอาแท่งสั้นออกจากแท่งยาว คือ <b>ลบ</b> &nbsp;${e}`;
+  }
+  if (p.type === 'big')   return `The <b>long bar = short bar + gap</b>. The unknown is the <b>whole long bar</b>, so we put the two pieces together: <b>ADD</b>. &nbsp;${e}`;
+  if (p.type === 'small') return `The <b>short bar = long bar ${MINUS} gap</b>. The unknown is a <b>piece</b> of the long bar, so we take the gap away: <b>SUBTRACT</b>. &nbsp;${e}`;
+  return `The <b>gap = long bar ${MINUS} short bar</b>. The gap is what's left when you take the short bar away from the long bar: <b>SUBTRACT</b>. &nbsp;${e}`;
 }
 function trickText(p){
-  const OP = p.op === 'add' ? 'ADD' : 'SUBTRACT';
-  return `Tricky one! The problem says “${esc(p.kw)}”, but the picture says <b>${OP}</b>. Trust the picture, not the keyword.`;
+  return TH()
+    ? `ข้อนี้หลอก! โจทย์ใช้คำว่า “${esc(kwOf(p))}” แต่รูปบอกว่าต้อง<b>${opWord(p.op)}</b> เชื่อรูป อย่าเชื่อแค่คำสำคัญ`
+    : `Tricky one! The problem says “${esc(kwOf(p))}”, but the picture says <b>${opWord(p.op)}</b>. Trust the picture, not the keyword.`;
 }
 
 /* ---------- log ---------- */
-const BADGE = { ok:['b-ok','Yes'], no:['b-no','Hmm'], hint:['b-hint','Hint'], why:['b-why','Why'], star:['b-star','Wow'] };
+const BADGE_CLS = { ok:'b-ok', no:'b-no', hint:'b-hint', why:'b-why', star:'b-star' };
 function log(kind, html){
   const li = document.createElement('li');
+  li.lang = S.lang;
   if (kind === 'sep'){ li.className = 'sep'; li.innerHTML = `<span class="micro">${html}</span>`; }
-  else {
-    const [cls, lbl] = BADGE[kind];
-    li.innerHTML = `<span class="badge micro ${cls}">${lbl}</span><span>${html}</span>`;
-  }
+  else li.innerHTML = `<span class="badge micro ${BADGE_CLS[kind]}">${esc(T().badges[kind])}</span><span>${html}</span>`;
   const ul = $('#log');
   ul.prepend(li);
   while (ul.children.length > 50) ul.lastElementChild.remove();
@@ -891,11 +1057,12 @@ function barShape(x, y, w, h, cls, attrs){
   </g>`;
 }
 function chip(y, name, micro, tone){
+  const th = TH();
   return `<g>
     <rect class="chip-bg" x="8" y="${y}" width="116" height="${LH}" rx="12"/>
     <rect class="chip-tab ${tone}" x="16" y="${y+10}" width="9" height="${LH-20}" rx="3"/>
-    <text class="chip-micro" x="34" y="${y+23}">${esc(micro)}</text>
-    <text class="chip-name" x="34" y="${y+44}">${esc(name)}</text>
+    <text class="chip-micro" x="34" y="${y + (th ? 24 : 23)}">${esc(micro)}</text>
+    <text class="chip-name" x="34" y="${y + (th ? 48 : 44)}">${esc(name)}</text>
   </g>`;
 }
 function icons(x0, y, unit, n, id){
@@ -926,14 +1093,14 @@ function ruler(){
 function drawModel(){
   const box = $('#model');
   $('#screen').classList.toggle('is-hidden', !S.showModel);
-  const p = S.p, st = S.step;
+  const p = S.p, st = S.step, t = T();
   let o = `<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${esc(modelAria())}">`;
 
   if (!S.showModel){
     o += `<rect class="cover" x="6" y="8" width="${VW-12}" height="${VH-16}" rx="16"/>
-      <rect class="cover-plate" x="${VW/2-170}" y="${VH/2-48}" width="340" height="96" rx="16"/>
-      <text class="cover-t" x="${VW/2}" y="${VH/2+2}" text-anchor="middle">MODEL HIDDEN</text>
-      <text class="cover-m" x="${VW/2}" y="${VH/2+26}" text-anchor="middle">FLIP THE BAR MODEL SWITCH TO PEEK</text>`;
+      <rect class="cover-plate" x="${VW/2-180}" y="${VH/2-50}" width="360" height="100" rx="16"/>
+      <text class="cover-t" x="${VW/2}" y="${VH/2+2}" text-anchor="middle">${esc(t.coverT)}</text>
+      <text class="cover-m" x="${VW/2}" y="${VH/2+28}" text-anchor="middle">${esc(t.coverM)}</text>`;
     box.innerHTML = o + '</svg>';
     return;
   }
@@ -944,7 +1111,7 @@ function drawModel(){
 
   if (st === 0){
     const w = Math.round(MW * .6);
-    o += chip(YT, '???', 'WHO?', 'ghost') + chip(YB, '???', 'WHO?', 'ghost');
+    o += chip(YT, '???', t.who, 'ghost') + chip(YB, '???', t.who, 'ghost');
     o += barShape(MX0, YT, w, LH, 'ghost') + barShape(MX0, YB, w, LH, 'ghost');
     o += `<text class="ghost-q" x="${MX0 + w/2}" y="${YT+LH/2+11}" text-anchor="middle">?</text>`;
     o += `<text class="ghost-q" x="${MX0 + w/2}" y="${YB+LH/2+11}" text-anchor="middle">?</text>`;
@@ -953,7 +1120,7 @@ function drawModel(){
   }
 
   const L1 = p.numLv === 1;
-  const ratio = L1 ? p.small.val / p.big.val : Math.min(.82, Math.max(.18, p.small.val / p.big.val));
+  const ratio = L1 ? p.s / p.b : Math.min(.82, Math.max(.18, p.s / p.b));
   const wS = Math.round(MW * ratio), xG = MX0 + wS, wG = MW - wS;
   const show = part => st >= 4 || (st >= 2 && part !== p.type);
   const unk  = part => st >= 2 && st < 4 && part === p.type;
@@ -961,31 +1128,25 @@ function drawModel(){
   const hitC = st === 1 ? ' hit' : '';
   const g = S.animate ? ' grow' : '';
 
-  o += chip(YT, p.big.name, 'HAS MORE', 'big') + chip(YB, p.small.name, 'HAS LESS', 'small');
+  o += chip(YT, nameOf(p,'big'), t.hasMore, 'big') + chip(YB, nameOf(p,'small'), t.hasLess, 'small');
 
   // guide line where the short bar ends
   o += `<line class="guide" x1="${xG}" y1="${YT-4}" x2="${xG}" y2="${YB+LH+4}"/>`;
 
-  // long bar
   o += barShape(MX0, YT, MW, LH, 'big' + hitC + g, hitA('big'));
-  // short bar
   o += barShape(MX0, YB, wS, LH, 'small' + hitC + g + ' d2', hitA('small'));
-  // gap
   o += `<g class="gapg${hitC}${g} d3" ${hitA('diff')}>
           <rect class="gfill" x="${xG+4}" y="${YB}" width="${wG-4}" height="${LH}" rx="12"/>
           <rect class="gdash" x="${xG+10}" y="${YB+6}" width="${Math.max(0,wG-16)}" height="${LH-12}" rx="8"/>
         </g>`;
 
   // contents
-  const unit = MW / p.big.val;
+  const unit = MW / p.b;
   const tiles = L1 && !p.money;
-  // long bar
-  if (tiles && show('big')) o += cellLines(MX0, YT, unit, p.big.val) + icons(MX0, YT, unit, p.big.val, p.obj.id);
-  else if (show('big')) o += `<text class="val-t" x="${MX0+MW/2}" y="${YT+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.big.val))}</text>`;
-  // short bar
-  if (tiles && show('small')) o += cellLines(MX0, YB, unit, p.small.val) + icons(MX0, YB, unit, p.small.val, p.obj.id);
-  else if (show('small')) o += `<text class="val-t${wS<110?' small-t':''}" x="${MX0+wS/2}" y="${YB+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.small.val))}</text>`;
-  // gap
+  if (tiles && show('big')) o += cellLines(MX0, YT, unit, p.b) + icons(MX0, YT, unit, p.b, p.obj.id);
+  else if (show('big')) o += `<text class="val-t" x="${MX0+MW/2}" y="${YT+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.b))}</text>`;
+  if (tiles && show('small')) o += cellLines(MX0, YB, unit, p.s) + icons(MX0, YB, unit, p.s, p.obj.id);
+  else if (show('small')) o += `<text class="val-t${wS<110?' small-t':''}" x="${MX0+wS/2}" y="${YB+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.s))}</text>`;
   if (tiles && show('diff')) o += icons(xG, YB, unit, p.diff, p.obj.id);
   else if (show('diff')) o += `<text class="val-t${wG<110?' small-t':''}" x="${xG+wG/2}" y="${YB+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.diff))}</text>`;
 
@@ -998,29 +1159,44 @@ function drawModel(){
     o += `<text class="qm" x="${x+w/2}" y="${y+LH/2+12}" text-anchor="middle">?</text>`;
   });
 
-  // difference bracket + chip
+  // difference bracket + chip (chip width is fitted to the real text after render)
   const by = YB + LH + 16, cx = xG + wG / 2;
   o += `<path class="bracket" d="M${xG+4} ${by} v9 H${MX0+MW} v-9 M${cx} ${by+9} v8"/>`;
-  const dLabel = show('diff') ? `DIFFERENCE = ${fmt(p,p.diff)}` : unk('diff') ? 'DIFFERENCE = ?' : 'DIFFERENCE';
-  const cw = dLabel.length * 9 + 26;
-  const chipX = Math.min(MX0 + MW - cw, Math.max(MX0 - 60, cx - cw / 2));
-  o += `<rect class="dchip" x="${chipX}" y="${by+18}" width="${cw}" height="28" rx="14"/>`;
-  o += `<text class="dchip-t" x="${chipX+cw/2}" y="${by+36.5}" text-anchor="middle">${esc(dLabel)}</text>`;
+  const dLabel = show('diff') ? `${t.diffChip} = ${fmt(p,p.diff)}` : unk('diff') ? `${t.diffChip} = ?` : t.diffChip;
+  o += `<g id="dchip" data-cx="${cx}"><rect class="dchip" x="${cx-60}" y="${by+18}" width="120" height="30" rx="15"/>`;
+  o += `<text class="dchip-t" x="${cx}" y="${by+38}" text-anchor="middle">${esc(dLabel)}</text></g>`;
 
   box.innerHTML = o + '</svg>';
+  fitDiffChip();
   S.animate = false;
+}
+function fitDiffChip(){
+  const g = document.getElementById('dchip'); if (!g) return;
+  const text = g.querySelector('text'), rect = g.querySelector('rect');
+  let w = 120;
+  try{ w = text.getComputedTextLength() + 28; }catch(e){}
+  if (!w || w < 60) w = 120;
+  const cx = +g.dataset.cx;
+  const x = Math.min(MX0 + MW - w, Math.max(MX0 - 60, cx - w / 2));
+  rect.setAttribute('x', x); rect.setAttribute('width', w);
+  text.setAttribute('x', x + w / 2);
 }
 
 function modelAria(){
   const p = S.p;
   if (!p) return 'Bar model';
+  if (TH()){
+    if (!S.showModel) return 'ซ่อนบาร์โมเดลอยู่';
+    if (S.step === 0) return 'แท่งว่างสองแท่ง ขั้นแรกให้หาว่าใครมีมากกว่า';
+    return `บาร์โมเดล: ${nameOf(p,'big')} ได้แท่งยาว ${nameOf(p,'small')} ได้แท่งสั้น ส่วนที่ยื่นเกินคือผลต่าง`;
+  }
   if (!S.showModel) return 'Bar model hidden';
   if (S.step === 0) return 'Two blank bars. First decide who has more.';
-  return `Bar model: ${p.big.name} has the long bar, ${p.small.name} has the short bar, and the gap between them is the difference.`;
+  return `Bar model: ${nameOf(p,'big')} has the long bar, ${nameOf(p,'small')} has the short bar, and the gap between them is the difference.`;
 }
 
 function updateReadouts(){
-  const p = S.p, st = S.step;
+  const p = S.p, st = S.step, t = T();
   const set = (id, label, text, cls) => {
     const el = $(id);
     el.querySelector('.t').textContent = label;
@@ -1029,30 +1205,40 @@ function updateReadouts(){
   };
   const valFor = part => {
     if (st < 2) return ['--', 'off'];
-    if (part === p.type) return st >= 4 ? [fmt(p, partVal(p,part)), 'solved'] : ['???', 'unk'];
-    return [fmt(p, partVal(p,part)), ''];
+    if (part === p.type) return st >= 4 ? [fmt(p, valOf(p,part)), 'solved'] : ['???', 'unk'];
+    return [fmt(p, valOf(p,part)), ''];
   };
-  set('#roBig',   st >= 1 ? `Long · ${p.big.name}`   : 'Long bar',  ...valFor('big'));
-  set('#roSmall', st >= 1 ? `Short · ${p.small.name}` : 'Short bar', ...valFor('small'));
-  set('#roDiff',  'Difference', ...valFor('diff'));
+  set('#roBig',   st >= 1 ? `${t.longBar} · ${nameOf(p,'big')}`    : t.longBar,  ...valFor('big'));
+  set('#roSmall', st >= 1 ? `${t.shortBar} · ${nameOf(p,'small')}` : t.shortBar, ...valFor('small'));
+  set('#roDiff',  t.difference, ...valFor('diff'));
   const eq = $('#roEq .val');
   if (st < 3){ eq.textContent = '— — —'; eq.className = 'val off'; }
   else if (st === 3){ eq.textContent = `${exprOf(p)} = ?`; eq.className = 'val'; }
   else { eq.textContent = `${exprOf(p)} = ${fmt(p, p.answer)}`; eq.className = 'val'; }
 }
 
-const STATUS = ['STEP 1/4 · WHO HAS MORE?','STEP 2/4 · FIND THE UNKNOWN PART','STEP 3/4 · ADD OR SUBTRACT?','STEP 4/4 · SOLVE IT','SOLVED ✓ · PRESS NEW PROBLEM'];
 function updateStatus(){
-  $('#status').textContent = (S.showModel ? '' : 'MODEL OFF · ') + STATUS[S.step];
+  $('#status').textContent = (S.showModel ? '' : T().modelOff) + T().status[S.step];
 }
 
-/* ---------- top bar & rail ---------- */
+/* ---------- static text, top bar & rail ---------- */
+function applyStatic(){
+  const t = T();
+  document.documentElement.lang = S.lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t[el.dataset.i18n]; });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t[el.dataset.i18nHtml]; }); // trusted, hard-coded strings
+  document.querySelectorAll('.langs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === S.lang)));
+  $('#swatches').setAttribute('aria-label', t.theme);
+  $('#toggle').setAttribute('aria-label', t.showModelAria);
+}
+
 function renderTop(){
+  const t = T();
   $('#lvlNum').textContent = S.level;
   const prog = Math.min(UNLOCK, S.lvStreak[S.level]);
   $('#meter').innerHTML = Array.from({length:UNLOCK}, (_, i) => `<span class="seg${i < prog ? ' on' : ''}"></span>`).join('');
-  $('#meterLbl').textContent = S.level === 4 ? (prog >= UNLOCK ? 'Mastered!' : `${UNLOCK-prog} to master`)
-    : S.unlocked > S.level ? (prog >= UNLOCK ? 'Unlocked!' : `L${S.level+1} open`) : `${UNLOCK-prog} to unlock`;
+  $('#meterLbl').textContent = S.level === 4 ? (prog >= UNLOCK ? t.mastered : t.toMaster(UNLOCK-prog))
+    : S.unlocked > S.level ? (prog >= UNLOCK ? t.unlocked : t.lvOpen(S.level+1)) : t.toUnlock(UNLOCK-prog);
   const lit = Math.min(LED_COUNT, S.streak);
   $('#leds').innerHTML = Array.from({length:LED_COUNT}, (_, i) =>
     `<span class="led${i < lit ? ' on' : ''}${i === lit-1 && S.justScored ? ' pop' : ''}"></span>`).join('');
@@ -1063,99 +1249,107 @@ function renderTop(){
 }
 
 function renderSwatches(){
-  $('#swatches').innerHTML = THEMES.map((t, i) =>
-    `<button class="swatch" data-theme="${i}" aria-pressed="${i === S.theme}" aria-label="Theme: ${esc(t.name)}" title="${esc(t.name)}">
-      <span style="background:${t.bg}"></span><span style="background:${t.hero}"></span><span style="background:${t.acc}"></span>
-    </button>`).join('');
+  $('#swatches').innerHTML = THEMES.map((th, i) => {
+    const n = th[S.lang];
+    return `<button class="swatch" data-theme="${i}" aria-pressed="${i === S.theme}" aria-label="${esc(T().themeLabel(n))}" title="${esc(n)}">
+      <span style="background:${th.bg}"></span><span style="background:${th.hero}"></span><span style="background:${th.acc}"></span>
+    </button>`;
+  }).join('');
   document.documentElement.dataset.theme = S.theme;
 }
 
 const LOCK = `<svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><rect x="2" y="8" width="14" height="10" rx="3" style="fill:var(--cream-2);stroke:var(--ink);stroke-width:2.5"/><path d="M5 8V6a4 4 0 0 1 8 0v2" style="fill:none;stroke:var(--ink);stroke-width:2.5"/></svg>`;
 function renderLevels(){
+  const t = T();
   $('#levels').innerHTML = [1,2,3,4].map(n => {
     const locked = n > S.unlocked;
     return `<button class="lvl${S.freshUnlock === n ? ' fresh' : ''}" data-level="${n}" ${locked ? 'disabled' : ''} aria-current="${n === S.level}">
       <span class="num">${n}</span>
-      <span><span class="nm">${esc(LEVELS[n].name)}</span><span class="ds micro">${esc(LEVELS[n].sub)}</span></span>
-      ${locked ? LOCK + '<span class="sr">locked</span>' : ''}
+      <span><span class="nm">${esc(t.levels[n].name)}</span><span class="ds micro">${esc(t.levels[n].sub)}</span></span>
+      ${locked ? LOCK + `<span class="sr">${esc(t.locked)}</span>` : ''}
     </button>`;
   }).join('');
 }
 
 function renderToggle(){
-  const t = $('#toggle');
-  t.setAttribute('aria-checked', String(S.showModel));
-  $('#toggleTxt').textContent = S.showModel ? 'Shown' : 'Hidden';
+  $('#toggle').setAttribute('aria-checked', String(S.showModel));
+  $('#toggleTxt').textContent = S.showModel ? T().shown : T().hidden;
 }
 
 /* ---------- right side ---------- */
 function renderProblem(){
-  const p = S.p;
+  const p = S.p, t = T(), txt = problemText(p);
   $('#thumb').innerHTML = `<svg viewBox="0 0 40 40"><use href="#ic-${p.obj.id}"/></svg>`;
-  $('#probNo').textContent = `Problem #${S.count}`;
-  $('#probLvl').textContent = `Level ${p.lv} · ${LEVELS[p.lv].name}`;
-  $('#problemText').innerHTML = p.lines.map(esc).join(' ') + `<b>${esc(p.question)}</b>`;
+  $('#probNo').textContent = t.problemNo(S.count);
+  $('#probLvl').textContent = t.levelName(p.lv, t.levels[p.lv].name);
+  $('#problemText').innerHTML = txt.lines.map(l => markNames(p, l)).join(' ') + `<span class="q">${markNames(p, txt.question)}</span>`;
 }
 
 function renderPips(){
-  $('#pips').innerHTML = STEP_LABELS.map((l, i) =>
+  $('#pips').innerHTML = T().steps.map((l, i) =>
     `<span class="pip micro ${i < S.step ? 'done' : i === S.step ? 'now' : ''}">${i < S.step ? '✓ ' : ''}${esc(l)}</span>`).join('');
 }
 
 function renderWhy(){
   const p = S.p;
+  const title = TH() ? `ทำไมต้อง${opWord(p.op)}?` : `Why ${p.op === 'add' ? 'add' : 'subtract'}?`;
   $('#why').innerHTML = S.step >= 3
-    ? `<div class="why"><span class="micro">Why ${p.op === 'add' ? 'add' : 'subtract'}?</span><p>${whyText(p)}</p>${p.trick ? `<p class="trick">${trickText(p)}</p>` : ''}</div>`
+    ? `<div class="why"><span class="micro">${esc(title)}</span><p>${whyText(p)}</p>${p.trick ? `<p class="trick">${trickText(p)}</p>` : ''}</div>`
     : '';
 }
 
 function renderQuestion(){
-  const p = S.p, q = $('#question');
+  const p = S.p, q = $('#question'), th = TH(), t = T();
   let h = '';
   if (S.step === 0){
-    h = `<p class="prompt">Who has MORE?</p>
-      <p class="prompt-sub">Read the problem. The one with more gets the <b>long bar</b>.</p>
-      <div class="choices two">${p.order.map(n =>
-        `<button class="choice" data-who="${esc(n)}"><span class="sw" style="background:var(--cream-2)"></span><span class="main">${esc(n)}</span></button>`).join('')}</div>`;
+    h = th
+      ? `<p class="prompt">ใครมีมากกว่า?</p><p class="prompt-sub">อ่านโจทย์ คนที่มีมากกว่าจะได้<b>แท่งยาว</b></p>`
+      : `<p class="prompt">Who has MORE?</p><p class="prompt-sub">Read the problem. The one with more gets the <b>long bar</b>.</p>`;
+    h += `<div class="choices two">${p.order.map(w =>
+        `<button class="choice" data-who="${w}"><span class="sw" style="background:var(--cream-2)"></span><span class="main">${esc(nameOf(p,w))}</span></button>`).join('')}</div>`;
   } else if (S.step === 1){
     const opt = (part, main, sub, color) =>
       `<button class="choice" data-part="${part}"><span class="sw" style="background:${color}"></span><span><span class="main">${esc(main)}</span><span class="sub">${esc(sub)}</span></span></button>`;
-    h = `<p class="prompt">Which part is UNKNOWN?</p>
-      <p class="prompt-sub">Every number in the problem fills one part. ${S.showModel ? 'Tap the part with no number — on the model or below.' : 'Pick the part with no number.'}</p>
-      <div class="choices">
-        ${opt('big', p.big.name, 'Long bar · has more', 'var(--hero)')}
-        ${opt('small', p.small.name, 'Short bar · has less', 'var(--accent)')}
-        ${opt('diff', 'Difference', 'The gap between them', 'var(--secondary)')}
+    h = th
+      ? `<p class="prompt">ส่วนไหนที่เรายังไม่รู้?</p><p class="prompt-sub">ตัวเลขแต่ละตัวในโจทย์จะเติมลงในส่วนหนึ่งของรูป ${S.showModel ? 'แตะส่วนที่ไม่มีตัวเลข บนรูปหรือปุ่มด้านล่าง' : 'เลือกส่วนที่ไม่มีตัวเลข'}</p>`
+      : `<p class="prompt">Which part is UNKNOWN?</p><p class="prompt-sub">Every number in the problem fills one part. ${S.showModel ? 'Tap the part with no number — on the model or below.' : 'Pick the part with no number.'}</p>`;
+    h += `<div class="choices">
+        ${opt('big', nameOf(p,'big'), th ? 'แท่งยาว · มีมากกว่า' : 'Long bar · has more', 'var(--hero)')}
+        ${opt('small', nameOf(p,'small'), th ? 'แท่งสั้น · มีน้อยกว่า' : 'Short bar · has less', 'var(--accent)')}
+        ${opt('diff', t.difference, th ? 'ส่วนที่ยื่นเกินออกมา' : 'The gap between them', 'var(--secondary)')}
       </div>`;
   } else if (S.step === 2){
-    h = `<p class="prompt">To find the unknown, do we add or subtract?</p>
-      <p class="prompt-sub">Look at the picture: is the unknown a <b>whole</b> bar made of pieces, or a <b>piece</b>?</p>
-      <div class="choices two">
-        <button class="choice op-choice" data-op="add"><span class="sym" aria-hidden="true">+</span><span class="main">ADD</span></button>
-        <button class="choice op-choice" data-op="sub"><span class="sym" aria-hidden="true">${MINUS}</span><span class="main">SUBTRACT</span></button>
+    h = th
+      ? `<p class="prompt">จะหาส่วนที่ไม่รู้ ต้องบวกหรือลบ?</p><p class="prompt-sub">ดูรูป: ส่วนที่ไม่รู้เป็น<b>แท่งเต็ม</b>ที่เกิดจากชิ้นส่วนมาต่อกัน หรือเป็นแค่<b>ชิ้นส่วนหนึ่ง</b>?</p>`
+      : `<p class="prompt">To find the unknown, do we add or subtract?</p><p class="prompt-sub">Look at the picture: is the unknown a <b>whole</b> bar made of pieces, or a <b>piece</b>?</p>`;
+    h += `<div class="choices two">
+        <button class="choice op-choice" data-op="add"><span class="sym" aria-hidden="true">+</span><span class="main">${esc(opWord('add'))}</span></button>
+        <button class="choice op-choice" data-op="sub"><span class="sym" aria-hidden="true">${MINUS}</span><span class="main">${esc(opWord('sub'))}</span></button>
       </div>`;
   } else if (S.step === 3){
-    h = `<p class="prompt">Now solve it.</p>
-      <p class="prompt-sub">Type your answer${p.money ? ' in dollars' : ''}.</p>
-      <form id="ansForm" autocomplete="off">
+    h = th
+      ? `<p class="prompt">ลองหาคำตอบ</p><p class="prompt-sub">พิมพ์คำตอบ${p.money ? ' (เป็นบาท)' : ''}</p>`
+      : `<p class="prompt">Now solve it.</p><p class="prompt-sub">Type your answer${p.money ? ' in dollars' : ''}.</p>`;
+    h += `<form id="ansForm" autocomplete="off">
         <div class="eq-row">
           <span class="expr">${esc(exprOf(p))} =</span>
-          <label class="sr" for="ans">Your answer</label>
+          <label class="sr" for="ans">${th ? 'คำตอบ' : 'Your answer'}</label>
           <input class="answer" id="ans" inputmode="numeric" maxlength="7" placeholder="?">
         </div>
-        <button class="pill" type="submit"><span class="dot" aria-hidden="true"></span>Check answer</button>
+        <button class="pill" type="submit"><span class="dot" aria-hidden="true"></span>${th ? 'ตรวจคำตอบ' : 'Check answer'}</button>
       </form>`;
   } else {
     const next = S.freshUnlock && S.freshUnlock !== S.level
-      ? `<button class="pill" data-go="${S.freshUnlock}"><span class="dot" aria-hidden="true"></span>Go to level ${S.freshUnlock}</button>` : '';
-    h = `<div class="solved-box"><span class="micro">Solved</span><p>${esc(answerSentence(p))}</p></div>
-      <div class="actions-row"><button class="pill glow" id="nextBtn"><span class="dot" aria-hidden="true"></span>New problem</button>${next}</div>`;
+      ? `<button class="pill" data-go="${S.freshUnlock}"><span class="dot" aria-hidden="true"></span>${th ? `ไประดับ ${S.freshUnlock}` : `Go to level ${S.freshUnlock}`}</button>` : '';
+    h = `<div class="solved-box"><span class="micro">${th ? 'ถูกต้อง' : 'Solved'}</span><p>${esc(answerSentence(p))}</p></div>
+      <div class="actions-row"><button class="pill glow" id="nextBtn"><span class="dot" aria-hidden="true"></span>${esc(t.newProblem)}</button>${next}</div>`;
   }
   q.innerHTML = h;
   if (S.step === 3){ const i = $('#ans'); if (i) i.focus({preventScroll:true}); }
 }
 
 function renderAll(){
+  applyStatic(); renderSwatches();
   renderTop(); renderLevels(); renderToggle();
   renderProblem(); renderPips(); renderWhy(); renderQuestion();
   drawModel(); updateReadouts(); updateStatus();
@@ -1167,7 +1361,8 @@ function newProblem(){
   S.p = makeProblem(S.level);
   S.step = 0; S.attempts = 0; S.firstTry = true;
   if (S.level === 4) S.showModel = false;
-  log('sep', `Problem #${S.count} · Level ${S.level}`);
+  const t = T();
+  log('sep', esc(`${t.problemNo(S.count)} · ${t.level} ${S.level}`));
   renderAll();
 }
 
@@ -1183,65 +1378,86 @@ function wrongButton(btn){
   btn.disabled = true;
 }
 
-function chooseWho(name, btn){
-  const p = S.p;
-  if (name === p.big.name){
-    log('ok', `Yes! <b>${esc(p.big.name)}</b> has more, so ${esc(p.big.name)} gets the <b>long bar</b> and ${esc(p.small.name)} gets the <b>short bar</b>.`);
+function chooseWho(who, btn){
+  const p = S.p, th = TH();
+  const B = esc(nameOf(p,'big')), Sm = esc(nameOf(p,'small'));
+  if (who === 'big'){
+    log('ok', th
+      ? `ใช่เลย! <b>${B}</b> มีมากกว่า ${B}จึงได้<b>แท่งยาว</b> และ${Sm}ได้<b>แท่งสั้น</b>`
+      : `Yes! <b>${B}</b> has more, so ${B} gets the <b>long bar</b> and ${Sm} gets the <b>short bar</b>.`);
     advance(1);
-  } else {
-    wrongButton(btn);
-    let msg;
-    if (p.rel){
-      msg = p.phr === 'less'
-        ? `Read it again: “${esc(p.rel)}” — ${esc(p.small.name)} is the one with <b>${esc(p.kw)}</b>. So whose bar sticks out further?`
-        : `Read it again: “${esc(p.rel)}” — ${esc(p.big.name)} has <b>more</b> than ${esc(p.small.name)}. So whose bar is longer?`;
-    } else {
-      msg = `Compare the numbers: ${esc(p.big.name)} has ${esc(fmt(p,p.big.val))} and ${esc(p.small.name)} has ${esc(fmt(p,p.small.val))}. The bigger number gets the longer bar.`;
-    }
-    log('no', msg);
+    return;
   }
+  wrongButton(btn);
+  const rel = problemText(p).rel;
+  let msg;
+  if (rel){
+    if (th) msg = p.phr === 'less'
+      ? `ลองอ่านอีกครั้ง: “${esc(rel)}” — ${Sm}คือคนที่มี<b>น้อยกว่า</b> แล้วแท่งของใครยาวกว่า?`
+      : `ลองอ่านอีกครั้ง: “${esc(rel)}” — ${B}มี<b>มากกว่า</b>${Sm} แล้วแท่งของใครยาวกว่า?`;
+    else msg = p.phr === 'less'
+      ? `Read it again: “${esc(rel)}” — ${Sm} is the one with <b>${esc(kwOf(p))}</b>. So whose bar sticks out further?`
+      : `Read it again: “${esc(rel)}” — ${B} has <b>more</b> than ${Sm}. So whose bar is longer?`;
+  } else {
+    msg = th
+      ? `ลองเทียบตัวเลข: ${B}มี ${esc(qty(p,p.b))} ส่วน${Sm}มี ${esc(qty(p,p.s))} ตัวเลขที่มากกว่าจะได้แท่งที่ยาวกว่า`
+      : `Compare the numbers: ${B} has ${esc(qty(p,p.b))} and ${Sm} has ${esc(qty(p,p.s))}. The bigger number gets the longer bar.`;
+  }
+  log('no', msg);
 }
 
 function choosePart(part, btn){
-  const p = S.p;
+  const p = S.p, th = TH();
   if (part === p.type){
-    const known = ['big','small','diff'].filter(x => x !== part).map(x => `${esc(partDesc(p,x))} = <b>${esc(fmt(p,partVal(p,x)))}</b>`);
-    log('ok', `Right — the question asks for ${esc(partDesc(p,part))}. We know ${known.join(' and ')}.`);
+    const known = ['big','small','diff'].filter(x => x !== part).map(x => `${esc(partDesc(p,x))} = <b>${esc(qty(p,valOf(p,x)))}</b>`);
+    log('ok', th
+      ? `ถูกต้อง — คำถามถามหา${esc(partDesc(p,part))} ส่วนที่เรารู้แล้วคือ ${known.join(' และ ')}`
+      : `Right — the question asks for ${esc(partDesc(p,part))}. We know ${known.join(' and ')}.`);
     advance(2);
-  } else {
-    if (!btn) btn = document.querySelector(`#question [data-part="${part}"]`);
-    wrongButton(btn);
-    log('no', `The problem tells us ${esc(partDesc(p,part))} is <b>${esc(fmt(p,partVal(p,part)))}</b>, so that part is <b>known</b>. Which number is the question asking for? “${esc(p.question)}”`);
-    if (S.showModel) flashScreen();
+    return;
   }
+  if (!btn) btn = document.querySelector(`#question [data-part="${part}"]`);
+  wrongButton(btn);
+  const qn = esc(problemText(p).question);
+  log('no', th
+    ? `โจทย์บอกแล้วว่า${esc(partDesc(p,part))} เท่ากับ <b>${esc(qty(p,valOf(p,part)))}</b> ส่วนนี้จึง<b>รู้ค่าแล้ว</b> คำถามถามหาตัวเลขไหน? “${qn}”`
+    : `The problem tells us ${esc(partDesc(p,part))} is <b>${esc(qty(p,valOf(p,part)))}</b>, so that part is <b>known</b>. Which number is the question asking for? “${qn}”`);
+  if (S.showModel) flashScreen();
 }
 
 function chooseOp(op, btn){
-  const p = S.p;
+  const p = S.p, th = TH();
   if (op === p.op){
-    log('ok', `Yes — <b>${p.op === 'add' ? 'add' : 'subtract'}</b>.`);
+    log('ok', th ? `ใช่ — <b>${opWord(p.op)}</b>` : `Yes — <b>${p.op === 'add' ? 'add' : 'subtract'}</b>.`);
     log('why', whyText(p));
     if (p.trick) log('star', trickText(p));
     advance(3);
-  } else {
-    wrongButton(btn);
-    const lured = p.trick && ((p.kw === 'more' && op === 'add') || (p.kw !== 'more' && op === 'sub'));
-    let msg = lured ? `Did the word “${esc(p.kw)}” make you want to ${op === 'add' ? 'add' : 'subtract'}? Words can trick you — the picture can't. ` : '';
-    if (p.type === 'big')
-      msg += `Look at the picture — the unknown is the <b>long bar</b>. It's <b>longer</b> than ${esc(p.small.name)}'s bar (${esc(fmt(p,p.small.val))}). Subtracting would make it shorter!`;
-    else if (p.type === 'small')
-      msg += `Look at the picture — the unknown is the <b>short bar</b>. It's <b>shorter</b> than ${esc(p.big.name)}'s bar (${esc(fmt(p,p.big.val))}). Adding would make it even longer!`;
-    else
-      msg += `Look at the picture — the unknown is just the <b>gap</b>, the extra piece at the end of the long bar. Adding both bars would give something longer than either bar!`;
-    if (!S.showModel) msg += ' Tip: flip the <b>Bar model</b> switch to see it.';
-    log('no', msg);
+    return;
   }
+  wrongButton(btn);
+  const B = esc(nameOf(p,'big')), Sm = esc(nameOf(p,'small'));
+  const lured = p.trick && ((p.phr === 'more' && op === 'add') || (p.phr !== 'more' && op === 'sub'));
+  let msg = '';
+  if (th){
+    if (lured) msg = `คำว่า “${esc(kwOf(p))}” ทำให้อยาก${opWord(op)}ใช่ไหม? คำสำคัญหลอกเราได้ แต่รูปหลอกเราไม่ได้ `;
+    if (p.type === 'big') msg += `ดูรูป — ส่วนที่ไม่รู้คือ<b>แท่งยาว</b> ซึ่ง<b>ยาวกว่า</b>แท่งของ${Sm} (${esc(qty(p,p.s))}) ถ้าลบ แท่งจะสั้นลง!`;
+    else if (p.type === 'small') msg += `ดูรูป — ส่วนที่ไม่รู้คือ<b>แท่งสั้น</b> ซึ่ง<b>สั้นกว่า</b>แท่งของ${B} (${esc(qty(p,p.b))}) ถ้าบวก แท่งจะยาวขึ้นไปอีก!`;
+    else msg += `ดูรูป — ส่วนที่ไม่รู้เป็นแค่<b>ผลต่าง</b> คือส่วนที่ยื่นเกินออกมาจากแท่งยาว ถ้าบวกสองแท่งเข้าด้วยกัน จะได้ยาวกว่าทั้งสองแท่งเสียอีก!`;
+    if (!S.showModel) msg += ' เคล็ดลับ: เปิดสวิตช์<b>บาร์โมเดล</b>เพื่อดูรูป';
+  } else {
+    if (lured) msg = `Did the word “${esc(kwOf(p))}” make you want to ${op === 'add' ? 'add' : 'subtract'}? Words can trick you — the picture can't. `;
+    if (p.type === 'big') msg += `Look at the picture — the unknown is the <b>long bar</b>. It's <b>longer</b> than ${Sm}'s bar (${esc(qty(p,p.s))}). Subtracting would make it shorter!`;
+    else if (p.type === 'small') msg += `Look at the picture — the unknown is the <b>short bar</b>. It's <b>shorter</b> than ${B}'s bar (${esc(qty(p,p.b))}). Adding would make it even longer!`;
+    else msg += `Look at the picture — the unknown is just the <b>gap</b>, the extra piece at the end of the long bar. Adding both bars would give something longer than either bar!`;
+    if (!S.showModel) msg += ' Tip: flip the <b>Bar model</b> switch to see it.';
+  }
+  log('no', msg);
 }
 
 function checkAnswer(raw){
-  const p = S.p;
-  const cleaned = String(raw).replace(/[$,\s]/g, '');
-  if (!/^\d{1,6}$/.test(cleaned)){ log('hint', 'Type a whole number, like 42.'); return; }
+  const p = S.p, th = TH();
+  const cleaned = String(raw).replace(/[$฿,\s]|บาท/g, '');
+  if (!/^\d{1,6}$/.test(cleaned)){ log('hint', th ? 'พิมพ์เป็นจำนวนนับ เช่น 42' : 'Type a whole number, like 42.'); return; }
   const n = parseInt(cleaned, 10);
   if (n === p.answer){ finish(true); return; }
 
@@ -1253,46 +1469,62 @@ function checkAnswer(raw){
   }
   const inp = $('#ans'); if (inp){ inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); inp.select(); }
 
-  const wrongOp = p.type === 'big' ? p.small.val - p.diff
-                : p.type === 'small' ? p.big.val + p.diff : p.big.val + p.small.val;
-  const opWord = p.op === 'add' ? 'adding' : 'subtracting';
-  let msg;
+  const e = esc(exprOf(p));
   if (S.attempts >= 3){
-    log('no', `Not quite. ${esc(exprOf(p))} = <b>${esc(fmt(p,p.answer))}</b>. Look at the model to see why — then try a new one!`);
+    log('no', th
+      ? `ยังไม่ถูก ${e} = <b>${esc(qty(p,p.answer))}</b> ลองดูรูปว่าทำไม แล้วไปทำข้อใหม่กัน!`
+      : `Not quite. ${e} = <b>${esc(fmt(p,p.answer))}</b>. Look at the model to see why — then try a new one!`);
     finish(false);
     return;
   }
+  const wrongOp = p.type === 'big' ? p.s - p.diff : p.type === 'small' ? p.b + p.diff : p.b + p.s;
+  const hund = p.b >= 100, tens = p.b >= 10;
+  let msg;
   if (n === wrongOp){
-    msg = `That's what you'd get by ${p.op === 'add' ? 'subtracting' : 'adding'}. We decided to <b>${p.op === 'add' ? 'add' : 'subtract'}</b> — check the equation: ${esc(exprOf(p))}.`;
-  } else if (p.type === 'big' && n <= p.small.val){
-    msg = `Look at the picture — the unknown is the <b>long bar</b>, so the answer must be <b>more</b> than ${esc(fmt(p,p.small.val))}.`;
-  } else if (p.type !== 'big' && n >= p.big.val){
-    msg = `Look at the picture — the unknown is ${p.type === 'small' ? 'the <b>short bar</b>' : 'only the <b>gap</b>'}, so it must be <b>less</b> than the long bar (${esc(fmt(p,p.big.val))}).`;
+    msg = th
+      ? `นั่นคือคำตอบเมื่อเรา${opWord(p.op === 'add' ? 'sub' : 'add')} แต่เราตกลงกันแล้วว่าจะ<b>${opWord(p.op)}</b> ลองดูประโยคสัญลักษณ์: ${e}`
+      : `That's what you'd get by ${p.op === 'add' ? 'subtracting' : 'adding'}. We decided to <b>${p.op === 'add' ? 'add' : 'subtract'}</b> — check the equation: ${e}.`;
+  } else if (p.type === 'big' && n <= p.s){
+    msg = th
+      ? `ดูรูป — ส่วนที่ไม่รู้คือ<b>แท่งยาว</b> คำตอบจึงต้อง<b>มากกว่า</b> ${esc(qty(p,p.s))}`
+      : `Look at the picture — the unknown is the <b>long bar</b>, so the answer must be <b>more</b> than ${esc(qty(p,p.s))}.`;
+  } else if (p.type !== 'big' && n >= p.b){
+    msg = th
+      ? `ดูรูป — ส่วนที่ไม่รู้คือ${p.type === 'small' ? '<b>แท่งสั้น</b>' : 'แค่<b>ผลต่าง</b>'} คำตอบจึงต้อง<b>น้อยกว่า</b>แท่งยาว (${esc(qty(p,p.b))})`
+      : `Look at the picture — the unknown is ${p.type === 'small' ? 'the <b>short bar</b>' : 'only the <b>gap</b>'}, so it must be <b>less</b> than the long bar (${esc(qty(p,p.b))}).`;
   } else if (S.attempts === 1){
-    msg = `Close! Check your ${opWord}: ${esc(exprOf(p))}. Line up the ones${p.answer >= 10 || p.big.val >= 10 ? ', tens' : ''}${p.big.val >= 100 ? ' and hundreds' : ''}.`;
+    msg = th
+      ? `ใกล้แล้ว! ตรวจการ${opWord(p.op)}อีกครั้ง: ${e} ตั้งหลักหน่วย${tens ? ' หลักสิบ' : ''}${hund ? ' และหลักร้อย' : ''}ให้ตรงกัน`
+      : `Close! Check your ${p.op === 'add' ? 'adding' : 'subtracting'}: ${e}. Line up the ones${tens ? ', tens' : ''}${hund ? ' and hundreds' : ''}.`;
   } else {
-    const r = p.big.val >= 100 ? 10 : 1;
-    msg = `Estimate first: the answer is about <b>${esc(fmt(p, Math.round(p.answer / r) * r))}</b>. Your answer ${esc(fmt(p,n))} is too ${n > p.answer ? 'big' : 'small'}.`;
+    const r = hund ? 10 : 1, est = Math.round(p.answer / r) * r;
+    msg = th
+      ? `ลองประมาณก่อน: คำตอบประมาณ <b>${esc(qty(p,est))}</b> คำตอบ ${esc(qty(p,n))} ${n > p.answer ? 'มากไป' : 'น้อยไป'}`
+      : `Estimate first: the answer is about <b>${esc(fmt(p,est))}</b>. Your answer ${esc(fmt(p,n))} is too ${n > p.answer ? 'big' : 'small'}.`;
   }
   log('no', msg);
 }
 
 function finish(solved){
-  const p = S.p;
+  const p = S.p, th = TH(), t = T();
   if (solved){
+    const sent = esc(answerSentence(p));
     if (S.firstTry){
       S.score += 10; S.streak++; S.lvStreak[S.level]++; S.justScored = true;
       if (S.streak > S.best) S.best = S.streak;
-      log('ok', `Correct! <b>${esc(answerSentence(p))}</b> +10 points. ${S.streak >= 3 ? `That's ${S.streak} in a row!` : ''}`);
+      const run = S.streak >= 3 ? (th ? `ถูกติดกัน ${S.streak} ข้อแล้ว!` : `That's ${S.streak} in a row!`) : '';
+      log('ok', th ? `ถูกต้อง! <b>${sent}</b> +10 คะแนน ${run}` : `Correct! <b>${sent}</b> +10 points. ${run}`);
       if (S.lvStreak[S.level] >= UNLOCK && S.level < 4 && S.unlocked === S.level){
         S.unlocked = S.level + 1; S.freshUnlock = S.unlocked;
-        log('star', `<b>Level ${S.unlocked} unlocked!</b> ${esc(LEVELS[S.unlocked].name)} is ready when you are.`);
+        const nm = esc(t.levels[S.unlocked].name);
+        log('star', th ? `<b>ปลดล็อกระดับ ${S.unlocked} แล้ว!</b> “${nm}” พร้อมให้เล่นแล้ว` : `<b>Level ${S.unlocked} unlocked!</b> ${nm} is ready when you are.`);
       } else if (S.level === 4 && S.lvStreak[4] === UNLOCK){
-        log('star', `<b>Mix Master!</b> ${UNLOCK} in a row with the model hidden. You don't need keywords anymore.`);
+        log('star', th ? `<b>สุดยอด!</b> ถูก ${UNLOCK} ข้อติดกันโดยไม่ดูรูป ไม่ต้องพึ่งคำสำคัญแล้ว` : `<b>Mix Master!</b> ${UNLOCK} in a row with the model hidden. You don't need keywords anymore.`);
       }
     } else {
       S.score += 5;
-      log('ok', `Got it! <b>${esc(answerSentence(p))}</b> +5 points. Next time aim for the first try to build your streak.`);
+      log('ok', th ? `ได้แล้ว! <b>${sent}</b> +5 คะแนน ครั้งหน้าลองตอบให้ถูกตั้งแต่ครั้งแรกเพื่อสะสมการถูกติดกัน`
+                   : `Got it! <b>${sent}</b> +5 points. Next time aim for the first try to build your streak.`);
     }
     save();
   }
@@ -1301,23 +1533,32 @@ function finish(solved){
 }
 
 function hint(){
-  const p = S.p;
-  const peek = !S.showModel && S.step < 4 ? ' <b>Tip:</b> flip the Bar model switch to see the picture.' : '';
+  const p = S.p, th = TH();
+  const peek = !S.showModel && S.step < 4 ? (th ? ' <b>เคล็ดลับ:</b> เปิดสวิตช์บาร์โมเดลเพื่อดูรูป' : ' <b>Tip:</b> flip the Bar model switch to see the picture.') : '';
+  const rel = problemText(p).rel;
   let msg;
   switch (S.step){
-    case 0: msg = p.rel
-      ? `Find the sentence that compares the two people: “${esc(p.rel)}” Who would get the <b>longer</b> bar?`
-      : `Two numbers are given. The person with the bigger number gets the <b>longer</b> bar.`; break;
-    case 1: msg = `Each number in the problem fills in one part of the model: the long bar, the short bar, or the gap. The part that gets <b>no number</b> is the unknown.`; break;
-    case 2: msg = `Picture it: is the unknown the <b>whole long bar</b> (short bar + gap put together)? Or is it <b>one piece</b> of the long bar (the short bar or the gap)? Putting together → add. Taking a piece away → subtract.`; break;
+    case 0: msg = rel
+      ? (th ? `หาประโยคที่เปรียบเทียบสองคน: “${esc(rel)}” ใครควรได้แท่งที่<b>ยาวกว่า</b>?` : `Find the sentence that compares the two people: “${esc(rel)}” Who would get the <b>longer</b> bar?`)
+      : (th ? `โจทย์ให้ตัวเลขมาสองตัว คนที่มีตัวเลขมากกว่าจะได้แท่งที่<b>ยาวกว่า</b>` : `Two numbers are given. The person with the bigger number gets the <b>longer</b> bar.`);
+      break;
+    case 1: msg = th
+      ? `ตัวเลขแต่ละตัวในโจทย์จะเติมลงในส่วนหนึ่งของรูป: แท่งยาว แท่งสั้น หรือผลต่าง ส่วนที่<b>ไม่มีตัวเลข</b>คือส่วนที่ยังไม่รู้`
+      : `Each number in the problem fills in one part of the model: the long bar, the short bar, or the gap. The part that gets <b>no number</b> is the unknown.`;
+      break;
+    case 2: msg = th
+      ? `ลองนึกภาพ: ส่วนที่ไม่รู้คือ<b>แท่งยาวทั้งแท่ง</b> (แท่งสั้น + ผลต่าง มาต่อกัน) หรือเป็น<b>ชิ้นส่วนหนึ่ง</b>ของแท่งยาว (แท่งสั้น หรือ ผลต่าง)? นำมารวมกัน → บวก  เอาชิ้นส่วนออก → ลบ`
+      : `Picture it: is the unknown the <b>whole long bar</b> (short bar + gap put together)? Or is it <b>one piece</b> of the long bar (the short bar or the gap)? Putting together → add. Taking a piece away → subtract.`;
+      break;
     case 3: {
-      const r = p.big.val >= 100 ? 100 : 10;
+      const r = p.b >= 100 ? 100 : 10, R = n => Math.round(n / r) * r;
+      const est = p.type === 'big' ? `${R(p.s)} + ${R(p.diff)}` : p.type === 'small' ? `${R(p.b)} ${MINUS} ${R(p.diff)}` : `${R(p.b)} ${MINUS} ${R(p.s)}`;
       msg = p.numLv === 1
-        ? `Count the pictures in the model to check!`
-        : `Estimate with round numbers first: ${p.type === 'big' ? `${Math.round(p.small.val/r)*r} + ${Math.round(p.diff/r)*r}` : p.type === 'small' ? `${Math.round(p.big.val/r)*r} ${MINUS} ${Math.round(p.diff/r)*r}` : `${Math.round(p.big.val/r)*r} ${MINUS} ${Math.round(p.small.val/r)*r}`} is close. Your answer should be near that.`;
+        ? (th ? `นับรูปในโมเดลเพื่อตรวจคำตอบ!` : `Count the pictures in the model to check!`)
+        : (th ? `ลองประมาณด้วยจำนวนเต็ม${r === 100 ? 'ร้อย' : 'สิบ'}ก่อน: ${est} คำตอบควรใกล้เคียงค่านี้` : `Estimate with round numbers first: ${est} is close. Your answer should be near that.`);
       break;
     }
-    default: msg = `Press <b>New problem</b> for another one.`;
+    default: msg = th ? `กด<b>โจทย์ใหม่</b>เพื่อทำข้อต่อไป` : `Press <b>New problem</b> for another one.`;
   }
   log('hint', msg + peek);
 }
@@ -1334,6 +1575,14 @@ function setLevel(n){
   newProblem();
 }
 
+function setLang(l){
+  if (l === S.lang || !UI[l]) return;
+  S.lang = l;
+  save();
+  log('sep', esc(T().langSep));
+  renderAll();   // same problem, same step — re-worded in the new language
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const t = e.target.closest('button, [data-part]');
@@ -1346,6 +1595,7 @@ document.addEventListener('click', e => {
     if (S.step === 1) renderQuestion();
     return;
   }
+  if (t.dataset.lang){ setLang(t.dataset.lang); return; }
   if (t.dataset.theme !== undefined && t.classList.contains('swatch')){
     S.theme = +t.dataset.theme; renderSwatches(); save(); return;
   }
@@ -1367,14 +1617,16 @@ document.addEventListener('submit', e => {
   if (S.step === 3) checkAnswer($('#ans').value);
 });
 document.addEventListener('animationend', e => { if (e.target.classList) e.target.classList.remove('shake'); });
+// web fonts can change text widths after first paint — refit the difference chip
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDiffChip);
 
 /* ---------- boot ---------- */
 load();
 S.level = S.unlocked;
 S.showModel = S.level !== 4;
-renderSwatches();
-log('sep', 'Welcome');
-log('hint', 'Every problem gets a <b>picture</b> first. Figure out who has more, find the unknown part, then decide: add or subtract? The picture tells you — not the keywords.');
+applyStatic();
+log('sep', esc(T().welcome));
+log('hint', T().welcomeMsg);
 newProblem();
 })();
 </script>
