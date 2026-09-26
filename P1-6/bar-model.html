@@ -1,0 +1,1382 @@
+<!doctype html>
+<html lang="en" data-theme="0">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bar Model Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============ THEME TOKENS ============ */
+:root{
+  --ink:#1b1a17;
+  --cream:#f4f1ea;
+  --cream-2:#e6e0d3;
+  --bg:#a3b09c;         /* muted backdrop */
+  --hero:#ff5a1f;       /* hero */
+  --accent:#2b5cff;     /* accent */
+  --secondary:#ffc928;  /* secondary */
+  --screen:#262923;
+  --screen-2:#30342c;
+  --screen-ink:#11120f;
+  --dim:#8f9585;
+  --ghost:#50554a;
+
+  --bw:4px;
+  --bw-s:3px;
+  --shadow:4px 4px 0 var(--ink);
+  --shadow-lg:7px 7px 0 var(--ink);
+  --hi:inset 0 3px 0 rgba(255,255,255,.7);
+  --lo:inset 0 -5px 0 rgba(27,26,23,.16);
+  --r:18px;
+  --gap:24px;
+  --f-head:"Outfit",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Share Tech Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+html[data-theme="1"]{ --bg:#aaa3b8; --hero:#7a3cf0; --accent:#ff7a1a; --secondary:#34d399; }
+html[data-theme="2"]{ --bg:#bdae92; --hero:#009e96; --accent:#ff4d6d; --secondary:#ffd23f; }
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--f-head);
+  font-weight:500;
+  line-height:1.4;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color .25s;
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:3px dashed var(--ink);outline-offset:4px}
+
+.micro{
+  font-family:var(--f-head);
+  font-weight:800;
+  font-size:10.5px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  line-height:1;
+}
+.mono{font-family:var(--f-mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============ LAYOUT ============ */
+.app{
+  max-width:1480px;
+  margin:0 auto;
+  padding:var(--gap);
+  display:grid;
+  grid-template-columns:250px minmax(0,1fr) 390px;
+  grid-template-areas:"top top top" "rail stage side";
+  gap:var(--gap);
+  align-items:start;
+}
+.topbar{grid-area:top}
+.rail{grid-area:rail;display:grid;gap:var(--gap)}
+.stage{grid-area:stage;min-width:0}
+.side{grid-area:side;display:grid;gap:var(--gap);min-width:0}
+
+@media (max-width:1240px){
+  .app{grid-template-columns:240px minmax(0,1fr);grid-template-areas:"top top" "rail stage" "side side"}
+  .side{grid-template-columns:1fr 1fr}
+  .side .log-panel{grid-column:1 / -1}
+}
+@media (max-width:860px){
+  :root{--gap:18px}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "side" "rail";padding:16px}
+  .side{grid-template-columns:minmax(0,1fr)}
+  .rail{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+}
+
+/* ============ PANELS ============ */
+.panel{
+  position:relative;
+  background:var(--cream);
+  border:var(--bw) solid var(--ink);
+  border-radius:var(--r);
+  box-shadow:var(--hi),var(--lo),var(--shadow);
+  padding:26px 20px 20px;
+}
+.tag{
+  position:absolute;
+  top:-13px;left:16px;
+  background:var(--ink);
+  color:var(--cream);
+  border-radius:999px;
+  padding:6px 12px 5px;
+}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:18px 28px;
+  padding:16px 20px;
+}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{
+  width:54px;height:54px;flex:none;
+  background:var(--hero);
+  border:var(--bw) solid var(--ink);
+  border-radius:14px;
+  box-shadow:var(--hi),var(--lo),3px 3px 0 var(--ink);
+  display:grid;place-items:center;
+  transition:background-color .25s;
+}
+h1{
+  margin:0;
+  font-weight:900;
+  font-size:clamp(22px,2.4vw,30px);
+  letter-spacing:-.01em;
+  line-height:1;
+}
+.brand .micro{margin-top:6px;color:#5d5a52}
+
+.top-right{display:flex;flex-wrap:wrap;align-items:stretch;gap:14px}
+.stat{
+  display:flex;flex-direction:column;justify-content:center;gap:7px;
+  background:var(--cream-2);
+  border:var(--bw-s) solid var(--ink);
+  border-radius:14px;
+  padding:10px 14px;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.55);
+  min-width:92px;
+}
+.stat-row{display:flex;align-items:center;gap:10px}
+.stat strong{font-weight:900;font-size:24px;line-height:1}
+.swatches{display:flex;gap:8px}
+.swatch{
+  width:38px;height:38px;padding:0;
+  border:var(--bw-s) solid var(--ink);
+  border-radius:12px;
+  overflow:hidden;
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  box-shadow:2px 2px 0 var(--ink);
+  transition:transform .06s,box-shadow .06s;
+}
+.swatch span:first-child{grid-row:1 / 3}
+.swatch:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+.swatch[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:3px}
+
+.meter{display:flex;gap:4px}
+.seg{
+  width:22px;height:14px;
+  border:var(--bw-s) solid var(--ink);
+  border-radius:5px;
+  background:var(--cream);
+}
+.seg.on{background:var(--hero);box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+
+.leds{
+  display:flex;gap:5px;
+  background:var(--screen);
+  border:var(--bw-s) solid var(--ink);
+  border-radius:999px;
+  padding:4px 7px;
+}
+.led{
+  width:12px;height:12px;border-radius:50%;
+  background:#4a4e44;
+  border:2px solid var(--screen-ink);
+}
+.led.on{background:var(--secondary);box-shadow:inset 0 2px 0 rgba(255,255,255,.7)}
+.led.pop{animation:ledpop .4s}
+@keyframes ledpop{40%{transform:scale(1.5)}}
+
+/* ============ BUTTONS ============ */
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--cream);
+  border:var(--bw) solid var(--ink);
+  border-radius:999px;
+  padding:12px 22px 11px;
+  font-weight:900;
+  font-size:15px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  box-shadow:var(--hi),var(--lo),var(--shadow);
+  transition:transform .06s,box-shadow .06s;
+  white-space:nowrap;
+}
+.pill:active:not(:disabled){transform:translate(4px,4px);box-shadow:var(--hi),var(--lo),0 0 0 var(--ink)}
+.pill:disabled{opacity:.45}
+.pill .dot{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--ink);background:var(--hero)}
+.pill.block{width:100%}
+.pill.glow .dot{animation:blink 1s steps(2) infinite}
+
+.choice{
+  display:flex;align-items:center;gap:12px;
+  width:100%;
+  text-align:left;
+  background:var(--cream);
+  border:var(--bw) solid var(--ink);
+  border-radius:16px;
+  padding:13px 16px 12px;
+  font-weight:800;
+  font-size:17px;
+  box-shadow:var(--hi),var(--lo),var(--shadow);
+  transition:transform .06s,box-shadow .06s,background-color .15s;
+}
+.choice:active:not(:disabled){transform:translate(4px,4px);box-shadow:var(--hi),var(--lo),0 0 0 var(--ink)}
+.choice .sw{
+  flex:none;width:30px;height:22px;border-radius:7px;
+  border:var(--bw-s) solid var(--ink);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5);
+}
+.choice .sub{display:block;font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b675e;margin-top:2px}
+.choice.wrong{background:var(--cream-2);opacity:.6}
+.choice.wrong .main{text-decoration:line-through;text-decoration-thickness:3px}
+.choices{display:grid;gap:12px}
+.choices.two{grid-template-columns:1fr 1fr}
+.op-choice{justify-content:center;flex-direction:column;gap:4px;padding:16px 10px 14px;text-align:center}
+.op-choice .sym{
+  width:46px;height:46px;border-radius:50%;
+  display:grid;place-items:center;
+  border:var(--bw) solid var(--ink);
+  background:var(--secondary);
+  font-weight:900;font-size:30px;line-height:1;
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.6),inset 0 -4px 0 rgba(0,0,0,.15);
+}
+.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+/* ============ LEFT RAIL ============ */
+.levels{display:grid;gap:10px}
+.lvl{
+  display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:12px;
+  width:100%;text-align:left;
+  background:var(--cream);
+  border:var(--bw-s) solid var(--ink);
+  border-radius:14px;
+  padding:8px 10px 8px 8px;
+  box-shadow:var(--hi),var(--lo),3px 3px 0 var(--ink);
+  transition:transform .06s,box-shadow .06s;
+}
+.lvl:active:not(:disabled){transform:translate(3px,3px);box-shadow:var(--hi),var(--lo),0 0 0 var(--ink)}
+.lvl .num{
+  width:40px;height:40px;border-radius:11px;
+  border:var(--bw-s) solid var(--ink);
+  background:var(--cream-2);
+  display:grid;place-items:center;
+  font-weight:900;font-size:20px;
+}
+.lvl .nm{font-weight:900;font-size:15px;line-height:1.1;display:block;white-space:nowrap}
+.lvl .ds{display:block;margin-top:4px;font-size:9.5px;letter-spacing:.12em;color:#6b675e;white-space:nowrap}
+.lvl[aria-current="true"]{background:var(--ink);color:var(--cream)}
+.lvl[aria-current="true"] .num{background:var(--hero);color:var(--cream)}
+.lvl[aria-current="true"] .ds{color:#bdb8ab}
+.lvl:disabled{background:var(--cream-2);box-shadow:none;opacity:.7}
+.lvl.fresh{animation:fresh 1s 3}
+@keyframes fresh{50%{background:var(--secondary)}}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.switch{
+  position:relative;flex:none;
+  width:84px;height:44px;padding:0;
+  background:var(--cream-2);
+  border:var(--bw) solid var(--ink);
+  border-radius:999px;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.12),3px 3px 0 var(--ink);
+  transition:background-color .15s;
+}
+.switch::before{
+  content:"";position:absolute;top:3px;left:3px;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--cream);
+  border:var(--bw) solid var(--ink);
+  box-shadow:inset 0 3px 0 #fff,inset 0 -4px 0 rgba(0,0,0,.15);
+  transition:transform .18s cubic-bezier(.3,1.5,.6,1);
+}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::before{transform:translateX(40px)}
+.switch-label strong{display:block;font-weight:900;font-size:17px;margin-top:6px}
+.rail p{margin:12px 0 0;font-size:14px;color:#4c4943}
+
+.legend{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}
+.legend .sw{flex:none;width:34px;height:18px;border-radius:6px;border:var(--bw-s) solid var(--ink)}
+.legend .sw.gap{background:repeating-linear-gradient(45deg,var(--secondary) 0 4px,var(--screen) 4px 8px)}
+
+/* ============ HERO DEVICE ============ */
+.device{
+  position:relative;
+  background:var(--cream);
+  border:var(--bw) solid var(--ink);
+  border-radius:30px;
+  padding:22px 24px 26px;
+  box-shadow:var(--hi),inset 0 -8px 0 rgba(27,26,23,.14),var(--shadow-lg);
+  margin-bottom:26px;
+}
+.screw{
+  position:absolute;width:16px;height:16px;border-radius:50%;
+  background:var(--cream-2);border:3px solid var(--ink);
+}
+.screw::after{content:"";position:absolute;left:1px;right:1px;top:50%;height:3px;margin-top:-1.5px;background:var(--ink);transform:rotate(-35deg)}
+.screw.tl{top:12px;left:12px}.screw.tr{top:12px;right:12px}
+.screw.bl{bottom:14px;left:12px}.screw.br{bottom:14px;right:12px}
+.feet{position:absolute;left:0;right:0;bottom:-22px;display:flex;justify-content:space-between;padding:0 60px;pointer-events:none}
+.feet span{width:70px;height:18px;background:var(--ink);border-radius:0 0 12px 12px}
+
+.plate{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+  margin:0 18px 16px;
+}
+.plate-name{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.plate-name b{font-weight:900;font-size:20px;letter-spacing:.04em}
+.plate-name .micro{color:#6b675e}
+.knobs{display:flex;align-items:center;gap:12px}
+.power{width:14px;height:14px;border-radius:50%;background:var(--secondary);border:3px solid var(--ink);box-shadow:inset 0 2px 0 rgba(255,255,255,.7)}
+.knob{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--hero);border:var(--bw) solid var(--ink);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.5),inset 0 -4px 0 rgba(0,0,0,.2),2px 2px 0 var(--ink);
+  position:relative;
+}
+.knob::after{content:"";position:absolute;top:3px;left:50%;width:4px;height:10px;margin-left:-2px;background:var(--ink);border-radius:2px}
+.knob.b{background:var(--accent)}
+.knob.b::after{transform:rotate(60deg);transform-origin:50% 12px}
+
+.screen{
+  background:var(--screen);
+  border:var(--bw) solid var(--ink);
+  border-radius:20px;
+  padding:14px 16px 16px;
+  box-shadow:inset 0 0 0 5px var(--screen-2),inset 0 6px 0 5px var(--screen-ink);
+}
+.status{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--f-mono);
+  color:var(--secondary);
+  font-size:15px;letter-spacing:.08em;
+  padding:6px 8px 8px;
+  border-bottom:2px dashed #4a4e44;
+  margin-bottom:6px;
+  min-height:32px;
+}
+.status .blinker{width:10px;height:10px;border-radius:50%;background:var(--secondary);animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+#model svg{display:block;width:100%;height:auto}
+
+.readouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
+.readout{
+  background:var(--screen-ink);
+  border:var(--bw-s) solid var(--ink);
+  border-radius:12px;
+  padding:9px 12px 8px;
+  min-width:0;
+  box-shadow:inset 0 0 0 2px #2c3028;
+}
+.readout .lbl{display:flex;align-items:center;gap:7px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.readout .lbl i{flex:none;width:10px;height:10px;border-radius:3px;border:2px solid var(--ink)}
+.readout .val{
+  display:block;margin-top:6px;
+  font-family:var(--f-mono);
+  font-size:clamp(20px,2.3vw,30px);
+  line-height:1;
+  color:var(--secondary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.readout .val.unk{color:var(--cream);animation:blink 1s steps(2) infinite}
+.readout .val.off{color:#4c5046}
+.readout .val.solved{color:var(--cream);background:var(--hero);border-radius:6px;padding:2px 6px;display:inline-block;max-width:100%}
+.readout.eq{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.readout.eq .val{margin-top:0}
+.screen.is-hidden .readouts{display:none}
+
+/* SVG model styling */
+.track{fill:var(--screen-2);stroke:var(--screen-ink);stroke-width:3}
+.rule{stroke:#5b6053;stroke-width:3;stroke-linecap:round}
+.bshadow{fill:var(--screen-ink)}
+.bfill{stroke:var(--ink);stroke-width:4}
+.big .bfill{fill:var(--hero)}
+.small .bfill{fill:var(--accent)}
+.ghost .bfill{fill:var(--ghost)}
+.bhi{stroke:rgba(255,255,255,.6);stroke-width:3;stroke-linecap:round}
+.blo{fill:rgba(0,0,0,.2)}
+.gfill{fill:url(#hatch);stroke:var(--ink);stroke-width:4}
+.gdash{fill:none;stroke:var(--secondary);stroke-width:3;stroke-dasharray:8 6}
+.guide{stroke:var(--cream);stroke-width:2;stroke-dasharray:4 6;opacity:.45}
+.bracket{fill:none;stroke:var(--secondary);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.chip-bg{fill:var(--cream);stroke:var(--ink);stroke-width:3}
+.chip-tab.big{fill:var(--hero)}
+.chip-tab.small{fill:var(--accent)}
+.chip-tab.ghost{fill:var(--ghost)}
+.chip-tab{stroke:var(--ink);stroke-width:2}
+.chip-name{font:900 17px var(--f-head);fill:var(--ink)}
+.chip-micro{font:800 8.5px var(--f-head);letter-spacing:.18em;fill:#6b675e}
+.dchip{fill:var(--secondary);stroke:var(--ink);stroke-width:3}
+.dchip-t{font:900 12px var(--f-head);letter-spacing:.14em;fill:var(--ink)}
+.val-t{font:900 26px var(--f-head);fill:var(--cream);stroke:var(--ink);stroke-width:5;paint-order:stroke;stroke-linejoin:round}
+.val-t.small-t{font-size:21px}
+.qm{font:900 34px var(--f-head);fill:var(--cream);stroke:var(--ink);stroke-width:6;paint-order:stroke;stroke-linejoin:round}
+.ghost-q{font:900 30px var(--f-head);fill:#7b8072}
+.unk-ring{fill:none;stroke:var(--cream);stroke-width:3;stroke-dasharray:10 7;animation:march .8s linear infinite}
+@keyframes march{to{stroke-dashoffset:-17}}
+.cell-line{stroke:var(--ink);stroke-width:2.5;opacity:.45}
+.tile{fill:var(--cream);stroke:var(--ink);stroke-width:2.5}
+.hit{cursor:pointer;outline:none}
+.hit:hover .bfill,.hit:focus-visible .bfill,.hit:hover .gfill,.hit:focus-visible .gfill{stroke:var(--cream)}
+.hit:hover .bshadow,.hit:focus-visible .bshadow{fill:var(--secondary)}
+.grow{transform-box:fill-box;transform-origin:left center;animation:grow .6s cubic-bezier(.3,1.35,.5,1) both}
+.grow.d2{animation-delay:.12s}
+.grow.d3{animation-delay:.24s}
+@keyframes grow{from{transform:scaleX(.04)}}
+.cover{fill:url(#stripes);stroke:var(--ink);stroke-width:4}
+.cover-plate{fill:var(--cream);stroke:var(--ink);stroke-width:4}
+.cover-t{font:900 24px var(--f-head);fill:var(--ink);letter-spacing:.06em}
+.cover-m{font:800 10px var(--f-head);fill:#6b675e;letter-spacing:.2em}
+
+/* icon sprite classes */
+.i-o{stroke:var(--ink);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.i-hero{fill:var(--hero)}
+.i-acc{fill:var(--accent)}
+.i-sec{fill:var(--secondary)}
+.i-cream{fill:var(--cream)}
+.i-none{fill:none}
+.i-ink{fill:var(--ink)}
+
+/* ============ RIGHT SIDE ============ */
+.problem-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.thumb{
+  flex:none;width:46px;height:46px;border-radius:12px;
+  background:var(--cream-2);border:var(--bw-s) solid var(--ink);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.6);
+  display:grid;place-items:center;
+}
+.thumb svg{width:34px;height:34px}
+.problem-meta{flex:1;min-width:0}
+.problem-meta .micro{color:#6b675e}
+.problem-meta strong{display:block;font-weight:900;font-size:16px;margin-top:4px}
+.problem-text{font-size:20px;line-height:1.5;margin:0 0 18px;font-weight:600}
+.problem-text b{font-weight:900;display:block;margin-top:6px}
+
+.pips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px}
+.pip{
+  border:var(--bw-s) solid var(--ink);
+  border-radius:9px;
+  padding:6px 4px 5px;
+  text-align:center;
+  background:var(--cream-2);
+  font-size:9px;
+  color:#6b675e;
+}
+.pip.now{background:var(--hero);color:var(--cream);box-shadow:inset 0 2px 0 rgba(255,255,255,.45)}
+.pip.done{background:var(--ink);color:var(--cream)}
+.prompt{font-weight:900;font-size:22px;line-height:1.2;margin:0 0 4px}
+.prompt-sub{margin:0 0 16px;color:#57534b;font-size:15px}
+
+.why{
+  background:var(--cream-2);
+  border:var(--bw-s) solid var(--ink);
+  border-radius:14px;
+  padding:12px 14px;
+  margin-bottom:16px;
+  font-size:15px;
+}
+.why .micro{display:inline-block;background:var(--accent);color:var(--cream);border:2px solid var(--ink);border-radius:999px;padding:4px 8px 3px;margin-bottom:8px}
+.why p{margin:0}
+.why .trick{margin-top:8px;font-weight:700}
+
+.eq-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.eq-row .expr{font-family:var(--f-mono);font-size:30px;line-height:1}
+.answer{
+  width:150px;
+  font-family:var(--f-mono);font-size:30px;line-height:1;
+  padding:9px 12px 8px;
+  background:#fff;
+  border:var(--bw) solid var(--ink);
+  border-radius:12px;
+  box-shadow:inset 0 4px 0 rgba(0,0,0,.08);
+}
+.answer:focus{outline:3px dashed var(--ink);outline-offset:3px}
+.solved-box{
+  background:var(--ink);color:var(--cream);
+  border:var(--bw) solid var(--ink);
+  border-radius:14px;padding:14px 16px;margin-bottom:16px;
+}
+.solved-box .micro{color:var(--secondary)}
+.solved-box p{margin:8px 0 0;font-size:18px;font-weight:700}
+.actions-row{display:flex;flex-wrap:wrap;gap:12px}
+
+.log{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-height:340px;overflow:auto;padding-right:4px}
+.log li{
+  display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
+  font-size:14.5px;
+  padding-bottom:10px;border-bottom:2px dashed #cfc8b8;
+}
+.log li:last-child{border-bottom:0}
+.log li.sep{grid-template-columns:1fr;border-bottom:0;padding:2px 0 0;color:#8a857a}
+.badge{
+  font-size:9.5px;
+  border:2px solid var(--ink);
+  border-radius:999px;
+  padding:4px 8px 3px;
+  min-width:52px;text-align:center;
+  margin-top:1px;
+}
+.b-ok{background:var(--secondary)}
+.b-no{background:var(--hero);color:var(--cream)}
+.b-hint{background:var(--cream-2)}
+.b-why{background:var(--accent);color:var(--cream)}
+.b-star{background:var(--ink);color:var(--secondary)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+@media (max-width:560px){
+  .top-right{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .stat{min-width:0}
+  .stat-row{gap:6px}
+  .leds{gap:2px;padding:3px 4px}
+  .led{width:9px;height:9px;border-width:1.5px}
+  .readouts{grid-template-columns:1fr 1fr}
+  .readout.diffro{grid-column:1 / -1}
+  .problem-text{font-size:18px}
+  .device{padding:18px 12px 22px}
+  .plate{margin:0 10px 12px}
+  .screen{padding:10px 8px 12px}
+  .choices.two{grid-template-columns:1fr}
+  .feet{padding:0 36px}
+}
+</style>
+</head>
+<body>
+
+<!-- Icon sprite + shared SVG patterns (kept renderable, not display:none, so patterns work) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" style="fill:var(--screen)"/>
+      <rect width="4" height="10" style="fill:var(--secondary)" opacity=".55"/>
+    </pattern>
+    <pattern id="stripes" width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="18" height="18" style="fill:var(--screen-2)"/>
+      <rect width="7" height="18" style="fill:var(--screen-ink)"/>
+    </pattern>
+  </defs>
+  <symbol id="ic-apple" viewBox="0 0 40 40">
+    <path class="i-hero i-o" d="M20 13c-3-3-12-3-13 6-1 8 5 16 9 16 2 0 3-1 4-1s2 1 4 1c4 0 10-8 9-16-1-9-10-9-13-6z"/>
+    <path class="i-none i-o" d="M20 13c0-4 1-6 3-8"/>
+    <path class="i-acc i-o" d="M22 9c3-4 8-4 9-2-2 3-6 4-9 2z"/>
+    <path class="i-none" d="M11 20c0-3 2-5 4-5" style="stroke:rgba(255,255,255,.75);stroke-width:2.5;stroke-linecap:round"/>
+  </symbol>
+  <symbol id="ic-marble" viewBox="0 0 40 40">
+    <circle class="i-acc i-o" cx="20" cy="20" r="14"/>
+    <path class="i-none" d="M10 22c4-6 9 2 14-4 3-3 6-2 7 0" style="stroke:var(--secondary);stroke-width:3.5;stroke-linecap:round"/>
+    <path class="i-none" d="M13 14c2-3 5-4 8-4" style="stroke:rgba(255,255,255,.8);stroke-width:2.5;stroke-linecap:round"/>
+    <circle class="i-none i-o" cx="20" cy="20" r="14"/>
+  </symbol>
+  <symbol id="ic-coin" viewBox="0 0 40 40">
+    <circle class="i-sec i-o" cx="20" cy="20" r="14"/>
+    <circle class="i-none" cx="20" cy="20" r="9" style="stroke:var(--ink);stroke-width:2"/>
+    <path class="i-none" d="M20 14v12M23 16.5c-1-1-5-1.5-5.5 1s5 2 5 4.5-4.5 2.2-5.8 1" style="stroke:var(--ink);stroke-width:2.2;stroke-linecap:round"/>
+  </symbol>
+  <symbol id="ic-cash" viewBox="0 0 40 40">
+    <rect class="i-sec i-o" x="4" y="10" width="32" height="20" rx="4"/>
+    <circle class="i-cream i-o" cx="20" cy="20" r="6"/>
+    <path class="i-none" d="M20 16.5v7" style="stroke:var(--ink);stroke-width:2.2;stroke-linecap:round"/>
+    <path class="i-none" d="M8 14h3M29 26h3" style="stroke:var(--ink);stroke-width:2.2;stroke-linecap:round"/>
+  </symbol>
+</svg>
+
+<div class="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar panel">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 32 32">
+          <rect x="3" y="5" width="26" height="9" rx="3" style="fill:var(--cream);stroke:var(--ink);stroke-width:3"/>
+          <rect x="3" y="18" width="15" height="9" rx="3" style="fill:var(--secondary);stroke:var(--ink);stroke-width:3"/>
+          <rect x="20" y="18" width="9" height="9" rx="3" style="fill:none;stroke:var(--ink);stroke-width:2.5;stroke-dasharray:3 2.5"/>
+        </svg>
+      </div>
+      <div>
+        <h1>BAR MODEL LAB</h1>
+        <div class="micro">Picture it · then solve it</div>
+      </div>
+    </div>
+
+    <div class="top-right">
+      <div class="stat">
+        <span class="micro">Theme</span>
+        <div class="swatches" id="swatches" role="group" aria-label="Color theme"></div>
+      </div>
+      <div class="stat">
+        <span class="micro">Level</span>
+        <div class="stat-row">
+          <strong id="lvlNum">1</strong>
+          <div class="meter" id="meter" aria-hidden="true"></div>
+        </div>
+        <span class="micro" id="meterLbl" style="color:#6b675e">4 to unlock</span>
+      </div>
+      <div class="stat">
+        <span class="micro">Streak</span>
+        <div class="stat-row">
+          <div class="leds" id="leds" aria-hidden="true"></div>
+          <strong id="streakNum">0</strong>
+        </div>
+        <span class="micro" style="color:#6b675e">Best <span id="bestNum">0</span></span>
+      </div>
+      <div class="stat">
+        <span class="micro">Score</span>
+        <strong id="scoreNum" class="mono">0000</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ LEFT RAIL ============ -->
+  <aside class="rail" aria-label="Controls">
+    <section class="panel">
+      <span class="tag micro">Level</span>
+      <div class="levels" id="levels"></div>
+      <p>Get <b>4 in a row</b> right on the first try to unlock the next level.</p>
+    </section>
+
+    <section class="panel">
+      <span class="tag micro">Bar model</span>
+      <div class="toggle-row">
+        <div class="switch-label">
+          <span class="micro" style="color:#6b675e">Picture</span>
+          <strong id="toggleTxt">Shown</strong>
+        </div>
+        <button class="switch" id="toggle" role="switch" aria-checked="true" aria-label="Show bar model"></button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <span class="tag micro">Stuck?</span>
+      <button class="pill block" id="hintBtn"><span class="dot" aria-hidden="true"></span>Hint</button>
+      <p>Hints point you back to the picture — not to a keyword.</p>
+    </section>
+
+    <section class="panel">
+      <span class="tag micro">Key</span>
+      <ul class="legend">
+        <li><span class="sw" style="background:var(--hero)"></span>Has more → long bar</li>
+        <li><span class="sw" style="background:var(--accent)"></span>Has less → short bar</li>
+        <li><span class="sw gap"></span>Difference → the gap</li>
+      </ul>
+    </section>
+  </aside>
+
+  <!-- ============ HERO: COMPARE-O-METER ============ -->
+  <main class="stage">
+    <div class="device">
+      <span class="screw tl"></span><span class="screw tr"></span>
+      <span class="screw bl"></span><span class="screw br"></span>
+      <div class="plate">
+        <div class="plate-name"><b>COMPARE-O-METER</b><span class="micro">Model BM-5 · Bar gauge</span></div>
+        <div class="knobs" aria-hidden="true"><span class="power"></span><span class="knob"></span><span class="knob b"></span></div>
+      </div>
+      <div class="screen" id="screen">
+        <div class="status" aria-live="polite"><span class="blinker" aria-hidden="true"></span><span id="status">READY</span></div>
+        <div id="model"></div>
+        <div class="readouts">
+          <div class="readout" id="roBig"><span class="micro lbl"><i style="background:var(--hero)"></i><span class="t">Long bar</span></span><span class="val off">--</span></div>
+          <div class="readout" id="roSmall"><span class="micro lbl"><i style="background:var(--accent)"></i><span class="t">Short bar</span></span><span class="val off">--</span></div>
+          <div class="readout diffro" id="roDiff"><span class="micro lbl"><i style="background:var(--secondary)"></i><span class="t">Difference</span></span><span class="val off">--</span></div>
+          <div class="readout eq" id="roEq"><span class="micro lbl">Equation</span><span class="val off">— — —</span></div>
+        </div>
+      </div>
+      <div class="feet" aria-hidden="true"><span></span><span></span></div>
+    </div>
+  </main>
+
+  <!-- ============ RIGHT SIDE ============ -->
+  <section class="side">
+    <section class="panel">
+      <span class="tag micro">Problem</span>
+      <div class="problem-head">
+        <div class="thumb" id="thumb" aria-hidden="true"></div>
+        <div class="problem-meta">
+          <span class="micro" id="probNo">Problem #1</span>
+          <strong id="probLvl">Level 1 · Tiny Numbers</strong>
+        </div>
+      </div>
+      <p class="problem-text" id="problemText"></p>
+      <button class="pill" id="newBtn"><span class="dot" aria-hidden="true"></span>New problem</button>
+    </section>
+
+    <section class="panel">
+      <span class="tag micro">Question</span>
+      <div class="pips" id="pips"></div>
+      <div id="why"></div>
+      <div id="question"></div>
+    </section>
+
+    <section class="panel log-panel">
+      <span class="tag micro">Feedback log</span>
+      <ul class="log" id="log" aria-live="polite"></ul>
+    </section>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const MINUS = '−';
+
+const UNLOCK = 4;       // correct-in-a-row needed to unlock the next level
+const LED_COUNT = 8;
+const THEMES = [
+  { name:'Tangerine',  bg:'#a3b09c', hero:'#ff5a1f', acc:'#2b5cff' },
+  { name:'Grape Soda', bg:'#aaa3b8', hero:'#7a3cf0', acc:'#ff7a1a' },
+  { name:'Lagoon',     bg:'#bdae92', hero:'#009e96', acc:'#ff4d6d' },
+];
+const LEVELS = [null,
+  { name:'Tiny Numbers', sub:'1–9 · objects' },
+  { name:'Two Digits',   sub:'10–99 · objects' },
+  { name:'Money Match',  sub:'$100–$999' },
+  { name:'Mix Master',   sub:'Mixed · no model' },
+];
+const OBJECTS = [
+  { id:'apple',  sg:'apple',  pl:'apples'  },
+  { id:'marble', sg:'marble', pl:'marbles' },
+  { id:'coin',   sg:'coin',   pl:'coins'   },
+];
+const NAMES = ['Maya','Leo','Ava','Sam','Noor','Ben','Kai','Zoe','Ivy','Omar','Rosa','Theo','Mia','Jin','Ella','Raj','Lucy','Finn'];
+const STEP_LABELS = ['More?','Unknown','+ / −','Answer'];
+
+/* ---------- state ---------- */
+const S = {
+  level:1, unlocked:1, theme:0,
+  score:0, streak:0, best:0,
+  lvStreak:[0,0,0,0,0],
+  showModel:true,
+  p:null, step:0, attempts:0, firstTry:true,
+  count:0, animate:false, justScored:false, lastKey:'', freshUnlock:0,
+};
+
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem('barModelLab.v1') || '{}');
+    if (Number.isInteger(d.unlocked) && d.unlocked >= 1 && d.unlocked <= 4) S.unlocked = d.unlocked;
+    if (Number.isInteger(d.theme) && d.theme >= 0 && d.theme < THEMES.length) S.theme = d.theme;
+    if (Number.isInteger(d.best) && d.best >= 0) S.best = d.best;
+  }catch(e){}
+}
+function save(){
+  try{ localStorage.setItem('barModelLab.v1', JSON.stringify({unlocked:S.unlocked, theme:S.theme, best:S.best})); }catch(e){}
+}
+
+/* ---------- problem generator ---------- */
+function numbersFor(lv){
+  let s, d;
+  if (lv === 1){ s = rnd(1,5); d = rnd(2,4); }                  // bigger ≤ 9, gap always obvious
+  else if (lv === 2){ d = rnd(8,40); s = rnd(10, 99 - d); }      // all two-digit
+  else { d = Math.random() < .7 ? rnd(101,450) : rnd(12,99); s = rnd(100, 999 - d); }
+  return { s, d, b: s + d };
+}
+
+function makeProblem(lv){
+  const numLv = lv === 4 ? pick([2,3,3]) : lv;
+  const money = lv === 3 || (lv === 4 && Math.random() < .5);
+  const obj = money ? { id: numLv >= 3 ? 'cash' : 'coin', sg:'dollar', pl:'dollars' } : pick(OBJECTS);
+  const { s, d, b } = numbersFor(numLv);
+
+  const a = pick(NAMES);
+  let c = pick(NAMES); while (c === a) c = pick(NAMES);
+  const B = a, Sm = c;   // B has more, Sm has less
+
+  // choose a variant, avoiding an exact repeat of the last one
+  let type, phr, key, tries = 0;
+  do{
+    type = pick(['big','small','diff']);
+    const trickP = type === 'diff' ? .5 : .35;
+    const trickPhr = { big:'less', small:'more', diff:'more' }[type];
+    const plainPhr = { big:'more', small:'less', diff:'less' }[type];
+    phr = Math.random() < trickP ? trickPhr : plainPhr;
+    key = type + phr;
+  } while (key === S.lastKey && ++tries < 6);
+  S.lastKey = key;
+
+  const trick = (type==='big' && phr==='less') || (type==='small' && phr==='more') || (type==='diff' && phr==='more');
+  const op = type === 'big' ? 'add' : 'sub';
+  const answer = type === 'big' ? b : type === 'small' ? s : d;
+  const kw = phr === 'more' ? 'more' : (money ? 'less' : 'fewer');
+
+  const amt = n => money ? `$${n}` : `${n} ${n === 1 ? obj.sg : obj.pl}`;
+  const has = (n, v) => `${n} has ${amt(v)}.`;
+  const ifHas = (n, v) => `If ${n} has ${amt(v)},`;
+  const ask = n => money ? `How much money does ${n} have?` : `How many ${obj.pl} does ${n} have?`;
+  const askLow = n => money ? `how much money does ${n} have?` : `how many ${obj.pl} does ${n} have?`;
+  const relMore = money ? `${B} has $${d} more than ${Sm}.` : `${B} has ${d} more ${obj.pl} than ${Sm}.`;
+  const relLess = money ? `${Sm} has $${d} less than ${B}.` : `${Sm} has ${d} fewer ${obj.pl} than ${B}.`;
+
+  let lines, rel = null, question;
+  if (type === 'diff'){
+    question = phr === 'more'
+      ? (money ? `How much more money does ${B} have than ${Sm}?` : `How many more ${obj.pl} does ${B} have than ${Sm}?`)
+      : (money ? `How much less money does ${Sm} have than ${B}?` : `How many fewer ${obj.pl} does ${Sm} have than ${B}?`);
+    const facts = Math.random() < .5 ? [has(B,b), has(Sm,s)] : [has(Sm,s), has(B,b)];
+    lines = [...facts];
+  } else {
+    rel = phr === 'more' ? relMore : relLess;
+    const [kn, kv, un] = type === 'big' ? [Sm, s, B] : [B, b, Sm];
+    const layout = rnd(0,2);
+    if (layout === 0){ lines = [rel, has(kn,kv)]; question = ask(un); }
+    else if (layout === 1){ lines = [has(kn,kv), rel]; question = ask(un); }
+    else { lines = [rel]; question = `${ifHas(kn,kv)} ${askLow(un)}`; }
+  }
+
+  return {
+    lv, numLv, money, obj, type, phr, trick, op, answer, kw, rel, question, lines,
+    big:{ name:B, val:b }, small:{ name:Sm, val:s }, diff:d,
+    order: Math.random() < .5 ? [B, Sm] : [Sm, B],   // button order for step 1
+  };
+}
+
+const fmt = (p, n) => p.money ? `$${n}` : String(n);
+const partVal = (p, part) => part === 'big' ? p.big.val : part === 'small' ? p.small.val : p.diff;
+const partDesc = (p, part) => part === 'big' ? `${p.big.name}'s amount (the long bar)`
+  : part === 'small' ? `${p.small.name}'s amount (the short bar)` : 'the difference (the gap)';
+function exprOf(p){
+  if (p.type === 'big')   return `${fmt(p,p.small.val)} + ${fmt(p,p.diff)}`;
+  if (p.type === 'small') return `${fmt(p,p.big.val)} ${MINUS} ${fmt(p,p.diff)}`;
+  return `${fmt(p,p.big.val)} ${MINUS} ${fmt(p,p.small.val)}`;
+}
+function answerSentence(p){
+  const u = p.money ? '' : ` ${p.answer === 1 ? p.obj.sg : p.obj.pl}`;
+  if (p.type === 'big')   return `${p.big.name} has ${fmt(p,p.answer)}${u}.`;
+  if (p.type === 'small') return `${p.small.name} has ${fmt(p,p.answer)}${u}.`;
+  return p.money ? `${p.big.name} has $${p.answer} more than ${p.small.name}.`
+                 : `${p.big.name} has ${p.answer} more ${p.obj.pl} than ${p.small.name}.`;
+}
+function whyText(p){
+  if (p.type === 'big')
+    return `The <b>long bar = short bar + gap</b>. The unknown is the <b>whole long bar</b>, so we put the two pieces together: <b>ADD</b>. &nbsp;${esc(exprOf(p))}`;
+  if (p.type === 'small')
+    return `The <b>short bar = long bar ${MINUS} gap</b>. The unknown is a <b>piece</b> of the long bar, so we take the gap away: <b>SUBTRACT</b>. &nbsp;${esc(exprOf(p))}`;
+  return `The <b>gap = long bar ${MINUS} short bar</b>. The gap is what's left when you take the short bar away from the long bar: <b>SUBTRACT</b>. &nbsp;${esc(exprOf(p))}`;
+}
+function trickText(p){
+  const OP = p.op === 'add' ? 'ADD' : 'SUBTRACT';
+  return `Tricky one! The problem says “${esc(p.kw)}”, but the picture says <b>${OP}</b>. Trust the picture, not the keyword.`;
+}
+
+/* ---------- log ---------- */
+const BADGE = { ok:['b-ok','Yes'], no:['b-no','Hmm'], hint:['b-hint','Hint'], why:['b-why','Why'], star:['b-star','Wow'] };
+function log(kind, html){
+  const li = document.createElement('li');
+  if (kind === 'sep'){ li.className = 'sep'; li.innerHTML = `<span class="micro">${html}</span>`; }
+  else {
+    const [cls, lbl] = BADGE[kind];
+    li.innerHTML = `<span class="badge micro ${cls}">${lbl}</span><span>${html}</span>`;
+  }
+  const ul = $('#log');
+  ul.prepend(li);
+  while (ul.children.length > 50) ul.lastElementChild.remove();
+  ul.scrollTop = 0;
+}
+
+/* ---------- model drawing (hero) ---------- */
+const MX0 = 140, MW = 440, LH = 60, YT = 30, YB = 122, VW = 600, VH = 276;
+
+function barShape(x, y, w, h, cls, attrs){
+  return `<g class="barg ${cls}" ${attrs || ''}>
+    <rect class="bshadow" x="${x+5}" y="${y+6}" width="${w}" height="${h}" rx="12"/>
+    <rect class="bfill" x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/>
+    <rect class="blo" x="${x+7}" y="${y+h-13}" width="${Math.max(0,w-14)}" height="7" rx="3.5"/>
+    <line class="bhi" x1="${x+12}" y1="${y+7}" x2="${Math.max(x+12,x+w-12)}" y2="${y+7}"/>
+  </g>`;
+}
+function chip(y, name, micro, tone){
+  return `<g>
+    <rect class="chip-bg" x="8" y="${y}" width="116" height="${LH}" rx="12"/>
+    <rect class="chip-tab ${tone}" x="16" y="${y+10}" width="9" height="${LH-20}" rx="3"/>
+    <text class="chip-micro" x="34" y="${y+23}">${esc(micro)}</text>
+    <text class="chip-name" x="34" y="${y+44}">${esc(name)}</text>
+  </g>`;
+}
+function icons(x0, y, unit, n, id){
+  const size = Math.min(unit - 12, LH - 22), pad = (unit - size) / 2;
+  let o = '';
+  for (let i = 0; i < n; i++){
+    const x = x0 + i * unit + pad, yy = y + (LH - size) / 2 - 1;
+    o += `<rect class="tile" x="${x-2}" y="${yy-2}" width="${size+4}" height="${size+4}" rx="7"/>`;
+    o += `<use href="#ic-${id}" x="${x}" y="${yy}" width="${size}" height="${size}"/>`;
+  }
+  return o;
+}
+function cellLines(x0, y, unit, n){
+  let o = '';
+  for (let i = 1; i < n; i++){ const x = x0 + i * unit; o += `<line class="cell-line" x1="${x}" y1="${y+6}" x2="${x}" y2="${y+LH-6}"/>`; }
+  return o;
+}
+function ruler(){
+  const ry = VH - 14;
+  let o = `<line class="rule" x1="${MX0}" y1="${ry}" x2="${MX0+MW}" y2="${ry}"/>`;
+  for (let i = 0; i <= 20; i++){
+    const x = MX0 + MW * i / 20, len = i % 10 === 0 ? 12 : i % 5 === 0 ? 8 : 4;
+    o += `<line class="rule" x1="${x}" y1="${ry}" x2="${x}" y2="${ry-len}"/>`;
+  }
+  return o;
+}
+
+function drawModel(){
+  const box = $('#model');
+  $('#screen').classList.toggle('is-hidden', !S.showModel);
+  const p = S.p, st = S.step;
+  let o = `<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${esc(modelAria())}">`;
+
+  if (!S.showModel){
+    o += `<rect class="cover" x="6" y="8" width="${VW-12}" height="${VH-16}" rx="16"/>
+      <rect class="cover-plate" x="${VW/2-170}" y="${VH/2-48}" width="340" height="96" rx="16"/>
+      <text class="cover-t" x="${VW/2}" y="${VH/2+2}" text-anchor="middle">MODEL HIDDEN</text>
+      <text class="cover-m" x="${VW/2}" y="${VH/2+26}" text-anchor="middle">FLIP THE BAR MODEL SWITCH TO PEEK</text>`;
+    box.innerHTML = o + '</svg>';
+    return;
+  }
+
+  o += `<rect class="track" x="${MX0-8}" y="${YT-8}" width="${MW+16}" height="${LH+16}" rx="16"/>`;
+  o += `<rect class="track" x="${MX0-8}" y="${YB-8}" width="${MW+16}" height="${LH+16}" rx="16"/>`;
+  o += ruler();
+
+  if (st === 0){
+    const w = Math.round(MW * .6);
+    o += chip(YT, '???', 'WHO?', 'ghost') + chip(YB, '???', 'WHO?', 'ghost');
+    o += barShape(MX0, YT, w, LH, 'ghost') + barShape(MX0, YB, w, LH, 'ghost');
+    o += `<text class="ghost-q" x="${MX0 + w/2}" y="${YT+LH/2+11}" text-anchor="middle">?</text>`;
+    o += `<text class="ghost-q" x="${MX0 + w/2}" y="${YB+LH/2+11}" text-anchor="middle">?</text>`;
+    box.innerHTML = o + '</svg>';
+    return;
+  }
+
+  const L1 = p.numLv === 1;
+  const ratio = L1 ? p.small.val / p.big.val : Math.min(.82, Math.max(.18, p.small.val / p.big.val));
+  const wS = Math.round(MW * ratio), xG = MX0 + wS, wG = MW - wS;
+  const show = part => st >= 4 || (st >= 2 && part !== p.type);
+  const unk  = part => st >= 2 && st < 4 && part === p.type;
+  const hitA = part => st === 1 ? `data-part="${part}" tabindex="0" role="button" aria-label="${esc(partDesc(p, part))}"` : '';
+  const hitC = st === 1 ? ' hit' : '';
+  const g = S.animate ? ' grow' : '';
+
+  o += chip(YT, p.big.name, 'HAS MORE', 'big') + chip(YB, p.small.name, 'HAS LESS', 'small');
+
+  // guide line where the short bar ends
+  o += `<line class="guide" x1="${xG}" y1="${YT-4}" x2="${xG}" y2="${YB+LH+4}"/>`;
+
+  // long bar
+  o += barShape(MX0, YT, MW, LH, 'big' + hitC + g, hitA('big'));
+  // short bar
+  o += barShape(MX0, YB, wS, LH, 'small' + hitC + g + ' d2', hitA('small'));
+  // gap
+  o += `<g class="gapg${hitC}${g} d3" ${hitA('diff')}>
+          <rect class="gfill" x="${xG+4}" y="${YB}" width="${wG-4}" height="${LH}" rx="12"/>
+          <rect class="gdash" x="${xG+10}" y="${YB+6}" width="${Math.max(0,wG-16)}" height="${LH-12}" rx="8"/>
+        </g>`;
+
+  // contents
+  const unit = MW / p.big.val;
+  const tiles = L1 && !p.money;
+  // long bar
+  if (tiles && show('big')) o += cellLines(MX0, YT, unit, p.big.val) + icons(MX0, YT, unit, p.big.val, p.obj.id);
+  else if (show('big')) o += `<text class="val-t" x="${MX0+MW/2}" y="${YT+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.big.val))}</text>`;
+  // short bar
+  if (tiles && show('small')) o += cellLines(MX0, YB, unit, p.small.val) + icons(MX0, YB, unit, p.small.val, p.obj.id);
+  else if (show('small')) o += `<text class="val-t${wS<110?' small-t':''}" x="${MX0+wS/2}" y="${YB+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.small.val))}</text>`;
+  // gap
+  if (tiles && show('diff')) o += icons(xG, YB, unit, p.diff, p.obj.id);
+  else if (show('diff')) o += `<text class="val-t${wG<110?' small-t':''}" x="${xG+wG/2}" y="${YB+LH/2+9}" text-anchor="middle">${esc(fmt(p,p.diff))}</text>`;
+
+  // the unknown: marching ring + big ?
+  const ringFor = { big:[MX0, YT, MW], small:[MX0, YB, wS], diff:[xG+4, YB, wG-4] };
+  ['big','small','diff'].forEach(part => {
+    if (!unk(part)) return;
+    const [x, y, w] = ringFor[part];
+    o += `<rect class="unk-ring" x="${x-7}" y="${y-7}" width="${w+14}" height="${LH+14}" rx="16"/>`;
+    o += `<text class="qm" x="${x+w/2}" y="${y+LH/2+12}" text-anchor="middle">?</text>`;
+  });
+
+  // difference bracket + chip
+  const by = YB + LH + 16, cx = xG + wG / 2;
+  o += `<path class="bracket" d="M${xG+4} ${by} v9 H${MX0+MW} v-9 M${cx} ${by+9} v8"/>`;
+  const dLabel = show('diff') ? `DIFFERENCE = ${fmt(p,p.diff)}` : unk('diff') ? 'DIFFERENCE = ?' : 'DIFFERENCE';
+  const cw = dLabel.length * 9 + 26;
+  const chipX = Math.min(MX0 + MW - cw, Math.max(MX0 - 60, cx - cw / 2));
+  o += `<rect class="dchip" x="${chipX}" y="${by+18}" width="${cw}" height="28" rx="14"/>`;
+  o += `<text class="dchip-t" x="${chipX+cw/2}" y="${by+36.5}" text-anchor="middle">${esc(dLabel)}</text>`;
+
+  box.innerHTML = o + '</svg>';
+  S.animate = false;
+}
+
+function modelAria(){
+  const p = S.p;
+  if (!p) return 'Bar model';
+  if (!S.showModel) return 'Bar model hidden';
+  if (S.step === 0) return 'Two blank bars. First decide who has more.';
+  return `Bar model: ${p.big.name} has the long bar, ${p.small.name} has the short bar, and the gap between them is the difference.`;
+}
+
+function updateReadouts(){
+  const p = S.p, st = S.step;
+  const set = (id, label, text, cls) => {
+    const el = $(id);
+    el.querySelector('.t').textContent = label;
+    const v = el.querySelector('.val');
+    v.textContent = text; v.className = 'val ' + (cls || '');
+  };
+  const valFor = part => {
+    if (st < 2) return ['--', 'off'];
+    if (part === p.type) return st >= 4 ? [fmt(p, partVal(p,part)), 'solved'] : ['???', 'unk'];
+    return [fmt(p, partVal(p,part)), ''];
+  };
+  set('#roBig',   st >= 1 ? `Long · ${p.big.name}`   : 'Long bar',  ...valFor('big'));
+  set('#roSmall', st >= 1 ? `Short · ${p.small.name}` : 'Short bar', ...valFor('small'));
+  set('#roDiff',  'Difference', ...valFor('diff'));
+  const eq = $('#roEq .val');
+  if (st < 3){ eq.textContent = '— — —'; eq.className = 'val off'; }
+  else if (st === 3){ eq.textContent = `${exprOf(p)} = ?`; eq.className = 'val'; }
+  else { eq.textContent = `${exprOf(p)} = ${fmt(p, p.answer)}`; eq.className = 'val'; }
+}
+
+const STATUS = ['STEP 1/4 · WHO HAS MORE?','STEP 2/4 · FIND THE UNKNOWN PART','STEP 3/4 · ADD OR SUBTRACT?','STEP 4/4 · SOLVE IT','SOLVED ✓ · PRESS NEW PROBLEM'];
+function updateStatus(){
+  $('#status').textContent = (S.showModel ? '' : 'MODEL OFF · ') + STATUS[S.step];
+}
+
+/* ---------- top bar & rail ---------- */
+function renderTop(){
+  $('#lvlNum').textContent = S.level;
+  const prog = Math.min(UNLOCK, S.lvStreak[S.level]);
+  $('#meter').innerHTML = Array.from({length:UNLOCK}, (_, i) => `<span class="seg${i < prog ? ' on' : ''}"></span>`).join('');
+  $('#meterLbl').textContent = S.level === 4 ? (prog >= UNLOCK ? 'Mastered!' : `${UNLOCK-prog} to master`)
+    : S.unlocked > S.level ? (prog >= UNLOCK ? 'Unlocked!' : `L${S.level+1} open`) : `${UNLOCK-prog} to unlock`;
+  const lit = Math.min(LED_COUNT, S.streak);
+  $('#leds').innerHTML = Array.from({length:LED_COUNT}, (_, i) =>
+    `<span class="led${i < lit ? ' on' : ''}${i === lit-1 && S.justScored ? ' pop' : ''}"></span>`).join('');
+  S.justScored = false;
+  $('#streakNum').textContent = S.streak;
+  $('#bestNum').textContent = S.best;
+  $('#scoreNum').textContent = String(S.score).padStart(4, '0');
+}
+
+function renderSwatches(){
+  $('#swatches').innerHTML = THEMES.map((t, i) =>
+    `<button class="swatch" data-theme="${i}" aria-pressed="${i === S.theme}" aria-label="Theme: ${esc(t.name)}" title="${esc(t.name)}">
+      <span style="background:${t.bg}"></span><span style="background:${t.hero}"></span><span style="background:${t.acc}"></span>
+    </button>`).join('');
+  document.documentElement.dataset.theme = S.theme;
+}
+
+const LOCK = `<svg width="18" height="20" viewBox="0 0 18 20" aria-hidden="true"><rect x="2" y="8" width="14" height="10" rx="3" style="fill:var(--cream-2);stroke:var(--ink);stroke-width:2.5"/><path d="M5 8V6a4 4 0 0 1 8 0v2" style="fill:none;stroke:var(--ink);stroke-width:2.5"/></svg>`;
+function renderLevels(){
+  $('#levels').innerHTML = [1,2,3,4].map(n => {
+    const locked = n > S.unlocked;
+    return `<button class="lvl${S.freshUnlock === n ? ' fresh' : ''}" data-level="${n}" ${locked ? 'disabled' : ''} aria-current="${n === S.level}">
+      <span class="num">${n}</span>
+      <span><span class="nm">${esc(LEVELS[n].name)}</span><span class="ds micro">${esc(LEVELS[n].sub)}</span></span>
+      ${locked ? LOCK + '<span class="sr">locked</span>' : ''}
+    </button>`;
+  }).join('');
+}
+
+function renderToggle(){
+  const t = $('#toggle');
+  t.setAttribute('aria-checked', String(S.showModel));
+  $('#toggleTxt').textContent = S.showModel ? 'Shown' : 'Hidden';
+}
+
+/* ---------- right side ---------- */
+function renderProblem(){
+  const p = S.p;
+  $('#thumb').innerHTML = `<svg viewBox="0 0 40 40"><use href="#ic-${p.obj.id}"/></svg>`;
+  $('#probNo').textContent = `Problem #${S.count}`;
+  $('#probLvl').textContent = `Level ${p.lv} · ${LEVELS[p.lv].name}`;
+  $('#problemText').innerHTML = p.lines.map(esc).join(' ') + `<b>${esc(p.question)}</b>`;
+}
+
+function renderPips(){
+  $('#pips').innerHTML = STEP_LABELS.map((l, i) =>
+    `<span class="pip micro ${i < S.step ? 'done' : i === S.step ? 'now' : ''}">${i < S.step ? '✓ ' : ''}${esc(l)}</span>`).join('');
+}
+
+function renderWhy(){
+  const p = S.p;
+  $('#why').innerHTML = S.step >= 3
+    ? `<div class="why"><span class="micro">Why ${p.op === 'add' ? 'add' : 'subtract'}?</span><p>${whyText(p)}</p>${p.trick ? `<p class="trick">${trickText(p)}</p>` : ''}</div>`
+    : '';
+}
+
+function renderQuestion(){
+  const p = S.p, q = $('#question');
+  let h = '';
+  if (S.step === 0){
+    h = `<p class="prompt">Who has MORE?</p>
+      <p class="prompt-sub">Read the problem. The one with more gets the <b>long bar</b>.</p>
+      <div class="choices two">${p.order.map(n =>
+        `<button class="choice" data-who="${esc(n)}"><span class="sw" style="background:var(--cream-2)"></span><span class="main">${esc(n)}</span></button>`).join('')}</div>`;
+  } else if (S.step === 1){
+    const opt = (part, main, sub, color) =>
+      `<button class="choice" data-part="${part}"><span class="sw" style="background:${color}"></span><span><span class="main">${esc(main)}</span><span class="sub">${esc(sub)}</span></span></button>`;
+    h = `<p class="prompt">Which part is UNKNOWN?</p>
+      <p class="prompt-sub">Every number in the problem fills one part. ${S.showModel ? 'Tap the part with no number — on the model or below.' : 'Pick the part with no number.'}</p>
+      <div class="choices">
+        ${opt('big', p.big.name, 'Long bar · has more', 'var(--hero)')}
+        ${opt('small', p.small.name, 'Short bar · has less', 'var(--accent)')}
+        ${opt('diff', 'Difference', 'The gap between them', 'var(--secondary)')}
+      </div>`;
+  } else if (S.step === 2){
+    h = `<p class="prompt">To find the unknown, do we add or subtract?</p>
+      <p class="prompt-sub">Look at the picture: is the unknown a <b>whole</b> bar made of pieces, or a <b>piece</b>?</p>
+      <div class="choices two">
+        <button class="choice op-choice" data-op="add"><span class="sym" aria-hidden="true">+</span><span class="main">ADD</span></button>
+        <button class="choice op-choice" data-op="sub"><span class="sym" aria-hidden="true">${MINUS}</span><span class="main">SUBTRACT</span></button>
+      </div>`;
+  } else if (S.step === 3){
+    h = `<p class="prompt">Now solve it.</p>
+      <p class="prompt-sub">Type your answer${p.money ? ' in dollars' : ''}.</p>
+      <form id="ansForm" autocomplete="off">
+        <div class="eq-row">
+          <span class="expr">${esc(exprOf(p))} =</span>
+          <label class="sr" for="ans">Your answer</label>
+          <input class="answer" id="ans" inputmode="numeric" maxlength="7" placeholder="?">
+        </div>
+        <button class="pill" type="submit"><span class="dot" aria-hidden="true"></span>Check answer</button>
+      </form>`;
+  } else {
+    const next = S.freshUnlock && S.freshUnlock !== S.level
+      ? `<button class="pill" data-go="${S.freshUnlock}"><span class="dot" aria-hidden="true"></span>Go to level ${S.freshUnlock}</button>` : '';
+    h = `<div class="solved-box"><span class="micro">Solved</span><p>${esc(answerSentence(p))}</p></div>
+      <div class="actions-row"><button class="pill glow" id="nextBtn"><span class="dot" aria-hidden="true"></span>New problem</button>${next}</div>`;
+  }
+  q.innerHTML = h;
+  if (S.step === 3){ const i = $('#ans'); if (i) i.focus({preventScroll:true}); }
+}
+
+function renderAll(){
+  renderTop(); renderLevels(); renderToggle();
+  renderProblem(); renderPips(); renderWhy(); renderQuestion();
+  drawModel(); updateReadouts(); updateStatus();
+}
+
+/* ---------- flow ---------- */
+function newProblem(){
+  S.count++;
+  S.p = makeProblem(S.level);
+  S.step = 0; S.attempts = 0; S.firstTry = true;
+  if (S.level === 4) S.showModel = false;
+  log('sep', `Problem #${S.count} · Level ${S.level}`);
+  renderAll();
+}
+
+function advance(to){
+  S.step = to;
+  if (to === 1) S.animate = true;
+  renderPips(); renderWhy(); renderQuestion(); drawModel(); updateReadouts(); updateStatus();
+}
+
+function wrongButton(btn){
+  if (!btn) return;
+  btn.classList.add('wrong','shake');
+  btn.disabled = true;
+}
+
+function chooseWho(name, btn){
+  const p = S.p;
+  if (name === p.big.name){
+    log('ok', `Yes! <b>${esc(p.big.name)}</b> has more, so ${esc(p.big.name)} gets the <b>long bar</b> and ${esc(p.small.name)} gets the <b>short bar</b>.`);
+    advance(1);
+  } else {
+    wrongButton(btn);
+    let msg;
+    if (p.rel){
+      msg = p.phr === 'less'
+        ? `Read it again: “${esc(p.rel)}” — ${esc(p.small.name)} is the one with <b>${esc(p.kw)}</b>. So whose bar sticks out further?`
+        : `Read it again: “${esc(p.rel)}” — ${esc(p.big.name)} has <b>more</b> than ${esc(p.small.name)}. So whose bar is longer?`;
+    } else {
+      msg = `Compare the numbers: ${esc(p.big.name)} has ${esc(fmt(p,p.big.val))} and ${esc(p.small.name)} has ${esc(fmt(p,p.small.val))}. The bigger number gets the longer bar.`;
+    }
+    log('no', msg);
+  }
+}
+
+function choosePart(part, btn){
+  const p = S.p;
+  if (part === p.type){
+    const known = ['big','small','diff'].filter(x => x !== part).map(x => `${esc(partDesc(p,x))} = <b>${esc(fmt(p,partVal(p,x)))}</b>`);
+    log('ok', `Right — the question asks for ${esc(partDesc(p,part))}. We know ${known.join(' and ')}.`);
+    advance(2);
+  } else {
+    if (!btn) btn = document.querySelector(`#question [data-part="${part}"]`);
+    wrongButton(btn);
+    log('no', `The problem tells us ${esc(partDesc(p,part))} is <b>${esc(fmt(p,partVal(p,part)))}</b>, so that part is <b>known</b>. Which number is the question asking for? “${esc(p.question)}”`);
+    if (S.showModel) flashScreen();
+  }
+}
+
+function chooseOp(op, btn){
+  const p = S.p;
+  if (op === p.op){
+    log('ok', `Yes — <b>${p.op === 'add' ? 'add' : 'subtract'}</b>.`);
+    log('why', whyText(p));
+    if (p.trick) log('star', trickText(p));
+    advance(3);
+  } else {
+    wrongButton(btn);
+    const lured = p.trick && ((p.kw === 'more' && op === 'add') || (p.kw !== 'more' && op === 'sub'));
+    let msg = lured ? `Did the word “${esc(p.kw)}” make you want to ${op === 'add' ? 'add' : 'subtract'}? Words can trick you — the picture can't. ` : '';
+    if (p.type === 'big')
+      msg += `Look at the picture — the unknown is the <b>long bar</b>. It's <b>longer</b> than ${esc(p.small.name)}'s bar (${esc(fmt(p,p.small.val))}). Subtracting would make it shorter!`;
+    else if (p.type === 'small')
+      msg += `Look at the picture — the unknown is the <b>short bar</b>. It's <b>shorter</b> than ${esc(p.big.name)}'s bar (${esc(fmt(p,p.big.val))}). Adding would make it even longer!`;
+    else
+      msg += `Look at the picture — the unknown is just the <b>gap</b>, the extra piece at the end of the long bar. Adding both bars would give something longer than either bar!`;
+    if (!S.showModel) msg += ' Tip: flip the <b>Bar model</b> switch to see it.';
+    log('no', msg);
+  }
+}
+
+function checkAnswer(raw){
+  const p = S.p;
+  const cleaned = String(raw).replace(/[$,\s]/g, '');
+  if (!/^\d{1,6}$/.test(cleaned)){ log('hint', 'Type a whole number, like 42.'); return; }
+  const n = parseInt(cleaned, 10);
+  if (n === p.answer){ finish(true); return; }
+
+  S.attempts++;
+  if (S.firstTry){
+    S.firstTry = false;
+    S.streak = 0; S.lvStreak[S.level] = 0;
+    renderTop();
+  }
+  const inp = $('#ans'); if (inp){ inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); inp.select(); }
+
+  const wrongOp = p.type === 'big' ? p.small.val - p.diff
+                : p.type === 'small' ? p.big.val + p.diff : p.big.val + p.small.val;
+  const opWord = p.op === 'add' ? 'adding' : 'subtracting';
+  let msg;
+  if (S.attempts >= 3){
+    log('no', `Not quite. ${esc(exprOf(p))} = <b>${esc(fmt(p,p.answer))}</b>. Look at the model to see why — then try a new one!`);
+    finish(false);
+    return;
+  }
+  if (n === wrongOp){
+    msg = `That's what you'd get by ${p.op === 'add' ? 'subtracting' : 'adding'}. We decided to <b>${p.op === 'add' ? 'add' : 'subtract'}</b> — check the equation: ${esc(exprOf(p))}.`;
+  } else if (p.type === 'big' && n <= p.small.val){
+    msg = `Look at the picture — the unknown is the <b>long bar</b>, so the answer must be <b>more</b> than ${esc(fmt(p,p.small.val))}.`;
+  } else if (p.type !== 'big' && n >= p.big.val){
+    msg = `Look at the picture — the unknown is ${p.type === 'small' ? 'the <b>short bar</b>' : 'only the <b>gap</b>'}, so it must be <b>less</b> than the long bar (${esc(fmt(p,p.big.val))}).`;
+  } else if (S.attempts === 1){
+    msg = `Close! Check your ${opWord}: ${esc(exprOf(p))}. Line up the ones${p.answer >= 10 || p.big.val >= 10 ? ', tens' : ''}${p.big.val >= 100 ? ' and hundreds' : ''}.`;
+  } else {
+    const r = p.big.val >= 100 ? 10 : 1;
+    msg = `Estimate first: the answer is about <b>${esc(fmt(p, Math.round(p.answer / r) * r))}</b>. Your answer ${esc(fmt(p,n))} is too ${n > p.answer ? 'big' : 'small'}.`;
+  }
+  log('no', msg);
+}
+
+function finish(solved){
+  const p = S.p;
+  if (solved){
+    if (S.firstTry){
+      S.score += 10; S.streak++; S.lvStreak[S.level]++; S.justScored = true;
+      if (S.streak > S.best) S.best = S.streak;
+      log('ok', `Correct! <b>${esc(answerSentence(p))}</b> +10 points. ${S.streak >= 3 ? `That's ${S.streak} in a row!` : ''}`);
+      if (S.lvStreak[S.level] >= UNLOCK && S.level < 4 && S.unlocked === S.level){
+        S.unlocked = S.level + 1; S.freshUnlock = S.unlocked;
+        log('star', `<b>Level ${S.unlocked} unlocked!</b> ${esc(LEVELS[S.unlocked].name)} is ready when you are.`);
+      } else if (S.level === 4 && S.lvStreak[4] === UNLOCK){
+        log('star', `<b>Mix Master!</b> ${UNLOCK} in a row with the model hidden. You don't need keywords anymore.`);
+      }
+    } else {
+      S.score += 5;
+      log('ok', `Got it! <b>${esc(answerSentence(p))}</b> +5 points. Next time aim for the first try to build your streak.`);
+    }
+    save();
+  }
+  S.step = 4;
+  renderTop(); renderLevels(); renderPips(); renderWhy(); renderQuestion(); drawModel(); updateReadouts(); updateStatus();
+}
+
+function hint(){
+  const p = S.p;
+  const peek = !S.showModel && S.step < 4 ? ' <b>Tip:</b> flip the Bar model switch to see the picture.' : '';
+  let msg;
+  switch (S.step){
+    case 0: msg = p.rel
+      ? `Find the sentence that compares the two people: “${esc(p.rel)}” Who would get the <b>longer</b> bar?`
+      : `Two numbers are given. The person with the bigger number gets the <b>longer</b> bar.`; break;
+    case 1: msg = `Each number in the problem fills in one part of the model: the long bar, the short bar, or the gap. The part that gets <b>no number</b> is the unknown.`; break;
+    case 2: msg = `Picture it: is the unknown the <b>whole long bar</b> (short bar + gap put together)? Or is it <b>one piece</b> of the long bar (the short bar or the gap)? Putting together → add. Taking a piece away → subtract.`; break;
+    case 3: {
+      const r = p.big.val >= 100 ? 100 : 10;
+      msg = p.numLv === 1
+        ? `Count the pictures in the model to check!`
+        : `Estimate with round numbers first: ${p.type === 'big' ? `${Math.round(p.small.val/r)*r} + ${Math.round(p.diff/r)*r}` : p.type === 'small' ? `${Math.round(p.big.val/r)*r} ${MINUS} ${Math.round(p.diff/r)*r}` : `${Math.round(p.big.val/r)*r} ${MINUS} ${Math.round(p.small.val/r)*r}`} is close. Your answer should be near that.`;
+      break;
+    }
+    default: msg = `Press <b>New problem</b> for another one.`;
+  }
+  log('hint', msg + peek);
+}
+
+function flashScreen(){
+  const s = $('#screen'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake');
+}
+
+function setLevel(n){
+  if (n > S.unlocked || n === S.level) return;
+  S.level = n;
+  S.showModel = n !== 4;
+  if (S.freshUnlock === n) S.freshUnlock = 0;
+  newProblem();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, [data-part]');
+  if (!t) return;
+  if (t.id === 'newBtn' || t.id === 'nextBtn'){ newProblem(); return; }
+  if (t.id === 'hintBtn'){ hint(); return; }
+  if (t.id === 'toggle'){
+    S.showModel = !S.showModel;
+    renderToggle(); drawModel(); updateStatus();
+    if (S.step === 1) renderQuestion();
+    return;
+  }
+  if (t.dataset.theme !== undefined && t.classList.contains('swatch')){
+    S.theme = +t.dataset.theme; renderSwatches(); save(); return;
+  }
+  if (t.dataset.level){ setLevel(+t.dataset.level); return; }
+  if (t.dataset.go){ setLevel(+t.dataset.go); return; }
+  if (t.dataset.who && S.step === 0){ chooseWho(t.dataset.who, t); return; }
+  if (t.dataset.part && S.step === 1){ choosePart(t.dataset.part, t.tagName === 'BUTTON' ? t : null); return; }
+  if (t.dataset.op && S.step === 2){ chooseOp(t.dataset.op, t); return; }
+});
+// keyboard activation for tappable SVG parts
+$('#model').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && e.target.dataset.part && S.step === 1){
+    e.preventDefault(); choosePart(e.target.dataset.part, null);
+  }
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'ansForm') return;
+  e.preventDefault();
+  if (S.step === 3) checkAnswer($('#ans').value);
+});
+document.addEventListener('animationend', e => { if (e.target.classList) e.target.classList.remove('shake'); });
+
+/* ---------- boot ---------- */
+load();
+S.level = S.unlocked;
+S.showModel = S.level !== 4;
+renderSwatches();
+log('sep', 'Welcome');
+log('hint', 'Every problem gets a <b>picture</b> first. Figure out who has more, find the unknown part, then decide: add or subtract? The picture tells you — not the keywords.');
+newProblem();
+})();
+</script>
+</body>
+</html>
