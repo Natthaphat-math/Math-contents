@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#eef1f6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="description" content="Interactive 3D explorer for cross sections of prisms, pyramids, cylinders, cones and spheres.">
-<title>Cross-Section Explorer</title>
+<title>สำรวจหน้าตัด · Cross-Section Explorer</title>
 <style>
   /* =====================================================================
      Design tokens
@@ -38,7 +38,7 @@
     --radius: 16px;
     --gap: 10px;
     --shadow: 0 1px 2px rgba(21,32,51,.06), 0 4px 14px rgba(21,32,51,.06);
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Thai", "Leelawadee UI", Tahoma, Arial, sans-serif;
   }
 
   * { box-sizing: border-box; }
@@ -127,7 +127,7 @@
     font-weight: 600;
     color: var(--muted);
   }
-  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend > span { display: inline-flex; align-items: center; gap: 5px; }
   .legend i {
     width: 12px; height: 12px; border-radius: 3px; display: inline-block;
   }
@@ -410,6 +410,35 @@
 
   .footer-note { font-size: 12px; color: var(--muted); text-align: center; padding: 2px 0 6px; }
 
+  /* Thai: no uppercase tracking, a little more line height */
+  :lang(th) body { line-height: 1.45; }
+  :lang(th) .card-title, :lang(th) .eyebrow { letter-spacing: 0; text-transform: none; font-size: 13.5px; }
+  :lang(th) .shape-name { line-height: 1.3; }
+
+  /* ---------- Stage top-right tools ---------- */
+  .tools { display: flex; gap: 8px; align-items: center; }
+  .lang-seg button { min-width: 48px; font-size: 14px; }
+  .lang-seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+
+  /* ---------- "Look straight" tick box ---------- */
+  .look-toggle {
+    background: rgba(255,255,255,.94);
+    border: 2px solid var(--section);
+    color: var(--section-ink);
+    padding: 0 14px 0 10px;
+  }
+  .look-toggle .tick {
+    width: 24px; height: 24px; flex: none;
+    border-radius: 7px;
+    border: 2px solid var(--section);
+    background: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .look-toggle .tick svg { width: 16px; height: 16px; opacity: 0; }
+  .look-toggle[aria-checked="true"] { background: var(--section); color: #fff; border-color: var(--section-ink); }
+  .look-toggle[aria-checked="true"] .tick { border-color: #fff; background: #fff; }
+  .look-toggle[aria-checked="true"] .tick svg { opacity: 1; color: var(--section); }
+
   /* Narrow phones: short labels in the stage toolbar */
   .long-label { display: inline; }
   .short-label { display: none; }
@@ -478,30 +507,36 @@
 
     <div class="stage-top">
       <div class="brand">
-        <h1>Cross-Section Explorer</h1>
+        <h1 data-i18n="title">Cross-Section Explorer</h1>
         <div class="legend" aria-hidden="true">
-          <span class="k-solid"><i></i>Solid</span>
-          <span class="k-plane"><i></i>Cutting plane</span>
-          <span class="k-section"><i></i>Cross section</span>
+          <span class="k-solid"><i></i><span data-i18n="legend.solid">Solid</span></span>
+          <span class="k-plane"><i></i><span data-i18n="legend.plane">Cutting plane</span></span>
+          <span class="k-section"><i></i><span data-i18n="legend.section">Cross section</span></span>
         </div>
+      </div>
+      <div class="tools">
+      <div class="seg lang-seg" role="group" aria-label="Language / ภาษา">
+        <button type="button" data-lang="th" lang="th">TH</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
       </div>
       <button class="btn icon-btn" id="fullscreenBtn" type="button" aria-label="Enter fullscreen" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </button>
+      </div>
     </div>
 
     <div class="stage-bottom">
-      <button class="btn btn-section" id="lookBtn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span class="long-label">Look straight at section</span><span class="short-label">Look at section</span>
+      <button class="btn look-toggle" id="lookBtn" type="button" role="switch" aria-checked="false">
+        <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <span class="long-label" data-i18n="look.long">Look straight at section</span><span class="short-label" data-i18n="look.short">Look at section</span>
       </button>
       <div class="seg" role="group" aria-label="Standard views">
-        <button type="button" data-view="front">Front</button>
-        <button type="button" data-view="top">Top</button>
-        <button type="button" data-view="side">Side</button>
-        <button type="button" data-view="reset" aria-label="Reset view">
+        <button type="button" data-view="front" data-i18n="view.front">Front</button>
+        <button type="button" data-view="top" data-i18n="view.top">Top</button>
+        <button type="button" data-view="side" data-i18n="view.side">Side</button>
+        <button type="button" data-view="reset" aria-label="Reset view" data-i18n-aria="view.reset">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
-          <span class="long-label">Reset view</span>
+          <span class="long-label" data-i18n="view.reset">Reset view</span>
         </button>
       </div>
     </div>
@@ -514,41 +549,41 @@
         <canvas id="view2d" role="img" aria-label="2D view of the cross section"></canvas>
       </div>
       <div class="section-info">
-        <div class="eyebrow">Cross section</div>
+        <div class="eyebrow" data-i18n="legend.section">Cross section</div>
         <div class="shape-name" id="shapeName" aria-live="polite"></div>
         <label class="switch sw-section">
-          <span>Show shape name</span>
+          <span data-i18n="toggle.name">Show shape name</span>
           <input type="checkbox" id="showNameToggle" role="switch" checked>
         </label>
       </div>
     </section>
 
     <section class="card" aria-labelledby="solidTitle">
-      <h2 class="card-title" id="solidTitle">Solid <b id="solidName"></b></h2>
+      <h2 class="card-title" id="solidTitle"><span data-i18n="card.solid">Solid</span> <b id="solidName"></b></h2>
       <div id="solidPicker"></div>
     </section>
 
     <section class="card" aria-labelledby="planeTitle">
-      <h2 class="card-title" id="planeTitle">Cutting plane</h2>
+      <h2 class="card-title" id="planeTitle" data-i18n="legend.plane">Cutting plane</h2>
       <div class="presets" id="presets"></div>
 
       <div class="slider-row">
         <div class="slider-head">
-          <label for="tilt">Tilt<small>from vertical axis</small></label>
+          <label for="tilt"><span data-i18n="tilt">Tilt</span><small data-i18n="tilt.hint">from vertical axis</small></label>
           <output id="tiltOut" for="tilt"></output>
         </div>
         <input type="range" id="tilt" min="0" max="180" step="1">
       </div>
       <div class="slider-row">
         <div class="slider-head">
-          <label for="rotation">Rotation<small>around vertical axis</small></label>
+          <label for="rotation"><span data-i18n="rotation">Rotation</span><small data-i18n="rotation.hint">around vertical axis</small></label>
           <output id="rotationOut" for="rotation"></output>
         </div>
         <input type="range" id="rotation" min="0" max="360" step="1">
       </div>
       <div class="slider-row">
         <div class="slider-head">
-          <label for="offset">Offset<small>distance from centre</small></label>
+          <label for="offset"><span data-i18n="offset">Offset</span><small data-i18n="offset.hint">distance from centre</small></label>
           <output id="offsetOut" for="offset"></output>
         </div>
         <input type="range" id="offset" min="-1" max="1" step="0.01">
@@ -556,22 +591,24 @@
     </section>
 
     <section class="card" aria-labelledby="displayTitle">
-      <h2 class="card-title" id="displayTitle">Display</h2>
+      <h2 class="card-title" id="displayTitle" data-i18n="card.display">Display</h2>
       <label class="switch">
-        <span>Split view<small>Pull the two halves apart</small></span>
+        <span><span data-i18n="toggle.split">Split view</span><small data-i18n="toggle.split.hint">Pull the two halves apart</small></span>
         <input type="checkbox" id="splitToggle" role="switch">
       </label>
       <label class="switch sw-plane">
-        <span>Show cutting plane</span>
+        <span data-i18n="toggle.plane">Show cutting plane</span>
         <input type="checkbox" id="planeToggle" role="switch" checked>
       </label>
     </section>
 
-    <div class="footer-note">Drag to rotate · pinch or scroll to zoom</div>
+    <div class="footer-note" data-i18n="footer">Drag to rotate · pinch or scroll to zoom</div>
   </aside>
 </div>
 
 <div id="loadError" role="alert">
+  <strong lang="th">โหลดภาพสามมิติไม่สำเร็จ</strong><br>
+  <span lang="th">ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต และใช้เบราว์เซอร์รุ่นใหม่ (Safari 16.4 ขึ้นไป) แล้วโหลดหน้านี้ใหม่</span><br><br>
   <strong>The 3D view could not load.</strong><br>
   Check your internet connection (Three.js loads from a CDN) and use an up-to-date browser
   (Safari 16.4+, Chrome 89+). Then reload the page.
@@ -617,6 +654,97 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const wrap360 = a => ((a % 360) + 360) % 360;
 const shortestDelta = (from, to) => ((((to - from) % 360) + 540) % 360) - 180;
+
+/* ======================================================================
+   0b. LANGUAGE (Thai default, English via the TH/EN switch or ?lang=en)
+   ====================================================================== */
+const STR = {
+  en: {
+    'title': 'Cross-Section Explorer',
+    'doc.title': 'Cross-Section Explorer',
+    'legend.solid': 'Solid', 'legend.plane': 'Cutting plane', 'legend.section': 'Cross section',
+    'look.long': 'Look straight at section', 'look.short': 'Look at section',
+    'view.front': 'Front', 'view.top': 'Top', 'view.side': 'Side', 'view.reset': 'Reset view',
+    'toggle.name': 'Show shape name', 'name.hidden': 'Name hidden',
+    'card.solid': 'Solid', 'card.display': 'Display',
+    'tilt': 'Tilt', 'tilt.hint': 'from vertical axis',
+    'rotation': 'Rotation', 'rotation.hint': 'around vertical axis',
+    'offset': 'Offset', 'offset.hint': 'distance from centre',
+    'toggle.split': 'Split view', 'toggle.split.hint': 'Pull the two halves apart',
+    'toggle.plane': 'Show cutting plane',
+    'footer': 'Drag to rotate · pinch or scroll to zoom',
+    'fs.enter': 'Enter fullscreen', 'fs.exit': 'Exit fullscreen',
+    'zoom': '×{z} zoom',
+    'group.Prisms': 'Prisms', 'group.Pyramids': 'Pyramids', 'group.Round': 'Curved solids',
+    'solid.tri-prism': 'Triangular prism', 'solid.rect-prism': 'Rectangular prism',
+    'solid.pent-prism': 'Pentagonal prism', 'solid.hex-prism': 'Hexagonal prism',
+    'solid.tri-pyramid': 'Triangular pyramid', 'solid.sq-pyramid': 'Square pyramid',
+    'solid.pent-pyramid': 'Pentagonal pyramid', 'solid.cylinder': 'Cylinder', 'solid.cone': 'Cone', 'solid.sphere': 'Sphere',
+    'short.tri-prism': 'Triangular', 'short.rect-prism': 'Rectangular', 'short.pent-prism': 'Pentagonal', 'short.hex-prism': 'Hexagonal',
+    'short.tri-pyramid': 'Triangular', 'short.sq-pyramid': 'Square', 'short.pent-pyramid': 'Pentagonal',
+    'short.cylinder': 'Cylinder', 'short.cone': 'Cone', 'short.sphere': 'Sphere',
+    'preset.parallel': 'Parallel to base', 'preset.perpendicular': 'Perpendicular to base',
+    'preset.horizontal': 'Horizontal', 'preset.vertical': 'Vertical',
+    'preset.oblique': 'Oblique', 'preset.apex': 'Through the apex',
+    'shape.none': 'No cross section', 'shape.point': 'Point', 'shape.segment': 'Line segment',
+    'shape.circle': 'Circle', 'shape.ellipse': 'Ellipse',
+    'shape.curved-ellipse': 'Curved shape (part of an ellipse)', 'shape.curved': 'Curved shape',
+    'shape.square': 'Square', 'shape.rectangle': 'Rectangle', 'shape.parallelogram': 'Parallelogram',
+    'shape.trapezoid': 'Trapezoid', 'shape.quadrilateral': 'Quadrilateral',
+    'shape.polygon-3': 'Triangle', 'shape.polygon-5': 'Pentagon', 'shape.polygon-6': 'Hexagon',
+    'shape.polygon-7': 'Heptagon', 'shape.polygon-8': 'Octagon', 'shape.polygon': '{n}-sided polygon',
+  },
+  th: {
+    'title': 'สำรวจหน้าตัด',
+    'doc.title': 'สำรวจหน้าตัด · Cross-Section Explorer',
+    'legend.solid': 'รูปสามมิติ', 'legend.plane': 'ระนาบตัด', 'legend.section': 'หน้าตัด',
+    'look.long': 'มองตรงไปที่หน้าตัด', 'look.short': 'มองตรง',
+    'view.front': 'ด้านหน้า', 'view.top': 'ด้านบน', 'view.side': 'ด้านข้าง', 'view.reset': 'รีเซ็ตมุมมอง',
+    'toggle.name': 'แสดงชื่อรูป', 'name.hidden': 'ซ่อนชื่อรูปอยู่',
+    'card.solid': 'รูปเรขาคณิตสามมิติ', 'card.display': 'การแสดงผล',
+    'tilt': 'มุมเอียง', 'tilt.hint': 'วัดจากแกนตั้ง',
+    'rotation': 'มุมหมุน', 'rotation.hint': 'รอบแกนตั้ง',
+    'offset': 'ระยะเลื่อน', 'offset.hint': 'ห่างจากจุดศูนย์กลาง',
+    'toggle.split': 'แยกเป็นสองส่วน', 'toggle.split.hint': 'ดึงสองส่วนที่ถูกตัดออกจากกัน',
+    'toggle.plane': 'แสดงระนาบตัด',
+    'footer': 'ลากเพื่อหมุน · ถ่างสองนิ้วหรือเลื่อนเมาส์เพื่อซูม',
+    'fs.enter': 'เต็มจอ', 'fs.exit': 'ออกจากโหมดเต็มจอ',
+    'zoom': 'ขยาย ×{z}',
+    'group.Prisms': 'ปริซึม', 'group.Pyramids': 'พีระมิด', 'group.Round': 'รูปที่มีผิวโค้ง',
+    'solid.tri-prism': 'ปริซึมสามเหลี่ยม', 'solid.rect-prism': 'ปริซึมสี่เหลี่ยมมุมฉาก',
+    'solid.pent-prism': 'ปริซึมห้าเหลี่ยม', 'solid.hex-prism': 'ปริซึมหกเหลี่ยม',
+    'solid.tri-pyramid': 'พีระมิดฐานสามเหลี่ยม', 'solid.sq-pyramid': 'พีระมิดฐานสี่เหลี่ยมจัตุรัส',
+    'solid.pent-pyramid': 'พีระมิดฐานห้าเหลี่ยม', 'solid.cylinder': 'ทรงกระบอก', 'solid.cone': 'กรวย', 'solid.sphere': 'ทรงกลม',
+    'short.tri-prism': 'สามเหลี่ยม', 'short.rect-prism': 'สี่เหลี่ยม', 'short.pent-prism': 'ห้าเหลี่ยม', 'short.hex-prism': 'หกเหลี่ยม',
+    'short.tri-pyramid': 'สามเหลี่ยม', 'short.sq-pyramid': 'สี่เหลี่ยม', 'short.pent-pyramid': 'ห้าเหลี่ยม',
+    'short.cylinder': 'ทรงกระบอก', 'short.cone': 'กรวย', 'short.sphere': 'ทรงกลม',
+    'preset.parallel': 'ขนานกับฐาน', 'preset.perpendicular': 'ตั้งฉากกับฐาน',
+    'preset.horizontal': 'แนวนอน', 'preset.vertical': 'แนวตั้ง',
+    'preset.oblique': 'เอียง', 'preset.apex': 'ผ่านจุดยอด',
+    'shape.none': 'ไม่มีหน้าตัด', 'shape.point': 'จุด', 'shape.segment': 'ส่วนของเส้นตรง',
+    'shape.circle': 'รูปวงกลม', 'shape.ellipse': 'รูปวงรี',
+    'shape.curved-ellipse': 'รูปที่มีขอบโค้ง (ส่วนหนึ่งของวงรี)', 'shape.curved': 'รูปที่มีขอบโค้ง',
+    'shape.square': 'รูปสี่เหลี่ยมจัตุรัส', 'shape.rectangle': 'รูปสี่เหลี่ยมผืนผ้า', 'shape.parallelogram': 'รูปสี่เหลี่ยมด้านขนาน',
+    'shape.trapezoid': 'รูปสี่เหลี่ยมคางหมู', 'shape.quadrilateral': 'รูปสี่เหลี่ยม',
+    'shape.polygon-3': 'รูปสามเหลี่ยม', 'shape.polygon-5': 'รูปห้าเหลี่ยม', 'shape.polygon-6': 'รูปหกเหลี่ยม',
+    'shape.polygon-7': 'รูปเจ็ดเหลี่ยม', 'shape.polygon-8': 'รูปแปดเหลี่ยม', 'shape.polygon': 'รูป {n} เหลี่ยม',
+  },
+};
+let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'th';
+function t(key, vars) {
+  let str = STR[lang][key] ?? STR.en[key] ?? key;
+  if (vars) for (const [k, v] of Object.entries(vars)) str = str.replace(`{${k}}`, v);
+  return str;
+}
+// Localised name of a classification result ({ key } from ShapeClassifier).
+function shapeName(shape) {
+  if (!shape) return '';
+  if (shape.key.startsWith('polygon-')) {
+    const n = parseInt(shape.key.slice(8), 10);
+    return STR.en['shape.' + shape.key] ? t('shape.' + shape.key) : t('shape.polygon', { n });
+  }
+  return t('shape.' + shape.key);
+}
 
 /* ======================================================================
    1. SOLID FACTORY
@@ -676,7 +804,7 @@ function buildSolid(def) {
       curvedGroup = 0; edgeAngle = 20; apexY = def.h / 2;
       break;
     case 'sphere':
-      geom = new THREE.SphereGeometry(def.r, 64, 48);
+      geom = new THREE.SphereGeometry(def.r, 96, 72);
       allCurved = true;
       break;
   }
@@ -732,7 +860,7 @@ function buildSolid(def) {
 const state = {
   solidId: 'cylinder',
   plane: { tilt: 35, rotation: 25, offset: 0 },   // degrees, degrees, world units
-  view: { split: false, showPlane: true, showName: true },
+  view: { split: false, showPlane: true, showName: true, lookStraight: false },
   // Guess-mode hooks: section (3D + 2D) and label can be hidden independently.
   reveal: { section: true, label: true },
   solid: null,       // built solid object
@@ -761,6 +889,7 @@ function planeBasis(tiltDeg, rotDeg) {
    fall back to a 2D convex hull (all solids are convex).
    ====================================================================== */
 function computeSection(solid, basis, d) {
+  if (solid.def.kind === 'sphere') return sphereSection(solid, basis, d);
   const { n, u, v } = basis;
   const T = solid.tris, C = solid.curved, R = solid.radius;
   const eps = 1e-6 * R;
@@ -873,6 +1002,26 @@ function computeSection(solid, basis, d) {
     pts2: hull.map(h => all2[h.i]),
     curved: hull.map(() => !!solid.curved.length && solid.def.kind === 'sphere'),
   };
+}
+
+// A plane meets a sphere in a circle: centre d·n, radius √(r² − d²).
+// Computed exactly (not from the mesh) so even tiny sections stay round.
+function sphereSection(solid, basis, d) {
+  const { n, u, v } = basis;
+  const r = solid.def.r, eps = 1e-6 * r;
+  const base = { coplanar: false, n: n.clone(), d };
+  if (Math.abs(d) > r + eps) return { ...base, type: 'none', pts3: [], pts2: [], curved: [] };
+  const c = [n.x * d, n.y * d, n.z * d];
+  const cu = d * n.dot(u), cv = d * n.dot(v);          // (both 0: n ⟂ u, v)
+  if (Math.abs(d) >= r - eps) return { ...base, type: 'point', pts3: [c], pts2: [[cu, cv]], curved: [] };
+  const rho = Math.sqrt(r * r - d * d);
+  const N = 192, pts3 = [], pts2 = [];
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2, ca = Math.cos(a) * rho, sa = Math.sin(a) * rho;
+    pts3.push([c[0] + ca * u.x + sa * v.x, c[1] + ca * u.y + sa * v.y, c[2] + ca * u.z + sa * v.z]);
+    pts2.push([cu + ca, cv + sa]);
+  }
+  return { ...base, type: 'polygon', pts3, pts2, curved: pts3.map(() => true) };
 }
 
 function chainLoop(nPts, segs) {
@@ -1371,7 +1520,7 @@ function draw2D() {
   if (!state.reveal.section) { centerText('?', CSS.muted); return; }
 
   if (res.type === 'none') {
-    centerText('No cross section', CSS.muted);
+    centerText(t('shape.none'), CSS.muted);
   } else if (res.type === 'point') {
     ctx.fillStyle = CSS.section; ctx.strokeStyle = CSS.sectionEdge; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(X(pts[0][0]), Y(pts[0][1]), 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -1399,7 +1548,7 @@ function draw2D() {
   }
 
   if (zoom > 1) {
-    const label = `×${zoom} zoom`;
+    const label = t('zoom', { z: zoom });
     ctx.font = `700 12px ${getComputedStyle(document.body).fontFamily}`;
     const tw = ctx.measureText(label).width + 12;
     ctx.fillStyle = 'rgba(255,255,255,.9)';
@@ -1414,7 +1563,7 @@ const shapeNameEl = document.getElementById('shapeName');
 function renderLabel() {
   const visible = state.view.showName && state.reveal.label && state.reveal.section;
   shapeNameEl.classList.toggle('is-hidden', !visible);
-  shapeNameEl.textContent = visible ? (state.shape ? state.shape.name : '') : 'Name hidden';
+  shapeNameEl.textContent = visible ? shapeName(state.shape) : t('name.hidden');
 }
 
 /* ======================================================================
@@ -1475,11 +1624,37 @@ const VIEWS = {
 // is drawn from). With the world-up camera, screen-up is then exactly the
 // plane's v axis, so the 3D view matches the 2D panel. Tilt is kept a hair
 // away from 0°/180° so the up-vector never becomes degenerate.
-function lookAtSection() {
-  const t = clamp(state.plane.tilt, 0.05, 179.95);
-  const { n } = planeBasis(t, state.plane.rotation);
+function perpendicularView() {
+  const tilt = clamp(state.plane.tilt, 0.05, 179.95);
+  const { n } = planeBasis(tilt, state.plane.rotation);
   const s = new THREE.Spherical().setFromVector3(n);
-  animateCameraTo({ polar: s.phi / DEG, azimuth: s.theta / DEG });
+  return { polar: s.phi / DEG, azimuth: s.theta / DEG };
+}
+function lookAtSection() { animateCameraTo(perpendicularView()); }
+
+// "Look straight at section" is a tick box: while ticked the camera stays
+// perpendicular to the plane (following slider/preset changes). Rotating
+// the view by hand or picking a standard view unticks it; zoom does not.
+const lookBtn = document.getElementById('lookBtn');
+function setLookLock(on) {
+  state.view.lookStraight = !!on;
+  lookBtn.setAttribute('aria-checked', String(!!on));
+  if (on) lookAtSection();
+}
+function followLookLock() {
+  const tg = perpendicularView();
+  if (camTween) {
+    camTween.to.polar = tg.polar;
+    camTween.to.azimuth = camTween.from.azimuth + shortestDelta(camTween.from.azimuth, tg.azimuth);
+    return;
+  }
+  const cur = sphericalOfCamera();
+  if (Math.abs(cur.polar - tg.polar) > 0.01 || Math.abs(shortestDelta(cur.azimuth, tg.azimuth)) > 0.01) {
+    setCameraSpherical(cur.r, tg.polar, tg.azimuth);
+    controls.update();
+    needsRender = true;
+    silhouetteDirty = true;
+  }
 }
 
 function resize3D() {
@@ -1571,13 +1746,13 @@ function stepPlaneTween(now) {
 function presetsFor(solid) {
   const round = solid.def.kind === 'sphere';
   const list = [
-    { id: 'parallel', label: round ? 'Horizontal' : 'Parallel to base', target: () => ({ tilt: 0, rotation: 0, offset: 0 }) },
-    { id: 'perpendicular', label: round ? 'Vertical' : 'Perpendicular to base', target: () => ({ tilt: 90, rotation: 0, offset: 0 }) },
-    { id: 'oblique', label: 'Oblique', target: () => ({ ...OBLIQUE[solid.def.kind] }) },
+    { id: 'parallel', label: t(round ? 'preset.horizontal' : 'preset.parallel'), target: () => ({ tilt: 0, rotation: 0, offset: 0 }) },
+    { id: 'perpendicular', label: t(round ? 'preset.vertical' : 'preset.perpendicular'), target: () => ({ tilt: 90, rotation: 0, offset: 0 }) },
+    { id: 'oblique', label: t('preset.oblique'), target: () => ({ ...OBLIQUE[solid.def.kind] }) },
   ];
   if (solid.apexY !== null) {
     list.push({
-      id: 'apex', label: 'Through the apex',
+      id: 'apex', label: t('preset.apex'),
       target: () => {
         let tilt = state.plane.tilt;
         if (tilt < 65 || tilt > 115) tilt = 90;          // a flatter plane may only touch the apex
@@ -1691,7 +1866,10 @@ function buildSolidPicker() {
   for (const g of groups) {
     const wrap = document.createElement('div');
     wrap.className = 'solid-group';
-    wrap.innerHTML = `<div class="group-label">${g}</div>`;
+    const gl = document.createElement('div');
+    gl.className = 'group-label';
+    gl.textContent = t('group.' + g);
+    wrap.appendChild(gl);
     const grid = document.createElement('div');
     grid.className = 'solid-grid';
     grid.setAttribute('role', 'group');
@@ -1701,8 +1879,11 @@ function buildSolidPicker() {
       b.type = 'button';
       b.className = 'solid-btn';
       b.dataset.solid = def.id;
-      b.setAttribute('aria-label', def.name);
-      b.innerHTML = `${solidIcon(def)}<span>${def.short}</span>`;
+      b.setAttribute('aria-label', t('solid.' + def.id));
+      b.innerHTML = solidIcon(def);
+      const sp = document.createElement('span');
+      sp.textContent = t('short.' + def.id);
+      b.appendChild(sp);
       b.addEventListener('click', () => setSolid(def.id));
       grid.appendChild(b);
     }
@@ -1712,7 +1893,7 @@ function buildSolidPicker() {
 }
 function renderSolidPicker() {
   pickerEl.querySelectorAll('.solid-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.solid === state.solidId)));
-  document.getElementById('solidName').textContent = state.solid.def.name;
+  document.getElementById('solidName').textContent = t('solid.' + state.solid.def.id);
 }
 
 /* ---------- Toggles & buttons ---------- */
@@ -1723,14 +1904,42 @@ splitToggle.addEventListener('change', () => { state.view.split = splitToggle.ch
 planeToggle.addEventListener('change', () => { state.view.showPlane = planeToggle.checked; needsRender = true; });
 nameToggle.addEventListener('change', () => { state.view.showName = nameToggle.checked; renderLabel(); });
 
-document.getElementById('lookBtn').addEventListener('click', lookAtSection);
+lookBtn.addEventListener('click', () => setLookLock(!state.view.lookStraight));
 document.querySelectorAll('[data-view]').forEach(b => {
-  b.addEventListener('click', () => animateCameraTo(VIEWS[b.dataset.view]()));
+  b.addEventListener('click', () => { setLookLock(false); animateCameraTo(VIEWS[b.dataset.view]()); });
 });
+let userDragging = false;
 controls.addEventListener('start', () => {
+  userDragging = true;
   if (camTween) { camTween = null; controls.enableDamping = true; }
 });
-controls.addEventListener('change', () => { needsRender = true; silhouetteDirty = true; });
+controls.addEventListener('end', () => { userDragging = false; });
+controls.addEventListener('change', () => {
+  needsRender = true;
+  silhouetteDirty = true;
+  if (userDragging && state.view.lookStraight) {
+    const tg = perpendicularView(), cur = sphericalOfCamera();
+    if (Math.abs(cur.polar - tg.polar) > 0.3 || Math.abs(shortestDelta(cur.azimuth, tg.azimuth)) > 0.3) setLookLock(false);
+  }
+});
+
+/* ---------- Language switch ---------- */
+function applyLanguage(next) {
+  if (next) lang = next === 'en' ? 'en' : 'th';
+  document.documentElement.lang = lang;
+  document.title = t('doc.title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+  document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  const fsOn = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  document.getElementById('fullscreenBtn').setAttribute('aria-label', t(fsOn ? 'fs.exit' : 'fs.enter'));
+  buildSolidPicker();
+  renderSolidPicker();
+  renderPresets();
+  renderLabel();
+  draw2D();
+}
+document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => applyLanguage(b.dataset.lang)));
 
 /* ---------- Fullscreen (hidden where unsupported, e.g. iPhone) ---------- */
 const fsBtn = document.getElementById('fullscreenBtn');
@@ -1745,7 +1954,7 @@ if (fsSupported) {
   });
   const onFs = () => {
     const on = !!fsElement();
-    fsBtn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
+    fsBtn.setAttribute('aria-label', t(on ? 'fs.exit' : 'fs.enter'));
     document.getElementById('fsIcon').setAttribute('d', on
       ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'
       : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');
@@ -1789,6 +1998,7 @@ function frame(now) {
   lastT = now;
 
   if (planeTween) stepPlaneTween(now);
+  if (state.view.lookStraight) followLookLock();
   if (camTween) stepCameraTween(now);
   if (controls.update()) { needsRender = true; silhouetteDirty = true; }
 
@@ -1813,6 +2023,7 @@ function frame(now) {
 /* ---------- Boot ---------- */
 buildSolidPicker();
 setSolid(state.solidId);
+applyLanguage();
 setPlane(OBLIQUE.cylinder);
 setCameraSpherical(DEFAULT_VIEW.r, DEFAULT_VIEW.polar, DEFAULT_VIEW.azimuth);
 controls.update();
@@ -1823,7 +2034,8 @@ requestAnimationFrame(frame);
 
 // Small public handle for future features (e.g. guess mode) and for testing.
 window.CrossSectionExplorer = {
-  state, setSolid, setPlane, lookAtSection, setSectionRevealed, setLabelRevealed,
+  state, setSolid, setPlane, lookAtSection, setLookLock, setSectionRevealed, setLabelRevealed,
+  setLanguage: applyLanguage, shapeName: () => shapeName(state.shape),
   classify: ShapeClassifier.classify,
   recompute: recomputeSection,
   camera, get presets() { return presetsFor(state.solid); },
