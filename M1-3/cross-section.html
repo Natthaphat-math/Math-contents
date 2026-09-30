@@ -415,6 +415,40 @@
   :lang(th) .card-title, :lang(th) .eyebrow { letter-spacing: 0; text-transform: none; font-size: 13.5px; }
   :lang(th) .shape-name { line-height: 1.3; }
 
+  /* ---------- Guess mode ---------- */
+  [hidden] { display: none !important; }
+  .info-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
+  .info-top .eyebrow { white-space: nowrap; }
+  .quiz-score {
+    font-size: 13px; font-weight: 750; color: var(--ink);
+    background: var(--chip); border-radius: 8px; padding: 2px 8px;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .guess-btn { background: var(--ink); color: #fff; border-color: var(--ink); width: 100%; }
+  .exit-guess { width: 100%; min-height: 40px; font-size: 13.5px; }
+  .shape-name.is-prompt { font-size: clamp(18px, 4.6vw, 23px); color: var(--ink); }
+  .quiz { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; }
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .choice {
+    min-height: 48px; padding: 6px 10px; border-radius: 12px;
+    border: 1.5px solid var(--line); background: var(--chip);
+    font-weight: 700; font-size: 15px; line-height: 1.2; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  }
+  .choice:active { background: var(--solid-soft); }
+  .choice.is-wrong { background: #eef0f3; color: #8a93a3; text-decoration: line-through; border-style: dashed; cursor: default; }
+  .choice.is-right { background: #e2f5e9; border-color: #1f9d55; color: #13693a; }
+  .choice .mark { font-weight: 800; text-decoration: none; }
+  .quiz-feedback { min-height: 1.4em; font-weight: 700; font-size: 14.5px; text-align: center; }
+  .quiz-feedback.tone-wrong { color: #8a5a00; }
+  .quiz-feedback.tone-right { color: #13693a; }
+  .quiz-feedback.tone-info { color: var(--muted); font-weight: 600; }
+  .quiz-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+  .quiz-actions .btn { flex: 1 1 auto; }
+  .btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .is-locked { opacity: .42; filter: saturate(.6); }
+  .switch input:disabled { opacity: .5; cursor: not-allowed; }
+
   /* ---------- Stage top-right tools ---------- */
   .tools { display: flex; gap: 8px; align-items: center; }
   .lang-seg button { min-width: 48px; font-size: 14px; }
@@ -525,7 +559,7 @@
       </div>
     </div>
 
-    <div class="stage-bottom">
+    <div class="stage-bottom lockable">
       <button class="btn look-toggle" id="lookBtn" type="button" role="switch" aria-checked="false">
         <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
         <span class="long-label" data-i18n="look.long">Look straight at section</span><span class="short-label" data-i18n="look.short">Look at section</span>
@@ -549,21 +583,34 @@
         <canvas id="view2d" role="img" aria-label="2D view of the cross section"></canvas>
       </div>
       <div class="section-info">
-        <div class="eyebrow" data-i18n="legend.section">Cross section</div>
+        <div class="info-top">
+          <div class="eyebrow" id="eyebrow">Cross section</div>
+          <span class="quiz-score" id="quizScore" hidden></span>
+        </div>
         <div class="shape-name" id="shapeName" aria-live="polite"></div>
-        <label class="switch sw-section">
+        <label class="switch sw-section" id="nameSwitch">
           <span data-i18n="toggle.name">Show shape name</span>
           <input type="checkbox" id="showNameToggle" role="switch" checked>
         </label>
+        <button class="btn guess-btn" id="guessBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+          <span data-i18n="guess.start">Guess mode</span>
+        </button>
+      </div>
+      <div class="quiz" id="quiz" hidden>
+        <div class="choices" id="choices" role="group"></div>
+        <div class="quiz-feedback" id="quizFeedback" aria-live="polite"></div>
+        <div class="quiz-actions" id="quizActions"></div>
+        <button class="btn exit-guess" id="exitGuessBtn" type="button" data-i18n="guess.exit">Exit guess mode</button>
       </div>
     </section>
 
-    <section class="card" aria-labelledby="solidTitle">
+    <section class="card lockable" aria-labelledby="solidTitle">
       <h2 class="card-title" id="solidTitle"><span data-i18n="card.solid">Solid</span> <b id="solidName"></b></h2>
       <div id="solidPicker"></div>
     </section>
 
-    <section class="card" aria-labelledby="planeTitle">
+    <section class="card lockable" aria-labelledby="planeTitle">
       <h2 class="card-title" id="planeTitle" data-i18n="legend.plane">Cutting plane</h2>
       <div class="presets" id="presets"></div>
 
@@ -590,7 +637,7 @@
       </div>
     </section>
 
-    <section class="card" aria-labelledby="displayTitle">
+    <section class="card lockable" aria-labelledby="displayTitle">
       <h2 class="card-title" id="displayTitle" data-i18n="card.display">Display</h2>
       <label class="switch">
         <span><span data-i18n="toggle.split">Split view</span><small data-i18n="toggle.split.hint">Pull the two halves apart</small></span>
@@ -693,6 +740,15 @@ const STR = {
     'shape.trapezoid': 'Trapezoid', 'shape.quadrilateral': 'Quadrilateral',
     'shape.polygon-3': 'Triangle', 'shape.polygon-5': 'Pentagon', 'shape.polygon-6': 'Hexagon',
     'shape.polygon-7': 'Heptagon', 'shape.polygon-8': 'Octagon', 'shape.polygon': '{n}-sided polygon',
+    'guess.start': 'Guess mode', 'guess.title': 'Guess mode', 'guess.exit': 'Exit guess mode',
+    'guess.prompt': 'What is the cross section?', 'guess.ownTitle': 'Your own question',
+    'guess.next': 'Next question', 'guess.own': 'Make my own', 'guess.startOwn': 'Start question',
+    'guess.random': 'Random question', 'guess.show': 'Show answer',
+    'guess.firstTry': 'Correct on the first try!', 'guess.correct': 'Correct!',
+    'guess.wrong': 'Not quite. Try again!', 'guess.shown': 'Here is the answer.',
+    'guess.setup': 'Choose a solid and set the cut. The section stays hidden. Then tap Start question.',
+    'guess.none': 'Could not make a question. Please try again.',
+    'guess.score': 'Score {c}/{n} · Streak {s}',
   },
   th: {
     'title': 'สำรวจหน้าตัด',
@@ -728,6 +784,15 @@ const STR = {
     'shape.trapezoid': 'รูปสี่เหลี่ยมคางหมู', 'shape.quadrilateral': 'รูปสี่เหลี่ยม',
     'shape.polygon-3': 'รูปสามเหลี่ยม', 'shape.polygon-5': 'รูปห้าเหลี่ยม', 'shape.polygon-6': 'รูปหกเหลี่ยม',
     'shape.polygon-7': 'รูปเจ็ดเหลี่ยม', 'shape.polygon-8': 'รูปแปดเหลี่ยม', 'shape.polygon': 'รูป {n} เหลี่ยม',
+    'guess.start': 'โหมดทายหน้าตัด', 'guess.title': 'โหมดทายหน้าตัด', 'guess.exit': 'ออกจากโหมดทาย',
+    'guess.prompt': 'หน้าตัดเป็นรูปอะไร', 'guess.ownTitle': 'โจทย์ที่ตั้งเอง',
+    'guess.next': 'ข้อต่อไป', 'guess.own': 'ตั้งโจทย์เอง', 'guess.startOwn': 'เริ่มโจทย์',
+    'guess.random': 'สุ่มโจทย์', 'guess.show': 'ดูเฉลย',
+    'guess.firstTry': 'ถูกต้องตั้งแต่ครั้งแรก!', 'guess.correct': 'ถูกต้อง!',
+    'guess.wrong': 'ยังไม่ถูก ลองใหม่อีกครั้ง', 'guess.shown': 'นี่คือคำตอบ',
+    'guess.setup': 'เลือกรูปสามมิติและตั้งระนาบตัด (หน้าตัดจะถูกซ่อนไว้) แล้วแตะ "เริ่มโจทย์"',
+    'guess.none': 'สร้างโจทย์ไม่สำเร็จ ลองใหม่อีกครั้ง',
+    'guess.score': 'คะแนน {c}/{n} · ถูกติดกัน {s}',
   },
 };
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'th';
@@ -863,6 +928,11 @@ const state = {
   view: { split: false, showPlane: true, showName: true, lookStraight: false },
   // Guess-mode hooks: section (3D + 2D) and label can be hidden independently.
   reveal: { section: true, label: true },
+  // Guess mode: phase is 'question' (locked, hidden), 'answered' (revealed) or 'setup' (teacher's own).
+  guess: {
+    active: false, phase: 'idle', answerKey: null, choices: [], tried: new Set(), firstTry: true,
+    message: null, done: 0, correct: 0, streak: 0, lastKey: null,
+  },
   solid: null,       // built solid object
   basis: null,       // { n, u, v } for the current plane
   result: null,      // section geometry result
@@ -1087,9 +1157,11 @@ function convexHull(points) {
 const ShapeClassifier = (() => {
   const COLLINEAR = 0.35 * DEG;   // below this turn, a vertex is not a corner
   const SMOOTH_MAX = 25 * DEG;    // curved-to-curved turns below this are "smooth"
-  const PARALLEL = Math.sin(1.5 * DEG);
-  const EQUAL = 0.02;
-  const CIRCLE_RATIO = 1.01;
+  const STRICT = { parallel: Math.sin(1.5 * DEG), equal: 0.02, circleRatio: 1.01 };
+  // Looser tolerances: a shape whose name changes under these is "borderline"
+  // (e.g. a rectangle that is almost a square) and is skipped by Guess mode.
+  const LOOSE = { parallel: Math.sin(7 * DEG), equal: 0.12, circleRatio: 1.12 };
+  let tol = STRICT;
   const POLY_NAMES = { 3: 'Triangle', 5: 'Pentagon', 6: 'Hexagon', 7: 'Heptagon', 8: 'Octagon' };
 
   // Axis ratio from the polygon's second moments of area (robust to sampling).
@@ -1117,7 +1189,7 @@ const ShapeClassifier = (() => {
   }
 
   function closedCurve(pts) {
-    return axisRatio(pts) < CIRCLE_RATIO
+    return axisRatio(pts) < tol.circleRatio
       ? { key: 'circle', name: 'Circle', corners: [] }
       : { key: 'ellipse', name: 'Ellipse', corners: [] };
   }
@@ -1128,9 +1200,9 @@ const ShapeClassifier = (() => {
       const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy);
       return { x: dx / L, y: dy / L, L };
     });
-    const par = (a, b) => Math.abs(a.x * b.y - a.y * b.x) < PARALLEL;
-    const perp = (a, b) => Math.abs(a.x * b.x + a.y * b.y) < PARALLEL;
-    const eq = (a, b) => Math.abs(a.L - b.L) / Math.max(a.L, b.L) < EQUAL;
+    const par = (a, b) => Math.abs(a.x * b.y - a.y * b.x) < tol.parallel;
+    const perp = (a, b) => Math.abs(a.x * b.x + a.y * b.y) < tol.parallel;
+    const eq = (a, b) => Math.abs(a.L - b.L) / Math.max(a.L, b.L) < tol.equal;
     const p1 = par(s[0], s[2]), p2 = par(s[1], s[3]);
     if (p1 && p2) {
       const right = perp(s[0], s[1]) && perp(s[1], s[2]);
@@ -1146,7 +1218,8 @@ const ShapeClassifier = (() => {
    * @param ctx     { conic: 'ellipse' | 'other' | null }  what the curved part is, if any
    * @returns       { key, name, corners: [indices into result.pts2] }
    */
-  function classify(result, ctx = {}) {
+  function classify(result, ctx = {}, loose = false) {
+    tol = loose ? LOOSE : STRICT;
     if (!result || result.type === 'none') return { key: 'none', name: 'No cross section', corners: [] };
     if (result.type === 'point') return { key: 'point', name: 'Point', corners: [] };
     if (result.type === 'segment') return { key: 'segment', name: 'Line segment', corners: [] };
@@ -1276,8 +1349,8 @@ const mainSection = sectionObjects();
 scene.add(mainSection.fill, mainSection.line);
 
 // Markers for degenerate sections (a point, or a line segment).
-const pointMarker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshBasicMaterial({ color: COLORS.section }));
-const segmentMarker = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14), new THREE.MeshBasicMaterial({ color: COLORS.section }));
+const pointMarker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshBasicMaterial({ color: COLORS.section, transparent: true }));
+const segmentMarker = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14), new THREE.MeshBasicMaterial({ color: COLORS.section, transparent: true }));
 pointMarker.renderOrder = segmentMarker.renderOrder = 5;
 scene.add(pointMarker, segmentMarker);
 
@@ -1371,6 +1444,7 @@ function updatePlaneAndHalves() {
   }
 }
 
+let revealFade = 1;          // 0 → 1 when a hidden section is revealed
 function syncVisibility() {
   const res = state.result;
   const show = state.reveal.section;
@@ -1383,6 +1457,8 @@ function syncVisibility() {
     h.front.material.opacity = 0.34 + 0.12 * opaque;
     h.back.material.opacity = 0.16 + 0.08 * opaque;
   }
+  sectionFillMat.opacity = sectionLineMat.opacity = revealFade;
+  pointMarker.material.opacity = segmentMarker.material.opacity = revealFade;
   pointMarker.visible = show && res && res.type === 'point';
   segmentMarker.visible = show && res && res.type === 'segment';
   planeGroup.visible = state.view.showPlane;
@@ -1475,7 +1551,7 @@ function draw2D() {
 
   const R = state.solid.radius;
   const base = Math.min(w, h) / (2.3 * R);
-  const pts = res.pts2;
+  const pts = state.reveal.section ? res.pts2 : [];     // hidden: no hints from zoom/centring
   let cx = 0, cy = 0, zoom = 1;
   if (pts.length) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -1561,7 +1637,15 @@ function draw2D() {
 /* ---------- Shape label ---------- */
 const shapeNameEl = document.getElementById('shapeName');
 function renderLabel() {
-  const visible = state.view.showName && state.reveal.label && state.reveal.section;
+  const g = state.guess;
+  const prompt = g.active && g.phase !== 'answered';
+  shapeNameEl.classList.toggle('is-prompt', prompt);
+  if (prompt) {
+    shapeNameEl.classList.remove('is-hidden');
+    shapeNameEl.textContent = t(g.phase === 'setup' ? 'guess.ownTitle' : 'guess.prompt');
+    return;
+  }
+  const visible = (g.active || state.view.showName) && state.reveal.label && state.reveal.section;
   shapeNameEl.classList.toggle('is-hidden', !visible);
   shapeNameEl.textContent = visible ? shapeName(state.shape) : t('name.hidden');
 }
@@ -1938,6 +2022,7 @@ function applyLanguage(next) {
   renderPresets();
   renderLabel();
   draw2D();
+  renderGuess();
 }
 document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => applyLanguage(b.dataset.lang)));
 
@@ -1980,12 +2065,281 @@ ro.observe(document.getElementById('panelWrap'));
 window.addEventListener('orientationchange', () => setTimeout(() => { resize3D(); resize2D(); }, 250));
 
 /* ======================================================================
-   9. GUESS-MODE HOOKS (not wired to UI yet)
-   A future "Guess mode" can hide the section (3D + 2D) and the name,
-   then call reveal() when students have made their prediction.
+   9. GUESS MODE
+   The section (3D + 2D) and its name are hidden; students pick one of four
+   names. Wrong picks are crossed out and they keep trying; a right pick (or
+   "Show answer") reveals the section. While a question is open, every
+   control is locked, including the view.
    ====================================================================== */
 function setSectionRevealed(on) { state.reveal.section = !!on; draw2D(); renderLabel(); needsRender = true; }
 function setLabelRevealed(on) { state.reveal.label = !!on; renderLabel(); }
+
+// Believable wrong answers for each shape (first three are used, shuffled).
+const NEIGHBOURS = {
+  'polygon-3': ['trapezoid', 'square', 'polygon-5', 'rectangle'],
+  'square': ['rectangle', 'parallelogram', 'trapezoid', 'circle'],
+  'rectangle': ['square', 'parallelogram', 'trapezoid', 'ellipse'],
+  'parallelogram': ['rectangle', 'trapezoid', 'square', 'polygon-6'],
+  'trapezoid': ['parallelogram', 'rectangle', 'polygon-3', 'polygon-5'],
+  'quadrilateral': ['trapezoid', 'parallelogram', 'rectangle', 'polygon-5'],
+  'polygon-5': ['polygon-6', 'trapezoid', 'polygon-3', 'square'],
+  'polygon-6': ['polygon-5', 'parallelogram', 'circle', 'rectangle'],
+  'polygon-7': ['polygon-6', 'polygon-5', 'polygon-8', 'circle'],
+  'polygon-8': ['polygon-6', 'polygon-7', 'circle', 'polygon-5'],
+  'circle': ['ellipse', 'curved-ellipse', 'polygon-6', 'square'],
+  'ellipse': ['circle', 'curved-ellipse', 'rectangle', 'parallelogram'],
+  'curved-ellipse': ['ellipse', 'circle', 'trapezoid', 'polygon-3'],
+  'curved': ['curved-ellipse', 'ellipse', 'polygon-3', 'circle'],
+  'none': ['point', 'circle', 'segment', 'polygon-3'],
+  'point': ['segment', 'none', 'circle', 'polygon-3'],
+  'segment': ['point', 'rectangle', 'none', 'polygon-3'],
+};
+const CHOICE_POOL = ['polygon-3', 'square', 'rectangle', 'parallelogram', 'trapezoid', 'polygon-5', 'polygon-6', 'circle', 'ellipse', 'curved-ellipse'];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rand = (a, b) => a + Math.random() * (b - a);
+
+function makeChoices(key) {
+  const picks = shuffle((NEIGHBOURS[key] || []).filter(k => k !== key)).slice(0, 3);
+  for (const k of shuffle(CHOICE_POOL.slice())) {
+    if (picks.length >= 3) break;
+    if (k !== key && !picks.includes(k)) picks.push(k);
+  }
+  return shuffle([key, ...picks]);
+}
+
+// A cut makes a fair question if its shape is big enough, has no tiny
+// sides, and keeps the same name under looser tolerances (not borderline).
+function clearShape(solid, basis, offset) {
+  const res = computeSection(solid, basis, offset);
+  if (res.type !== 'polygon') return null;
+  const R = solid.radius;
+  if (Math.abs(signedArea(res.pts2)) < 0.08 * R * R) return null;
+  const ctx = { conic: conicFor(solid, basis.n) };
+  const strict = ShapeClassifier.classify(res, ctx);
+  const loose = ShapeClassifier.classify(res, ctx, true);
+  if (loose.key !== strict.key) return null;
+  if (strict.key === 'curved' || strict.key === 'segment' || strict.key === 'quadrilateral') return null;
+  if (/^polygon-(\d+)$/.test(strict.key) && parseInt(strict.key.slice(8), 10) > 8) return null;
+  const c = strict.corners, P = res.pts2;
+  if (c.length >= 2) {
+    let per = 0;
+    for (let i = 0; i < P.length; i++) per += Math.hypot(P[(i + 1) % P.length][0] - P[i][0], P[(i + 1) % P.length][1] - P[i][1]);
+    for (let k = 0; k < c.length; k++) {
+      const a = P[c[k]], b = P[c[(k + 1) % c.length]];
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.07 * per) return null;
+    }
+  }
+  return strict;
+}
+
+function randomQuestion() {
+  const g = state.guess;
+  for (let i = 0; i < 600; i++) {
+    const def = pick(SOLID_DEFS);
+    const solid = buildSolid(def);
+    const half = def.kind === 'sphere' ? def.r : def.h / 2;
+    const kinds = ['parallel', 'perpendicular', 'oblique', 'oblique'];
+    if (solid.apexY !== null) kinds.push('apex');
+    const kind = pick(kinds);
+    const rotation = (Math.round(rand(0, 360) / 5) * 5) % 360;
+    let tilt, offset = 0;
+    if (kind === 'parallel') { tilt = 0; offset = rand(-0.8, 0.8) * half; }
+    else if (kind === 'perpendicular') { tilt = 90; offset = rand(-0.6, 0.6) * solid.radius; }
+    else if (kind === 'oblique') { tilt = Math.round(rand(15, 75)); offset = rand(-0.45, 0.45) * solid.radius; }
+    else { tilt = Math.round(rand(70, 110)); }
+    offset = Math.round(offset * 100) / 100;
+    const basis = planeBasis(tilt, rotation);
+    if (kind === 'apex') offset = basis.n.y * solid.apexY;
+    const shape = clearShape(solid, basis, offset);
+    if (!shape) continue;
+    if (shape.key === g.lastKey && i < 400) continue;
+    return { solidId: def.id, plane: { tilt, rotation, offset } };
+  }
+  return null;
+}
+
+// A camera direction that sees the plane at a slant (not edge-on, not face-on).
+function questionView(n) {
+  let best = null, bestScore = Infinity;
+  for (const az of [32, 62, 122, 152, 212, 242, 302, 332, 2, 92, 182, 272]) {
+    for (const polar of [60, 48, 72]) {
+      const dir = new THREE.Vector3().setFromSphericalCoords(1, polar * DEG, az * DEG);
+      const score = Math.abs(Math.abs(dir.dot(n)) - 0.55) + Math.abs(polar - 60) / 300;
+      if (score < bestScore) { bestScore = score; best = { r: DEFAULT_VIEW.r, polar, azimuth: az }; }
+    }
+  }
+  return best;
+}
+
+function hideForGuess() {
+  state.reveal.section = false;
+  state.reveal.label = false;
+  state.view.split = false; splitToggle.checked = false;
+  state.view.showPlane = true; planeToggle.checked = true;
+  setLookLock(false);
+  draw2D(); renderLabel(); needsRender = true;
+}
+
+// q = { solidId, plane } for a random question, or null to use the current cut.
+function beginQuestion(q) {
+  const g = state.guess;
+  if (q) { setSolid(q.solidId); setPlane(q.plane); }
+  planeTween = null;
+  recomputeSection();
+  g.answerKey = state.shape.key;
+  g.choices = makeChoices(g.answerKey);
+  g.tried = new Set();
+  g.firstTry = true;
+  g.message = null;
+  g.phase = 'question';
+  hideForGuess();
+  animateCameraTo(questionView(state.basis.n));
+  renderGuess();
+}
+
+function nextRandomQuestion() {
+  const q = randomQuestion();
+  if (!q) { state.guess.message = { text: 'guess.none', tone: 'info' }; renderGuess(); return; }
+  beginQuestion(q);
+}
+
+function startGuessMode() {
+  state.guess.active = true;
+  nextRandomQuestion();
+}
+
+function exitGuessMode() {
+  const g = state.guess;
+  g.active = false;
+  g.phase = 'idle';
+  g.message = null;
+  state.reveal.section = true;
+  state.reveal.label = true;
+  revealFade = 1;
+  draw2D(); renderLabel(); needsRender = true;
+  renderGuess();
+}
+
+function startOwnQuestion() {
+  const g = state.guess;
+  g.phase = 'setup';
+  g.message = { text: 'guess.setup', tone: 'info' };
+  hideForGuess();
+  renderGuess();
+}
+
+function answerGuess(key) {
+  const g = state.guess;
+  if (g.phase !== 'question' || g.tried.has(key)) return;
+  if (key === g.answerKey) {
+    finishQuestion(g.firstTry, g.firstTry ? 'guess.firstTry' : 'guess.correct');
+  } else {
+    g.tried.add(key);
+    g.firstTry = false;
+    g.message = { text: 'guess.wrong', tone: 'wrong' };
+    renderGuess();
+  }
+}
+
+function finishQuestion(scored, msg) {
+  const g = state.guess;
+  g.done++;
+  if (scored) { g.correct++; g.streak++; } else g.streak = 0;
+  g.lastKey = g.answerKey;
+  g.phase = 'answered';
+  g.message = { text: msg, tone: msg === 'guess.shown' ? 'info' : 'right' };
+  state.reveal.section = true;
+  state.reveal.label = true;
+  revealFade = 0;
+  draw2D(); renderLabel(); needsRender = true;
+  renderGuess();
+  setLookLock(true);                       // turn to face the revealed section
+}
+
+const quizEl = document.getElementById('quiz');
+const choicesEl = document.getElementById('choices');
+const quizActionsEl = document.getElementById('quizActions');
+const quizFeedbackEl = document.getElementById('quizFeedback');
+const quizScoreEl = document.getElementById('quizScore');
+
+function actionButton(labelKey, onClick, primary) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn' + (primary ? ' btn-primary' : '');
+  b.textContent = t(labelKey);
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+function applyGuessLocks() {
+  const g = state.guess;
+  const locked = g.active && g.phase === 'question';
+  controls.enabled = !locked;
+  document.querySelectorAll('.lockable').forEach(el => {
+    el.inert = locked;
+    el.classList.toggle('is-locked', locked);
+  });
+  const noDisplayToggles = g.active && g.phase !== 'answered';
+  splitToggle.disabled = noDisplayToggles;
+  planeToggle.disabled = noDisplayToggles;
+}
+
+function renderGuess() {
+  const g = state.guess;
+  quizEl.hidden = !g.active;
+  document.getElementById('guessBtn').hidden = g.active;
+  document.getElementById('nameSwitch').hidden = g.active;
+  document.getElementById('eyebrow').textContent = t(g.active ? 'guess.title' : 'legend.section');
+  quizScoreEl.hidden = !g.active;
+  quizScoreEl.textContent = t('guess.score', { c: g.correct, n: g.done, s: g.streak });
+
+  const showChoices = g.active && (g.phase === 'question' || g.phase === 'answered');
+  choicesEl.hidden = !showChoices;
+  choicesEl.setAttribute('aria-label', t('guess.prompt'));
+  choicesEl.replaceChildren(...(showChoices ? g.choices.map(key => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'choice';
+    b.dataset.key = key;
+    const wrong = g.tried.has(key);
+    const right = g.phase === 'answered' && key === g.answerKey;
+    if (wrong) b.classList.add('is-wrong');
+    if (right) b.classList.add('is-right');
+    if (wrong || right) {
+      const m = document.createElement('span');
+      m.className = 'mark';
+      m.textContent = right ? '✓' : '✗';
+      b.appendChild(m);
+    }
+    b.appendChild(document.createTextNode(shapeName({ key })));
+    b.disabled = g.phase !== 'question' || wrong;
+    b.addEventListener('click', () => answerGuess(key));
+    return b;
+  }) : []));
+
+  quizFeedbackEl.className = 'quiz-feedback' + (g.message ? ' tone-' + g.message.tone : '');
+  quizFeedbackEl.textContent = g.message ? t(g.message.text) : '';
+
+  const actions = [];
+  if (g.phase === 'question') {
+    actions.push(actionButton('guess.show', () => finishQuestion(false, 'guess.shown')));
+    actions.push(actionButton('guess.own', startOwnQuestion));
+  } else if (g.phase === 'answered') {
+    actions.push(actionButton('guess.next', nextRandomQuestion, true));
+    actions.push(actionButton('guess.own', startOwnQuestion));
+  } else if (g.phase === 'setup') {
+    actions.push(actionButton('guess.startOwn', () => beginQuestion(null), true));
+    actions.push(actionButton('guess.random', nextRandomQuestion));
+  }
+  quizActionsEl.replaceChildren(...actions);
+
+  applyGuessLocks();
+  renderLabel();
+}
+
+document.getElementById('guessBtn').addEventListener('click', startGuessMode);
+document.getElementById('exitGuessBtn').addEventListener('click', exitGuessMode);
 
 /* ======================================================================
    10. MAIN LOOP  (section only recomputed when solid/plane changed;
@@ -1999,6 +2353,7 @@ function frame(now) {
 
   if (planeTween) stepPlaneTween(now);
   if (state.view.lookStraight) followLookLock();
+  if (revealFade < 1) { revealFade = Math.min(1, revealFade + dt * 2.2); needsRender = true; }
   if (camTween) stepCameraTween(now);
   if (controls.update()) { needsRender = true; silhouetteDirty = true; }
 
@@ -2036,6 +2391,8 @@ requestAnimationFrame(frame);
 window.CrossSectionExplorer = {
   state, setSolid, setPlane, lookAtSection, setLookLock, setSectionRevealed, setLabelRevealed,
   setLanguage: applyLanguage, shapeName: () => shapeName(state.shape),
+  guess: { start: startGuessMode, exit: exitGuessMode, answer: answerGuess, next: nextRandomQuestion,
+           own: startOwnQuestion, begin: beginQuestion, randomQuestion, clearShape },
   classify: ShapeClassifier.classify,
   recompute: recomputeSection,
   camera, get presets() { return presetsFor(state.solid); },
