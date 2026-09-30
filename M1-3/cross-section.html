@@ -450,7 +450,11 @@
   .switch input:disabled { opacity: .5; cursor: not-allowed; }
 
   /* ---------- Stage top-right tools ---------- */
-  .tools { display: flex; gap: 8px; align-items: center; }
+  .tools { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .tools-row { display: flex; gap: 8px; align-items: center; }
+  .style-seg button { font-size: 13.5px; padding: 0 10px; white-space: nowrap; }
+  .style-seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .style-textbook .legend { visibility: hidden; }
   .lang-seg button { min-width: 48px; font-size: 14px; }
   .lang-seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 
@@ -549,6 +553,7 @@
         </div>
       </div>
       <div class="tools">
+      <div class="tools-row">
       <div class="seg lang-seg" role="group" aria-label="Language / ภาษา">
         <button type="button" data-lang="th" lang="th">TH</button>
         <button type="button" data-lang="en" lang="en">EN</button>
@@ -556,6 +561,11 @@
       <button class="btn icon-btn" id="fullscreenBtn" type="button" aria-label="Enter fullscreen" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </button>
+      </div>
+      <div class="seg style-seg" role="group" aria-label="View style">
+        <button type="button" data-style="textbook"><span class="long-label" data-i18n="style.textbook">Textbook</span><span class="short-label" data-i18n="style.textbook.short">Book</span></button>
+        <button type="button" data-style="color"><span class="long-label" data-i18n="style.color">Colour 3D</span><span class="short-label" data-i18n="style.color.short">3D</span></button>
+      </div>
       </div>
     </div>
 
@@ -671,6 +681,9 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 /* ======================================================================
    0. CONSTANTS & HELPERS
@@ -749,6 +762,7 @@ const STR = {
     'guess.setup': 'Choose a solid and set the cut. The section stays hidden. Then tap Start question.',
     'guess.none': 'Could not make a question. Please try again.',
     'guess.score': 'Score {c}/{n} · Streak {s}',
+    'style.textbook': 'Textbook', 'style.color': 'Colour 3D', 'style.textbook.short': 'Book', 'style.color.short': '3D',
   },
   th: {
     'title': 'สำรวจหน้าตัด',
@@ -793,6 +807,7 @@ const STR = {
     'guess.setup': 'เลือกรูปสามมิติและตั้งระนาบตัด (หน้าตัดจะถูกซ่อนไว้) แล้วแตะ "เริ่มโจทย์"',
     'guess.none': 'สร้างโจทย์ไม่สำเร็จ ลองใหม่อีกครั้ง',
     'guess.score': 'คะแนน {c}/{n} · ถูกติดกัน {s}',
+    'style.textbook': 'แบบหนังสือ', 'style.color': 'แบบสามมิติ', 'style.textbook.short': 'หนังสือ', 'style.color.short': 'สามมิติ',
   },
 };
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'th';
@@ -907,6 +922,8 @@ function buildSolid(def) {
     geom,
     edges: allCurved ? new THREE.BufferGeometry() : new THREE.EdgesGeometry(geom, edgeAngle),
     tris: new Float64Array(tris),
+    verts: pos.array,
+    inkEdges: new LineSegmentsGeometry().setPositions(allCurved ? [0, 0, 0, 0, 0, 0] : new THREE.EdgesGeometry(geom, edgeAngle).attributes.position.array),
     curved: Uint8Array.from(curved),
     radius,
     flat: def.kind === 'prism' || def.kind === 'box' || def.kind === 'pyramid',
@@ -925,7 +942,8 @@ function buildSolid(def) {
 const state = {
   solidId: 'cylinder',
   plane: { tilt: 35, rotation: 25, offset: 0 },   // degrees, degrees, world units
-  view: { split: false, showPlane: true, showName: true, lookStraight: false },
+  // style: 'color' (translucent 3D) or 'textbook' (white, opaque, black outlines like the exercise book)
+  view: { split: false, showPlane: true, showName: true, lookStraight: false, style: 'color' },
   // Guess-mode hooks: section (3D + 2D) and label can be hidden independently.
   reveal: { section: true, label: true },
   // Guess mode: phase is 'question' (locked, hidden), 'answered' (revealed) or 'setup' (teacher's own).
@@ -1287,7 +1305,7 @@ renderer.localClippingEnabled = true;
 renderer.setClearColor(0x000000, 0);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 300);
 scene.add(camera);
 scene.add(new THREE.HemisphereLight(0xffffff, 0xa4afc0, 1.7));
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -1321,6 +1339,18 @@ function sectionObjects() {
 
 // Two clipped halves of the solid (+n side and -n side). With gap = 0 they
 // look like one solid; in split view they slide apart along the normal.
+// Thick "ink" lines for the textbook style (1px WebGL lines are too thin to project).
+const inkMats = [];
+function inkMaterial(color, width, clip) {
+  const m = new LineMaterial({ color, linewidth: width, worldUnits: false, transparent: true });
+  if (clip) m.clippingPlanes = [clip];
+  inkMats.push(m);
+  return m;
+}
+const INK = 0x1b1f27;
+const inkSilhouetteGeom = new LineSegmentsGeometry();
+let silhouetteCount = 0;
+
 function makeHalf(sign) {
   const clip = new THREE.Plane();
   const group = new THREE.Group();
@@ -1338,9 +1368,20 @@ function makeHalf(sign) {
   const silhouette = new THREE.LineSegments(silhouetteGeom, edgeMat);
   silhouette.frustumCulled = false;
   const cap = sectionObjects();
-  group.add(back, front, edges, silhouette, cap.fill, cap.line);
+  // textbook style: opaque white faces pushed back a little so the ink lines win the depth test
+  const colorFront = front.material;
+  const bookFace = new THREE.MeshBasicMaterial({
+    color: 0xffffff, side: THREE.DoubleSide, clippingPlanes: [clip],
+    polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+  });
+  const inkMat = inkMaterial(INK, 2.4, clip);
+  const inkEdges = new LineSegments2(undefined, inkMat);
+  const inkSil = new LineSegments2(inkSilhouetteGeom, inkMat);
+  inkEdges.renderOrder = inkSil.renderOrder = 10;
+  inkEdges.frustumCulled = inkSil.frustumCulled = false;
+  group.add(back, front, edges, silhouette, cap.fill, cap.line, inkEdges, inkSil);
   scene.add(group);
-  return { sign, clip, group, back, front, edges, silhouette, cap };
+  return { sign, clip, group, back, front, edges, silhouette, cap, colorFront, bookFace, inkEdges, inkSil };
 }
 const halves = [makeHalf(+1), makeHalf(-1)];
 
@@ -1367,9 +1408,28 @@ const planeOutline = new THREE.LineLoop(
   new THREE.LineBasicMaterial({ color: COLORS.planeEdge, transparent: true, opacity: 0.95 }),
 );
 planeOutline.renderOrder = 8;
+const planeColorMat = planeMesh.material;
+const planeBookMat = new THREE.MeshBasicMaterial({
+  color: 0xffffff, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+});
+const planeInk = new LineSegments2(
+  new LineSegmentsGeometry().setPositions([
+    -0.5, -0.5, 0, 0.5, -0.5, 0,   0.5, -0.5, 0, 0.5, 0.5, 0,
+    0.5, 0.5, 0, -0.5, 0.5, 0,    -0.5, 0.5, 0, -0.5, -0.5, 0,
+  ]),
+  inkMaterial(INK, 2.2),
+);
+planeInk.renderOrder = 10;
 const planeGroup = new THREE.Group();
-planeGroup.add(planeMesh, planeOutline);
+planeGroup.add(planeMesh, planeOutline, planeInk);
 scene.add(planeGroup);
+
+// Trace of the plane on the solid (the section outline) as an ink line.
+const traceMat = inkMaterial(INK, 1.8);
+const traceInk = new LineSegments2(new LineSegmentsGeometry(), traceMat);
+traceInk.renderOrder = 11;
+traceInk.frustumCulled = false;
+scene.add(traceInk);
 
 let gap = 0;                        // current split separation
 function gapTarget() { return state.view.split ? 0.32 * state.solid.radius : 0; }
@@ -1383,10 +1443,8 @@ function applySolidToScene() {
     h.back.material.flatShading = h.front.material.flatShading = s.flat;
     h.back.material.needsUpdate = h.front.material.needsUpdate = true;
     h.silhouette.visible = s.hasSilhouette;
+    h.inkEdges.geometry = s.inkEdges;
   }
-  const size = 2 * 1.3 * s.radius;
-  planeMesh.scale.set(size, size, 1);
-  planeOutline.scale.set(size, size, 1);
   pointMarker.scale.setScalar(0.045 * s.radius);
   silhouetteDirty = true;
 }
@@ -1410,6 +1468,11 @@ function updateSectionBuffers() {
       lineArr.set(a, nLine * 3);
       nLine += 1;
     }
+  }
+  if (res.type === 'polygon') {
+    const pts = res.pts3, N = pts.length, arr = new Float32Array(N * 6);
+    for (let i = 0; i < N; i++) { arr.set(pts[i], i * 6); arr.set(pts[(i + 1) % N], i * 6 + 3); }
+    traceInk.geometry.setPositions(arr);
   }
   sectionFillGeom.setDrawRange(0, nFill);
   sectionLineGeom.setDrawRange(0, nLine);
@@ -1436,6 +1499,13 @@ function updatePlaneAndHalves() {
   _m.makeBasis(u, v, n);
   planeGroup.quaternion.setFromRotationMatrix(_m);
   planeGroup.position.copy(n).multiplyScalar(d);
+  if (state.view.style === 'textbook' && state.planeRect) {
+    const r = state.planeRect;
+    for (const o of [planeMesh, planeOutline, planeInk]) { o.position.set(r.cu, r.cv, 0); o.scale.set(2 * r.hu, 2 * r.hv, 1); }
+  } else {
+    const size = 2 * 1.3 * state.solid.radius;
+    for (const o of [planeMesh, planeOutline, planeInk]) { o.position.set(0, 0, 0); o.scale.set(size, size, 1); }
+  }
   for (const h of halves) {
     // keep side sign·(n·x − d) ≥ 0, shifted by the gap along sign·n
     h.clip.normal.copy(n).multiplyScalar(h.sign);
@@ -1450,13 +1520,32 @@ function syncVisibility() {
   const show = state.reveal.section;
   const split = gap > 1e-4;
   const poly = res && res.type === 'polygon';
-  mainSection.fill.visible = mainSection.line.visible = show && poly && !split;
+  const book = state.view.style === 'textbook';
+  mainSection.fill.visible = show && poly && !split;
+  mainSection.line.visible = show && poly && !split && !book;
   for (const h of halves) {
     h.cap.fill.visible = h.cap.line.visible = show && poly && split;
     const opaque = split ? 1 : 0;
-    h.front.material.opacity = 0.34 + 0.12 * opaque;
+    h.colorFront.opacity = 0.34 + 0.12 * opaque;
     h.back.material.opacity = 0.16 + 0.08 * opaque;
+    h.front.material = book ? h.bookFace : h.colorFront;
+    h.back.visible = !book;
+    h.edges.visible = !book;
+    h.silhouette.visible = !book && state.solid.hasSilhouette;
+    h.inkEdges.visible = book && state.solid.def.kind !== 'sphere';
+    h.inkSil.visible = book && state.solid.hasSilhouette && silhouetteCount > 0;
   }
+  planeMesh.material = book ? planeBookMat : planeColorMat;
+  planeOutline.visible = !book;
+  planeInk.visible = book;
+  // Ink trace: black and hidden where covered while the section is hidden;
+  // once revealed, the crimson face and its outline are drawn "x-ray" style on top.
+  traceInk.visible = book && poly && !split;
+  traceMat.color.setHex(show ? COLORS.sectionEdge : INK);
+  traceMat.linewidth = show ? 2.6 : 1.8;
+  traceMat.depthTest = !show;
+  sectionFillMat.depthTest = !(book && show);
+  sectionFillMat.depthWrite = !(book && show);
   sectionFillMat.opacity = sectionLineMat.opacity = revealFade;
   pointMarker.material.opacity = segmentMarker.material.opacity = revealFade;
   pointMarker.visible = show && res && res.type === 'point';
@@ -1516,6 +1605,8 @@ function updateSilhouette() {
     }
   }
   silhouetteGeom.setDrawRange(0, k / 3);
+  silhouetteCount = k / 3;
+  if (k) inkSilhouetteGeom.setPositions(arr.slice(0, k));
   silhouetteGeom.attributes.position.needsUpdate = true;
   silhouetteDirty = false;
 }
@@ -1664,6 +1755,10 @@ controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 controls.target.set(0, 0, 0);
 
 const DEFAULT_VIEW = { r: 7.2, polar: 64, azimuth: 32 };
+// Textbook style uses a narrow field of view from further away: nearly a
+// parallel projection, like the drawings in the exercise book.
+const HALF_FOV = { color: 20, textbook: 6 };
+function viewScale(style = state.view.style) { return Math.tan(20 * DEG) / Math.tan(HALF_FOV[style] * DEG); }
 let camTween = null;
 
 function sphericalOfCamera() {
@@ -1701,7 +1796,7 @@ const VIEWS = {
   front: () => ({ polar: 90, azimuth: 0 }),
   top:   () => ({ polar: 0.05, azimuth: 0 }),
   side:  () => ({ polar: 90, azimuth: 90 }),
-  reset: () => ({ ...DEFAULT_VIEW }),
+  reset: () => ({ ...DEFAULT_VIEW, r: DEFAULT_VIEW.r * viewScale() }),
 };
 
 // Look perpendicular to the plane from its +n side (the side the 2D panel
@@ -1747,7 +1842,10 @@ function resize3D() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   // keep the horizontal field of view reasonable on tall (portrait) viewports
-  camera.fov = camera.aspect < 1 ? 2 * Math.atan(Math.tan(20 * DEG) / camera.aspect) / DEG : 40;
+  const half = HALF_FOV[state.view.style];
+  camera.fov = camera.aspect < 1 ? 2 * Math.atan(Math.tan(half * DEG) / camera.aspect) / DEG : 2 * half;
+  for (const m of inkMats) m.resolution.set(w, h);
+  camera.near = state.view.style === 'textbook' ? 2 : 0.05;   // better depth precision far away
   camera.fov = Math.min(camera.fov, 75);
   camera.updateProjectionMatrix();
   needsRender = true;
@@ -1765,11 +1863,46 @@ function recomputeSection() {
   const p = state.plane;
   state.basis = planeBasis(p.tilt, p.rotation);
   state.result = computeSection(state.solid, state.basis, p.offset);
+  state.planeRect = fitPlaneRect(state.solid, state.basis);
   state.shape = ShapeClassifier.classify(state.result, { conic: conicFor(state.solid, state.basis.n) });
   updateSectionBuffers();
   draw2D();
   renderLabel();
   state.sectionDirty = false;
+  needsRender = true;
+}
+
+// Textbook plane: a rectangle a little bigger than the solid's outline on the plane.
+function fitPlaneRect(solid, { u, v }) {
+  const V = solid.verts;
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+  for (let i = 0; i < V.length; i += 3) {
+    const pu = V[i] * u.x + V[i + 1] * u.y + V[i + 2] * u.z;
+    const pv = V[i] * v.x + V[i + 1] * v.y + V[i + 2] * v.z;
+    if (pu < u0) u0 = pu; if (pu > u1) u1 = pu;
+    if (pv < v0) v0 = pv; if (pv > v1) v1 = pv;
+  }
+  const m = 0.12 * Math.max(u1 - u0, v1 - v0) + 0.12 * solid.radius;
+  return { cu: (u0 + u1) / 2, cv: (v0 + v1) / 2, hu: (u1 - u0) / 2 + m, hv: (v1 - v0) / 2 + m };
+}
+
+/* ---------- View style (Colour 3D ↔ Textbook) ---------- */
+function setStyle(style) {
+  const next = style === 'textbook' ? 'textbook' : 'color';
+  const k = viewScale(next) / viewScale();
+  state.view.style = next;
+  if (k !== 1) {
+    const off = camera.position.clone().sub(controls.target).multiplyScalar(k);
+    camera.position.copy(controls.target).add(off);
+    if (camTween) { camTween.from.r *= k; camTween.to.r *= k; }
+  }
+  controls.minDistance = 3.2 * viewScale();
+  controls.maxDistance = 14 * viewScale();
+  document.getElementById('app').classList.toggle('style-textbook', next === 'textbook');
+  document.querySelectorAll('[data-style]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.style === next)));
+  resize3D();
+  controls.update();
+  silhouetteDirty = true;
   needsRender = true;
 }
 
@@ -2159,14 +2292,22 @@ function randomQuestion() {
   return null;
 }
 
-// A camera direction that sees the plane at a slant (not edge-on, not face-on).
-function questionView(n) {
+// Start from the exercise-book angle (front-right, a little above) and nudge
+// it so the plane is seen at a slant (not edge-on, not face-on) and the
+// bigger piece of the solid is on the viewer's side of the plane.
+const BOOK_VIEW = { polar: 64, azimuth: 35 };
+function questionView(n, d = 0) {
   let best = null, bestScore = Infinity;
-  for (const az of [32, 62, 122, 152, 212, 242, 302, 332, 2, 92, 182, 272]) {
-    for (const polar of [60, 48, 72]) {
+  for (let da = -180; da < 180; da += 15) {
+    for (const polar of [64, 56, 72, 48]) {
+      const az = BOOK_VIEW.azimuth + da;
       const dir = new THREE.Vector3().setFromSphericalCoords(1, polar * DEG, az * DEG);
-      const score = Math.abs(Math.abs(dir.dot(n)) - 0.55) + Math.abs(polar - 60) / 300;
-      if (score < bestScore) { bestScore = score; best = { r: DEFAULT_VIEW.r, polar, azimuth: az }; }
+      const dot = dir.dot(n);
+      let score = Math.abs(Math.abs(dot) - 0.5) * 2;
+      if (Math.abs(dot) < 0.22 || Math.abs(dot) > 0.9) score += 5;
+      if (d * dot > 0.02 * state.solid.radius) score += 1.5;         // viewer on the smaller piece's side
+      score += Math.abs(da) / 180 + Math.abs(polar - BOOK_VIEW.polar) / 60;
+      if (score < bestScore) { bestScore = score; best = { r: DEFAULT_VIEW.r * viewScale(), polar, azimuth: az }; }
     }
   }
   return best;
@@ -2194,7 +2335,7 @@ function beginQuestion(q) {
   g.message = null;
   g.phase = 'question';
   hideForGuess();
-  animateCameraTo(questionView(state.basis.n));
+  animateCameraTo(questionView(state.basis.n, state.plane.offset));
   renderGuess();
 }
 
@@ -2206,6 +2347,7 @@ function nextRandomQuestion() {
 
 function startGuessMode() {
   state.guess.active = true;
+  setStyle('textbook');
   nextRandomQuestion();
 }
 
@@ -2217,6 +2359,7 @@ function exitGuessMode() {
   state.reveal.section = true;
   state.reveal.label = true;
   revealFade = 1;
+  setStyle('color');
   draw2D(); renderLabel(); needsRender = true;
   renderGuess();
 }
@@ -2339,6 +2482,7 @@ function renderGuess() {
 }
 
 document.getElementById('guessBtn').addEventListener('click', startGuessMode);
+document.querySelectorAll('[data-style]').forEach(b => b.addEventListener('click', () => setStyle(b.dataset.style)));
 document.getElementById('exitGuessBtn').addEventListener('click', exitGuessMode);
 
 /* ======================================================================
@@ -2379,6 +2523,7 @@ function frame(now) {
 buildSolidPicker();
 setSolid(state.solidId);
 applyLanguage();
+setStyle('color');
 setPlane(OBLIQUE.cylinder);
 setCameraSpherical(DEFAULT_VIEW.r, DEFAULT_VIEW.polar, DEFAULT_VIEW.azimuth);
 controls.update();
@@ -2390,12 +2535,12 @@ requestAnimationFrame(frame);
 // Small public handle for future features (e.g. guess mode) and for testing.
 window.CrossSectionExplorer = {
   state, setSolid, setPlane, lookAtSection, setLookLock, setSectionRevealed, setLabelRevealed,
-  setLanguage: applyLanguage, shapeName: () => shapeName(state.shape),
+  setLanguage: applyLanguage, setStyle, shapeName: () => shapeName(state.shape),
   guess: { start: startGuessMode, exit: exitGuessMode, answer: answerGuess, next: nextRandomQuestion,
            own: startOwnQuestion, begin: beginQuestion, randomQuestion, clearShape },
   classify: ShapeClassifier.classify,
   recompute: recomputeSection,
-  camera, get presets() { return presetsFor(state.solid); },
+  camera, scene, get presets() { return presetsFor(state.solid); },
 };
 window.__csxReady = true;
 </script>
