@@ -1,0 +1,1834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef1f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="Interactive 3D explorer for cross sections of prisms, pyramids, cylinders, cones and spheres.">
+<title>Cross-Section Explorer</title>
+<style>
+  /* =====================================================================
+     Design tokens
+     Identity colours: SOLID = blue, PLANE = amber, SECTION = crimson.
+     The same three are used in the 3D view, the 2D panel and the controls.
+     ===================================================================== */
+  :root {
+    --bg: #eef1f6;
+    --stage-a: #f8fafc;
+    --stage-b: #dfe6ef;
+    --card: #ffffff;
+    --ink: #152033;
+    --muted: #5a6477;
+    --line: #d9e0ea;
+    --chip: #f3f6fa;
+
+    --solid: #3b6fb0;
+    --solid-ink: #1d3d66;
+    --solid-soft: #e4edf9;
+
+    --plane: #f2b01e;
+    --plane-ink: #7d5200;
+    --plane-soft: #fff5d9;
+
+    --section: #e23d5a;
+    --section-ink: #9d1731;
+    --section-soft: #fde8ec;
+
+    --radius: 16px;
+    --gap: 10px;
+    --shadow: 0 1px 2px rgba(21,32,51,.06), 0 4px 14px rgba(21,32,51,.06);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.35;
+    -webkit-text-size-adjust: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  button, input, label { font: inherit; color: inherit; }
+  button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+  /* ---------- App shell (phone portrait = default, stacked) ---------- */
+  #app {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 46%) minmax(0, 1fr);
+    gap: var(--gap);
+    padding:
+      calc(env(safe-area-inset-top, 0px) + 8px)
+      calc(env(safe-area-inset-right, 0px) + 8px)
+      calc(env(safe-area-inset-bottom, 0px) + 8px)
+      calc(env(safe-area-inset-left, 0px) + 8px);
+  }
+
+  /* ---------- 3D stage ---------- */
+  .stage {
+    position: relative;
+    min-height: 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 35%, var(--stage-a) 0%, var(--stage-b) 100%);
+    box-shadow: var(--shadow);
+  }
+  #view3d {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    outline: none;
+  }
+  .stage-top, .stage-bottom {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+  .stage-top { top: 10px; }
+  .stage-bottom { bottom: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .stage-top > *, .stage-bottom > * { pointer-events: auto; }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .brand h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 750;
+    letter-spacing: -.01em;
+    color: var(--ink);
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i {
+    width: 12px; height: 12px; border-radius: 3px; display: inline-block;
+  }
+  .legend .k-solid i   { background: color-mix(in srgb, var(--solid) 45%, white); border: 2px solid var(--solid-ink); }
+  .legend .k-plane i   { background: color-mix(in srgb, var(--plane) 45%, white); border: 2px solid var(--plane); }
+  .legend .k-section i { background: var(--section); border: 2px solid var(--section-ink); }
+
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.92);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    font-weight: 650;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(21,32,51,.08);
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .btn-section {
+    background: var(--section);
+    border-color: var(--section-ink);
+    color: #fff;
+  }
+  .icon-btn { padding: 0; width: 44px; }
+
+  .seg {
+    display: inline-flex;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.92);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(21,32,51,.08);
+  }
+  .seg button {
+    min-height: 44px;
+    min-width: 50px;
+    padding: 0 11px;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: transparent;
+    font-weight: 650;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .seg button:first-child { border-left: 0; }
+  .seg button:active { background: var(--chip); }
+  .seg svg { width: 18px; height: 18px; }
+
+  /* ---------- Side column ---------- */
+  .side {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    border-radius: var(--radius);
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 12px;
+  }
+  .card-title {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .card-title b { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); font-weight: 700; }
+
+  /* Section card stays pinned while the controls scroll underneath */
+  .section-card {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: minmax(118px, 40%) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+  }
+  .panel-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-height: 30vh;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid color-mix(in srgb, var(--plane) 55%, white);
+    background: var(--plane-soft);
+  }
+  #view2d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .section-info { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--section-ink);
+  }
+  .shape-name {
+    font-size: clamp(20px, 5.2vw, 28px);
+    font-weight: 780;
+    line-height: 1.12;
+    letter-spacing: -.01em;
+    color: var(--ink);
+    min-height: 1.2em;
+    overflow-wrap: anywhere;
+  }
+  .shape-name.is-hidden { color: var(--muted); font-weight: 600; font-size: 17px; }
+
+  /* ---------- Solid picker ---------- */
+  .solid-group + .solid-group { margin-top: 10px; }
+  .group-label { font-size: 12.5px; font-weight: 700; color: var(--muted); margin: 0 0 6px 2px; }
+  .solid-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .solid-btn {
+    min-height: 66px;
+    padding: 6px 2px 7px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    background: var(--chip);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--muted);
+    cursor: pointer;
+    min-width: 0;
+  }
+  .solid-btn svg { width: 40px; height: 34px; color: var(--muted); }
+  .solid-btn span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .solid-btn[aria-pressed="true"] {
+    background: var(--solid-soft);
+    border-color: var(--solid);
+    color: var(--solid-ink);
+  }
+  .solid-btn[aria-pressed="true"] svg { color: var(--solid); }
+
+  /* ---------- Plane controls ---------- */
+  .presets { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 8px; }
+  .preset-btn {
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1.5px solid color-mix(in srgb, var(--plane) 60%, white);
+    background: var(--plane-soft);
+    color: var(--plane-ink);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    flex: 1 1 auto;
+  }
+  .preset-btn:active { background: color-mix(in srgb, var(--plane) 30%, white); }
+
+  .slider-row { padding: 4px 0 0; }
+  .slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-weight: 650;
+    font-size: 14.5px;
+  }
+  .slider-head small { color: var(--muted); font-weight: 500; font-size: 12.5px; margin-left: 4px; }
+  .slider-head output {
+    font-variant-numeric: tabular-nums;
+    font-weight: 750;
+    color: var(--plane-ink);
+    background: var(--plane-soft);
+    border-radius: 8px;
+    padding: 1px 8px;
+    min-width: 62px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    --fill: 50%;
+  }
+  input[type="range"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--plane) 50%, white); outline-offset: 2px; border-radius: 10px; }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--plane) 0 var(--fill), #e6e9ef var(--fill) 100%);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    margin-top: -10px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--plane);
+    box-shadow: 0 1px 4px rgba(21,32,51,.28);
+  }
+  input[type="range"]::-moz-range-track { height: 10px; border-radius: 999px; background: #e6e9ef; }
+  input[type="range"]::-moz-range-progress { height: 10px; border-radius: 999px; background: var(--plane); }
+  input[type="range"]::-moz-range-thumb {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #fff; border: 3px solid var(--plane);
+    box-shadow: 0 1px 4px rgba(21,32,51,.28);
+  }
+
+  /* ---------- Switches ---------- */
+  .switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    font-weight: 650;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .switch + .switch { border-top: 1px solid var(--line); }
+  .switch small { display: block; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  .switch input {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: none;
+    width: 52px;
+    height: 32px;
+    border-radius: 999px;
+    background: #d3d9e3;
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .switch input::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    transition: transform .2s;
+  }
+  .switch input:checked { background: var(--ink); }
+  .switch input:checked::after { transform: translateX(20px); }
+  .switch input:focus-visible { outline: 3px solid color-mix(in srgb, var(--solid) 45%, white); outline-offset: 2px; }
+  .switch.sw-section input:checked { background: var(--section); }
+  .switch.sw-plane input:checked { background: var(--plane); }
+  .section-info .switch { min-height: 44px; font-size: 13.5px; }
+
+  .footer-note { font-size: 12px; color: var(--muted); text-align: center; padding: 2px 0 6px; }
+
+  /* Narrow phones: short labels in the stage toolbar */
+  .long-label { display: inline; }
+  .short-label { display: none; }
+  @media (max-width: 430px) {
+    .long-label { display: none; }
+    .short-label { display: inline; }
+    .seg button { min-width: 46px; padding: 0 9px; }
+    .brand h1 { font-size: 15px; }
+  }
+
+  /* ---------- iPad landscape / wide screens: side column ---------- */
+  @media (min-width: 700px) and (orientation: landscape), (min-width: 1000px) {
+    #app {
+      grid-template-columns: minmax(0, 1fr) clamp(320px, 33vw, 420px);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 12px;
+      padding:
+        calc(env(safe-area-inset-top, 0px) + 12px)
+        calc(env(safe-area-inset-right, 0px) + 12px)
+        calc(env(safe-area-inset-bottom, 0px) + 12px)
+        calc(env(safe-area-inset-left, 0px) + 12px);
+    }
+    .section-card { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+    .panel-wrap { aspect-ratio: 4 / 3; max-height: 36vh; }
+    .brand h1 { font-size: 20px; }
+    .legend { font-size: 13px; }
+    .stage-top { top: 14px; left: 14px; right: 14px; }
+    .stage-bottom { bottom: 14px; left: 14px; right: 14px; }
+  }
+  /* Short landscape phones: keep the 2D panel small */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .section-card { grid-template-columns: minmax(110px, 44%) minmax(0, 1fr); }
+    .panel-wrap { aspect-ratio: 1 / 1; max-height: 40vh; }
+    .legend { display: none; }
+  }
+
+  /* ---------- Load error ---------- */
+  #loadError {
+    display: none;
+    position: fixed;
+    inset: auto 16px 16px 16px;
+    z-index: 10;
+    background: #fff;
+    border: 2px solid var(--section);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+</style>
+
+<!-- Three.js pinned version, loaded as ES modules via an import map -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <!-- ================= 3D stage ================= -->
+  <section class="stage" id="stage" aria-label="3D view">
+    <canvas id="view3d" aria-label="3D view of the solid and cutting plane. Drag to rotate, pinch or scroll to zoom." role="img"></canvas>
+
+    <div class="stage-top">
+      <div class="brand">
+        <h1>Cross-Section Explorer</h1>
+        <div class="legend" aria-hidden="true">
+          <span class="k-solid"><i></i>Solid</span>
+          <span class="k-plane"><i></i>Cutting plane</span>
+          <span class="k-section"><i></i>Cross section</span>
+        </div>
+      </div>
+      <button class="btn icon-btn" id="fullscreenBtn" type="button" aria-label="Enter fullscreen" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </button>
+    </div>
+
+    <div class="stage-bottom">
+      <button class="btn btn-section" id="lookBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="long-label">Look straight at section</span><span class="short-label">Look at section</span>
+      </button>
+      <div class="seg" role="group" aria-label="Standard views">
+        <button type="button" data-view="front">Front</button>
+        <button type="button" data-view="top">Top</button>
+        <button type="button" data-view="side">Side</button>
+        <button type="button" data-view="reset" aria-label="Reset view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+          <span class="long-label">Reset view</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Side column ================= -->
+  <aside class="side" id="side">
+    <section class="card section-card" aria-label="Cross section">
+      <div class="panel-wrap" id="panelWrap">
+        <canvas id="view2d" role="img" aria-label="2D view of the cross section"></canvas>
+      </div>
+      <div class="section-info">
+        <div class="eyebrow">Cross section</div>
+        <div class="shape-name" id="shapeName" aria-live="polite"></div>
+        <label class="switch sw-section">
+          <span>Show shape name</span>
+          <input type="checkbox" id="showNameToggle" role="switch" checked>
+        </label>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="solidTitle">
+      <h2 class="card-title" id="solidTitle">Solid <b id="solidName"></b></h2>
+      <div id="solidPicker"></div>
+    </section>
+
+    <section class="card" aria-labelledby="planeTitle">
+      <h2 class="card-title" id="planeTitle">Cutting plane</h2>
+      <div class="presets" id="presets"></div>
+
+      <div class="slider-row">
+        <div class="slider-head">
+          <label for="tilt">Tilt<small>from vertical axis</small></label>
+          <output id="tiltOut" for="tilt"></output>
+        </div>
+        <input type="range" id="tilt" min="0" max="180" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head">
+          <label for="rotation">Rotation<small>around vertical axis</small></label>
+          <output id="rotationOut" for="rotation"></output>
+        </div>
+        <input type="range" id="rotation" min="0" max="360" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head">
+          <label for="offset">Offset<small>distance from centre</small></label>
+          <output id="offsetOut" for="offset"></output>
+        </div>
+        <input type="range" id="offset" min="-1" max="1" step="0.01">
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="displayTitle">
+      <h2 class="card-title" id="displayTitle">Display</h2>
+      <label class="switch">
+        <span>Split view<small>Pull the two halves apart</small></span>
+        <input type="checkbox" id="splitToggle" role="switch">
+      </label>
+      <label class="switch sw-plane">
+        <span>Show cutting plane</span>
+        <input type="checkbox" id="planeToggle" role="switch" checked>
+      </label>
+    </section>
+
+    <div class="footer-note">Drag to rotate · pinch or scroll to zoom</div>
+  </aside>
+</div>
+
+<div id="loadError" role="alert">
+  <strong>The 3D view could not load.</strong><br>
+  Check your internet connection (Three.js loads from a CDN) and use an up-to-date browser
+  (Safari 16.4+, Chrome 89+). Then reload the page.
+</div>
+
+<script>
+  // Shown if the module script never finishes starting (offline CDN, very old browser).
+  setTimeout(function () {
+    if (!window.__csxReady) document.getElementById('loadError').style.display = 'block';
+  }, 8000);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ======================================================================
+   0. CONSTANTS & HELPERS
+   ====================================================================== */
+const DEG = Math.PI / 180;
+const COLORS = {
+  solid: 0x2f6bc8,
+  solidEdge: 0x1d3d66,
+  plane: 0xf2b01e,
+  planeEdge: 0xc98a00,
+  section: 0xe23d5a,
+  sectionEdge: 0x9d1731,
+};
+const CSS = {
+  planeSoft: '#fff5d9',
+  gridMinor: 'rgba(201,138,0,0.14)',
+  gridMajor: 'rgba(201,138,0,0.30)',
+  axis: 'rgba(125,82,0,0.40)',
+  section: '#e23d5a',
+  sectionEdge: '#9d1731',
+  ink: '#152033',
+  muted: '#5a6477',
+};
+const MAX_LOOP = 4096;          // capacity of the dynamic section buffers (points)
+
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const wrap360 = a => ((a % 360) + 360) % 360;
+const shortestDelta = (from, to) => ((((to - from) % 360) + 540) % 360) - 180;
+
+/* ======================================================================
+   1. SOLID FACTORY
+   Every solid is centred at the origin with its axis along +Y.
+   Each solid provides: render geometry, edge geometry, a flat triangle
+   list (for section computation) and a per-triangle "curved surface" flag.
+   ====================================================================== */
+const SOLID_DEFS = [
+  { id: 'tri-prism',   group: 'Prisms',   short: 'Triangular',  name: 'Triangular prism',   kind: 'prism',   sides: 3, r: 1.1, h: 1.6 },
+  { id: 'rect-prism',  group: 'Prisms',   short: 'Rectangular', name: 'Rectangular prism',  kind: 'box',     w: 1.9, h: 1.3, d: 1.2 },
+  { id: 'pent-prism',  group: 'Prisms',   short: 'Pentagonal',  name: 'Pentagonal prism',   kind: 'prism',   sides: 5, r: 1.0, h: 1.6 },
+  { id: 'hex-prism',   group: 'Prisms',   short: 'Hexagonal',   name: 'Hexagonal prism',    kind: 'prism',   sides: 6, r: 1.0, h: 1.6 },
+  { id: 'tri-pyramid', group: 'Pyramids', short: 'Triangular',  name: 'Triangular pyramid', kind: 'pyramid', sides: 3, r: 1.15, h: 1.8 },
+  { id: 'sq-pyramid',  group: 'Pyramids', short: 'Square',      name: 'Square pyramid',     kind: 'pyramid', sides: 4, r: 1.15, h: 1.8 },
+  { id: 'pent-pyramid',group: 'Pyramids', short: 'Pentagonal',  name: 'Pentagonal pyramid', kind: 'pyramid', sides: 5, r: 1.1, h: 1.8 },
+  { id: 'cylinder',    group: 'Round',    short: 'Cylinder',    name: 'Cylinder',           kind: 'cylinder', r: 0.9, h: 2.0 },
+  { id: 'cone',        group: 'Round',    short: 'Cone',        name: 'Cone',               kind: 'cone',     r: 1.0, h: 1.9 },
+  { id: 'sphere',      group: 'Round',    short: 'Sphere',      name: 'Sphere',             kind: 'sphere',   r: 1.15 },
+];
+
+// Default "Oblique" preset per kind (checked to give a clean oblique cut).
+const OBLIQUE = {
+  prism:    { tilt: 30, rotation: 25, offset: 0.00 },
+  box:      { tilt: 30, rotation: 25, offset: 0.00 },
+  pyramid:  { tilt: 30, rotation: 20, offset: 0.15 },
+  cylinder: { tilt: 35, rotation: 25, offset: 0.00 },
+  cone:     { tilt: 25, rotation: 25, offset: 0.20 },
+  sphere:   { tilt: 35, rotation: 25, offset: 0.45 },
+};
+
+const solidCache = new Map();
+
+function buildSolid(def) {
+  if (solidCache.has(def.id)) return solidCache.get(def.id);
+  let geom;
+  let curvedGroup = -1;       // geometry group index that is a curved surface
+  let allCurved = false;
+  let apexY = null;
+  let edgeAngle = 1;          // EdgesGeometry threshold in degrees
+  switch (def.kind) {
+    case 'prism':
+      geom = new THREE.CylinderGeometry(def.r, def.r, def.h, def.sides, 1, false, Math.PI / def.sides);
+      break;
+    case 'box':
+      geom = new THREE.BoxGeometry(def.w, def.h, def.d);
+      break;
+    case 'pyramid':
+      geom = new THREE.ConeGeometry(def.r, def.h, def.sides, 1, false, Math.PI / def.sides);
+      apexY = def.h / 2;
+      break;
+    case 'cylinder':
+      geom = new THREE.CylinderGeometry(def.r, def.r, def.h, 96, 1);
+      curvedGroup = 0; edgeAngle = 20;
+      break;
+    case 'cone':
+      geom = new THREE.ConeGeometry(def.r, def.h, 96, 1);
+      curvedGroup = 0; edgeAngle = 20; apexY = def.h / 2;
+      break;
+    case 'sphere':
+      geom = new THREE.SphereGeometry(def.r, 64, 48);
+      allCurved = true;
+      break;
+  }
+
+  // Flat triangle list + curved flags, skipping degenerate triangles.
+  const pos = geom.attributes.position;
+  const index = geom.index;
+  const triCount = (index ? index.count : pos.count) / 3;
+  const tris = [];
+  const curved = [];
+  const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+  const e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+  let radius = 0;
+  for (let i = 0; i < pos.count; i++) {
+    va.fromBufferAttribute(pos, i);
+    radius = Math.max(radius, va.length());
+  }
+  const groupOf = t => {
+    for (const g of geom.groups) if (t * 3 >= g.start && t * 3 < g.start + g.count) return g.materialIndex;
+    return 0;
+  };
+  for (let t = 0; t < triCount; t++) {
+    const i0 = index ? index.getX(3 * t) : 3 * t;
+    const i1 = index ? index.getX(3 * t + 1) : 3 * t + 1;
+    const i2 = index ? index.getX(3 * t + 2) : 3 * t + 2;
+    va.fromBufferAttribute(pos, i0); vb.fromBufferAttribute(pos, i1); vc.fromBufferAttribute(pos, i2);
+    e1.subVectors(vb, va); e2.subVectors(vc, va);
+    if (e1.cross(e2).length() < 1e-10) continue;
+    tris.push(va.x, va.y, va.z, vb.x, vb.y, vb.z, vc.x, vc.y, vc.z);
+    curved.push(allCurved || (curvedGroup >= 0 && groupOf(t) === curvedGroup) ? 1 : 0);
+  }
+
+  const solid = {
+    def,
+    geom,
+    edges: allCurved ? new THREE.BufferGeometry() : new THREE.EdgesGeometry(geom, edgeAngle),
+    tris: new Float64Array(tris),
+    curved: Uint8Array.from(curved),
+    radius,
+    flat: def.kind === 'prism' || def.kind === 'box' || def.kind === 'pyramid',
+    hasSilhouette: def.kind === 'cylinder' || def.kind === 'cone' || def.kind === 'sphere',
+    apexY,
+    offsetMax: Math.ceil(radius * 1.12 * 20) / 20,   // slightly beyond bounding radius, 0.05 steps
+  };
+  solidCache.set(def.id, solid);
+  return solid;
+}
+
+/* ======================================================================
+   2. APP STATE & PLANE STATE
+   A single state object; everything else reads from it.
+   ====================================================================== */
+const state = {
+  solidId: 'cylinder',
+  plane: { tilt: 35, rotation: 25, offset: 0 },   // degrees, degrees, world units
+  view: { split: false, showPlane: true, showName: true },
+  // Guess-mode hooks: section (3D + 2D) and label can be hidden independently.
+  reveal: { section: true, label: true },
+  solid: null,       // built solid object
+  basis: null,       // { n, u, v } for the current plane
+  result: null,      // section geometry result
+  shape: null,       // classification result
+  sectionDirty: true,
+};
+
+// Plane normal from tilt (angle from +Y) and rotation (azimuth around Y).
+// u is horizontal in the plane, v = n × u points "up" in the plane, so
+// looking from the +n side, (u, v) appear as (right, up).
+function planeBasis(tiltDeg, rotDeg) {
+  const t = tiltDeg * DEG, r = rotDeg * DEG;
+  const st = Math.sin(t), ct = Math.cos(t), sr = Math.sin(r), cr = Math.cos(r);
+  const n = new THREE.Vector3(st * sr, ct, st * cr);
+  const u = new THREE.Vector3(cr, 0, -sr);
+  const v = new THREE.Vector3().crossVectors(n, u);
+  return { n, u, v };
+}
+
+/* ======================================================================
+   3. SECTION COMPUTATION
+   Intersect the plane with every triangle, collect segments, merge
+   endpoints with an epsilon, chain into a closed loop. Degenerate cases
+   fall back to a 2D convex hull (all solids are convex).
+   ====================================================================== */
+function computeSection(solid, basis, d) {
+  const { n, u, v } = basis;
+  const T = solid.tris, C = solid.curved, R = solid.radius;
+  const eps = 1e-6 * R;
+  const merge2 = (2e-5 * R) ** 2;
+  const nx = n.x, ny = n.y, nz = n.z;
+
+  const P = [];                 // unique points [x, y, z]
+  const segs = [];              // [ia, ib, curvedFlag]
+  const segIndex = new Map();
+  const touches = [];
+  let coplanar = false;
+
+  const idOf = (x, y, z) => {
+    for (let i = 0; i < P.length; i++) {
+      const p = P[i];
+      const dx = p[0] - x, dy = p[1] - y, dz = p[2] - z;
+      if (dx * dx + dy * dy + dz * dz < merge2) return i;
+    }
+    P.push([x, y, z]);
+    return P.length - 1;
+  };
+
+  const tmp = [];
+  const triCount = T.length / 9;
+  for (let t = 0; t < triCount; t++) {
+    const o = t * 9;
+    const ax = T[o], ay = T[o + 1], az = T[o + 2];
+    const bx = T[o + 3], by = T[o + 4], bz = T[o + 5];
+    const cx = T[o + 6], cy = T[o + 7], cz = T[o + 8];
+    let da = nx * ax + ny * ay + nz * az - d;
+    let db = nx * bx + ny * by + nz * bz - d;
+    let dc = nx * cx + ny * cy + nz * cz - d;
+    if (da > eps && db > eps && dc > eps) continue;
+    if (da < -eps && db < -eps && dc < -eps) continue;
+    if (Math.abs(da) <= eps) da = 0;
+    if (Math.abs(db) <= eps) db = 0;
+    if (Math.abs(dc) <= eps) dc = 0;
+    if (da === 0 && db === 0 && dc === 0) { coplanar = true; continue; }
+
+    tmp.length = 0;
+    if (da === 0) tmp.push(ax, ay, az);
+    if (db === 0) tmp.push(bx, by, bz);
+    if (dc === 0) tmp.push(cx, cy, cz);
+    if (da * db < 0) { const s = da / (da - db); tmp.push(ax + (bx - ax) * s, ay + (by - ay) * s, az + (bz - az) * s); }
+    if (db * dc < 0) { const s = db / (db - dc); tmp.push(bx + (cx - bx) * s, by + (cy - by) * s, bz + (cz - bz) * s); }
+    if (dc * da < 0) { const s = dc / (dc - da); tmp.push(cx + (ax - cx) * s, cy + (ay - cy) * s, cz + (az - cz) * s); }
+
+    const k = tmp.length / 3;
+    if (k === 1) {
+      touches.push(idOf(tmp[0], tmp[1], tmp[2]));
+    } else if (k >= 2) {
+      const i1 = idOf(tmp[0], tmp[1], tmp[2]);
+      const i2 = idOf(tmp[3], tmp[4], tmp[5]);
+      if (i1 === i2) { touches.push(i1); continue; }
+      const key = i1 < i2 ? i1 * 100003 + i2 : i2 * 100003 + i1;
+      const existing = segIndex.get(key);
+      if (existing === undefined) {
+        segIndex.set(key, segs.length);
+        segs.push([i1, i2, C[t]]);
+      } else if (!C[t]) {
+        segs[existing][2] = 0;     // shared with a flat face: treat as flat
+      }
+    }
+  }
+
+  const to2D = p => [p[0] * u.x + p[1] * u.y + p[2] * u.z, p[0] * v.x + p[1] * v.y + p[2] * v.z];
+  const base = { coplanar, n: n.clone(), d };
+
+  if (P.length === 0) return { ...base, type: 'none', pts3: [], pts2: [], curved: [] };
+
+  // --- Try to chain the segments into one closed loop ---
+  const loop = chainLoop(P.length, segs);
+  if (loop) {
+    let pts3 = loop.order.map(i => P[i]);
+    let pts2 = pts3.map(to2D);
+    let curved = loop.flags.map(Boolean);
+    const area = signedArea(pts2);
+    if (Math.abs(area) > 1e-7 * R * R) {
+      if (area < 0) {                            // make counter-clockwise in (u, v)
+        const N = pts3.length;
+        pts3 = pts3.slice().reverse();
+        pts2 = pts2.slice().reverse();
+        const old = curved;
+        curved = old.map((_, i) => old[((N - 2 - i) % N + N) % N]);
+      }
+      return { ...base, type: 'polygon', pts3, pts2, curved };
+    }
+  }
+
+  // --- Fallback: convex hull of every contact point (degenerate cases) ---
+  const all2 = P.map(to2D);
+  let maxD2 = 0, ia = 0, ib = 0;
+  for (let i = 0; i < all2.length; i++) for (let j = i + 1; j < all2.length; j++) {
+    const dx = all2[i][0] - all2[j][0], dy = all2[i][1] - all2[j][1];
+    const d2 = dx * dx + dy * dy;
+    if (d2 > maxD2) { maxD2 = d2; ia = i; ib = j; }
+  }
+  if (Math.sqrt(maxD2) < 1e-4 * R) {
+    return { ...base, type: 'point', pts3: [P[0]], pts2: [all2[0]], curved: [] };
+  }
+  const hull = convexHull(all2.map((p, i) => ({ x: p[0], y: p[1], i })));
+  const hullArea = Math.abs(signedArea(hull.map(h => [h.x, h.y])));
+  if (hull.length < 3 || hullArea < 1e-4 * R * Math.sqrt(maxD2)) {
+    return { ...base, type: 'segment', pts3: [P[ia], P[ib]], pts2: [all2[ia], all2[ib]], curved: [] };
+  }
+  return {
+    ...base,
+    type: 'polygon',
+    pts3: hull.map(h => P[h.i]),
+    pts2: hull.map(h => all2[h.i]),
+    curved: hull.map(() => !!solid.curved.length && solid.def.kind === 'sphere'),
+  };
+}
+
+function chainLoop(nPts, segs) {
+  if (segs.length < 3) return null;
+  const adj = Array.from({ length: nPts }, () => []);
+  segs.forEach((s, i) => { adj[s[0]].push(i); adj[s[1]].push(i); });
+  let used = 0, start = -1;
+  for (let i = 0; i < nPts; i++) {
+    const L = adj[i].length;
+    if (L === 0) continue;
+    if (L !== 2) return null;
+    used++;
+    if (start < 0) start = i;
+  }
+  const order = [start], flags = [];
+  let prevSeg = -1, cur = start;
+  for (let steps = 0; steps <= segs.length; steps++) {
+    const a = adj[cur];
+    const si = a[0] !== prevSeg ? a[0] : a[1];
+    const s = segs[si];
+    const next = s[0] === cur ? s[1] : s[0];
+    flags.push(s[2]);
+    prevSeg = si;
+    cur = next;
+    if (cur === start) break;
+    order.push(cur);
+  }
+  if (cur !== start || order.length !== used) return null;
+  return { order, flags };
+}
+
+function signedArea(pts) {
+  let a = 0;
+  for (let i = 0, N = pts.length; i < N; i++) {
+    const p = pts[i], q = pts[(i + 1) % N];
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return a / 2;
+}
+
+function convexHull(points) {
+  const pts = points.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+  if (pts.length < 3) return pts;
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [], upper = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 1e-12) lower.pop();
+    lower.push(p);
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 1e-12) upper.pop();
+    upper.push(p);
+  }
+  upper.pop(); lower.pop();
+  return lower.concat(upper);
+}
+
+/* ======================================================================
+   4. SHAPE CLASSIFICATION  (self-contained; a future "guess mode" can call
+   ShapeClassifier.classify() and compare with a student's answer)
+   ====================================================================== */
+const ShapeClassifier = (() => {
+  const COLLINEAR = 0.35 * DEG;   // below this turn, a vertex is not a corner
+  const SMOOTH_MAX = 25 * DEG;    // curved-to-curved turns below this are "smooth"
+  const PARALLEL = Math.sin(1.5 * DEG);
+  const EQUAL = 0.02;
+  const CIRCLE_RATIO = 1.01;
+  const POLY_NAMES = { 3: 'Triangle', 5: 'Pentagon', 6: 'Hexagon', 7: 'Heptagon', 8: 'Octagon' };
+
+  // Axis ratio from the polygon's second moments of area (robust to sampling).
+  function axisRatio(pts) {
+    let A = 0, cx = 0, cy = 0;
+    const N = pts.length;
+    for (let i = 0; i < N; i++) {
+      const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % N];
+      const c = x0 * y1 - x1 * y0;
+      A += c; cx += (x0 + x1) * c; cy += (y0 + y1) * c;
+    }
+    A /= 2; cx /= 6 * A; cy /= 6 * A;
+    let ixx = 0, iyy = 0, ixy = 0;
+    for (let i = 0; i < N; i++) {
+      const x0 = pts[i][0] - cx, y0 = pts[i][1] - cy;
+      const x1 = pts[(i + 1) % N][0] - cx, y1 = pts[(i + 1) % N][1] - cy;
+      const c = x0 * y1 - x1 * y0;
+      ixx += (y0 * y0 + y0 * y1 + y1 * y1) * c;
+      iyy += (x0 * x0 + x0 * x1 + x1 * x1) * c;
+      ixy += (x0 * y1 + 2 * x0 * y0 + 2 * x1 * y1 + x1 * y0) * c;
+    }
+    ixx /= 12; iyy /= 12; ixy /= 24;
+    const m = (ixx + iyy) / 2, r = Math.sqrt(((ixx - iyy) / 2) ** 2 + ixy ** 2);
+    return Math.sqrt(Math.abs((m + r) / (m - r || 1e-12)));
+  }
+
+  function closedCurve(pts) {
+    return axisRatio(pts) < CIRCLE_RATIO
+      ? { key: 'circle', name: 'Circle', corners: [] }
+      : { key: 'ellipse', name: 'Ellipse', corners: [] };
+  }
+
+  function quadrilateral(c) {
+    const s = c.map((p, i) => {
+      const q = c[(i + 1) % 4];
+      const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy);
+      return { x: dx / L, y: dy / L, L };
+    });
+    const par = (a, b) => Math.abs(a.x * b.y - a.y * b.x) < PARALLEL;
+    const perp = (a, b) => Math.abs(a.x * b.x + a.y * b.y) < PARALLEL;
+    const eq = (a, b) => Math.abs(a.L - b.L) / Math.max(a.L, b.L) < EQUAL;
+    const p1 = par(s[0], s[2]), p2 = par(s[1], s[3]);
+    if (p1 && p2) {
+      const right = perp(s[0], s[1]) && perp(s[1], s[2]);
+      if (right) return eq(s[0], s[1]) ? { key: 'square', name: 'Square' } : { key: 'rectangle', name: 'Rectangle' };
+      return { key: 'parallelogram', name: 'Parallelogram' };
+    }
+    if (p1 || p2) return { key: 'trapezoid', name: 'Trapezoid' };
+    return { key: 'quadrilateral', name: 'Quadrilateral' };
+  }
+
+  /**
+   * @param result  section result from computeSection()
+   * @param ctx     { conic: 'ellipse' | 'other' | null }  what the curved part is, if any
+   * @returns       { key, name, corners: [indices into result.pts2] }
+   */
+  function classify(result, ctx = {}) {
+    if (!result || result.type === 'none') return { key: 'none', name: 'No cross section', corners: [] };
+    if (result.type === 'point') return { key: 'point', name: 'Point', corners: [] };
+    if (result.type === 'segment') return { key: 'segment', name: 'Line segment', corners: [] };
+
+    const p = result.pts2, f = result.curved, N = p.length;
+    if (f.every(Boolean)) return closedCurve(p);
+
+    // Vertex types from the turning angle and the kind of surface on each side.
+    const kind = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const a = p[(i - 1 + N) % N], b = p[i], c = p[(i + 1) % N];
+      const e1x = b[0] - a[0], e1y = b[1] - a[1], e2x = c[0] - b[0], e2y = c[1] - b[1];
+      const tau = Math.abs(Math.atan2(e1x * e2y - e1y * e2x, e1x * e2x + e1y * e2y));
+      const cPrev = f[(i - 1 + N) % N], cNext = f[i];
+      if (tau < COLLINEAR) kind[i] = 'line';
+      else if (!cPrev || !cNext) kind[i] = 'corner';
+      else kind[i] = tau > SMOOTH_MAX ? 'corner' : 'smooth';
+    }
+    const corners = [];
+    for (let i = 0; i < N; i++) if (kind[i] === 'corner') corners.push(i);
+    if (corners.length === 0) return closedCurve(p);
+
+    let curvedSides = 0;
+    for (let k = 0; k < corners.length; k++) {
+      const from = corners[k], to = corners[(k + 1) % corners.length];
+      for (let i = (from + 1) % N; i !== to; i = (i + 1) % N) {
+        if (kind[i] === 'smooth') { curvedSides++; break; }
+      }
+    }
+    if (curvedSides > 0) {
+      return ctx.conic === 'ellipse'
+        ? { key: 'curved-ellipse', name: 'Curved shape (part of an ellipse)', corners }
+        : { key: 'curved', name: 'Curved shape', corners };
+    }
+
+    const n = corners.length;
+    if (n < 3) return { key: 'segment', name: 'Line segment', corners };
+    if (n === 4) return { ...quadrilateral(corners.map(i => p[i])), corners };
+    return { key: 'polygon-' + n, name: POLY_NAMES[n] || `${n}-sided polygon`, corners };
+  }
+
+  return { classify };
+})();
+
+// What the curved part of a section is (used only to word the label).
+function conicFor(solid, n) {
+  const k = solid.def.kind;
+  if (k === 'cylinder') return 'ellipse';
+  if (k === 'cone') {
+    const alpha = Math.atan(solid.def.r / solid.def.h);             // half-angle of the cone
+    const planeToAxis = Math.PI / 2 - Math.acos(Math.min(1, Math.abs(n.y)));
+    return planeToAxis > alpha + 0.3 * DEG ? 'ellipse' : 'other';
+  }
+  return null;
+}
+
+/* ======================================================================
+   5. 3D RENDERING
+   ====================================================================== */
+const canvas3d = document.getElementById('view3d');
+const stageEl = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.localClippingEnabled = true;
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);
+scene.add(camera);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xa4afc0, 1.7));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+keyLight.position.set(2.5, 3, 4);
+camera.add(keyLight);                                   // light follows the viewer
+
+// Shared dynamic geometry for the section face and its outline.
+function dynamicGeometry(maxVerts) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(maxVerts * 3), 3).setUsage(THREE.DynamicDrawUsage));
+  g.setDrawRange(0, 0);
+  return g;
+}
+const sectionFillGeom = dynamicGeometry(MAX_LOOP * 3);
+const sectionLineGeom = dynamicGeometry(MAX_LOOP);
+const silhouetteGeom = dynamicGeometry(256);
+
+const sectionFillMat = new THREE.MeshBasicMaterial({
+  color: COLORS.section, side: THREE.DoubleSide, transparent: true, opacity: 1,
+  polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+});
+const sectionLineMat = new THREE.LineBasicMaterial({ color: COLORS.sectionEdge, transparent: true, opacity: 1 });
+
+function sectionObjects() {
+  const fill = new THREE.Mesh(sectionFillGeom, sectionFillMat);
+  const line = new THREE.LineLoop(sectionLineGeom, sectionLineMat);
+  fill.renderOrder = 5; line.renderOrder = 6;
+  fill.frustumCulled = line.frustumCulled = false;
+  return { fill, line };
+}
+
+// Two clipped halves of the solid (+n side and -n side). With gap = 0 they
+// look like one solid; in split view they slide apart along the normal.
+function makeHalf(sign) {
+  const clip = new THREE.Plane();
+  const group = new THREE.Group();
+  const back = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({
+    color: COLORS.solid, roughness: 0.55, metalness: 0, transparent: true, opacity: 0.16,
+    side: THREE.BackSide, depthWrite: false, clippingPlanes: [clip],
+  }));
+  const front = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({
+    color: COLORS.solid, roughness: 0.5, metalness: 0, transparent: true, opacity: 0.34,
+    side: THREE.FrontSide, depthWrite: false, clippingPlanes: [clip],
+  }));
+  back.renderOrder = 1; front.renderOrder = 2;
+  const edgeMat = new THREE.LineBasicMaterial({ color: COLORS.solidEdge, clippingPlanes: [clip] });
+  const edges = new THREE.LineSegments(undefined, edgeMat);
+  const silhouette = new THREE.LineSegments(silhouetteGeom, edgeMat);
+  silhouette.frustumCulled = false;
+  const cap = sectionObjects();
+  group.add(back, front, edges, silhouette, cap.fill, cap.line);
+  scene.add(group);
+  return { sign, clip, group, back, front, edges, silhouette, cap };
+}
+const halves = [makeHalf(+1), makeHalf(-1)];
+
+// Section on the cutting plane (used when not split).
+const mainSection = sectionObjects();
+scene.add(mainSection.fill, mainSection.line);
+
+// Markers for degenerate sections (a point, or a line segment).
+const pointMarker = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), new THREE.MeshBasicMaterial({ color: COLORS.section }));
+const segmentMarker = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 14), new THREE.MeshBasicMaterial({ color: COLORS.section }));
+pointMarker.renderOrder = segmentMarker.renderOrder = 5;
+scene.add(pointMarker, segmentMarker);
+
+// Cutting plane: translucent quad + thin outline.
+const planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
+  color: COLORS.plane, transparent: true, opacity: 0.26, side: THREE.DoubleSide, depthWrite: false,
+}));
+planeMesh.renderOrder = 0;       // drawn before the solid so the solid keeps its blue
+const planeOutline = new THREE.LineLoop(
+  new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.5, -0.5, 0), new THREE.Vector3(0.5, -0.5, 0),
+    new THREE.Vector3(0.5, 0.5, 0), new THREE.Vector3(-0.5, 0.5, 0),
+  ]),
+  new THREE.LineBasicMaterial({ color: COLORS.planeEdge, transparent: true, opacity: 0.95 }),
+);
+planeOutline.renderOrder = 8;
+const planeGroup = new THREE.Group();
+planeGroup.add(planeMesh, planeOutline);
+scene.add(planeGroup);
+
+let gap = 0;                        // current split separation
+function gapTarget() { return state.view.split ? 0.32 * state.solid.radius : 0; }
+
+function applySolidToScene() {
+  const s = state.solid;
+  for (const h of halves) {
+    h.back.geometry = s.geom;
+    h.front.geometry = s.geom;
+    h.edges.geometry = s.edges;
+    h.back.material.flatShading = h.front.material.flatShading = s.flat;
+    h.back.material.needsUpdate = h.front.material.needsUpdate = true;
+    h.silhouette.visible = s.hasSilhouette;
+  }
+  const size = 2 * 1.3 * s.radius;
+  planeMesh.scale.set(size, size, 1);
+  planeOutline.scale.set(size, size, 1);
+  pointMarker.scale.setScalar(0.045 * s.radius);
+  silhouetteDirty = true;
+}
+
+// Write the section loop into the fill (fan) and outline buffers.
+function updateSectionBuffers() {
+  const res = state.result;
+  const fillArr = sectionFillGeom.attributes.position.array;
+  const lineArr = sectionLineGeom.attributes.position.array;
+  let nFill = 0, nLine = 0;
+  if (res.type === 'polygon') {
+    const pts = res.pts3.slice(0, MAX_LOOP);
+    const N = pts.length;
+    let cx = 0, cy = 0, cz = 0;
+    for (const p of pts) { cx += p[0]; cy += p[1]; cz += p[2]; }
+    cx /= N; cy /= N; cz /= N;
+    for (let i = 0; i < N; i++) {
+      const a = pts[i], b = pts[(i + 1) % N];
+      fillArr.set([cx, cy, cz, a[0], a[1], a[2], b[0], b[1], b[2]], nFill * 3);
+      nFill += 3;
+      lineArr.set(a, nLine * 3);
+      nLine += 1;
+    }
+  }
+  sectionFillGeom.setDrawRange(0, nFill);
+  sectionLineGeom.setDrawRange(0, nLine);
+  sectionFillGeom.attributes.position.needsUpdate = true;
+  sectionLineGeom.attributes.position.needsUpdate = true;
+
+  if (res.type === 'point') pointMarker.position.fromArray(res.pts3[0]);
+  if (res.type === 'segment') {
+    const a = new THREE.Vector3().fromArray(res.pts3[0]);
+    const b = new THREE.Vector3().fromArray(res.pts3[1]);
+    const dir = b.clone().sub(a);
+    const r = 0.018 * state.solid.radius;
+    segmentMarker.position.copy(a).add(b).multiplyScalar(0.5);
+    segmentMarker.scale.set(r, dir.length(), r);
+    segmentMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  }
+}
+
+// Plane quad placement + clipping planes + half offsets (cheap; every frame).
+const _m = new THREE.Matrix4();
+function updatePlaneAndHalves() {
+  const { n, u, v } = state.basis;
+  const d = state.plane.offset;
+  _m.makeBasis(u, v, n);
+  planeGroup.quaternion.setFromRotationMatrix(_m);
+  planeGroup.position.copy(n).multiplyScalar(d);
+  for (const h of halves) {
+    // keep side sign·(n·x − d) ≥ 0, shifted by the gap along sign·n
+    h.clip.normal.copy(n).multiplyScalar(h.sign);
+    h.clip.constant = -(h.sign * d + gap);
+    h.group.position.copy(n).multiplyScalar(h.sign * gap);
+  }
+}
+
+function syncVisibility() {
+  const res = state.result;
+  const show = state.reveal.section;
+  const split = gap > 1e-4;
+  const poly = res && res.type === 'polygon';
+  mainSection.fill.visible = mainSection.line.visible = show && poly && !split;
+  for (const h of halves) {
+    h.cap.fill.visible = h.cap.line.visible = show && poly && split;
+    const opaque = split ? 1 : 0;
+    h.front.material.opacity = 0.34 + 0.12 * opaque;
+    h.back.material.opacity = 0.16 + 0.08 * opaque;
+  }
+  pointMarker.visible = show && res && res.type === 'point';
+  segmentMarker.visible = show && res && res.type === 'segment';
+  planeGroup.visible = state.view.showPlane;
+}
+
+// Silhouette lines for curved solids (view dependent).
+let silhouetteDirty = true;
+function updateSilhouette() {
+  const s = state.solid;
+  const arr = silhouetteGeom.attributes.position.array;
+  let k = 0;
+  const push = (x, y, z) => { arr[k++] = x; arr[k++] = y; arr[k++] = z; };
+  const c = camera.position;
+  const def = s.def;
+  if (def.kind === 'cylinder') {
+    const L = Math.hypot(c.x, c.z), r = def.r, h = def.h / 2;
+    if (L > r * 1.001) {
+      const g = Math.atan2(c.z, c.x), dl = Math.acos(r / L);
+      for (const a of [g + dl, g - dl]) {
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        push(x, -h, z); push(x, h, z);
+      }
+    }
+  } else if (def.kind === 'cone') {
+    const H = def.h, r = def.r, dy = c.y - H / 2;
+    let px, pz;
+    if (Math.abs(dy) < 1e-6) { px = c.x * 1e6; pz = c.z * 1e6; }
+    else { const t = -H / dy; px = t * c.x; pz = t * c.z; }
+    const L = Math.hypot(px, pz);
+    if (L > r * 1.001) {
+      const g = Math.atan2(pz, px), dl = Math.acos(r / L);
+      for (const a of [g + dl, g - dl]) {
+        push(r * Math.cos(a), -H / 2, r * Math.sin(a)); push(0, H / 2, 0);
+      }
+    }
+  } else if (def.kind === 'sphere') {
+    const D = c.length(), r = def.r;
+    if (D > r * 1.001) {
+      const rr = r * Math.sqrt(D * D - r * r) / D;
+      const center = c.clone().multiplyScalar((r * r) / (D * D));
+      const w = c.clone().normalize();
+      const e1 = new THREE.Vector3(0, 1, 0).cross(w);
+      if (e1.lengthSq() < 1e-8) e1.set(1, 0, 0);
+      e1.normalize();
+      const e2 = new THREE.Vector3().crossVectors(w, e1);
+      const M = 96;
+      for (let i = 0; i < M; i++) {
+        for (const j of [i, i + 1]) {
+          const a = (j / M) * Math.PI * 2;
+          push(center.x + rr * (Math.cos(a) * e1.x + Math.sin(a) * e2.x),
+               center.y + rr * (Math.cos(a) * e1.y + Math.sin(a) * e2.y),
+               center.z + rr * (Math.cos(a) * e1.z + Math.sin(a) * e2.z));
+        }
+      }
+    }
+  }
+  silhouetteGeom.setDrawRange(0, k / 3);
+  silhouetteGeom.attributes.position.needsUpdate = true;
+  silhouetteDirty = false;
+}
+
+/* ======================================================================
+   6. 2D SECTION PANEL
+   The panel is the cutting plane seen from its +n side: u → right, v → up.
+   The scale is fixed per solid (so sizes can be compared); very small
+   sections are magnified ×2/×4/×8 and the zoom is shown in a badge.
+   ====================================================================== */
+const canvas2d = document.getElementById('view2d');
+const ctx2d = canvas2d.getContext('2d');
+const panel = { w: 1, h: 1, dpr: 1 };
+
+function resize2D() {
+  const rect = canvas2d.getBoundingClientRect();
+  panel.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  panel.w = Math.max(1, rect.width);
+  panel.h = Math.max(1, rect.height);
+  canvas2d.width = Math.round(panel.w * panel.dpr);
+  canvas2d.height = Math.round(panel.h * panel.dpr);
+  draw2D();
+}
+
+function draw2D() {
+  const { w, h, dpr } = panel;
+  const ctx = ctx2d;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = CSS.planeSoft;
+  ctx.fillRect(0, 0, w, h);
+  const res = state.result;
+  if (!res || !state.solid) return;
+
+  const R = state.solid.radius;
+  const base = Math.min(w, h) / (2.3 * R);
+  const pts = res.pts2;
+  let cx = 0, cy = 0, zoom = 1;
+  if (pts.length) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    cx = (x0 + x1) / 2; cy = (y0 + y1) / 2;
+    const size = Math.max(x1 - x0, y1 - y0);
+    if (res.type !== 'point') while (size * base * zoom < 0.22 * Math.min(w, h) && zoom < 8) zoom *= 2;
+  }
+  const S = base * zoom;
+  const X = x => w / 2 + (x - cx) * S;
+  const Y = y => h / 2 - (y - cy) * S;
+
+  // Grid anchored to the plane's own origin (the point nearest the solid's centre).
+  const step = 0.25 / zoom;
+  const drawGrid = (major) => {
+    ctx.beginPath();
+    const s = major ? step * 4 : step;
+    const ux0 = cx - w / 2 / S, ux1 = cx + w / 2 / S, vy0 = cy - h / 2 / S, vy1 = cy + h / 2 / S;
+    for (let g = Math.ceil(ux0 / s) * s; g <= ux1; g += s) { const x = Math.round(X(g)) + 0.5; ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+    for (let g = Math.ceil(vy0 / s) * s; g <= vy1; g += s) { const y = Math.round(Y(g)) + 0.5; ctx.moveTo(0, y); ctx.lineTo(w, y); }
+    ctx.strokeStyle = major ? CSS.gridMajor : CSS.gridMinor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  };
+  drawGrid(false);
+  drawGrid(true);
+  // small cross at the plane origin
+  ctx.strokeStyle = CSS.axis; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(X(0) - 6, Y(0)); ctx.lineTo(X(0) + 6, Y(0));
+  ctx.moveTo(X(0), Y(0) - 6); ctx.lineTo(X(0), Y(0) + 6);
+  ctx.stroke();
+
+  const fontPx = Math.round(clamp(Math.min(w, h) / 11, 13, 20));
+  const centerText = (text, color) => {
+    ctx.fillStyle = color;
+    ctx.font = `700 ${fontPx}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, w / 2, h / 2);
+  };
+
+  if (!state.reveal.section) { centerText('?', CSS.muted); return; }
+
+  if (res.type === 'none') {
+    centerText('No cross section', CSS.muted);
+  } else if (res.type === 'point') {
+    ctx.fillStyle = CSS.section; ctx.strokeStyle = CSS.sectionEdge; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(pts[0][0]), Y(pts[0][1]), 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  } else if (res.type === 'segment') {
+    ctx.strokeStyle = CSS.section; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(X(pts[0][0]), Y(pts[0][1])); ctx.lineTo(X(pts[1][0]), Y(pts[1][1])); ctx.stroke();
+  } else {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+    ctx.closePath();
+    ctx.fillStyle = CSS.section;
+    ctx.fill();
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = CSS.sectionEdge;
+    ctx.stroke();
+    // corner dots
+    const corners = (state.shape && state.shape.corners) || [];
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = CSS.sectionEdge;
+    ctx.lineWidth = 2;
+    for (const i of corners) {
+      ctx.beginPath(); ctx.arc(X(pts[i][0]), Y(pts[i][1]), 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  if (zoom > 1) {
+    const label = `×${zoom} zoom`;
+    ctx.font = `700 12px ${getComputedStyle(document.body).fontFamily}`;
+    const tw = ctx.measureText(label).width + 12;
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.fillRect(w - tw - 6, 6, tw, 20);
+    ctx.fillStyle = CSS.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, w - tw / 2 - 6, 16);
+  }
+}
+
+/* ---------- Shape label ---------- */
+const shapeNameEl = document.getElementById('shapeName');
+function renderLabel() {
+  const visible = state.view.showName && state.reveal.label && state.reveal.section;
+  shapeNameEl.classList.toggle('is-hidden', !visible);
+  shapeNameEl.textContent = visible ? (state.shape ? state.shape.name : '') : 'Name hidden';
+}
+
+/* ======================================================================
+   7. CAMERA & VIEWS
+   ====================================================================== */
+const controls = new OrbitControls(camera, canvas3d);
+controls.enablePan = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+controls.rotateSpeed = 0.9;
+controls.minDistance = 3.2;
+controls.maxDistance = 14;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+controls.target.set(0, 0, 0);
+
+const DEFAULT_VIEW = { r: 7.2, polar: 64, azimuth: 32 };
+let camTween = null;
+
+function sphericalOfCamera() {
+  const s = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+  return { r: s.radius, polar: s.phi / DEG, azimuth: s.theta / DEG };
+}
+function setCameraSpherical(r, polar, azimuth) {
+  const s = new THREE.Spherical(r, clamp(polar, 0.05, 179.95) * DEG, azimuth * DEG);
+  camera.position.setFromSpherical(s).add(controls.target);
+  camera.lookAt(controls.target);
+}
+function animateCameraTo(target, ms = 700) {
+  const from = sphericalOfCamera();
+  camTween = {
+    from,
+    to: {
+      r: target.r ?? from.r,
+      polar: target.polar,
+      azimuth: from.azimuth + shortestDelta(from.azimuth, target.azimuth),
+    },
+    t0: performance.now(),
+    ms,
+  };
+  controls.enableDamping = false;
+}
+function stepCameraTween(now) {
+  const k = easeInOut(clamp((now - camTween.t0) / camTween.ms, 0, 1));
+  const { from, to } = camTween;
+  setCameraSpherical(lerp(from.r, to.r, k), lerp(from.polar, to.polar, k), lerp(from.azimuth, to.azimuth, k));
+  controls.update();
+  if (k >= 1) { camTween = null; controls.enableDamping = true; }
+}
+
+const VIEWS = {
+  front: () => ({ polar: 90, azimuth: 0 }),
+  top:   () => ({ polar: 0.05, azimuth: 0 }),
+  side:  () => ({ polar: 90, azimuth: 90 }),
+  reset: () => ({ ...DEFAULT_VIEW }),
+};
+
+// Look perpendicular to the plane from its +n side (the side the 2D panel
+// is drawn from). With the world-up camera, screen-up is then exactly the
+// plane's v axis, so the 3D view matches the 2D panel. Tilt is kept a hair
+// away from 0°/180° so the up-vector never becomes degenerate.
+function lookAtSection() {
+  const t = clamp(state.plane.tilt, 0.05, 179.95);
+  const { n } = planeBasis(t, state.plane.rotation);
+  const s = new THREE.Spherical().setFromVector3(n);
+  animateCameraTo({ polar: s.phi / DEG, azimuth: s.theta / DEG });
+}
+
+function resize3D() {
+  const w = Math.max(1, stageEl.clientWidth), h = Math.max(1, stageEl.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  // keep the horizontal field of view reasonable on tall (portrait) viewports
+  camera.fov = camera.aspect < 1 ? 2 * Math.atan(Math.tan(20 * DEG) / camera.aspect) / DEG : 40;
+  camera.fov = Math.min(camera.fov, 75);
+  camera.updateProjectionMatrix();
+  needsRender = true;
+}
+
+/* ======================================================================
+   8. STATE UPDATES, PRESETS & UI WIRING
+   ====================================================================== */
+let needsRender = true;
+let planeTween = null;
+
+function markSectionDirty() { state.sectionDirty = true; }
+
+function recomputeSection() {
+  const p = state.plane;
+  state.basis = planeBasis(p.tilt, p.rotation);
+  state.result = computeSection(state.solid, state.basis, p.offset);
+  state.shape = ShapeClassifier.classify(state.result, { conic: conicFor(state.solid, state.basis.n) });
+  updateSectionBuffers();
+  draw2D();
+  renderLabel();
+  state.sectionDirty = false;
+  needsRender = true;
+}
+
+function setSolid(id) {
+  const def = SOLID_DEFS.find(s => s.id === id) || SOLID_DEFS[0];
+  state.solidId = def.id;
+  state.solid = buildSolid(def);
+  planeTween = null;
+  state.plane.offset = clamp(state.plane.offset, -state.solid.offsetMax, state.solid.offsetMax);
+  applySolidToScene();
+  renderSolidPicker();
+  renderPresets();
+  configureOffsetSlider();
+  syncSliders();
+  markSectionDirty();
+}
+
+function setPlane(values, { animate = false } = {}) {
+  const lim = state.solid.offsetMax;
+  const target = {
+    tilt: clamp(values.tilt ?? state.plane.tilt, 0, 180),
+    rotation: wrap360(values.rotation ?? state.plane.rotation),
+    offset: clamp(values.offset ?? state.plane.offset, -lim, lim),
+  };
+  if (animate) {
+    const from = { ...state.plane };
+    planeTween = {
+      from,
+      to: { ...target, rotation: from.rotation + shortestDelta(from.rotation, target.rotation) },
+      t0: performance.now(),
+      ms: 550,
+    };
+  } else {
+    planeTween = null;
+    Object.assign(state.plane, target);
+    syncSliders();
+    markSectionDirty();
+  }
+}
+
+function stepPlaneTween(now) {
+  const k = easeInOut(clamp((now - planeTween.t0) / planeTween.ms, 0, 1));
+  const { from, to } = planeTween;
+  state.plane.tilt = lerp(from.tilt, to.tilt, k);
+  state.plane.rotation = wrap360(lerp(from.rotation, to.rotation, k));
+  state.plane.offset = lerp(from.offset, to.offset, k);
+  if (k >= 1) {
+    state.plane.tilt = to.tilt;
+    state.plane.rotation = wrap360(to.rotation);
+    state.plane.offset = to.offset;
+    planeTween = null;
+  }
+  syncSliders();
+  markSectionDirty();
+}
+
+/* ---------- Presets ---------- */
+function presetsFor(solid) {
+  const round = solid.def.kind === 'sphere';
+  const list = [
+    { id: 'parallel', label: round ? 'Horizontal' : 'Parallel to base', target: () => ({ tilt: 0, rotation: 0, offset: 0 }) },
+    { id: 'perpendicular', label: round ? 'Vertical' : 'Perpendicular to base', target: () => ({ tilt: 90, rotation: 0, offset: 0 }) },
+    { id: 'oblique', label: 'Oblique', target: () => ({ ...OBLIQUE[solid.def.kind] }) },
+  ];
+  if (solid.apexY !== null) {
+    list.push({
+      id: 'apex', label: 'Through the apex',
+      target: () => {
+        let tilt = state.plane.tilt;
+        if (tilt < 65 || tilt > 115) tilt = 90;          // a flatter plane may only touch the apex
+        const rotation = state.plane.rotation;
+        const { n } = planeBasis(tilt, rotation);
+        return { tilt, rotation, offset: n.y * solid.apexY };
+      },
+    });
+  }
+  return list;
+}
+
+const presetsEl = document.getElementById('presets');
+function renderPresets() {
+  presetsEl.replaceChildren(...presetsFor(state.solid).map(p => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'preset-btn';
+    b.textContent = p.label;
+    b.dataset.preset = p.id;
+    b.addEventListener('click', () => setPlane(p.target(), { animate: true }));
+    return b;
+  }));
+}
+
+/* ---------- Sliders ---------- */
+const sliders = {
+  tilt: { input: document.getElementById('tilt'), out: document.getElementById('tiltOut'), fmt: v => `${Math.round(v)}°` },
+  rotation: { input: document.getElementById('rotation'), out: document.getElementById('rotationOut'), fmt: v => `${Math.round(v) % 360}°` },
+  offset: { input: document.getElementById('offset'), out: document.getElementById('offsetOut'), fmt: v => (Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2)) },
+};
+function configureOffsetSlider() {
+  const lim = state.solid.offsetMax;
+  sliders.offset.input.min = String(-lim);
+  sliders.offset.input.max = String(lim);
+}
+function syncSliders() {
+  for (const [key, s] of Object.entries(sliders)) {
+    const val = state.plane[key];
+    s.input.value = String(val);
+    s.out.textContent = s.fmt(val);
+    const min = +s.input.min, max = +s.input.max;
+    s.input.style.setProperty('--fill', `${((val - min) / (max - min)) * 100}%`);
+  }
+}
+for (const [key, s] of Object.entries(sliders)) {
+  s.input.addEventListener('input', () => {
+    planeTween = null;
+    state.plane[key] = parseFloat(s.input.value);
+    s.out.textContent = s.fmt(state.plane[key]);
+    const min = +s.input.min, max = +s.input.max;
+    s.input.style.setProperty('--fill', `${((state.plane[key] - min) / (max - min)) * 100}%`);
+    markSectionDirty();
+  });
+}
+
+/* ---------- Solid picker (buttons with generated line icons) ---------- */
+function solidIcon(def) {
+  const cx = 20, rx = def.kind === 'box' ? 15 : 13, ry = 4.6, top = 9, bot = 28;
+  const f = v => v.toFixed(1);
+  const ring = (n, y, off) => Array.from({ length: n }, (_, k) => {
+    const a = off + (k * 2 * Math.PI) / n;
+    return { x: cx + rx * Math.sin(a), y: y + ry * Math.cos(a), back: Math.cos(a) < -0.2 };
+  });
+  const seg = (a, b, back) => `<path d="M${f(a.x)} ${f(a.y)}L${f(b.x)} ${f(b.y)}" opacity="${back ? 0.35 : 1}"/>`;
+  let body = '';
+  const polyEdges = (pts, isBottom) => pts.map((p, k) => {
+    const q = pts[(k + 1) % pts.length];
+    const back = isBottom && (p.y + q.y) / 2 < bot;
+    return seg(p, q, back);
+  }).join('');
+  switch (def.kind) {
+    case 'prism':
+    case 'box': {
+      const n = def.kind === 'box' ? 4 : def.sides;
+      const off = Math.PI / n;
+      const b = ring(n, bot, off), t = ring(n, top, off);
+      body = polyEdges(t, false) + polyEdges(b, true) + b.map((p, k) => seg(p, t[k], p.back)).join('');
+      break;
+    }
+    case 'pyramid': {
+      const b = ring(def.sides, bot, Math.PI / def.sides);
+      const apex = { x: cx, y: 4 };
+      body = polyEdges(b, true) + b.map(p => seg(p, apex, p.back)).join('');
+      break;
+    }
+    case 'cylinder':
+      body = `<ellipse cx="20" cy="${top}" rx="${rx}" ry="${ry}"/>
+        <path d="M${cx - rx} ${bot}A${rx} ${ry} 0 0 0 ${cx + rx} ${bot}"/>
+        <path d="M${cx - rx} ${bot}A${rx} ${ry} 0 0 1 ${cx + rx} ${bot}" opacity=".35"/>
+        <path d="M${cx - rx} ${top}V${bot}M${cx + rx} ${top}V${bot}"/>`;
+      break;
+    case 'cone':
+      body = `<path d="M${cx - rx} ${bot}A${rx} ${ry} 0 0 0 ${cx + rx} ${bot}"/>
+        <path d="M${cx - rx} ${bot}A${rx} ${ry} 0 0 1 ${cx + rx} ${bot}" opacity=".35"/>
+        <path d="M${cx - rx} ${bot}L${cx} 4L${cx + rx} ${bot}"/>`;
+      break;
+    case 'sphere':
+      body = `<circle cx="20" cy="17.5" r="13.5"/>
+        <path d="M6.5 17.5A13.5 4.2 0 0 0 33.5 17.5"/>
+        <path d="M6.5 17.5A13.5 4.2 0 0 1 33.5 17.5" opacity=".35"/>`;
+      break;
+  }
+  return `<svg viewBox="0 0 40 34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${body}</svg>`;
+}
+
+const pickerEl = document.getElementById('solidPicker');
+function buildSolidPicker() {
+  const groups = [...new Set(SOLID_DEFS.map(d => d.group))];
+  pickerEl.innerHTML = '';
+  for (const g of groups) {
+    const wrap = document.createElement('div');
+    wrap.className = 'solid-group';
+    wrap.innerHTML = `<div class="group-label">${g}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'solid-grid';
+    grid.setAttribute('role', 'group');
+    grid.setAttribute('aria-label', g);
+    for (const def of SOLID_DEFS.filter(d => d.group === g)) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'solid-btn';
+      b.dataset.solid = def.id;
+      b.setAttribute('aria-label', def.name);
+      b.innerHTML = `${solidIcon(def)}<span>${def.short}</span>`;
+      b.addEventListener('click', () => setSolid(def.id));
+      grid.appendChild(b);
+    }
+    wrap.appendChild(grid);
+    pickerEl.appendChild(wrap);
+  }
+}
+function renderSolidPicker() {
+  pickerEl.querySelectorAll('.solid-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.solid === state.solidId)));
+  document.getElementById('solidName').textContent = state.solid.def.name;
+}
+
+/* ---------- Toggles & buttons ---------- */
+const splitToggle = document.getElementById('splitToggle');
+const planeToggle = document.getElementById('planeToggle');
+const nameToggle = document.getElementById('showNameToggle');
+splitToggle.addEventListener('change', () => { state.view.split = splitToggle.checked; needsRender = true; });
+planeToggle.addEventListener('change', () => { state.view.showPlane = planeToggle.checked; needsRender = true; });
+nameToggle.addEventListener('change', () => { state.view.showName = nameToggle.checked; renderLabel(); });
+
+document.getElementById('lookBtn').addEventListener('click', lookAtSection);
+document.querySelectorAll('[data-view]').forEach(b => {
+  b.addEventListener('click', () => animateCameraTo(VIEWS[b.dataset.view]()));
+});
+controls.addEventListener('start', () => {
+  if (camTween) { camTween = null; controls.enableDamping = true; }
+});
+controls.addEventListener('change', () => { needsRender = true; silhouetteDirty = true; });
+
+/* ---------- Fullscreen (hidden where unsupported, e.g. iPhone) ---------- */
+const fsBtn = document.getElementById('fullscreenBtn');
+const root = document.documentElement;
+const fsSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+if (fsSupported) {
+  fsBtn.hidden = false;
+  fsBtn.addEventListener('click', () => {
+    if (fsElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+  });
+  const onFs = () => {
+    const on = !!fsElement();
+    fsBtn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
+    document.getElementById('fsIcon').setAttribute('d', on
+      ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5'
+      : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');
+  };
+  document.addEventListener('fullscreenchange', onFs);
+  document.addEventListener('webkitfullscreenchange', onFs);
+}
+
+/* ---------- Touch hygiene: no page zoom/scroll while using the 3D view ---------- */
+['gesturestart', 'gesturechange'].forEach(t => stageEl.addEventListener(t, e => e.preventDefault(), { passive: false }));
+canvas3d.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+canvas3d.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------- Resize / orientation ---------- */
+const ro = new ResizeObserver(entries => {
+  for (const e of entries) {
+    if (e.target === stageEl) resize3D();
+    else resize2D();
+  }
+});
+ro.observe(stageEl);
+ro.observe(document.getElementById('panelWrap'));
+window.addEventListener('orientationchange', () => setTimeout(() => { resize3D(); resize2D(); }, 250));
+
+/* ======================================================================
+   9. GUESS-MODE HOOKS (not wired to UI yet)
+   A future "Guess mode" can hide the section (3D + 2D) and the name,
+   then call reveal() when students have made their prediction.
+   ====================================================================== */
+function setSectionRevealed(on) { state.reveal.section = !!on; draw2D(); renderLabel(); needsRender = true; }
+function setLabelRevealed(on) { state.reveal.label = !!on; renderLabel(); }
+
+/* ======================================================================
+   10. MAIN LOOP  (section only recomputed when solid/plane changed;
+       frames only rendered when something moved)
+   ====================================================================== */
+let lastT = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - lastT) / 1000);
+  lastT = now;
+
+  if (planeTween) stepPlaneTween(now);
+  if (camTween) stepCameraTween(now);
+  if (controls.update()) { needsRender = true; silhouetteDirty = true; }
+
+  const gt = gapTarget();
+  if (Math.abs(gap - gt) > 1e-4) {
+    gap += (gt - gap) * (1 - Math.exp(-dt * 9));
+    if (Math.abs(gap - gt) < 1e-3) gap = gt;
+    needsRender = true;
+  }
+
+  if (state.sectionDirty) recomputeSection();
+
+  if (needsRender) {
+    if (silhouetteDirty && state.solid.hasSilhouette) updateSilhouette();
+    updatePlaneAndHalves();
+    syncVisibility();
+    renderer.render(scene, camera);
+    needsRender = false;
+  }
+}
+
+/* ---------- Boot ---------- */
+buildSolidPicker();
+setSolid(state.solidId);
+setPlane(OBLIQUE.cylinder);
+setCameraSpherical(DEFAULT_VIEW.r, DEFAULT_VIEW.polar, DEFAULT_VIEW.azimuth);
+controls.update();
+resize3D();
+resize2D();
+recomputeSection();
+requestAnimationFrame(frame);
+
+// Small public handle for future features (e.g. guess mode) and for testing.
+window.CrossSectionExplorer = {
+  state, setSolid, setPlane, lookAtSection, setSectionRevealed, setLabelRevealed,
+  classify: ShapeClassifier.classify,
+  recompute: recomputeSection,
+  camera, get presets() { return presetsFor(state.solid); },
+};
+window.__csxReady = true;
+</script>
+</body>
+</html>
