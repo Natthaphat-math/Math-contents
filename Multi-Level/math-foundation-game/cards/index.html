@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Foundation Cards</title>
+<link rel="stylesheet" href="cards.css">
+<style>
+  body { margin: 0; background: #E9E4D8; color: #1B1A17; font-family: 'Newsreader', Georgia, serif; }
+  header.bar { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center;
+    padding: 16px 24px; background: rgba(233, 228, 216, 0.92); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(27,26,23,0.15); }
+  h1 { margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 32px; }
+  label { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; display: flex; gap: 8px; align-items: center; }
+  select, input { font: inherit; }
+  main { padding: 24px; }
+  section { margin-bottom: 40px; }
+  h2.suit { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 28px; margin: 0 0 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 20px; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>Math Foundation Cards</h1>
+  <label for="size">Card width <input id="size" type="range" min="160" max="840" value="280"> <span id="sizeOut">280px</span></label>
+  <label for="suit">Suit <select id="suit"><option value="">All</option></select></label>
+</header>
+<main id="gallery"></main>
+<script type="module">
+  import { loadDeck, renderCard } from './cards.js';
+  const deck = await loadDeck('./cards.json');
+  const gallery = document.getElementById('gallery');
+  const size = document.getElementById('size');
+  const sizeOut = document.getElementById('sizeOut');
+  const suitSel = document.getElementById('suit');
+  for (const s of deck.suits) suitSel.append(new Option(s.name, s.id));
+
+  function draw() {
+    gallery.replaceChildren();
+    for (const s of deck.suits) {
+      if (suitSel.value && suitSel.value !== s.id) continue;
+      const sec = document.createElement('section');
+      const h = document.createElement('h2'); h.className = 'suit'; h.textContent = s.name;
+      const row = document.createElement('div'); row.className = 'row';
+      for (const c of deck.bySuit[s.id]) row.append(renderCard(c, { deck, width: Number(size.value) }));
+      sec.append(h, row); gallery.append(sec);
+    }
+  }
+  size.addEventListener('input', () => {
+    sizeOut.textContent = `${size.value}px`;
+    for (const c of gallery.querySelectorAll('.mfc-card')) c.style.setProperty('--mfc-width', `${size.value}px`);
+  });
+  suitSel.addEventListener('change', draw);
+  draw();
+</script>
+</body>
+</html>

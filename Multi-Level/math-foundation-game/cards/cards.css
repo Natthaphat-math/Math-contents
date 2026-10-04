@@ -1,0 +1,82 @@
+/* Math Foundation Cards — card styles.
+   Designed at 420×680. Every size is in cqw (container width), so a card
+   stays pin-sharp at any width: just set --mfc-width on .mfc-card. */
+
+@font-face { font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/InstrumentSerif-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap; src: url('fonts/InstrumentSerif-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/IBMPlexMono-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/IBMPlexMono-Medium.ttf') format('truetype'); }
+@font-face { font-family: 'Newsreader'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('fonts/Newsreader-Variable.ttf') format('truetype'); }
+@font-face { font-family: 'Newsreader'; font-style: italic; font-weight: 200 800; font-display: swap; src: url('fonts/Newsreader-Italic-Variable.ttf') format('truetype'); }
+
+.mfc-card {
+  --mfc-width: 420px;
+  --mfc-paper: #F6F2E9;
+  --mfc-plate: #EFEADF;
+  --mfc-ink: #1B1A17;
+  --mfc-muted: #5E5A52;
+  --mfc-rule: rgba(27, 26, 23, 0.18);
+  --accent: #B4502F;             /* set per card from its suit */
+  container-type: inline-size;
+  width: var(--mfc-width);
+  aspect-ratio: 420 / 680;
+  flex: none;
+}
+.mfc-face {
+  width: 100%; height: 100%; box-sizing: border-box;
+  padding: 3.3333cqw;
+  background: var(--mfc-paper);
+  border-radius: 4.2857cqw;
+  color: var(--mfc-ink);
+  font-family: 'Newsreader', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+.mfc-frame {
+  height: 100%; box-sizing: border-box;
+  border: max(1px, 0.2381cqw) solid var(--mfc-rule);
+  border-radius: 2.381cqw;
+  padding: 4.2857cqw 4.2857cqw 3.8095cqw;
+  display: flex; flex-direction: column; gap: 3.3333cqw;
+}
+.mfc-head, .mfc-origin {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  text-transform: uppercase; color: var(--mfc-muted);
+}
+.mfc-head { font-size: 2.619cqw; letter-spacing: 0.12em; }
+.mfc-suit { display: flex; align-items: center; gap: 1.9048cqw; }
+.mfc-dot { width: 1.9048cqw; height: 1.9048cqw; border-radius: 50%; background: var(--accent); }
+.mfc-art {
+  height: 59.5238cqw; flex: none;
+  background: var(--mfc-plate); border-radius: 1.4286cqw;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);          /* the drawings use currentColor for the accent */
+}
+.mfc-art svg { width: 84.2857cqw; height: 59.5238cqw; display: block; overflow: visible; }
+.mfc-name {
+  margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
+  font-size: 10.4762cqw; line-height: 1;
+}
+.mfc-tagline { margin: 1.4286cqw 0 0; font-style: italic; font-size: 4.0476cqw; color: var(--mfc-muted); }
+.mfc-formulas {
+  display: flex; flex-wrap: wrap; gap: 1.9048cqw;
+  margin: 0; padding: 0; list-style: none;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 3.0952cqw;
+}
+.mfc-formulas li {
+  padding: 1.1905cqw 2.381cqw;
+  border: max(1px, 0.2381cqw) solid var(--accent); border-radius: 999px; color: var(--accent);
+}
+.mfc-facts {
+  display: flex; flex-direction: column; gap: 1.9048cqw;
+  margin: 0; padding: 0; list-style: none;
+  font-size: 3.5714cqw; line-height: 1.35;
+}
+.mfc-facts li { display: flex; gap: 2.8571cqw; align-items: baseline; }
+.mfc-num { width: 5.2381cqw; flex: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 2.619cqw; color: var(--accent); }
+.mfc-origin {
+  margin-top: auto; padding-top: 2.381cqw;
+  border-top: max(1px, 0.2381cqw) solid var(--mfc-rule);
+  font-size: 2.5cqw; letter-spacing: 0.1em;
+}

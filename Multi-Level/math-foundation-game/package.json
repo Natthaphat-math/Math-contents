@@ -1,0 +1,10 @@
+{
+  "name": "math-foundation-game",
+  "private": true,
+  "type": "module",
+  "description": "Math Foundation: build mathematics from nothing, one card at a time.",
+  "scripts": {
+    "test": "node --test",
+    "build": "node tools/build.mjs"
+  }
+}
