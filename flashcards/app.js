@@ -54,11 +54,10 @@
   function levelCode(level) { return LEVEL_LABEL[level] ? level : 'sh'; } // styling fallback only
   function levelLabel(level) { return LEVEL_LABEL[level] || level || ''; }
   function pct(part, whole) { return whole ? Math.round((part / whole) * 100) : 0; }
-  function relativeDay(day) {
+  // "พรุ่งนี้" / "ในอีก 3 วัน" — used as "กลับมาอีกที…"
+  function comeBackWhen(day) {
     const d = SRS.daysBetween(today(), day);
-    if (d <= 0) return 'วันนี้';
-    if (d === 1) return 'พรุ่งนี้';
-    return 'อีก ' + d + ' วัน';
+    return d <= 1 ? 'พรุ่งนี้' : 'ในอีก ' + d + ' วัน';
   }
 
   /* =======================================================================
@@ -320,7 +319,7 @@
         '<span class="level-tag">' + levelTagHtml(deck.level) + '</span>' +
         '<span class="deck-title">' + escapeHtml(deck.topic) + '</span>' +
         '<span class="deck-count">' + st.total + ' ใบ</span>' +
-        (st.due ? '<span class="due-badge">ถึงรอบ ' + st.due + '</span>' : '') +
+        (st.due ? '<span class="due-badge">' + st.due + ' ใบรอทวน</span>' : '') +
         '<span class="deck-foot"><span class="deck-bar"><span style="width:' + mastery + '%"></span></span>' +
           '<span class="deck-pct">จำได้ ' + mastery + '%</span></span>';
       btn.addEventListener('click', () => navigate('hub', { topic: deck.topic }));
@@ -334,16 +333,16 @@
     const line = $('due-line');
     const cta = $('study-due-all');
     if (st.due) {
-      line.innerHTML = 'วันนี้มีการ์ดถึงรอบ <b>' + st.due + '</b> ใบ';
-      $('study-due-all-label').textContent = 'ทบทวนการ์ดที่ถึงรอบ (' + st.due + ')';
+      line.innerHTML = 'ได้เวลาทวนแล้ว <b>' + st.due + '</b> ใบ';
+      $('study-due-all-label').textContent = 'เริ่มทวน ' + st.due + ' ใบ';
       cta.disabled = false;
     } else if (cards.length) {
-      line.textContent = 'วันนี้ทบทวนครบแล้ว รอบถัดไป' + relativeDay(st.nextDue);
-      $('study-due-all-label').textContent = 'ทบทวนครบแล้ววันนี้';
+      line.textContent = 'วันนี้ทวนครบแล้ว กลับมาอีกที' + comeBackWhen(st.nextDue);
+      $('study-due-all-label').textContent = 'วันนี้ทวนครบแล้ว';
       cta.disabled = true;
     } else {
       line.textContent = 'ยังไม่มีการ์ดในระดับนี้';
-      $('study-due-all-label').textContent = 'ทบทวนการ์ดที่ถึงรอบ';
+      $('study-due-all-label').textContent = 'เริ่มทวน';
       cta.disabled = true;
     }
   }
@@ -363,7 +362,7 @@
   $('study-due-all').addEventListener('click', () => {
     const t = today();
     const due = decksInFilter().flatMap(d => d.cards).filter(c => SRS.isDue(srs, idOf(c), t));
-    if (due.length) startSession(due, { title: 'การ์ดที่ถึงรอบ', mixed: true, ordered: true });
+    if (due.length) startSession(due, { title: 'การ์ดที่รอทวน', mixed: true, ordered: true });
   });
   $('notice-keep').addEventListener('click', () => {
     settings.noticeDone = true; saveSettings(); renderNotice();
@@ -404,8 +403,8 @@
     list.innerHTML = '';
     list.appendChild(modeButton({
       primary: true, icon: String(dueCards.length),
-      title: 'ทบทวนการ์ดที่ถึงรอบ',
-      sub: dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีการ์ดถึงรอบวันนี้ รอบถัดไป' + relativeDay(st.nextDue),
+      title: 'ทวนใบที่รออยู่',
+      sub: dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
       disabled: !dueCards.length,
       onClick: () => startSession(dueCards, { title: deck.topic, ordered: true }),
     }));
@@ -662,7 +661,8 @@
     if (future.length) {
       const first = future[0];
       const count = future.filter(d => d === first).length;
-      $('summary-next').textContent = 'รอบถัดไป' + relativeDay(first) + ' ' + count + ' ใบ การ์ดที่จำได้จะกลับมาช้าลงเรื่อย ๆ';
+      const days = SRS.daysBetween(t, first);
+      $('summary-next').textContent = (days <= 1 ? 'พรุ่งนี้มีอีก ' : 'อีก ' + days + ' วันจะมีอีก ') + count + ' ใบรอทวน การ์ดที่จำได้จะกลับมาช้าลงเรื่อย ๆ';
     } else {
       $('summary-next').textContent = '';
     }
