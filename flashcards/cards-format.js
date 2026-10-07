@@ -4,8 +4,11 @@
    means the teacher can type LaTeX exactly as in a .tex file (single backslashes,
    `${`, backticks…). The only text that cannot appear is the comment terminator.
 
+   Structure:  # บท: (unit — shown as one deck)  →  # หัวข้อ: (optional topic inside the unit)  →  == cards.
+   In the code a unit is still called "topic" (deck name), and a หัวข้อ is "section".
+
    Output (globals used by app.js):
-     CARDS        [{ topic, level, id, front, back, frontTikz?, backTikz?, line }]
+     CARDS        [{ topic, section?, level, id, front, back, frontTikz?, backTikz?, line }]
      TOPIC_GLYPH  { [topic]: symbol }
      CARD_ERRORS  [{ line, message }]  — problems found; bad cards are skipped
 */
@@ -21,7 +24,7 @@
   // Field labels at the start of a line → card property
   const FIELDS = { 'ถาม': 'front', 'ตอบ': 'back', 'รูปถาม': 'frontTikz', 'รูปตอบ': 'backTikz' };
   const FIELD_RE = /^(รูปถาม|รูปตอบ|ถาม|ตอบ)\s*:\s*(.*)$/;
-  const HEADER_RE = /^#\s*(หัวข้อ|ระดับ|สัญลักษณ์)\s*:\s*(.*)$/;
+  const HEADER_RE = /^#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์)\s*:\s*(.*)$/;
   const CARD_RE = /^==\s*(.*)$/;
   const COMMENT_RE = /^\s*\/\//;
 
@@ -50,7 +53,7 @@
     const errors = [];
     const topicLevel = {};
     const seenIds = new Map(); // id → line
-    let topic = null, level = null;
+    let topic = null, level = null, section = null;
     let card = null, field = null, buf = [];
 
     const err = (line, message) => errors.push({ line, message });
@@ -65,8 +68,8 @@
       const c = card;
       card = null;
       if (!c.id) { err(c.line, 'การ์ดไม่มี id (ต้องเขียนต่อจาก ==)'); return; }
-      if (!c.topic) { err(c.line, 'การ์ด ' + c.id + ' อยู่ก่อน "# หัวข้อ:" บรรทัดแรก'); return; }
-      if (!c.level) { err(c.line, 'หัวข้อ "' + c.topic + '" ยังไม่มี "# ระดับ:"'); return; }
+      if (!c.topic) { err(c.line, 'การ์ด ' + c.id + ' อยู่ก่อน "# บท:" บรรทัดแรก'); return; }
+      if (!c.level) { err(c.line, 'บท "' + c.topic + '" ยังไม่มี "# ระดับ:"'); return; }
       if (!c.front || !c.back) { err(c.line, 'การ์ด ' + c.id + ' ต้องมีทั้ง "ถาม:" และ "ตอบ:"'); return; }
       if (seenIds.has(c.id)) { err(c.line, 'id "' + c.id + '" ซ้ำกับการ์ดบรรทัด ' + seenIds.get(c.id)); return; }
       seenIds.set(c.id, c.line);
@@ -84,15 +87,19 @@
       if (h) {
         closeCard();
         const value = h[2].trim();
-        if (h[1] === 'หัวข้อ') {
+        if (h[1] === 'บท') {
           topic = value || null;
+          section = null;
           level = topic && topicLevel[topic] ? topicLevel[topic] : null;
-          if (!topic) err(n, '"# หัวข้อ:" ต้องมีชื่อหัวข้อ');
+          if (!topic) err(n, '"# บท:" ต้องมีชื่อบท');
+        } else if (h[1] === 'หัวข้อ') {
+          if (!topic) { err(n, '"# หัวข้อ:" ต้องอยู่หลัง "# บท:"'); return; }
+          section = value || null;
         } else if (h[1] === 'ระดับ') {
           const code = LEVEL_ALIASES[value.replace(/\s+/g, '')] || LEVEL_ALIASES[value];
           if (!code) { err(n, 'ระดับ "' + value + '" ไม่รู้จัก ใช้ ps, jh, sh หรือ uni'); return; }
-          if (!topic) { err(n, '"# ระดับ:" ต้องอยู่หลัง "# หัวข้อ:"'); return; }
-          if (topicLevel[topic] && topicLevel[topic] !== code) err(n, 'หัวข้อ "' + topic + '" ถูกตั้งระดับไว้ต่างกันสองที่');
+          if (!topic) { err(n, '"# ระดับ:" ต้องอยู่หลัง "# บท:"'); return; }
+          if (topicLevel[topic] && topicLevel[topic] !== code) err(n, 'บท "' + topic + '" ถูกตั้งระดับไว้ต่างกันสองที่');
           topicLevel[topic] = level = code;
         } else if (topic && value) {
           glyphs[topic] = value;
@@ -104,6 +111,7 @@
       if (c) {
         closeCard();
         card = { topic, level, id: c[1].trim(), front: '', back: '', line: n };
+        if (section) card.section = section;
         return;
       }
 

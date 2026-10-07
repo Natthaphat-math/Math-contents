@@ -74,7 +74,7 @@
       if (!map.has(c.topic)) map.set(c.topic, { topic: c.topic, level: c.level, cards: [], text: normalize(c.topic) });
       const deck = map.get(c.topic);
       deck.cards.push(c);
-      deck.text += ' ' + searchableText(c.front) + ' ' + searchableText(c.back);
+      deck.text += ' ' + normalize(c.section) + ' ' + searchableText(c.front) + ' ' + searchableText(c.back);
     });
     return [...map.values()];
   })();
@@ -95,8 +95,12 @@
   let srs = SRS.load(storage, today()).state;
   const saveProgress = () => SRS.save(storage, srs);
 
-  const settings = Object.assign({ theme: null, palette: 'bauhaus', filter: 'all', noticeDone: false },
+  const settings = Object.assign({ theme: null, palette: 'bauhaus', filter: 'all', noticeDone: false, pins: [] },
     (function () { try { return JSON.parse(storage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) { return {}; } })());
+  if (!Array.isArray(settings.pins)) settings.pins = [];
+  // Pinned decks are "my decks": once a student has any, the app opens on them.
+  if (settings.pins.some(t => DECKS.some(d => d.topic === t))) settings.filter = 'pinned';
+  if (!['all', 'pinned', ...LEVELS.map(l => l.code)].includes(settings.filter)) settings.filter = 'all';
   function saveSettings() { try { storage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ } }
 
   // Per-deck numbers used across screens
@@ -138,7 +142,7 @@
     if (currentScreen === 'study' && !isDark() && session) {
       color = cs.getPropertyValue('--lv-' + levelCode(currentCard() ? currentCard().level : 'sh'));
     }
-    metaTheme.setAttribute('content', color.trim() || '#2338E0');
+    metaTheme.setAttribute('content', color.trim() || '#2D3A8C');
   }
   const onSystemThemeChange = () => { if (!settings.theme) applyTheme(); };
   if (prefersDark.addEventListener) prefersDark.addEventListener('change', onSystemThemeChange);
@@ -255,25 +259,38 @@
   let query = '';
   const searchEl = $('search');
 
+  const isPinned = topic => settings.pins.includes(topic);
   function decksInFilter() {
+    if (settings.filter === 'pinned') return DECKS.filter(d => isPinned(d.topic));
     return DECKS.filter(d => settings.filter === 'all' || d.level === settings.filter);
   }
   function visibleDecks() {
     const q = normalize(query.trim());
+    // Keep file order everywhere, so a tile never jumps away right after it is pinned.
     return decksInFilter().filter(d => !q || d.text.includes(q));
   }
+
+  function togglePin(topic) {
+    const firstPin = !settings.pins.length;
+    if (isPinned(topic)) settings.pins = settings.pins.filter(t => t !== topic);
+    else settings.pins.push(topic);
+    saveSettings();
+    toast(isPinned(topic) ? (firstPin ? 'ปักหมุดแล้ว ดูได้ที่แถบ “ปักหมุด”' : 'ปักหมุดแล้ว') : 'เลิกปักหมุดแล้ว');
+  }
+  const PIN_ICON = '<svg aria-hidden="true"><use href="#i-pin"/></svg>';
 
   function renderFilters() {
     const el = $('filters');
     el.innerHTML = '';
-    [{ code: 'all', label: 'ทั้งหมด' }, ...LEVELS].forEach(chip => {
+    [{ code: 'pinned', label: 'ปักหมุด' }, { code: 'all', label: 'ทั้งหมด' }, ...LEVELS].forEach(chip => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'chip';
-      const count = chip.code === 'all' ? DECKS.length : DECKS.filter(d => d.level === chip.code).length;
+      const count = chip.code === 'all' || chip.code === 'pinned' ? 1 : DECKS.filter(d => d.level === chip.code).length;
       if (!count) btn.classList.add('empty');
       btn.setAttribute('aria-pressed', settings.filter === chip.code ? 'true' : 'false');
-      btn.innerHTML = (chip.code === 'all' ? '' : '<span class="shape ' + chip.code + '" aria-hidden="true"></span>') + escapeHtml(chip.label);
+      const icon = chip.code === 'pinned' ? PIN_ICON : chip.code === 'all' ? '' : '<span class="shape ' + chip.code + '" aria-hidden="true"></span>';
+      btn.innerHTML = icon + escapeHtml(chip.label);
       btn.addEventListener('click', () => {
         settings.filter = chip.code;
         saveSettings();
@@ -291,12 +308,14 @@
 
     if (!decks.length) {
       const searching = !!query.trim();
+      const noPins = !searching && settings.filter === 'pinned';
+      const title = searching ? 'ไม่พบหัวข้อ “' + escapeHtml(query.trim()) + '”' : noPins ? 'ยังไม่ได้ปักหมุดชุดไหน' : 'ยังไม่มีชุดการ์ดในระดับนี้';
+      const text = searching ? 'ลองค้นด้วยคำอื่น หรือดูทุกระดับชั้น' : noPins ? 'แตะปุ่มหมุดบนชุดการ์ด เพื่อเก็บชุดที่เรียนอยู่ไว้ตรงนี้' : 'เลือกระดับชั้นอื่นเพื่อดูชุดการ์ด';
       grid.innerHTML =
         '<div class="empty-state">' +
           '<div class="empty-art" aria-hidden="true"><span class="shape ps"></span><span class="shape jh"></span><span class="shape sh"></span><span class="shape uni"></span></div>' +
-          '<h3>' + (searching ? 'ไม่พบหัวข้อ “' + escapeHtml(query.trim()) + '”' : 'ยังไม่มีชุดการ์ดในระดับนี้') + '</h3>' +
-          '<p>' + (searching ? 'ลองค้นด้วยคำอื่น หรือดูทุกระดับชั้น' : 'เลือกระดับชั้นอื่นเพื่อดูชุดการ์ด') + '</p>' +
-          '<button class="pill-btn" type="button" id="empty-reset">' + (searching ? 'ล้างการค้นหา' : 'ดูทุกระดับชั้น') + '</button>' +
+          '<h3>' + title + '</h3><p>' + text + '</p>' +
+          '<button class="pill-btn" type="button" id="empty-reset">' + (searching ? 'ล้างการค้นหา' : noPins ? 'ดูทุกชุด' : 'ดูทุกระดับชั้น') + '</button>' +
         '</div>';
       $('empty-reset').addEventListener('click', () => {
         query = ''; searchEl.value = '';
@@ -310,10 +329,12 @@
       const st = deckStats(deck.cards);
       const code = levelCode(deck.level);
       const mastery = pct(st.mastered, st.total);
+      const cell = document.createElement('div');
+      cell.className = 'deck-cell';
+      cell.style.animationDelay = Math.min(i * 40, 400) + 'ms';
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'deck lv-' + code;
-      btn.style.animationDelay = Math.min(i * 40, 400) + 'ms';
       btn.innerHTML =
         '<span class="big-shape ' + code + '" aria-hidden="true"><span class="glyph">' + escapeHtml(glyphFor(deck.topic)) + '</span></span>' +
         '<span class="level-tag">' + levelTagHtml(deck.level) + '</span>' +
@@ -323,8 +344,35 @@
         '<span class="deck-foot"><span class="deck-bar"><span style="width:' + mastery + '%"></span></span>' +
           '<span class="deck-pct">จำได้ ' + mastery + '%</span></span>';
       btn.addEventListener('click', () => navigate('hub', { topic: deck.topic }));
-      grid.appendChild(btn);
+
+      // Pin toggle sits beside (not inside) the tile button: buttons can't be nested.
+      const pin = document.createElement('button');
+      pin.type = 'button';
+      pin.className = 'pin-btn';
+      pin.innerHTML = PIN_ICON;
+      setPinState(pin, deck.topic, false);
+      pin.addEventListener('click', () => { togglePin(deck.topic); renderHome(); });
+
+      cell.append(btn, pin);
+      grid.appendChild(cell);
     });
+  }
+  function setPinState(btn, topic, withText) {
+    const on = isPinned(topic);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.setAttribute('aria-label', (on ? 'เลิกปักหมุด ' : 'ปักหมุด ') + topic);
+    if (withText) btn.querySelector('.pin-text').textContent = on ? 'ปักหมุดแล้ว' : 'ปักหมุด';
+  }
+
+  // Cards written in the wrong format are skipped; tell the teacher where.
+  function renderCardErrors() {
+    const errors = (typeof CARD_ERRORS !== 'undefined' && Array.isArray(CARD_ERRORS)) ? CARD_ERRORS : [];
+    const box = $('card-errors');
+    box.hidden = !errors.length;
+    if (!errors.length) return;
+    $('card-errors-title').textContent = 'มี ' + errors.length + ' จุดในไฟล์การ์ดที่เขียนไม่ตรงรูปแบบ การ์ดเหล่านั้นจึงยังไม่แสดง';
+    $('card-errors-list').innerHTML = errors.map(e =>
+      '<li>บรรทัด ' + e.line + ': ' + escapeHtml(e.message) + '</li>').join('');
   }
 
   function renderDueLine() {
@@ -341,7 +389,7 @@
       $('study-due-all-label').textContent = 'วันนี้ทวนครบแล้ว';
       cta.disabled = true;
     } else {
-      line.textContent = 'ยังไม่มีการ์ดในระดับนี้';
+      line.textContent = settings.filter === 'pinned' ? 'ปักหมุดชุดการ์ดที่เรียนอยู่ แล้วเริ่มทวนได้เลย' : 'ยังไม่มีการ์ดในระดับนี้';
       $('study-due-all-label').textContent = 'เริ่มทวน';
       cta.disabled = true;
     }
@@ -356,6 +404,7 @@
     renderDueLine();
     renderDecks();
     renderNotice();
+    renderCardErrors();
   }
 
   searchEl.addEventListener('input', () => { query = searchEl.value; renderDecks(); });
@@ -388,6 +437,7 @@
     $('hub-glyph').textContent = glyphFor(deck.topic);
     $('hub-level').innerHTML = levelTagHtml(deck.level);
     $('hub-topic').textContent = deck.topic;
+    setPinState($('hub-pin'), deck.topic, true);
     $('hub-sub').textContent = 'การ์ด ' + st.total + ' ใบ จำได้แล้ว ' + st.mastered + ' ใบ (' + pct(st.mastered, st.total) + '%)';
 
     // Box distribution
@@ -403,7 +453,7 @@
     list.innerHTML = '';
     list.appendChild(modeButton({
       primary: true, icon: String(dueCards.length),
-      title: 'ทวนใบที่รออยู่',
+      title: 'ใบที่รอทวนอยู่',
       sub: dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
       disabled: !dueCards.length,
       onClick: () => startSession(dueCards, { title: deck.topic, ordered: true }),
@@ -435,6 +485,11 @@
     if (!disabled) btn.addEventListener('click', onClick);
     return btn;
   }
+
+  $('hub-pin').addEventListener('click', () => {
+    togglePin(currentTopic);
+    setPinState($('hub-pin'), currentTopic, true);
+  });
 
   /* =======================================================================
      GRID — all card fronts at a glance (no flip, no swipe)
@@ -662,7 +717,7 @@
       const first = future[0];
       const count = future.filter(d => d === first).length;
       const days = SRS.daysBetween(t, first);
-      $('summary-next').textContent = (days <= 1 ? 'พรุ่งนี้มีอีก ' : 'อีก ' + days + ' วันจะมีอีก ') + count + ' ใบรอทวน การ์ดที่จำได้จะกลับมาช้าลงเรื่อย ๆ';
+      $('summary-next').textContent = (days <= 1 ? 'พรุ่งนี้มีอีก ' : 'อีก ' + days + ' วันจะมีอีก ') + count + ' ใบที่รอทวน การ์ดที่จำได้จะกลับมาช้าลงเรื่อย ๆ';
     } else {
       $('summary-next').textContent = '';
     }

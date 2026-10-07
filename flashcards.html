@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2338E0">
+<meta name="theme-color" content="#2D3A8C">
 <title>บัตรคำ · ทบทวนคณิตศาสตร์</title>
 <meta name="description" content="แอปทบทวนบทเรียนคณิตศาสตร์ด้วยบัตรคำ แตะเพื่อดูคำตอบ แล้วบอกว่าจำได้หรือไม่ การ์ดที่ยังจำไม่ได้จะกลับมาเร็วขึ้น">
 
@@ -24,7 +24,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <!-- ?v= forces phones to fetch the new files after an update (GitHub Pages caches ~10 min). -->
-<link rel="stylesheet" href="flashcards/styles.css?v=2.0.1">
+<link rel="stylesheet" href="flashcards/styles.css?v=2.2.0">
 </head>
 <body>
 <noscript>แอปนี้ต้องเปิดใช้งาน JavaScript จึงจะทำงานได้</noscript>
@@ -38,6 +38,7 @@
   <symbol id="i-settings" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></g></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></g></symbol>
   <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3.5h6l-1 5.5 3.2 3.2V14H6.8v-1.8L10 9z" fill="var(--pin-fill, none)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 14v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
 </svg>
 
@@ -79,6 +80,13 @@
         <div class="filters" id="filters" role="group" aria-label="กรองตามระดับชั้น"></div>
         <p class="result-line" id="result-line" aria-live="polite"></p>
         <div class="deck-grid" id="deck-grid"></div>
+
+        <!-- Shown only when cards.js has cards in the wrong format -->
+        <details class="card-errors" id="card-errors" hidden>
+          <summary id="card-errors-title"></summary>
+          <p>สำหรับครู: แก้ตามเลขบรรทัดในไฟล์ flashcards/cards.js</p>
+          <ul id="card-errors-list"></ul>
+        </details>
       </div>
     </div>
     <div class="bottom-bar">
@@ -94,7 +102,10 @@
       <div class="wrap">
         <div class="topbar">
           <button class="icon-btn js-back" type="button" aria-label="กลับไปหน้าชุดการ์ดทั้งหมด"><svg><use href="#i-back"/></svg></button>
-          <button class="icon-btn js-theme-toggle" type="button" aria-label="สลับโหมดมืด"><svg><use href="#i-moon"/></svg></button>
+          <div class="topbar-actions">
+            <button class="pin-pill" type="button" id="hub-pin" aria-pressed="false"><svg aria-hidden="true"><use href="#i-pin"/></svg><span class="pin-text">ปักหมุด</span></button>
+            <button class="icon-btn js-theme-toggle" type="button" aria-label="สลับโหมดมืด"><svg><use href="#i-moon"/></svg></button>
+          </div>
         </div>
         <div class="hub-card" id="hub-card">
           <span class="big-shape" id="hub-shape" aria-hidden="true"><span class="glyph" id="hub-glyph"></span></span>
@@ -220,7 +231,7 @@
       <div class="palette-options">
         <label class="palette-card" data-preview="bauhaus">
           <input type="radio" name="palette" value="bauhaus">
-          <span class="swatches"><i style="background:#FFC229"></i><i style="background:#CF3A1D"></i><i style="background:#2338E0"></i><i style="background:#0B7A54"></i></span>
+          <span class="swatches"><i style="background:#FFC229"></i><i style="background:#CF3A1D"></i><i style="background:#2D3A8C"></i><i style="background:#0B7A54"></i></span>
           <span class="palette-name">สีใหม่</span>
         </label>
         <label class="palette-card" data-preview="classic">
@@ -245,8 +256,9 @@
 <!-- Scripts run in order after the page is parsed. -->
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-<script defer src="flashcards/data.js?v=2.0.1"></script>
-<script defer src="flashcards/srs.js?v=2.0.1"></script>
-<script defer src="flashcards/app.js?v=2.0.1"></script>
+<script defer src="flashcards/cards.js?v=2.2.0"></script>
+<script defer src="flashcards/cards-format.js?v=2.2.0"></script>
+<script defer src="flashcards/srs.js?v=2.2.0"></script>
+<script defer src="flashcards/app.js?v=2.2.0"></script>
 </body>
 </html>
