@@ -61,8 +61,13 @@
   }
 
   /* =======================================================================
-     Data: cards → decks (one deck per topic, in order of first appearance)
+     Data: cards → decks. A deck is one บท (unit; called "topic" in the code).
+     Inside a deck, cards can be grouped by หัวข้อ ("section"), in order of
+     first appearance. Cards without a หัวข้อ in a unit that has some are
+     grouped as "ทั่วไป".
      ======================================================================= */
+  const NO_SECTION = '';
+  const sectionLabel = key => key || 'ทั่วไป';
   const CARD_LIST = (typeof CARDS !== 'undefined' && Array.isArray(CARDS)) ? CARDS : [];
   const GLYPHS = (typeof TOPIC_GLYPH !== 'undefined' && TOPIC_GLYPH) ? TOPIC_GLYPH : {};
   const IDS = SRS.assignIds(CARD_LIST);
@@ -71,14 +76,19 @@
   const DECKS = (function buildDecks() {
     const map = new Map();
     CARD_LIST.forEach(c => {
-      if (!map.has(c.topic)) map.set(c.topic, { topic: c.topic, level: c.level, cards: [], text: normalize(c.topic) });
+      if (!map.has(c.topic)) map.set(c.topic, { topic: c.topic, level: c.level, cards: [], sections: [], text: normalize(c.topic) });
       const deck = map.get(c.topic);
       deck.cards.push(c);
+      const key = c.section || NO_SECTION;
+      let sec = deck.sections.find(s => s.key === key);
+      if (!sec) deck.sections.push(sec = { key, cards: [] });
+      sec.cards.push(c);
       deck.text += ' ' + normalize(c.section) + ' ' + searchableText(c.front) + ' ' + searchableText(c.back);
     });
     return [...map.values()];
   })();
   const deckByTopic = topic => DECKS.find(d => d.topic === topic);
+  const hasSections = deck => deck.sections.some(s => s.key !== NO_SECTION);
   function glyphFor(topic) { return GLYPHS[topic] || (topic ? topic.charAt(0).toUpperCase() : '?'); }
 
   /* =======================================================================
@@ -98,10 +108,26 @@
   const settings = Object.assign({ theme: null, palette: 'bauhaus', filter: 'all', noticeDone: false, pins: [] },
     (function () { try { return JSON.parse(storage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) { return {}; } })());
   if (!Array.isArray(settings.pins)) settings.pins = [];
+  // Unticked หัวข้อ per unit: { [unit]: [sectionKey, …] }. Stored as "off" so topics
+  // the teacher adds later start ticked.
+  if (!settings.off || typeof settings.off !== 'object' || Array.isArray(settings.off)) settings.off = {};
   // Pinned decks are "my decks": once a student has any, the app opens on them.
   if (settings.pins.some(t => DECKS.some(d => d.topic === t))) settings.filter = 'pinned';
   if (!['all', 'pinned', ...LEVELS.map(l => l.code)].includes(settings.filter)) settings.filter = 'all';
   function saveSettings() { try { storage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ } }
+
+  // Topics the student ticked in a unit (all, if the unit has no หัวข้อ)
+  const isSectionOn = (deck, key) => !(settings.off[deck.topic] || []).includes(key);
+  function activeCards(deck) {
+    if (!hasSections(deck)) return deck.cards;
+    return deck.sections.filter(s => isSectionOn(deck, s.key)).flatMap(s => s.cards);
+  }
+  function setSectionOn(deck, key, on) {
+    const off = (settings.off[deck.topic] || []).filter(k => k !== key);
+    if (!on) off.push(key);
+    if (off.length) settings.off[deck.topic] = off; else delete settings.off[deck.topic];
+    saveSettings();
+  }
 
   // Per-deck numbers used across screens
   function deckStats(cards) {
@@ -327,6 +353,7 @@
 
     decks.forEach((deck, i) => {
       const st = deckStats(deck.cards);
+      const dueTicked = deckStats(activeCards(deck)).due; // due count follows the ticked หัวข้อ
       const code = levelCode(deck.level);
       const mastery = pct(st.mastered, st.total);
       const cell = document.createElement('div');
@@ -340,7 +367,7 @@
         '<span class="level-tag">' + levelTagHtml(deck.level) + '</span>' +
         '<span class="deck-title">' + escapeHtml(deck.topic) + '</span>' +
         '<span class="deck-count">' + st.total + ' ใบ</span>' +
-        (st.due ? '<span class="due-badge">' + st.due + ' ใบรอทวน</span>' : '') +
+        (dueTicked ? '<span class="due-badge">' + dueTicked + ' ใบรอทวน</span>' : '') +
         '<span class="deck-foot"><span class="deck-bar"><span style="width:' + mastery + '%"></span></span>' +
           '<span class="deck-pct">จำได้ ' + mastery + '%</span></span>';
       btn.addEventListener('click', () => navigate('hub', { topic: deck.topic }));
@@ -376,18 +403,20 @@
   }
 
   function renderDueLine() {
-    const cards = decksInFilter().flatMap(d => d.cards);
+    const cards = decksInFilter().flatMap(activeCards);
     const st = deckStats(cards);
     const line = $('due-line');
     const cta = $('study-due-all');
+    const pinnedTab = settings.filter === 'pinned';
     if (st.due) {
       line.innerHTML = 'ได้เวลาทวนแล้ว <b>' + st.due + '</b> ใบ';
       $('study-due-all-label').textContent = 'เริ่มทวน ' + st.due + ' ใบ';
       cta.disabled = false;
     } else if (cards.length) {
       line.textContent = 'วันนี้ทวนครบแล้ว กลับมาอีกที' + comeBackWhen(st.nextDue);
-      $('study-due-all-label').textContent = 'วันนี้ทวนครบแล้ว';
-      cta.disabled = true;
+      // In the pinned tab students can still review everything (e.g. before a test)
+      $('study-due-all-label').textContent = pinnedTab ? 'เลือกวิธีทวน' : 'วันนี้ทวนครบแล้ว';
+      cta.disabled = !pinnedTab;
     } else {
       line.textContent = settings.filter === 'pinned' ? 'ปักหมุดชุดการ์ดที่เรียนอยู่ แล้วเริ่มทวนได้เลย' : 'ยังไม่มีการ์ดในระดับนี้';
       $('study-due-all-label').textContent = 'เริ่มทวน';
@@ -409,10 +438,54 @@
 
   searchEl.addEventListener('input', () => { query = searchEl.value; renderDecks(); });
   $('study-due-all').addEventListener('click', () => {
+    if (settings.filter === 'pinned') { openStudyChoice(); return; }
     const t = today();
-    const due = decksInFilter().flatMap(d => d.cards).filter(c => SRS.isDue(srs, idOf(c), t));
+    const due = decksInFilter().flatMap(activeCards).filter(c => SRS.isDue(srs, idOf(c), t));
     if (due.length) startSession(due, { title: 'การ์ดที่รอทวน', mixed: true, ordered: true });
   });
+
+  // The three ways to study a set of cards (used by the deck page and the pinned tab)
+  function studyModes(cards, title, opts) {
+    const t = today();
+    const st = deckStats(cards);
+    const mixed = !!(opts && opts.mixed);
+    const dueCards = cards.filter(c => SRS.isDue(srs, idOf(c), t));
+    const notYet = cards.filter(c => SRS.lastAnswer(srs, idOf(c)) !== 'remembered');
+    const none = !cards.length;
+    const then = fn => () => { if (opts && opts.before) opts.before(); fn(); };
+    return [
+      modeButton({
+        primary: true, icon: String(dueCards.length), title: 'ใบที่รอทวนอยู่',
+        sub: none ? 'เลือกอย่างน้อย 1 หัวข้อ' : dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
+        disabled: !dueCards.length,
+        onClick: then(() => startSession(dueCards, { title, mixed, ordered: true })),
+      }),
+      modeButton({
+        icon: '∀', title: 'ทบทวนทั้งหมด', sub: none ? 'เลือกอย่างน้อย 1 หัวข้อ' : cards.length + ' ใบ สุ่มลำดับ',
+        disabled: none,
+        onClick: then(() => startSession(cards, { title, mixed })),
+      }),
+      modeButton({
+        icon: '↺', title: 'ทบทวนใบที่ยังจำไม่ได้',
+        sub: none ? 'เลือกอย่างน้อย 1 หัวข้อ' : notYet.length ? notYet.length + ' ใบ' : 'จำได้ครบทุกใบแล้ว',
+        disabled: !notYet.length,
+        onClick: then(() => startSession(notYet, { title, mixed })),
+      }),
+    ];
+  }
+
+  // Pinned tab: choose how to review all pinned units (their ticked หัวข้อ)
+  const choiceDialog = $('study-choice');
+  function openStudyChoice() {
+    const decks = decksInFilter();
+    const cards = decks.flatMap(activeCards);
+    $('choice-sub').textContent = decks.length + ' บทที่ปักหมุด รวม ' + cards.length + ' ใบ';
+    const list = $('choice-list');
+    list.innerHTML = '';
+    studyModes(cards, 'ที่ปักหมุดไว้', { mixed: true, before: () => choiceDialog.close() }).forEach(b => list.appendChild(b));
+    if (choiceDialog.showModal) choiceDialog.showModal(); else choiceDialog.setAttribute('open', '');
+  }
+  choiceDialog.addEventListener('click', e => { if (e.target === choiceDialog) choiceDialog.close(); });
   $('notice-keep').addEventListener('click', () => {
     settings.noticeDone = true; saveSettings(); renderNotice();
     toast('ใช้สีใหม่');
@@ -430,7 +503,6 @@
     const deck = deckByTopic(currentTopic);
     const code = levelCode(deck.level);
     const st = deckStats(deck.cards);
-    const t = today();
 
     $('hub-card').className = 'hub-card lv-' + code;
     $('hub-shape').className = 'big-shape ' + code;
@@ -438,36 +510,72 @@
     $('hub-level').innerHTML = levelTagHtml(deck.level);
     $('hub-topic').textContent = deck.topic;
     setPinState($('hub-pin'), deck.topic, true);
-    $('hub-sub').textContent = 'การ์ด ' + st.total + ' ใบ จำได้แล้ว ' + st.mastered + ' ใบ (' + pct(st.mastered, st.total) + '%)';
+    $('hub-sub').textContent = 'การ์ด ' + st.total + ' ใบ' + (hasSections(deck) ? ' ' + deck.sections.length + ' หัวข้อ' : '') +
+      ' จำได้แล้ว ' + st.mastered + ' ใบ (' + pct(st.mastered, st.total) + '%)';
+    renderTopicList(deck);
+    renderHubStudy(deck);
+  }
 
-    // Box distribution
+  // Tick list of หัวข้อ (only for units that have them)
+  function renderTopicList(deck) {
+    const panel = $('topic-panel');
+    panel.hidden = !hasSections(deck);
+    if (panel.hidden) return;
+    const list = $('topic-list');
+    list.innerHTML = '';
+    deck.sections.forEach((sec, i) => {
+      const row = document.createElement('label');
+      row.className = 'topic-row';
+      row.innerHTML =
+        '<input type="checkbox">' +
+        '<span class="topic-check" aria-hidden="true"></span>' +
+        '<span class="topic-name"></span>' +
+        '<span class="topic-meta"></span>';
+      const input = row.querySelector('input');
+      input.checked = isSectionOn(deck, sec.key);
+      input.dataset.key = sec.key;
+      row.querySelector('.topic-name').textContent = sectionLabel(sec.key);
+      input.addEventListener('change', () => {
+        setSectionOn(deck, sec.key, input.checked);
+        renderHubStudy(deck);
+      });
+      list.appendChild(row);
+    });
+    $('topic-all').onclick = () => {
+      const allOn = deck.sections.every(s => isSectionOn(deck, s.key));
+      deck.sections.forEach(s => setSectionOn(deck, s.key, !allOn));
+      list.querySelectorAll('input').forEach(inp => { inp.checked = !allOn; });
+      renderHubStudy(deck);
+    };
+  }
+
+  // Everything on the deck page that depends on which หัวข้อ are ticked
+  function renderHubStudy(deck) {
+    const t = today();
+    if (hasSections(deck)) {
+      $('topic-list').querySelectorAll('.topic-row').forEach((row, i) => {
+        const sec = deck.sections[i];
+        const due = sec.cards.filter(c => SRS.isDue(srs, idOf(c), t)).length;
+        row.querySelector('.topic-meta').innerHTML = sec.cards.length + ' ใบ' + (due ? ' <span class="due-badge">' + due + ' รอทวน</span>' : '');
+      });
+      const allOn = deck.sections.every(s => isSectionOn(deck, s.key));
+      $('topic-all').textContent = allOn ? 'ไม่เลือกทั้งหมด' : 'เลือกทั้งหมด';
+      const on = deck.sections.filter(s => isSectionOn(deck, s.key)).length;
+      $('topic-count').textContent = 'เลือก ' + on + ' จาก ' + deck.sections.length + ' หัวข้อ';
+    }
+    const cards = activeCards(deck);
+    const st = deckStats(cards);
+
+    // Box distribution (of the ticked หัวข้อ)
     const maxCount = Math.max(1, ...st.boxes);
     $('hub-boxes').innerHTML = st.boxes.map((n, box) =>
       '<div class="box-cell"><div class="stack"><span style="height:' + Math.round((n / maxCount) * 100) + '%"></span></div>' +
       '<b>' + n + '</b><small>' + (box ? 'กล่อง ' + box : 'ใหม่') + '</small></div>').join('');
 
-    // Modes
-    const dueCards = deck.cards.filter(c => SRS.isDue(srs, idOf(c), t));
-    const notYet = deck.cards.filter(c => SRS.lastAnswer(srs, idOf(c)) !== 'remembered');
+    // Modes (ticked หัวข้อ only); the overview always shows the whole unit
     const list = $('mode-list');
     list.innerHTML = '';
-    list.appendChild(modeButton({
-      primary: true, icon: String(dueCards.length),
-      title: 'ใบที่รอทวนอยู่',
-      sub: dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
-      disabled: !dueCards.length,
-      onClick: () => startSession(dueCards, { title: deck.topic, ordered: true }),
-    }));
-    list.appendChild(modeButton({
-      icon: '∀', title: 'ทบทวนทั้งหมด', sub: deck.cards.length + ' ใบ สุ่มลำดับ',
-      onClick: () => startSession(deck.cards, { title: deck.topic }),
-    }));
-    list.appendChild(modeButton({
-      icon: '↺', title: 'ทบทวนใบที่ยังจำไม่ได้',
-      sub: notYet.length ? notYet.length + ' ใบ' : 'จำได้ครบทุกใบแล้ว',
-      disabled: !notYet.length,
-      onClick: () => startSession(notYet, { title: deck.topic }),
-    }));
+    studyModes(cards, deck.topic).forEach(b => list.appendChild(b));
     list.appendChild(modeButton({
       icon: '⊞', title: 'ดูภาพรวมการ์ดทั้งหมด', sub: deck.cards.length + ' ใบ ดูเฉพาะด้านหน้า',
       onClick: () => navigate('grid', { topic: deck.topic }),
@@ -500,14 +608,24 @@
     $('grid-sub').textContent = levelLabel(deck.level) + ' ' + deck.cards.length + ' ใบ';
     const wrap = $('grid-wrap');
     wrap.innerHTML = '';
-    deck.cards.forEach((card, i) => {
-      const tile = document.createElement('div');
-      tile.className = 'grid-card';
-      tile.style.animationDelay = Math.min(i * 25, 400) + 'ms';
-      tile.innerHTML = '<span class="grid-index">' + (i + 1) + '</span>' + boxDots(SRS.boxOf(srs, idOf(card))) + '<span class="grid-content"></span>';
-      // Diagrams are skipped here to keep the overview light (same as before).
-      renderFace(tile.querySelector('.grid-content'), card.front, null);
-      wrap.appendChild(tile);
+    let i = 0;
+    // Grouped under a heading per หัวข้อ (no headings for units without หัวข้อ)
+    deck.sections.forEach(sec => {
+      if (hasSections(deck)) {
+        const h = document.createElement('h3');
+        h.className = 'grid-heading';
+        h.innerHTML = escapeHtml(sectionLabel(sec.key)) + ' <span>' + sec.cards.length + ' ใบ</span>';
+        wrap.appendChild(h);
+      }
+      sec.cards.forEach(card => {
+        const tile = document.createElement('div');
+        tile.className = 'grid-card';
+        tile.style.animationDelay = Math.min(i * 25, 400) + 'ms';
+        tile.innerHTML = '<span class="grid-index">' + (++i) + '</span>' + boxDots(SRS.boxOf(srs, idOf(card))) + '<span class="grid-content"></span>';
+        // Diagrams are skipped here to keep the overview light (same as before).
+        renderFace(tile.querySelector('.grid-content'), card.front, null);
+        wrap.appendChild(tile);
+      });
     });
   }
 
@@ -579,7 +697,10 @@
     $('front-level').innerHTML = levelTagHtml(card.level);
     $('front-box').outerHTML = boxDots(box).replace('<span class="leitner', '<span id="front-box" class="leitner');
     $('back-box').outerHTML = boxDots(box).replace('<span class="leitner', '<span id="back-box" class="leitner');
-    $('front-topic').textContent = session.mixed ? card.topic : '';
+    // Unit name in mixed sessions, plus the หัวข้อ when the card has one
+    $('front-topic').textContent = session.mixed
+      ? card.topic + (card.section ? ' › ' + card.section : '')
+      : (card.section || '');
     renderFace($('front-content'), card.front, card.frontTikz);
     renderFace($('back-content'), card.back, card.backTikz);
     // Very short fronts (a single symbol like ℤ) get a bigger type size.

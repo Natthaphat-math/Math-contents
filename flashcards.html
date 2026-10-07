@@ -24,7 +24,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <!-- ?v= forces phones to fetch the new files after an update (GitHub Pages caches ~10 min). -->
-<link rel="stylesheet" href="flashcards/styles.css?v=2.2.0">
+<link rel="stylesheet" href="flashcards/styles.css?v=2.4.0">
 </head>
 <body>
 <noscript>แอปนี้ต้องเปิดใช้งาน JavaScript จึงจะทำงานได้</noscript>
@@ -112,6 +112,15 @@
           <span class="level-tag" id="hub-level"></span>
           <h2 class="hub-topic" id="hub-topic"></h2>
           <p class="hub-sub" id="hub-sub"></p>
+        </div>
+        <!-- หัวข้อ in this unit: tick the ones to study (hidden when the unit has none) -->
+        <div class="topics-panel" id="topic-panel" hidden>
+          <div class="panel-head">
+            <p class="panel-title">หัวข้อในบทนี้</p>
+            <button class="text-btn" type="button" id="topic-all">ไม่เลือกทั้งหมด</button>
+          </div>
+          <p class="panel-note" id="topic-count"></p>
+          <div class="topic-list" id="topic-list" role="group" aria-label="เลือกหัวข้อที่จะทวน"></div>
         </div>
         <div class="boxes-panel">
           <p class="panel-title">การ์ดในแต่ละกล่อง</p>
@@ -250,15 +259,27 @@
   </form>
 </dialog>
 
+<!-- Pinned tab: choose how to review all pinned units -->
+<dialog class="sheet" id="study-choice" aria-labelledby="choice-title">
+  <form method="dialog" class="sheet-inner">
+    <div class="sheet-head">
+      <h2 id="choice-title">ทวนบทที่ปักหมุด</h2>
+      <button class="icon-btn" value="close" aria-label="ปิด"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <p class="field-note" id="choice-sub"></p>
+    <div class="mode-list choice-list" id="choice-list"></div>
+  </form>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <p class="sr-only" id="live" aria-live="polite"></p>
 
 <!-- Scripts run in order after the page is parsed. -->
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-<script defer src="flashcards/cards.js?v=2.2.0"></script>
-<script defer src="flashcards/cards-format.js?v=2.2.0"></script>
-<script defer src="flashcards/srs.js?v=2.2.0"></script>
-<script defer src="flashcards/app.js?v=2.2.0"></script>
+<script defer src="flashcards/cards.js?v=2.4.0"></script>
+<script defer src="flashcards/cards-format.js?v=2.4.0"></script>
+<script defer src="flashcards/srs.js?v=2.4.0"></script>
+<script defer src="flashcards/app.js?v=2.4.0"></script>
 </body>
 </html>

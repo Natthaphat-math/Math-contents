@@ -325,6 +325,42 @@ svg { width: 22px; height: 22px; flex: none; }
 .box-cell b { display: block; margin-top: 4px; font-size: 16px; }
 .box-cell small { display: block; font-size: 11.5px; color: var(--muted); }
 
+/* หัวข้อ tick list on the deck page */
+.topics-panel { margin-top: 12px; padding: 16px; border-radius: var(--radius-l); background: var(--surface); }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.text-btn { min-height: 44px; padding: 0 4px; font-weight: 600; font-size: 14px; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+:root[data-theme="dark"] .text-btn { color: #9DB0FF; }
+.topic-list { display: flex; flex-direction: column; margin-top: 6px; }
+.topic-row {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  min-height: 52px; padding: 6px 2px; cursor: pointer;
+  border-top: 1px solid var(--line);
+}
+.topic-row:first-child { border-top: 0; }
+.topic-row input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.topic-check {
+  flex: none; width: 26px; height: 26px; border-radius: 8px;
+  border: 2px solid var(--muted); display: grid; place-items: center;
+}
+.topic-row input:checked + .topic-check { background: var(--ink); border-color: var(--ink); }
+.topic-row input:checked + .topic-check::after {
+  content: ""; width: 12px; height: 7px; margin-top: -3px;
+  border-left: 3px solid var(--bg); border-bottom: 3px solid var(--bg); transform: rotate(-45deg);
+}
+.topic-row input:focus-visible + .topic-check { outline: 3px solid var(--ink); outline-offset: 2px; }
+.topic-name { flex: 1; min-width: 0; font-weight: 500; font-size: 16px; overflow-wrap: anywhere; }
+.topic-row input:not(:checked) ~ .topic-name { color: var(--muted); }
+.topic-meta { flex: none; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.topic-meta .due-badge { font-size: 12px; padding: 1px 8px; }
+.choice-list { padding-bottom: 8px; }
+.sheet .mode { background: var(--surface-2); }
+.sheet .mode.primary { background: var(--ink); }
+
+/* card overview: one heading per หัวข้อ */
+.grid-heading { grid-column: 1 / -1; margin-top: 12px; font-size: 17px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+.grid-heading:first-child { margin-top: 0; }
+.grid-heading span { font-size: 13px; font-weight: 500; color: var(--muted); }
+
 .mode-list { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 40px; }
 .mode {
   display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
