@@ -453,7 +453,7 @@
     list.innerHTML = '';
     list.appendChild(modeButton({
       primary: true, icon: String(dueCards.length),
-      title: 'ทวนใบที่รออยู่',
+      title: 'ใบที่รอทวนอยู่',
       sub: dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
       disabled: !dueCards.length,
       onClick: () => startSession(dueCards, { title: deck.topic, ordered: true }),
@@ -717,7 +717,7 @@
       const first = future[0];
       const count = future.filter(d => d === first).length;
       const days = SRS.daysBetween(t, first);
-      $('summary-next').textContent = (days <= 1 ? 'พรุ่งนี้มีอีก ' : 'อีก ' + days + ' วันจะมีอีก ') + count + ' ใบรอทวน การ์ดที่จำได้จะกลับมาช้าลงเรื่อย ๆ';
+      $('summary-next').textContent = (days <= 1 ? 'พรุ่งนี้มีอีก ' : 'อีก ' + days + ' วันจะมีอีก ') + count + ' ใบที่รอทวน การ์ดที่จำได้จะกลับมาช้าลงเรื่อย ๆ';
     } else {
       $('summary-next').textContent = '';
     }
