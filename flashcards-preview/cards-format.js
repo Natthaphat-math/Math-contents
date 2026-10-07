@@ -11,6 +11,14 @@
      CARDS        [{ topic, section?, level, id, front, back, frontTikz?, backTikz?, line }]
      TOPIC_GLYPH  { [topic]: symbol }
      CARD_ERRORS  [{ line, message }]  — problems found; bad cards are skipped
+   Cards marked "ซ่อน: ใช่" are left out of CARDS (their id stays reserved).
+
+   For the card editor (card-editor.html) there is also a lossless round trip:
+     splitFile(fileText)   → { before, text, after, lineOffset }  (wrapper vs. card text)
+     parseDocument(text)   → { preamble, units:[{ name, level, glyph, comments,
+                               topics:[{ name|null, comments, cards:[…] }] }], trailing }
+     serialize(doc)        → card text again; comments stay attached to the unit /
+                             topic / card they were written directly above.
 */
 (function (root) {
   'use strict';
@@ -22,8 +30,12 @@
     uni: 'uni', 'มหาลัย': 'uni', 'มหาวิทยาลัย': 'uni',
   };
   // Field labels at the start of a line → card property
-  const FIELDS = { 'ถาม': 'front', 'ตอบ': 'back', 'รูปถาม': 'frontTikz', 'รูปตอบ': 'backTikz' };
-  const FIELD_RE = /^(รูปถาม|รูปตอบ|ถาม|ตอบ)\s*:\s*(.*)$/;
+  const FIELDS = { 'ถาม': 'front', 'ตอบ': 'back', 'รูปถาม': 'frontTikz', 'รูปตอบ': 'backTikz', 'ซ่อน': 'hiddenRaw' };
+  const FIELD_RE = /^(รูปถาม|รูปตอบ|ถาม|ตอบ|ซ่อน)\s*:\s*(.*)$/;
+  const YES = ['ใช่', 'yes', 'true', '1'];
+  const isYes = v => YES.includes(String(v || '').trim().split('\n')[0].trim().toLowerCase());
+  // Lines of card content may not start like this (they would be read as structure)
+  const RESERVED_LINE_RE = /^(\s*\/\/|==|(รูปถาม|รูปตอบ|ถาม|ตอบ|ซ่อน)\s*:|#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์)\s*:)/;
   const HEADER_RE = /^#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์)\s*:\s*(.*)$/;
   const CARD_RE = /^==\s*(.*)$/;
   const COMMENT_RE = /^\s*\/\//;
@@ -73,7 +85,9 @@
       if (!c.front || !c.back) { err(c.line, 'การ์ด ' + c.id + ' ต้องมีทั้ง "ถาม:" และ "ตอบ:"'); return; }
       if (seenIds.has(c.id)) { err(c.line, 'id "' + c.id + '" ซ้ำกับการ์ดบรรทัด ' + seenIds.get(c.id)); return; }
       seenIds.set(c.id, c.line);
-      cards.push(c);
+      const hidden = 'hiddenRaw' in c && isYes(c.hiddenRaw);
+      delete c.hiddenRaw;
+      if (!hidden) cards.push(c);   // hidden: id reserved, card not shown
     }
 
     const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
@@ -135,7 +149,172 @@
     return { cards, glyphs, errors };
   }
 
-  const CardsFormat = { parse, extractSource };
+  /* ======================================================================
+     Editor round trip
+     ====================================================================== */
+
+  // Split the raw text of cards.js (or a draft file) into wrapper and card text.
+  function splitFile(fileText) {
+    const src = String(fileText || '').replace(/\r\n?/g, '\n');
+    const start = src.indexOf('/*');
+    const end = src.lastIndexOf('*/');
+    if (start < 0 || end <= start) return null;
+    return {
+      before: src.slice(0, start + 2),
+      text: src.slice(start + 2, end),
+      after: src.slice(end),
+      lineOffset: src.slice(0, start).split('\n').length - 1,
+    };
+  }
+
+  function parseDocument(text) {
+    const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+    const doc = { preamble: [], units: [], trailing: [] };
+    let unit = null, topic = null, card = null, field = null, buf = [];
+    let pending = [];          // comment lines waiting for the next unit/topic/card
+    let started = false;
+
+    function closeField() {
+      if (card && field) card[field] = finishField(buf);
+      field = null; buf = [];
+    }
+    function closeCard() {
+      closeField();
+      if (card) {
+        card.hidden = 'hiddenRaw' in card && isYes(card.hiddenRaw);
+        delete card.hiddenRaw;
+      }
+      card = null;
+    }
+    // Before the first unit: the last comment block directly above it (no blank line)
+    // belongs to that unit; everything earlier is the preamble (rules header).
+    function start() {
+      if (started) return;
+      started = true;
+      let k = pending.length;
+      while (k > 0 && pending[k - 1].comment) k--;
+      doc.preamble = pending.slice(0, k).map(x => x.raw);
+      while (doc.preamble.length > 1 && !doc.preamble[doc.preamble.length - 1].trim()) doc.preamble.pop(); // serialize adds the gap
+      pending = pending.slice(k);
+    }
+    const takeComments = () => { const c = pending.map(x => x.raw); pending = []; return c; };
+    function getUnit(name, line) {
+      let u = doc.units.find(x => x.name === name);
+      if (!u) { u = { name, level: '', glyph: '', comments: [], topics: [], line }; doc.units.push(u); }
+      return u;
+    }
+    function getTopic(u, name) {
+      let t = u.topics.find(x => x.name === name);
+      if (!t) {
+        t = { name, comments: [], cards: [] };
+        if (name === null) u.topics.unshift(t); else u.topics.push(t);  // cards without หัวข้อ come first
+      }
+      return t;
+    }
+
+    lines.forEach((raw, i) => {
+      const n = i + 1;
+      const isComment = COMMENT_RE.test(raw);
+      const t = raw.replace(/\s+$/, '').trimStart();
+      if (!started) {
+        const structural = !isComment && (HEADER_RE.test(t) || CARD_RE.test(t));
+        if (!structural) {
+          if (!isComment && t) pending.push({ raw: '// ' + t, comment: true }); // stray text: keep as a note
+          else pending.push({ raw: raw.replace(/\s+$/, ''), comment: isComment });
+          if (!t) pending.forEach(x => { x.comment = x.comment && false; });  // a blank line detaches earlier comments
+          return;
+        }
+        start();
+      }
+      // Notes wait until we know what follows: a unit/topic/card header (the note
+      // belongs to it) or more of the current card (the note belongs to that card).
+      if (isComment) { pending.push({ raw: raw.trim(), comment: true }); return; }
+
+      const h = t.match(HEADER_RE);
+      if (h) {
+        closeCard();
+        const value = h[2].trim();
+        if (h[1] === 'บท') {
+          unit = getUnit(value, n);
+          unit.comments.push(...takeComments());
+          topic = null;
+        } else if (h[1] === 'หัวข้อ') {
+          if (!unit) unit = getUnit('', n);
+          topic = getTopic(unit, value || '');
+          topic.comments.push(...takeComments());
+        } else {
+          if (!unit) unit = getUnit('', n);
+          unit.comments.push(...takeComments());
+          if (h[1] === 'ระดับ') unit.level = LEVEL_ALIASES[value.replace(/\s+/g, '')] || LEVEL_ALIASES[value] || value;
+          else unit.glyph = value;
+        }
+        return;
+      }
+      const c = t.match(CARD_RE);
+      if (c) {
+        closeCard();
+        if (!unit) unit = getUnit('', n);
+        const tp = topic || getTopic(unit, null);
+        card = { id: c[1].trim(), front: '', back: '', frontTikz: '', backTikz: '', hidden: false, comments: takeComments(), line: n };
+        tp.cards.push(card);
+        return;
+      }
+      const f = t.match(FIELD_RE);
+      if (f && card) {
+        if (pending.length) card.comments.push(...takeComments());
+        closeField();
+        field = FIELDS[f[1]];
+        buf = [f[2]];
+        return;
+      }
+      if (field) {
+        if (t && pending.length) card.comments.push(...takeComments());
+        if (t || !pending.length) buf.push(t);
+        return;
+      }
+      if (t) pending.push({ raw: '// ' + t, comment: true }); // text outside a card: keep it as a note
+    });
+    closeCard();
+    if (!started) { doc.preamble = pending.map(x => x.raw); pending = []; }
+    doc.trailing = pending.map(x => x.raw).filter(l => l.trim());
+    return doc;
+  }
+
+  function fieldLines(label, value, ownLine) {
+    if (!value) return [];
+    const ls = String(value).split('\n');
+    return ownLine ? [label + ':', ...ls] : [label + ': ' + ls[0], ...ls.slice(1)];
+  }
+  function serialize(doc) {
+    const out = [...doc.preamble];
+    doc.units.forEach(u => {
+      out.push('', '', ...u.comments, '# บท: ' + u.name, '# ระดับ: ' + u.level);
+      if (u.glyph) out.push('# สัญลักษณ์: ' + u.glyph);
+      u.topics.forEach(t => {
+        if (t.name !== null) out.push('', ...t.comments, '# หัวข้อ: ' + t.name);
+        t.cards.forEach(c => {
+          out.push('', ...c.comments, '== ' + c.id,
+            ...fieldLines('ถาม', c.front), ...fieldLines('ตอบ', c.back),
+            ...fieldLines('รูปถาม', c.frontTikz, true), ...fieldLines('รูปตอบ', c.backTikz, true));
+          if (c.hidden) out.push('ซ่อน: ใช่');
+        });
+      });
+    });
+    if (doc.trailing.length) out.push('', ...doc.trailing);
+    return out.join('\n') + '\n\n';
+  }
+
+  // Content lines that would break the file when written back (for the editor)
+  function contentProblems(value) {
+    const problems = [];
+    String(value || '').split('\n').forEach((l, i) => {
+      if (i > 0 && RESERVED_LINE_RE.test(l.trimStart())) problems.push('บรรทัดที่ ' + (i + 1) + ' ห้ามขึ้นต้นด้วย "' + l.trim().slice(0, 12) + '"');
+    });
+    if (String(value || '').includes('*/')) problems.push('ห้ามมี * ตามด้วย / ติดกัน');
+    return problems;
+  }
+
+  const CardsFormat = { parse, extractSource, splitFile, parseDocument, serialize, contentProblems, LEVEL_ALIASES };
   root.CardsFormat = CardsFormat;
   if (typeof module !== 'undefined' && module.exports) module.exports = CardsFormat;
 

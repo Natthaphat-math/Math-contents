@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>แก้ไขการ์ด (preview) · บัตรคำคณิตศาสตร์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="card-editor/editor.css?v=1.0.0">
+</head>
+<body>
+<noscript>หน้านี้ต้องเปิดใช้งาน JavaScript</noscript>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"><i class="shape ps"></i><i class="shape jh"></i><i class="shape sh"></i><i class="shape uni"></i></span>
+    <div>
+      <h1>แก้ไขการ์ด</h1>
+      <p class="status" id="status" aria-live="polite">กำลังโหลด…</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <a class="btn ghost" href="flashcards-preview.html" target="_blank" rel="noopener">เปิดแอป</a>
+    <button class="btn" type="button" id="new-card">+ การ์ดใหม่</button>
+    <button class="btn primary" type="button" id="export-btn">ส่งออก cards.js</button>
+  </div>
+</header>
+
+<div class="banner" id="banner" hidden></div>
+
+<main class="layout">
+  <!-- Left: all cards (units → topics → cards) or Claude's drafts -->
+  <aside class="pane outline-pane" aria-label="รายการการ์ด">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" type="button" id="tab-cards" aria-selected="true">การ์ดทั้งหมด</button>
+      <button class="tab" role="tab" type="button" id="tab-drafts" aria-selected="false">ร่างจาก Claude <span class="tab-count" id="draft-count"></span></button>
+    </div>
+    <div class="pane-scroll" id="outline-scroll">
+      <div id="outline"></div>
+      <div id="drafts" hidden></div>
+    </div>
+  </aside>
+
+  <!-- Middle: edit the selected card / topic / unit -->
+  <section class="pane editor-pane" aria-label="แก้ไข">
+    <div class="pane-scroll" id="editor"></div>
+  </section>
+
+  <!-- Right: how the card looks in the app -->
+  <section class="pane preview-pane" aria-label="ตัวอย่าง">
+    <div class="pane-scroll">
+      <p class="pane-title">ตัวอย่างในแอป</p>
+      <div id="preview"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Export: the whole new cards.js, ready to paste -->
+<dialog class="dialog" id="export-dialog" aria-labelledby="export-title">
+  <div class="dialog-inner">
+    <div class="dialog-head">
+      <h2 id="export-title">ส่งออก cards.js</h2>
+      <button class="icon-btn" type="button" data-close aria-label="ปิด">✕</button>
+    </div>
+    <div id="export-body"></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script defer src="flashcards-preview/cards-format.js?v=1.0.0"></script>
+<script defer src="card-editor/editor.js?v=1.0.0"></script>
+</body>
+</html>
