@@ -45,6 +45,9 @@ tied to each card's id, so published ids must never change.
    short skill per card; question on `ถาม:`, answer on `ตอบ:`; keep both short; bold key
    words with `**…**`. Only add TikZ (`รูปถาม:` / `รูปตอบ:`) when a picture really helps.
    Check every formula against the PDF.
+   For a theorem or property of the form "if … then …", write the question as
+   `ถาม: ถ้า … แล้วจะสรุปได้ว่า ?` and put the conclusion on `ตอบ:`. Never use arrows such as
+   → in place of "ถ้า … แล้ว": students who don't know the symbol may not understand the card.
 7. Run `node flashcards/check-cards.mjs` and fix every ✗ it reports (warnings: judge).
 8. Commit only the new draft file and push to `main`. Drafts are not shown to students.
    **Never commit the PDF**: the repo is public.
