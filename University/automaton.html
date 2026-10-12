@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th" data-lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deterministic Finite Automata — an interactive introduction</title>
+<title>ออโต้มาตาจำกัดเชิงกำหนด — บทนำแบบโต้ตอบ</title>
 <style>
 /* =====================================================================
    THEME TOKENS
@@ -36,7 +36,7 @@
   --shadow:0 1px 2px rgba(18,20,30,.08), 0 6px 18px rgba(18,20,30,.06);
   --radius:14px;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai","Leelawadee UI",Thonburi,Sarabun,Helvetica,Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root{
@@ -323,22 +323,41 @@ table{border-collapse:collapse; font-size:.95rem}
 .scan-out .c.cur{outline:2px solid var(--hl); border-radius:3px}
 footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--muted); font-size:.9rem; border-top:1px solid var(--line-soft)}
 .next-row{display:flex; justify-content:flex-end; margin-top:1.2rem}
+
+/* =====================================================================
+   LANGUAGE SWITCH (ไทย / EN)
+   Static prose is written twice, lang="th" and lang="en"; only the
+   blocks matching <html data-lang> are shown. Script-drawn content is
+   rebuilt in the chosen language instead.
+   ===================================================================== */
+:root[data-lang="th"] [lang="en"], :root[data-lang="en"] [lang="th"]{display:none !important}
+.lang-switch{margin-left:auto; align-self:center; display:inline-flex; border:1px solid var(--line);
+  border-radius:999px; overflow:hidden; background:var(--panel)}
+.lang-switch button{border:0; background:none; color:var(--muted); font:inherit; font-size:.85rem;
+  font-weight:700; padding:.3em .85em; cursor:pointer}
+.lang-switch button:hover{color:var(--ink)}
+.lang-switch button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
+:root[data-lang="th"] h4{letter-spacing:.01em}
 </style>
 </head>
 <body>
-<a class="skip" href="#main">Skip to main content</a>
+<a class="skip" href="#main"><span lang="th">ข้ามไปยังเนื้อหาหลัก</span><span lang="en">Skip to main content</span></a>
 
 <header class="top">
   <div class="top-inner">
     <div class="brand">
-      <h1>Deterministic Finite Automata</h1>
-      <span class="sub">an interactive introduction · alphabet Σ = {0, 1}</span>
+      <h1><span lang="th">ออโต้มาตาจำกัดเชิงกำหนด (DFA)</span><span lang="en">Deterministic Finite Automata</span></h1>
+      <span class="sub"><span lang="th">บทนำแบบโต้ตอบ · ชุดสัญลักษณ์ Σ = {0, 1}</span><span lang="en">an interactive introduction · alphabet Σ = {0, 1}</span></span>
+      <div class="lang-switch" role="group" aria-label="ภาษา / Language">
+        <button type="button" data-setlang="th" lang="th-x-ui" aria-pressed="true">ไทย</button>
+        <button type="button" data-setlang="en" lang="en-x-ui" aria-pressed="false">EN</button>
+      </div>
     </div>
-    <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" id="tab-def"  aria-controls="panel-def"  aria-selected="true"><span class="num">1</span>Definition</button>
-      <button class="tab" role="tab" id="tab-ex"   aria-controls="panel-ex"   aria-selected="false"><span class="num">2</span>Examples</button>
-      <button class="tab" role="tab" id="tab-app"  aria-controls="panel-app"  aria-selected="false"><span class="num">3</span>Applications</button>
-      <button class="tab" role="tab" id="tab-lab"  aria-controls="panel-lab"  aria-selected="false"><span class="num">4</span>Build one yourself</button>
+    <nav class="tabs" role="tablist" data-aria-th="ส่วนต่าง ๆ ของบทเรียน" data-aria-en="Sections">
+      <button class="tab" role="tab" id="tab-def"  aria-controls="panel-def"  aria-selected="true"><span class="num">1</span><span lang="th">นิยาม</span><span lang="en">Definition</span></button>
+      <button class="tab" role="tab" id="tab-ex"   aria-controls="panel-ex"   aria-selected="false"><span class="num">2</span><span lang="th">ตัวอย่าง</span><span lang="en">Examples</span></button>
+      <button class="tab" role="tab" id="tab-app"  aria-controls="panel-app"  aria-selected="false"><span class="num">3</span><span lang="th">การประยุกต์ใช้</span><span lang="en">Applications</span></button>
+      <button class="tab" role="tab" id="tab-lab"  aria-controls="panel-lab"  aria-selected="false"><span class="num">4</span><span lang="th">ลองสร้างเอง</span><span lang="en">Build one yourself</span></button>
     </nav>
   </div>
 </header>
@@ -347,11 +366,18 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
 
 <!-- ===================================================================
      SECTION 1 — DEFINITION
+     Every prose block exists twice, lang="th" and lang="en"; CSS shows
+     only the blocks matching <html data-lang>.
      =================================================================== -->
 <section class="panel" id="panel-def" role="tabpanel" aria-labelledby="tab-def" tabindex="-1">
 
-  <h2>1 · What is a finite automaton?</h2>
-  <p class="lede">
+  <h2><span lang="th">1 · ออโต้มาตาจำกัดคืออะไร?</span><span lang="en">1 · What is a finite automaton?</span></h2>
+  <p class="lede" lang="th">
+    <strong>ออโต้มาตา</strong> (automaton) คือเครื่องจักรในจินตนาการที่ตั้งใจออกแบบให้เรียบง่ายที่สุดเท่าที่จะทำได้:
+    มันอ่านข้อมูลเข้าทีละสัญลักษณ์ และสิ่งเดียวที่มันจำได้คือตอนนี้มันอยู่ใน<strong>สถานะ</strong> (state) ใด
+    ไม่มีกระดาษทด ไม่มีตัวนับ และจำไม่ได้ว่าอ่านอะไรไปเมื่อสามสัญลักษณ์ก่อน — เว้นแต่ข้อเท็จจริงนั้นถูกฝังไว้ในสถานะที่มันย้ายไปแล้ว
+  </p>
+  <p class="lede" lang="en">
     An <strong>automaton</strong> is an imaginary machine that is deliberately as simple as possible:
     it reads an input one symbol at a time, and the only thing it remembers is which
     <strong>state</strong> it is currently in. There is no scratch paper, no counter, no memory of
@@ -359,21 +385,39 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </p>
 
   <div class="card">
-    <h3>The job of a DFA: answer one yes/no question</h3>
-    <p>
+    <h3><span lang="th">หน้าที่ของ DFA: ตอบคำถามแบบใช่/ไม่ใช่เพียงข้อเดียว</span><span lang="en">The job of a DFA: answer one yes/no question</span></h3>
+    <p lang="th">
+      <strong>ออโต้มาตาจำกัดเชิงกำหนด</strong> (deterministic finite automaton: DFA) คือเครื่องที่<em>ตัดสิน</em>คำถามเกี่ยวกับสตริง
+      เราป้อนสตริงให้มัน มันอ่านจากซ้ายไปขวา แล้วตอบในตอนท้ายว่า <strong>ยอมรับ</strong> (accept — ใช่ สตริงนี้มีสมบัติที่ต้องการ)
+      หรือ <strong>ปฏิเสธ</strong> (reject — ไม่ใช่)
+    </p>
+    <p lang="en">
       A <strong>deterministic finite automaton</strong> (DFA) is a machine that <em>decides</em> a
       question about strings. You hand it a string; it reads the string left to right and finally
       says <strong>accept</strong> (yes, this string has the property) or <strong>reject</strong> (no, it does not).
     </p>
-    <p>
+    <p lang="th">
+      ลองนึกถึงพนักงานเฝ้าประตูที่ความจำสั้นมาก คอยตรวจกฎอย่าง “สตริงนี้ลงท้ายด้วย 1 หรือไม่?”
+      หรือ “สตริงนี้มี <span class="mono">01</span> อยู่ที่ใดที่หนึ่งหรือไม่?” พนักงานคนนี้จำทั้งสตริงไม่ได้
+      จำได้แค่ข้อเท็จจริงจำนวนจำกัดที่ตายตัว ข้อละหนึ่งสถานะ
+      ศิลปะของการสร้าง DFA คือการเลือกว่า<em>แต่ละสถานะควรจำอะไร</em>
+    </p>
+    <p lang="en">
       Think of a bouncer with a very short memory, checking a rule like
       “does this string end with a 1?” or “does this string contain <span class="mono">01</span> somewhere?”.
       The bouncer cannot remember the whole string — only a small fixed set of facts, one per state.
       The art of building a DFA is choosing <em>what each state should remember</em>.
     </p>
 
-    <h4>Vocabulary (we will use these words constantly)</h4>
-    <ul>
+    <h4><span lang="th">คำศัพท์ (จะได้ใช้บ่อยมาก)</span><span lang="en">Vocabulary (we will use these words constantly)</span></h4>
+    <ul lang="th">
+      <li><strong>สัญลักษณ์</strong> (symbol) — อักขระหนึ่งตัวที่เครื่องอ่านได้ ในที่นี้คือ <span class="mono">0</span> และ <span class="mono">1</span></li>
+      <li><strong>ชุดสัญลักษณ์</strong> (alphabet, <span class="mono">Σ</span> อ่านว่า “ซิกมา”) — เซตจำกัดของสัญลักษณ์ที่อนุญาต ทั้งหน้านี้ใช้ <span class="mono">Σ = {0, 1}</span></li>
+      <li><strong>สตริง</strong> (string) — ลำดับจำกัดของสัญลักษณ์ เช่น <span class="mono">1001</span> ส่วน<strong>สตริงว่าง</strong> (empty string) เขียนแทนด้วย <span class="mono">ε</span> (“เอปไซลอน”) มีความยาว 0 และเป็นข้อมูลเข้าที่ถูกต้องสมบูรณ์!</li>
+      <li><strong>ภาษา</strong> (language) — <em>เซต</em>ของสตริง เช่น “สตริงทั้งหมดที่ลงท้ายด้วย 1” ก็คือภาษาหนึ่ง จุดประสงค์ทั้งหมดของ DFA คือการกำหนดภาษาหนึ่งภาษา</li>
+      <li><span class="mono">Σ*</span> — เซตของสตริง<em>ทั้งหมด</em>บน Σ รวมทั้ง <span class="mono">ε</span> ด้วย ภาษาใด ๆ จึงเป็นเซตย่อยของ <span class="mono">Σ*</span> เสมอ</li>
+    </ul>
+    <ul lang="en">
       <li><strong>Symbol</strong> — one character the machine can read. Ours are <span class="mono">0</span> and <span class="mono">1</span>.</li>
       <li><strong>Alphabet</strong> (<span class="mono">Σ</span>, “sigma”) — the finite set of allowed symbols. On this page <span class="mono">Σ = {0, 1}</span> everywhere.</li>
       <li><strong>String</strong> — a finite sequence of symbols, e.g. <span class="mono">1001</span>. The <strong>empty string</strong> is written <span class="mono">ε</span> (“epsilon”) and has length 0. It is a perfectly legal input!</li>
@@ -383,32 +427,48 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>The formal definition</h3>
-    <p>
-      A DFA is written as a <strong>5-tuple</strong> — five pieces of data that together pin the machine down completely:
-    </p>
+    <h3><span lang="th">นิยามเชิงรูปนัย</span><span lang="en">The formal definition</span></h3>
+    <p lang="th">DFA เขียนในรูป<strong>สิ่งอันดับ 5</strong> (5-tuple) — ข้อมูลห้าส่วนที่รวมกันแล้วระบุเครื่องได้อย่างสมบูรณ์:</p>
+    <p lang="en">A DFA is written as a <strong>5-tuple</strong> — five pieces of data that together pin the machine down completely:</p>
     <p class="mono" style="font-size:1.3rem; margin:.2em 0 1em">M = (Q, Σ, δ, q<sub>0</sub>, F)</p>
     <div class="grid">
       <div>
         <table class="ttable">
-          <caption>The five parts</caption>
+          <caption><span lang="th">ห้าส่วนประกอบ</span><span lang="en">The five parts</span></caption>
           <tbody>
-            <tr><th scope="row">Q</th><td class="meaning">A <strong>finite</strong> set of states. Finite is the whole point: the machine has a fixed, bounded memory.</td></tr>
-            <tr><th scope="row">Σ</th><td class="meaning">The input <strong>alphabet</strong>, a finite set of symbols. Here always <span class="mono">{0,1}</span>.</td></tr>
-            <tr><th scope="row">δ</th><td class="meaning">The <strong>transition function</strong> <span class="mono">δ : Q × Σ → Q</span>. Given a state and a symbol, it names the next state. It is a <em>function</em>, so it gives exactly one answer for every input pair.</td></tr>
-            <tr><th scope="row">q<sub>0</sub></th><td class="meaning">The <strong>start state</strong>, an element of Q. Exactly one, and the machine is in it before reading anything.</td></tr>
-            <tr><th scope="row">F</th><td class="meaning">The set of <strong>accept states</strong> (also called final states), a subset of Q. Ending in one of these means “yes”.</td></tr>
+            <tr><th scope="row">Q</th><td class="meaning">
+              <span lang="th">เซต<strong>จำกัด</strong>ของสถานะ ความจำกัดคือหัวใจของเรื่องนี้: เครื่องมีหน่วยความจำที่ตายตัวและมีขอบเขต</span>
+              <span lang="en">A <strong>finite</strong> set of states. Finite is the whole point: the machine has a fixed, bounded memory.</span></td></tr>
+            <tr><th scope="row">Σ</th><td class="meaning">
+              <span lang="th"><strong>ชุดสัญลักษณ์</strong>ของข้อมูลเข้า (input alphabet) เป็นเซตจำกัด ในหน้านี้คือ <span class="mono">{0,1}</span> เสมอ</span>
+              <span lang="en">The input <strong>alphabet</strong>, a finite set of symbols. Here always <span class="mono">{0,1}</span>.</span></td></tr>
+            <tr><th scope="row">δ</th><td class="meaning">
+              <span lang="th"><strong>ฟังก์ชันการเปลี่ยนสถานะ</strong> (transition function) <span class="mono">δ : Q × Σ → Q</span> เมื่อรู้สถานะและสัญลักษณ์ มันบอกสถานะถัดไป และเพราะเป็น<em>ฟังก์ชัน</em> จึงให้คำตอบเดียวพอดีสำหรับทุกคู่</span>
+              <span lang="en">The <strong>transition function</strong> <span class="mono">δ : Q × Σ → Q</span>. Given a state and a symbol, it names the next state. It is a <em>function</em>, so it gives exactly one answer for every input pair.</span></td></tr>
+            <tr><th scope="row">q<sub>0</sub></th><td class="meaning">
+              <span lang="th"><strong>สถานะเริ่มต้น</strong> (start state) เป็นสมาชิกของ Q มีเพียงหนึ่งเดียว และเครื่องอยู่ที่นี่ก่อนจะอ่านสิ่งใด</span>
+              <span lang="en">The <strong>start state</strong>, an element of Q. Exactly one, and the machine is in it before reading anything.</span></td></tr>
+            <tr><th scope="row">F</th><td class="meaning">
+              <span lang="th">เซตของ<strong>สถานะยอมรับ</strong> (accept states หรือ final states) เป็นเซตย่อยของ Q การจบที่สถานะใดสถานะหนึ่งในนี้หมายถึง “ใช่”</span>
+              <span lang="en">The set of <strong>accept states</strong> (also called final states), a subset of Q. Ending in one of these means “yes”.</span></td></tr>
           </tbody>
         </table>
       </div>
       <div>
         <div class="note">
-          <p><span class="tag">Read δ out loud.</span>
+          <p lang="th"><span class="tag">ลองอ่าน δ ออกเสียง</span>
+          <span class="mono">δ(q<sub>1</sub>, 0) = q<sub>2</sub></span> อ่านว่า
+          “จากสถานะ q<sub>1</sub> เมื่ออ่าน 0 ให้ไปสถานะ q<sub>2</sub>”</p>
+          <p lang="en"><span class="tag">Read δ out loud.</span>
           <span class="mono">δ(q<sub>1</sub>, 0) = q<sub>2</sub></span> is read
           “from state q<sub>1</sub>, reading a 0, go to state q<sub>2</sub>”.</p>
         </div>
         <div class="note warn">
-          <p><span class="tag">F may be empty, or all of Q.</span>
+          <p lang="th"><span class="tag">F อาจเป็นเซตว่าง หรือเท่ากับ Q ก็ได้</span>
+          ถ้า <span class="mono">F = ∅</span> เครื่องจะไม่ยอมรับสตริงใดเลย — ภาษาของมันคือเซตว่าง ∅
+          ถ้า <span class="mono">F = Q</span> เครื่องยอมรับทุกสตริง — ภาษาของมันคือ <span class="mono">Σ*</span> ทั้งหมด
+          ทั้งสองกรณีเป็น DFA ที่ถูกต้อง (หมายเหตุ: ∅ กับ <span class="mono">{ε}</span> เป็นคนละภาษา ภาษาแรกไม่มีสตริงเลย ส่วนภาษาหลังมีสตริงเดียวพอดี คือสตริงว่าง)</p>
+          <p lang="en"><span class="tag">F may be empty, or all of Q.</span>
           If <span class="mono">F = ∅</span> the machine accepts nothing — its language is the empty set ∅.
           If <span class="mono">F = Q</span> it accepts everything — its language is all of <span class="mono">Σ*</span>.
           Both are legal DFAs. (Note: ∅ and <span class="mono">{ε}</span> are different languages — one contains no strings at all, the other contains exactly one string, the empty one.)</p>
@@ -418,16 +478,28 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>What makes it <em>deterministic</em>?</h3>
-    <p>“Deterministic” means there is never a choice and never a dead end: from any state, reading any symbol, the machine’s next move is completely determined. Formally, three requirements:</p>
-    <ol>
+    <h3><span lang="th">อะไรทำให้มัน<em>เชิงกำหนด</em>?</span><span lang="en">What makes it <em>deterministic</em>?</span></h3>
+    <p lang="th">“เชิงกำหนด” (deterministic) หมายความว่าไม่มีทางเลือกและไม่มีทางตัน: จากสถานะใด ๆ เมื่ออ่านสัญลักษณ์ใด ๆ การเคลื่อนที่ถัดไปถูกกำหนดไว้อย่างสมบูรณ์ เขียนเป็นเงื่อนไขได้สามข้อ:</p>
+    <p lang="en">“Deterministic” means there is never a choice and never a dead end: from any state, reading any symbol, the machine’s next move is completely determined. Formally, three requirements:</p>
+    <ol lang="th">
+      <li><strong>มีสถานะเริ่มต้นหนึ่งเดียวพอดี</strong> ไม่ใช่ศูนย์ ไม่ใช่สอง</li>
+      <li><strong>ทุกสถานะมีการเปลี่ยนสถานะออกไปหนึ่งเส้นพอดีสำหรับทุกสัญลักษณ์</strong> เมื่อ <span class="mono">Σ = {0,1}</span> ทุกสถานะต้องมีลูกศรสำหรับ <span class="mono">0</span> <em>และ</em>ลูกศรสำหรับ <span class="mono">1</span> — ห้ามขาด และห้ามมีลูกศรสองเส้นที่มีป้ายเดียวกันออกจากสถานะเดียวกัน (พูดอีกแบบคือ δ ต้องนิยามครบทุกคู่ (total function))</li>
+      <li><strong>ไม่มีการเปลี่ยนสถานะแบบ ε</strong> (ε-transition) เครื่องจะเปลี่ยนสถานะ “ฟรี ๆ” โดยไม่อ่านสัญลักษณ์ไม่ได้ ทุกการเคลื่อนที่ต้องกินสัญลักษณ์ข้อมูลเข้าหนึ่งตัวพอดี</li>
+    </ol>
+    <ol lang="en">
       <li><strong>Exactly one start state.</strong> Not zero, not two.</li>
       <li><strong>Exactly one transition out of every state for every symbol.</strong> With <span class="mono">Σ = {0,1}</span>, every state needs an arrow for <span class="mono">0</span> <em>and</em> an arrow for <span class="mono">1</span> — no missing transitions, no two arrows with the same label leaving the same state. (This is just another way of saying δ is a total function.)</li>
       <li><strong>No ε-transitions.</strong> The machine may not change state “for free” without consuming a symbol. Every move eats exactly one input symbol.</li>
     </ol>
-    <p class="small muted">Drop any of these and you get a <em>nondeterministic</em> finite automaton (NFA) — a useful machine, but a different one, and the subject of a later lecture.</p>
+    <p class="small muted" lang="th">ถ้าตัดเงื่อนไขข้อใดข้อหนึ่งออก เราจะได้ออโต้มาตาจำกัด<em>ไม่เชิงกำหนด</em> (NFA) — เป็นเครื่องที่มีประโยชน์ แต่เป็นอีกเครื่องหนึ่ง และเป็นหัวข้อของบทเรียนถัดไป</p>
+    <p class="small muted" lang="en">Drop any of these and you get a <em>nondeterministic</em> finite automaton (NFA) — a useful machine, but a different one, and the subject of a later lecture.</p>
     <div id="bad-examples" class="grid" style="margin-top:.6rem"></div>
-    <p class="small muted" style="margin-top:.6rem">
+    <p class="small muted" style="margin-top:.6rem" lang="th">
+      ผลที่ตามมาของข้อ 2 ซึ่งทำให้หลายคนแปลกใจ: ถ้าต้องการให้ DFA “ยอมแพ้” เราละลูกศรทิ้งไม่ได้
+      ต้องส่งไปยัง<strong>สถานะกับดัก</strong> (trap state หรือ dead state) — สถานะที่ไม่ใช่สถานะยอมรับ และลูกศรทุกเส้นวนกลับเข้าตัวเอง
+      คุณจะได้สร้างแบบนี้ในแบบฝึกหัดที่ 3
+    </p>
+    <p class="small muted" style="margin-top:.6rem" lang="en">
       A consequence of rule 2 that surprises people: if you want a DFA to “give up”, you cannot simply omit the arrow.
       You must send it to a <strong>trap state</strong> (also called a dead state) — a non-accepting state whose arrows all loop back to itself.
       You will build one in Exercise 3.
@@ -435,26 +507,51 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>How a DFA computes</h3>
-    <p>The whole procedure, with no cleverness at all:</p>
-    <ol>
+    <h3><span lang="th">DFA คำนวณอย่างไร</span><span lang="en">How a DFA computes</span></h3>
+    <p lang="th">ขั้นตอนทั้งหมด ไม่มีความซับซ้อนใด ๆ เลย:</p>
+    <p lang="en">The whole procedure, with no cleverness at all:</p>
+    <ol lang="th">
+      <li>เริ่มที่ <span class="mono">q<sub>0</sub></span> โดยหัวอ่านอยู่ที่สัญลักษณ์ซ้ายสุด</li>
+      <li>อ่านสัญลักษณ์ปัจจุบัน <span class="mono">a</span> แล้วย้ายไปสถานะ <span class="mono">δ(สถานะปัจจุบัน, a)</span> จากนั้นเลื่อนไปหนึ่งสัญลักษณ์</li>
+      <li>ทำซ้ำจนกว่าข้อมูลเข้าจะหมด</li>
+      <li>ถ้าสถานะที่ไปถึงในตอนท้ายอยู่ใน <span class="mono">F</span> ให้<strong>ยอมรับ</strong> มิฉะนั้น<strong>ปฏิเสธ</strong></li>
+    </ol>
+    <ol lang="en">
       <li>Start in <span class="mono">q<sub>0</sub></span> with the read head at the leftmost symbol.</li>
       <li>Read the current symbol <span class="mono">a</span>; move to state <span class="mono">δ(current, a)</span>; advance one symbol.</li>
       <li>Repeat until the input is used up.</li>
       <li>If the state you land in is in <span class="mono">F</span>, <strong>accept</strong>; otherwise <strong>reject</strong>.</li>
     </ol>
-    <p>
+    <p lang="th">
+      สังเกตว่าเครื่องหยุดทำงาน<em>เสมอ</em> หลังจาก <span class="mono">|w|</span> ขั้นพอดีสำหรับข้อมูลเข้าที่ยาว
+      <span class="mono">|w|</span> มันวนไม่รู้จบไม่ได้ และหยุดก่อนกำหนดก็ไม่ได้ — ต้องอ่านสตริงจนหมด
+      DFA ที่บังเอิญอยู่ในสถานะยอมรับระหว่างทางยังไม่ได้ยอมรับอะไรทั้งนั้น สถานะตอนจบเท่านั้นที่นับ
+    </p>
+    <p lang="en">
       Notice that the machine <em>always</em> halts, after exactly <span class="mono">|w|</span> steps for an input of length
       <span class="mono">|w|</span>. It cannot loop forever, and it cannot stop early — it must consume the whole string.
       A DFA in an accept state half-way through has not accepted anything; only the state at the very end counts.
     </p>
-    <p>
+    <p lang="th">
+      <strong>สตริงว่าง</strong> การรัน <span class="mono">ε</span> คือการเดินศูนย์ขั้น เครื่องจึงยังอยู่ที่
+      <span class="mono">q<sub>0</sub></span> เมื่อข้อมูลเข้าหมด ดังนั้น
+      <em><span class="mono">ε</span> จะถูกยอมรับก็ต่อเมื่อสถานะเริ่มต้นเป็นสถานะยอมรับ</em>
+      ข้อเท็จจริงข้อเดียวนี้ช่วยแก้โจทย์ได้มากอย่างน่าประหลาดใจ
+    </p>
+    <p lang="en">
       <strong>The empty string.</strong> Running <span class="mono">ε</span> means taking zero steps, so the machine is still in
       <span class="mono">q<sub>0</sub></span> when the input runs out. Therefore
       <em><span class="mono">ε</span> is accepted exactly when the start state is an accept state</em>. That single fact settles a
       surprising number of exercises.
     </p>
-    <p>
+    <p lang="th">
+      <strong>ภาษาของเครื่อง</strong> เราเขียน
+      <span class="mono">L(M) = { w ∈ Σ* : M ยอมรับ w }</span> —
+      เซตของสตริงทั้งหมดที่เครื่องตอบว่าใช่ เครื่องสองเครื่องที่หน้าตาต่างกันอาจมีภาษาเดียวกันได้
+      เมื่อเป็นเช่นนั้นเราเรียกว่าทั้งสอง<strong>สมมูลกัน</strong> (equivalent)
+      (ปุ่ม “ตรวจคำตอบ” ในส่วนที่ 4 ก็คือการทดสอบความสมมูลนั่นเอง)
+    </p>
+    <p lang="en">
       <strong>The language of a machine.</strong> We write
       <span class="mono">L(M) = { w ∈ Σ* : M accepts w }</span> —
       the set of all strings the machine says yes to. Two different-looking machines can have the same language;
@@ -465,15 +562,27 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>Three ways to write down the same machine</h3>
-    <p>
+    <h3><span lang="th">เขียนเครื่องเดียวกันได้สามแบบ</span><span lang="en">Three ways to write down the same machine</span></h3>
+    <p lang="th">
+      ข้างล่างคือ DFA เล็ก ๆ สำหรับภาษา <strong>“สตริงที่มี 1 อย่างน้อยหนึ่งตัว”</strong>
+      คลิกส่วนใดก็ได้ของสิ่งอันดับ เพื่อดูว่าตรงกับส่วนใดของแผนภาพและส่วนใดของตาราง
+    </p>
+    <p lang="en">
       Below is a small DFA for the language <strong>“strings that contain at least one 1”</strong>.
       Click any part of the tuple to see which part of the diagram and which part of the table it corresponds to.
     </p>
     <div id="tuple-explorer"></div>
 
-    <h4 style="margin-top:1.4rem">Reading a state diagram</h4>
-    <ul class="small">
+    <h4 style="margin-top:1.4rem"><span lang="th">การอ่านแผนภาพสถานะ</span><span lang="en">Reading a state diagram</span></h4>
+    <ul class="small" lang="th">
+      <li><strong>วงกลม</strong>คือสถานะ ติดป้ายด้วยชื่อสถานะ</li>
+      <li><strong>วงกลมสองชั้น</strong>คือสถานะยอมรับ (ในตารางก็เขียนคำว่า “ยอมรับ” ไว้ด้วย จึงไม่ต้องพึ่งการสังเกตวงกลมชั้นที่สอง)</li>
+      <li>ลูกศรที่ลอยมาจากที่ว่างพร้อมป้าย <em>เริ่ม</em> ชี้ไปยังสถานะเริ่มต้น</li>
+      <li>ลูกศรจาก <span class="mono">p</span> ไป <span class="mono">q</span> ที่มีป้าย <span class="mono">a</span> หมายถึง <span class="mono">δ(p, a) = q</span></li>
+      <li>ลูกศรหนึ่งเส้นอาจมี<em>หลาย</em>ป้าย: <span class="mono">0, 1</span> บนลูกศรเส้นเดียวเป็นการเขียนย่อของการเปลี่ยนสถานะสองแบบที่บังเอิญไปที่เดียวกัน</li>
+      <li>ลูกศรที่ออกจากสถานะแล้ววนกลับเข้าตัวเอง (<strong>วงวนตัวเอง</strong>, self-loop) หมายถึง “อยู่ที่เดิม ไม่ต้องจำอะไรเพิ่ม”</li>
+    </ul>
+    <ul class="small" lang="en">
       <li>A <strong>circle</strong> is a state, labelled with its name.</li>
       <li>A <strong>double circle</strong> is an accept state. (The table also spells out “accept”, so you never have to rely on spotting the extra ring.)</li>
       <li>An arrow coming from nowhere, labelled <em>start</em>, points at the start state.</li>
@@ -481,8 +590,13 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
       <li>An arrow can carry <em>several</em> labels: <span class="mono">0, 1</span> on one arrow is shorthand for two transitions that happen to have the same destination.</li>
       <li>An arrow from a state back to itself (a <strong>self-loop</strong>) means “stay put, and remember nothing new”.</li>
     </ul>
-    <h4>Reading a transition table</h4>
-    <ul class="small">
+    <h4><span lang="th">การอ่านตารางการเปลี่ยนสถานะ</span><span lang="en">Reading a transition table</span></h4>
+    <ul class="small" lang="th">
+      <li>หนึ่งแถวต่อหนึ่งสถานะ หนึ่งคอลัมน์ต่อหนึ่งสัญลักษณ์ ช่องในตารางคือ <span class="mono">δ(สถานะ, สัญลักษณ์)</span></li>
+      <li><span class="mark mono">→</span> กำกับสถานะเริ่มต้น และ <span class="mark mono">*</span> กำกับสถานะยอมรับ</li>
+      <li>ตารางเป็นรูปแบบที่ปลอดภัยที่สุดในสามแบบ: ช่องที่หายไปมองข้ามไม่ได้ ขณะที่ลูกศรที่หายไปในแผนภาพมองข้ามได้ง่าย</li>
+    </ul>
+    <ul class="small" lang="en">
       <li>One row per state, one column per symbol; the cell holds <span class="mono">δ(state, symbol)</span>.</li>
       <li><span class="mark mono">→</span> marks the start state; <span class="mark mono">*</span> marks accept states.</li>
       <li>The table is the safest of the three notations: a missing cell is impossible to overlook, whereas a missing arrow in a diagram is easy to miss.</li>
@@ -490,43 +604,63 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
     <div id="quiz-notation"></div>
   </div>
 
-  <div class="next-row"><button class="btn primary" data-goto="tab-ex">Next: worked examples →</button></div>
+  <div class="next-row"><button class="btn primary" data-goto="tab-ex"><span lang="th">ถัดไป: ตัวอย่าง →</span><span lang="en">Next: worked examples →</span></button></div>
 </section>
 
 <!-- ===================================================================
      SECTION 2 — WORKED EXAMPLES WITH A STEP-BY-STEP SIMULATOR
      =================================================================== -->
 <section class="panel" id="panel-ex" role="tabpanel" aria-labelledby="tab-ex" tabindex="-1" hidden>
-  <h2>2 · Four machines, taken apart</h2>
-  <p class="lede">
+  <h2><span lang="th">2 · สี่เครื่อง แยกส่วนให้ดูทีละชิ้น</span><span lang="en">2 · Four machines, taken apart</span></h2>
+  <p class="lede" lang="th">
+    แต่ละตัวอย่างแสดงเครื่องเดียวกันในทุกรูปแบบการเขียน พร้อมเครื่องจำลองที่เดินทีละขั้นได้
+    ลองทายสถานะถัดไปก่อนกด <em>ก้าวถัดไป</em> — การเรียนรู้เกิดขึ้นตรงนั้น
+  </p>
+  <p class="lede" lang="en">
     Each example shows the same machine in every notation, plus a simulator you can single-step.
     Try to predict the next state before you press <em>Step</em> — that is where the learning happens.
   </p>
-  <nav class="ex-nav" id="example-nav" aria-label="Choose an example"></nav>
+  <nav class="ex-nav" id="example-nav" data-aria-th="เลือกตัวอย่าง" data-aria-en="Choose an example"></nav>
   <div id="example-host" style="margin-top:1rem"></div>
-  <div class="next-row"><button class="btn primary" data-goto="tab-app">Next: where DFAs show up →</button></div>
+  <div class="next-row"><button class="btn primary" data-goto="tab-app"><span lang="th">ถัดไป: DFA อยู่ที่ไหนบ้าง →</span><span lang="en">Next: where DFAs show up →</span></button></div>
 </section>
 
 <!-- ===================================================================
      SECTION 3 — APPLICATIONS
      =================================================================== -->
 <section class="panel" id="panel-app" role="tabpanel" aria-labelledby="tab-app" tabindex="-1" hidden>
-  <h2>3 · Where these things actually live</h2>
-  <p class="lede">
+  <h2><span lang="th">3 · สิ่งเหล่านี้อยู่ที่ไหนในโลกจริง</span><span lang="en">3 · Where these things actually live</span></h2>
+  <p class="lede" lang="th">
+    ออโต้มาตาจำกัดไม่ได้เป็นแค่แบบฝึกหัดบนกระดาน ระบบใดก็ตามที่มีสถานการณ์จำนวนไม่มาก
+    และถูกขับเคลื่อนด้วยลำดับของเหตุการณ์ <em>ก็คือ</em>ออโต้มาตาจำกัด ไม่ว่าผู้สร้างจะรู้จักคำนี้หรือไม่
+    ข้างล่างมีสามตัวอย่างให้ลองเล่น และรายการตัวอย่างอื่น ๆ
+  </p>
+  <p class="lede" lang="en">
     Finite automata are not only a blackboard exercise. Any system with a small number of
     situations, driven by a stream of events, <em>is</em> a finite automaton — whether or not its
     author knew the word. Here are three you can poke at, and a list of others.
   </p>
 
   <div class="card">
-    <h3>Demo 1 · A turnstile</h3>
-    <p>
+    <h3><span lang="th">ตัวอย่างที่ 1 · ประตูหมุน (turnstile)</span><span lang="en">Demo 1 · A turnstile</span></h3>
+    <p lang="th">
+      ตัวอย่างคลาสสิก มีสองสถานะ — <strong>Locked</strong> (ล็อก) และ <strong>Unlocked</strong> (ปลดล็อก) — และสองเหตุการณ์:
+      หยอดเหรียญ หรือดันแขนประตู เราแทนเหตุการณ์ด้วยชุดสัญลักษณ์ของเรา:
+      <span class="mono">0 = หยอดเหรียญ</span>, <span class="mono">1 = ดัน</span>
+      (Σ จะเป็นเซตจำกัดของสัญลักษณ์อะไรก็ได้ การเรียกว่า 0 และ 1 เป็นแค่การตั้งชื่อ)
+    </p>
+    <p lang="en">
       The classic. Two states — <strong>Locked</strong> and <strong>Unlocked</strong> — and two events:
       insert a coin, or push the arm. We encode the events as our alphabet:
       <span class="mono">0 = coin</span>, <span class="mono">1 = push</span>. (Σ can be any finite set of
       symbols; calling them 0 and 1 is just a naming choice.)
     </p>
-    <p class="small muted">
+    <p class="small muted" lang="th">
+      กดปุ่มแล้วดูสถานะเคลื่อนที่ ในงานควบคุมแบบนี้ ผลลัพธ์ที่น่าสนใจคือ<em>ตัวสถานะเอง</em>
+      ไม่ใช่คำตัดสินยอมรับ/ปฏิเสธ — แต่ถ้าเรากำหนด <span class="mono">F = {Unlocked}</span>
+      แล้ว L(M) ก็คือเซตของลำดับเหตุการณ์ทั้งหมดที่ทำให้ประตูเปิดค้างไว้พอดี
+    </p>
+    <p class="small muted" lang="en">
       Press the buttons and watch the state move. In a control application like this, the interesting
       output is the <em>state itself</em>, not an accept/reject verdict — but if we do declare
       <span class="mono">F = {Unlocked}</span>, then L(M) is exactly the set of event sequences that leave the gate open.
@@ -535,15 +669,26 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>Demo 2 · Input validation: is this a well-formed binary numeral?</h3>
-    <p>
+    <h3><span lang="th">ตัวอย่างที่ 2 · ตรวจสอบข้อมูลเข้า: เลขฐานสองนี้เขียนถูกรูปแบบหรือไม่?</span><span lang="en">Demo 2 · Input validation: is this a well-formed binary numeral?</span></h3>
+    <p lang="th">
+      คอมไพเลอร์และฟอร์มตรวจสอบข้อมูลทุกตัวมีโค้ดหน้าตาแบบนี้ กฎของเรา: เลขฐานสองที่ถูกรูปแบบคือ
+      เลข <span class="mono">0</span> ตัวเดียว หรือสตริงของเลขโดดที่ขึ้นต้นด้วย <span class="mono">1</span>
+      ดังนั้น <span class="mono">0</span>, <span class="mono">1</span>, <span class="mono">1011</span> ถูกต้อง
+      ส่วน <span class="mono">00</span>, <span class="mono">011</span> และสตริงว่างไม่ถูกต้อง (ห้ามมีศูนย์นำหน้า และห้ามเป็นค่าว่าง)
+    </p>
+    <p lang="en">
       Every compiler and every form validator contains code shaped like this. Our rule: a binary
       numeral is either the single digit <span class="mono">0</span>, or a string of digits that
       starts with <span class="mono">1</span>. So <span class="mono">0</span>, <span class="mono">1</span>,
       <span class="mono">1011</span> are fine; <span class="mono">00</span>, <span class="mono">011</span>,
       and the empty string are not (no leading zeros, no empty literal).
     </p>
-    <p class="small muted">
+    <p class="small muted" lang="th">
+      พิมพ์แล้วดูผลตัดสินเปลี่ยนทุกครั้งที่กดแป้น พร้อมเส้นทางในเครื่องแบบสด ๆ
+      เครื่องนี้ต้องมี<strong>สถานะกับดัก</strong>: เมื่อศูนย์นำหน้าถูกตามด้วยอะไรก็ตาม
+      ข้อมูลที่ตามมาทีหลังจะกู้สตริงนั้นกลับมาไม่ได้อีก
+    </p>
+    <p class="small muted" lang="en">
       Type and watch the verdict update on every keystroke, with the path through the machine shown live.
       This machine needs a <strong>trap state</strong>: once a leading zero is followed by anything, no
       later input can rescue the string.
@@ -552,8 +697,15 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>Demo 3 · Text search: finding every occurrence of <span class="mono">0110</span></h3>
-    <p>
+    <h3><span lang="th">ตัวอย่างที่ 3 · ค้นหาข้อความ: หาทุกตำแหน่งที่ <span class="mono">0110</span> ปรากฏ</span><span lang="en">Demo 3 · Text search: finding every occurrence of <span class="mono">0110</span></span></h3>
+    <p lang="th">
+      เครื่องมือค้นหาและเอนจินนิพจน์ปรกติ (regex) แปลงรูปแบบที่ต้องการค้นให้เป็นออโต้มาตาครั้งเดียว
+      แล้วไล่อ่านข้อความจากซ้ายไปขวารอบเดียวโดยไม่ย้อนกลับเลย เครื่องข้างล่างจำว่า<em>ตอนนี้จับคู่รูปแบบได้ยาวเท่าไร</em>:
+      สถานะ <span class="mono">k</span> หมายถึง “<span class="mono">k</span> สัญลักษณ์ล่าสุดตรงกับ <span class="mono">k</span>
+      สัญลักษณ์แรกของ <span class="mono">0110</span> และไม่มีส่วนนำหน้าที่ยาวกว่านี้ที่ตรงกัน”
+      การไปถึงสถานะ 4 หมายความว่าเพิ่งพบรูปแบบที่จบตรงตำแหน่งนี้พอดี
+    </p>
+    <p lang="en">
       Search tools and regex engines compile a pattern into an automaton once, then scan the text in a
       single left-to-right pass, never backing up. The machine below remembers <em>how much of the
       pattern has just matched</em>: state <span class="mono">k</span> means “the last <span class="mono">k</span>
@@ -561,7 +713,12 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
       Reaching state 4 means a match just ended here.
     </p>
     <div id="demo-scanner" class="app-demo"></div>
-    <p class="small muted" style="margin-top:.8rem">
+    <p class="small muted" style="margin-top:.8rem" lang="th">
+      สังเกตสิ่งที่เกิดขึ้นหลังจากจับคู่ได้บางส่วนแล้วล้มเหลว เช่นใน <span class="mono">0101</span><wbr><span class="mono">10</span>
+      เครื่องไม่อ่านสัญลักษณ์ซ้ำเลย แต่ถอยกลับไปยังส่วนนำหน้าที่ยาวที่สุดที่ยังใช้ได้
+      นี่คือแนวคิดของ Knuth–Morris–Pratt และเป็นเหตุผลที่การค้นนี้ใช้เวลาเชิงเส้น
+    </p>
+    <p class="small muted" style="margin-top:.8rem" lang="en">
       Notice what happens after a failed partial match — e.g. in <span class="mono">0101</span><wbr><span class="mono">10</span>.
       The machine never re-reads a symbol; it just falls back to the longest prefix that is still alive.
       That is the Knuth–Morris–Pratt idea, and it is why this scan is linear time.
@@ -569,8 +726,26 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>More of the same idea</h3>
-    <div class="grid">
+    <h3><span lang="th">แนวคิดเดียวกันในที่อื่น ๆ</span><span lang="en">More of the same idea</span></h3>
+    <div class="grid" lang="th">
+      <div>
+        <h4>ตู้จำหน่ายสินค้าอัตโนมัติ</h4>
+        <p class="small">สถานะเก็บยอดเงินที่หยอดมาแล้ว (0, 5, 10 บาท …) เหรียญคือสัญลักษณ์ข้อมูลเข้า และสถานะ “จ่ายสินค้า” คือสถานะยอมรับ เป็นเครื่องจำกัดเพราะนับแค่ถึงราคาสินค้าก็พอ</p>
+        <h4>สัญญาณไฟจราจร</h4>
+        <p class="small">เขียว → เหลือง → แดง → เขียว คือออโต้มาตาสามสถานะที่ขับเคลื่อนด้วยจังหวะนาฬิกาและเซนเซอร์ ปุ่มกดข้ามถนนเพิ่มข้อมูลเข้า ไม่ได้เพิ่มหน่วยความจำ</p>
+        <h4>การวิเคราะห์ศัพท์ (lexical analysis)</h4>
+        <p class="small">ขั้นแรกของคอมไพเลอร์ทุกตัวคือการหั่นซอร์สโค้ดเป็นโทเคน (ชื่อตัวแปร ตัวเลข ตัวดำเนินการ) ด้วย DFA ขนาดใหญ่ตัวเดียว ซึ่งมักสร้างอัตโนมัติจากนิพจน์ปรกติด้วยเครื่องมืออย่าง <span class="mono">lex</span>/<span class="mono">flex</span></p>
+      </div>
+      <div>
+        <h4>นิพจน์ปรกติ (regular expression)</h4>
+        <p class="small">regex ทุกตัวที่ไม่มีการอ้างอิงย้อนกลับ (back-reference) แทนภาษาที่ DFA ตัดสินได้ — นั่นคือทฤษฎีบทของ Kleene เอนจินที่เร็ว (RE2, grep) สร้างออโต้มาตาจริง ๆ</p>
+        <h4>โพรโทคอลเครือข่าย</h4>
+        <p class="small">วงจรชีวิตการเชื่อมต่อของ TCP (LISTEN, SYN-SENT, ESTABLISHED, FIN-WAIT-1 …) ถูกนิยามเป็นเครื่องสถานะ และวาดเป็นแผนภาพไว้ใน RFC 793</p>
+        <h4>ส่วนติดต่อผู้ใช้และตรรกะในเกม</h4>
+        <p class="small">“ยืนนิ่ง → เดิน → กระโดด → ตก” หรือสถานะเปิด/ปิดใช้งานของกล่องโต้ตอบ การเขียนสิ่งเหล่านี้เป็นออโต้มาตาอย่างชัดเจนช่วยกันบั๊กประเภทที่ตัวแปรธงสองตัวขัดแย้งกันเอง</p>
+      </div>
+    </div>
+    <div class="grid" lang="en">
       <div>
         <h4>Vending machine</h4>
         <p class="small">States track the amount deposited so far (0¢, 25¢, 50¢…). Coins are the input symbols; the “dispense” state is the accept state. Finite because the machine only needs to count up to the price.</p>
@@ -591,8 +766,19 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
   </div>
 
   <div class="card">
-    <h3>The honest limitation</h3>
-    <p>
+    <h3><span lang="th">ข้อจำกัดที่ต้องพูดกันตรง ๆ</span><span lang="en">The honest limitation</span></h3>
+    <p lang="th">
+      DFA มีจำนวนสถานะจำกัด และนั่นคือเพดานที่มีอยู่จริง: <strong>DFA นับแบบไม่มีขอบเขตไม่ได้</strong>
+      ไม่มี DFA ใดยอมรับภาษา <span class="mono">{ 0<sup>n</sup>1<sup>n</sup> : n ≥ 0 }</span>
+      (<span class="mono">01</span>, <span class="mono">0011</span>, <span class="mono">000111</span>, …) ได้
+      เหตุผลเชิงสัญชาตญาณ: หลังจากอ่าน 0 ทั้งหมดแล้ว เครื่องต้องจำให้ได้ว่าเห็น 0 ไปกี่ตัวพอดี แต่เครื่องที่มี
+      <span class="mono">k</span> สถานะแยกแยะจำนวนได้แค่ <span class="mono">k</span> ค่า ดังนั้นต้องมีส่วนนำหน้าสองแบบที่ต่างกัน
+      <span class="mono">0<sup>i</sup></span> กับ <span class="mono">0<sup>j</sup></span> ที่ไปจบที่สถานะเดียวกัน
+      และเครื่องจะตอบเหมือนกันสำหรับ <span class="mono">0<sup>i</sup>1<sup>i</sup></span>
+      และ <span class="mono">0<sup>j</sup>1<sup>i</sup></span> ซึ่งหนึ่งในนั้นควรถูกปฏิเสธ
+      วงเล็บที่เปิดปิดสมดุลและพาลินโดรมก็ทำไม่ได้ด้วยเหตุผลเดียวกัน
+    </p>
+    <p lang="en">
       A DFA has finitely many states, and that is a real ceiling: <strong>a DFA cannot count without bound</strong>.
       No DFA accepts the language <span class="mono">{ 0<sup>n</sup>1<sup>n</sup> : n ≥ 0 }</span>
       (<span class="mono">01</span>, <span class="mono">0011</span>, <span class="mono">000111</span>, …).
@@ -603,7 +789,14 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
       and <span class="mono">0<sup>j</sup>1<sup>i</sup></span>, one of which it should reject.
       Balanced parentheses and “palindromes” fail for the same reason.
     </p>
-    <p>
+    <p lang="th">
+      เมื่อเขียนข้อโต้แย้งนี้ให้รัดกุมจะได้<strong>เล็มมาการปั๊ม</strong> (pumping lemma)
+      ส่วนภาษาที่ DFA <em>ทำได้</em>มีชื่อเรียกว่า<strong>ภาษาปรกติ</strong> (regular languages)
+      หัวข้อถัดไปในวิชาของคุณ: <strong>NFA</strong> (ยอมให้มีทางเลือกและการเคลื่อนที่แบบ ε — ซึ่งน่าแปลกใจที่ไม่ได้เพิ่มพลังเลย)
+      <strong>นิพจน์ปรกติ</strong> (ภาษากลุ่มเดียวกันอีกครั้ง ในรูปข้อความ) และ
+      <strong>ออโต้มาตาแบบกดลง</strong> (pushdown automata — เพิ่มสแตกเข้าไป แล้ว <span class="mono">0<sup>n</sup>1<sup>n</sup></span> ก็กลายเป็นเรื่องง่าย)
+    </p>
+    <p lang="en">
       That argument, made precise, is the <strong>pumping lemma</strong>. And the languages that <em>are</em>
       within reach have a name: the <strong>regular languages</strong>. Coming next in your course:
       <strong>NFAs</strong> (allow choice and ε-moves — surprisingly, no extra power),
@@ -613,15 +806,20 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
     <div id="quiz-limits"></div>
   </div>
 
-  <div class="next-row"><button class="btn primary" data-goto="tab-lab">Next: build your own →</button></div>
+  <div class="next-row"><button class="btn primary" data-goto="tab-lab"><span lang="th">ถัดไป: สร้างเครื่องของคุณเอง →</span><span lang="en">Next: build your own →</span></button></div>
 </section>
 
 <!-- ===================================================================
      SECTION 4 — EXERCISES / BUILDER
      =================================================================== -->
 <section class="panel" id="panel-lab" role="tabpanel" aria-labelledby="tab-lab" tabindex="-1" hidden>
-  <h2>4 · Build your own DFA</h2>
-  <p class="lede">
+  <h2><span lang="th">4 · สร้าง DFA ของคุณเอง</span><span lang="en">4 · Build your own DFA</span></h2>
+  <p class="lede" lang="th">
+    ถึงตาคุณแล้ว ในแต่ละโจทย์ ให้ออกแบบเครื่อง ตรวจว่าเป็น DFA ที่ถูกต้อง ลองทดสอบสตริงด้วยตนเอง
+    แล้วส่งคำตอบ ตัวตรวจจะเปรียบเทียบเครื่องของคุณกับภาษาเป้าหมายอย่างแม่นตรง — ถ้าต่างกันแม้แต่สตริงเดียว
+    มันจะบอกสตริงที่สั้นที่สุดให้
+  </p>
+  <p class="lede" lang="en">
     Your turn. For each task, design a machine, check it is a legal DFA, test some strings by hand,
     then submit it. The checker compares your machine against the target language exactly — if they
     differ on any string at all, it will hand you the shortest one.
@@ -629,19 +827,23 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
 
   <div class="card" style="padding:.8rem 1.1rem">
     <div class="row" style="justify-content:space-between">
-      <strong class="small">Progress this session</strong>
-      <ul class="progress-list" id="progress-list" aria-label="Exercise progress"></ul>
+      <strong class="small"><span lang="th">ความคืบหน้าในรอบนี้</span><span lang="en">Progress this session</span></strong>
+      <ul class="progress-list" id="progress-list" data-aria-th="ความคืบหน้าของแบบฝึกหัด" data-aria-en="Exercise progress"></ul>
     </div>
   </div>
 
-  <nav class="ex-nav" id="lab-nav" aria-label="Choose an exercise"></nav>
+  <nav class="ex-nav" id="lab-nav" data-aria-th="เลือกแบบฝึกหัด" data-aria-en="Choose an exercise"></nav>
   <div id="lab-host" style="margin-top:1rem"></div>
 </section>
 
 </main>
 
 <footer class="bot">
-  <p>
+  <p lang="th">
+    ทำเป็นไฟล์ HTML ไฟล์เดียวที่สมบูรณ์ในตัว — ไม่ต้องใช้อินเทอร์เน็ต ไม่ต้อง build ไม่มีไลบรารีภายนอก
+    แผนภาพทุกภาพวาดจากข้อมูลของเครื่องเอง ภาพจึงไม่มีทางขัดกับตาราง
+  </p>
+  <p lang="en">
     Built as a single self-contained HTML file — no network, no build step, no dependencies.
     Every diagram is drawn from the machine’s own data, so the picture can never disagree with the table.
   </p>
@@ -670,6 +872,14 @@ footer.bot{max-width:1120px; margin:0 auto; padding:1rem 1rem 3rem; color:var(--
    ===================================================================== */
 
 var SIGMA = ['0', '1'];
+
+/* The few sentences the core produces itself (validation checklist, trace
+   text, diagram descriptions) come in both languages. English is the
+   default so the offline test-suite reads naturally; the page switches
+   to Thai via setLang('th'). */
+var LANG = 'en';
+function setLang(l) { LANG = (l === 'th') ? 'th' : 'en'; }
+function tx(en, th) { return LANG === 'th' ? th : en; }
 
 function makeDFA(spec) {
   var dfa = {
@@ -714,14 +924,17 @@ function cloneDFA(dfa) {
 
 /* Human-readable description, used as the accessible text of a diagram. */
 function describe(dfa) {
-  var parts = [];
-  parts.push('State diagram with ' + dfa.states.length + ' state' + (dfa.states.length === 1 ? '' : 's') + ': ' + dfa.states.join(', ') + '.');
-  parts.push('Start state: ' + (dfa.start || 'none') + '.');
-  parts.push(dfa.accept.length ? 'Accept states: ' + dfa.accept.join(', ') + '.' : 'There are no accept states.');
+  var parts = [], n = dfa.states.length;
+  parts.push(tx('State diagram with ' + n + ' state' + (n === 1 ? '' : 's') + ': ',
+                'แผนภาพสถานะที่มี ' + n + ' สถานะ: ') + dfa.states.join(', ') + '.');
+  parts.push(tx('Start state: ', 'สถานะเริ่มต้น: ') + (dfa.start || tx('none', 'ไม่มี')) + '.');
+  parts.push(dfa.accept.length ? tx('Accept states: ', 'สถานะยอมรับ: ') + dfa.accept.join(', ') + '.'
+                               : tx('There are no accept states.', 'ไม่มีสถานะยอมรับ'));
   dfa.states.forEach(function (q) {
     dfa.alphabet.forEach(function (a) {
-      var t = step(dfa, q, a);
-      parts.push('From ' + q + ' on ' + a + ' go to ' + (t === undefined ? 'nowhere (undefined)' : t) + '.');
+      var t = step(dfa, q, a), to = (t === undefined) ? tx('nowhere (undefined)', 'ไม่มีปลายทาง (ยังไม่กำหนด)') : t;
+      parts.push(tx('From ' + q + ' on ' + a + ' go to ' + to + '.',
+                    'จาก ' + q + ' เมื่ออ่าน ' + a + ' ไปที่ ' + to + '.'));
     });
   });
   return parts.join(' ');
@@ -736,8 +949,8 @@ function validate(dfa) {
   var checks = [];
   function add(key, label, ok, detail) { checks.push({ key: key, label: label, ok: ok, detail: detail || '' }); }
 
-  add('nonempty', 'Has at least one state', dfa.states.length > 0,
-      dfa.states.length ? '' : 'Add a state to get started.');
+  add('nonempty', tx('Has at least one state', 'มีอย่างน้อยหนึ่งสถานะ'), dfa.states.length > 0,
+      dfa.states.length ? '' : tx('Add a state to get started.', 'เพิ่มสถานะเพื่อเริ่มต้น'));
 
   var names = {}, dupes = [], blanks = 0;
   dfa.states.forEach(function (q) {
@@ -745,12 +958,14 @@ function validate(dfa) {
     if (names[q]) { if (dupes.indexOf(q) === -1) dupes.push(q); }
     names[q] = true;
   });
-  add('names', 'State names are non-empty and unique', dupes.length === 0 && blanks === 0,
-      dupes.length ? 'Duplicated name(s): ' + dupes.join(', ') + '.' : (blanks ? 'A state has a blank name.' : ''));
+  add('names', tx('State names are non-empty and unique', 'ชื่อสถานะไม่ว่างและไม่ซ้ำกัน'), dupes.length === 0 && blanks === 0,
+      dupes.length ? tx('Duplicated name(s): ', 'ชื่อซ้ำ: ') + dupes.join(', ') + '.'
+                   : (blanks ? tx('A state has a blank name.', 'มีสถานะที่ไม่มีชื่อ') : ''));
 
   var startOK = !!dfa.start && dfa.states.indexOf(dfa.start) !== -1;
-  add('start', 'Exactly one start state', startOK,
-      startOK ? '' : 'Mark one state as the start state — a DFA has exactly one.');
+  add('start', tx('Exactly one start state', 'มีสถานะเริ่มต้นหนึ่งเดียวพอดี'), startOK,
+      startOK ? '' : tx('Mark one state as the start state — a DFA has exactly one.',
+                        'เลือกสถานะหนึ่งเป็นสถานะเริ่มต้น — DFA มีสถานะเริ่มต้นหนึ่งเดียวพอดี'));
 
   var missing = [], bad = [];
   dfa.states.forEach(function (q) {
@@ -760,15 +975,17 @@ function validate(dfa) {
       else if (dfa.states.indexOf(t) === -1) bad.push('δ(' + q + ', ' + a + ') = ' + t);
     });
   });
-  add('total', 'Every state has exactly one transition on 0 and on 1', missing.length === 0,
-      missing.length ? 'Still undefined: ' + missing.slice(0, 6).join(', ') + (missing.length > 6 ? ' …' : '') +
-      '. An incomplete machine is not a DFA — send unwanted symbols to a trap state instead.' : '');
-  add('targets', 'Every transition points at a state that exists', bad.length === 0,
-      bad.length ? 'Dangling: ' + bad.join(', ') : '');
+  var list = missing.slice(0, 6).join(', ') + (missing.length > 6 ? ' …' : '');
+  add('total', tx('Every state has exactly one transition on 0 and on 1',
+                  'ทุกสถานะมีการเปลี่ยนสถานะบน 0 และบน 1 อย่างละหนึ่งเส้นพอดี'), missing.length === 0,
+      missing.length ? tx('Still undefined: ' + list + '. An incomplete machine is not a DFA — send unwanted symbols to a trap state instead.',
+                          'ยังไม่ได้กำหนด: ' + list + ' เครื่องที่ไม่ครบไม่ใช่ DFA — ส่งสัญลักษณ์ที่ไม่ต้องการไปยังสถานะกับดักแทน') : '');
+  add('targets', tx('Every transition points at a state that exists', 'การเปลี่ยนสถานะทุกเส้นชี้ไปยังสถานะที่มีอยู่จริง'), bad.length === 0,
+      bad.length ? tx('Dangling: ', 'ชี้ไปยังสถานะที่ไม่มีอยู่: ') + bad.join(', ') : '');
 
   var accOK = dfa.accept.every(function (q) { return dfa.states.indexOf(q) !== -1; });
-  add('accept', 'Accept states are real states (F ⊆ Q; F may be empty)', accOK,
-      accOK ? '' : 'An accept state refers to a deleted state.');
+  add('accept', tx('Accept states are real states (F ⊆ Q; F may be empty)', 'สถานะยอมรับเป็นสถานะที่มีอยู่จริง (F ⊆ Q และ F เป็นเซตว่างได้)'), accOK,
+      accOK ? '' : tx('An accept state refers to a deleted state.', 'มีสถานะยอมรับที่อ้างถึงสถานะที่ถูกลบไปแล้ว'));
 
   return { valid: checks.every(function (c) { return c.ok; }), checks: checks };
 }
@@ -808,11 +1025,12 @@ function accepts(dfa, w) { var r = run(dfa, w); return r.ok && r.accepted; }
 /* A readable trace: q0 --1--> q1 --0--> q1  ⇒ reject */
 function traceString(dfa, w) {
   var r = run(dfa, w);
-  if (!r.ok) return 'no run (' + r.reason + ')';
+  if (!r.ok) return tx('no run (', 'รันไม่ได้ (') + r.reason + ')';
   var s = r.states[0];
   r.transitions.forEach(function (t) { s += ' --' + t.sym + '--> ' + t.to; });
-  return s + '   ⇒ ' + (r.accepted ? 'accept' : 'reject') + ' (ended in ' + r.end +
-         ', which is ' + (r.accepted ? 'an accept state' : 'not an accept state') + ')';
+  return s + '   ⇒ ' + (r.accepted
+    ? tx('accept (ended in ' + r.end + ', which is an accept state)', 'ยอมรับ (จบที่ ' + r.end + ' ซึ่งเป็นสถานะยอมรับ)')
+    : tx('reject (ended in ' + r.end + ', which is not an accept state)', 'ปฏิเสธ (จบที่ ' + r.end + ' ซึ่งไม่ใช่สถานะยอมรับ)'));
 }
 
 /* =====================================================================
@@ -1146,8 +1364,132 @@ var EXERCISES = [
   }
 ];
 
+/* --- Thai overlay ----------------------------------------------------
+   The English catalogue above stays the single source of truth for the
+   machines themselves; this block only supplies Thai wording. Each entry
+   gets a .th object (text fields) and each machine a .meaningTh map. The
+   test-suite checks that every field and every state is covered. */
+var TH = {
+  intro: {
+    name: 'มี 1 อย่างน้อยหนึ่งตัว',
+    meaning: { q0: 'ยังไม่เคยเห็น 1', q1: 'เห็น 1 แล้ว — ไม่มีอะไรลบล้างได้' }
+  },
+  examples: {
+    ends1: {
+      tab: 'ลงท้ายด้วย 1', title: 'สตริงที่ลงท้ายด้วย 1',
+      english: 'ยอมรับเฉพาะสตริงที่สัญลักษณ์ตัวสุดท้ายเป็น 1 สตริงว่างไม่มีสัญลักษณ์ตัวสุดท้าย จึงถูกปฏิเสธ',
+      idea: 'เครื่องต้องรู้แค่เรื่องเดียว: สัญลักษณ์ที่เพิ่งอ่านเป็น 1 หรือไม่?',
+      meaning: { q0: 'สัญลักษณ์ล่าสุดเป็น 0 หรือยังไม่ได้อ่านอะไรเลย', q1: 'สัญลักษณ์ล่าสุดเป็น 1' }
+    },
+    sub01: {
+      tab: 'มี 01', title: 'สตริงที่มี 01 เป็นสตริงย่อย',
+      english: 'ยอมรับสตริงที่มี 0 ตามด้วย 1 ทันทีที่ใดที่หนึ่ง — คือมี 01 ปรากฏติดกันเป็นก้อนเดียว',
+      idea: 'ติดตามว่าจับคู่รูปแบบ 01 ไปได้แค่ไหน: ยังไม่มีเลย, มี 0 รออยู่ หรือ “เจอแล้ว” เมื่อเจอแล้วคำตอบจะไม่มีวันเปลี่ยนกลับ สถานะนั้นจึงดูดทุกอย่างไว้',
+      meaning: { q0: 'ไม่มี 0 ค้างอยู่ — สัญลักษณ์ล่าสุดเป็น 1 หรือยังไม่ได้อ่านอะไร', q1: 'เพิ่งอ่าน 0 มา ถ้าได้ 1 ตอนนี้จะครบ 01', q2: 'เจอ 01 แล้ว (กับดักฝั่ง “ใช่”)' }
+    },
+    odd0: {
+      tab: 'จำนวน 0 เป็นคี่', title: 'สตริงที่มี 0 เป็นจำนวนคี่',
+      english: 'นับจำนวน 0 (ไม่สนใจ 1) แล้วยอมรับเมื่อจำนวนนั้นเป็นคี่',
+      idea: 'ไม่ต้องรู้จำนวน รู้แค่ว่าเป็นคู่หรือคี่ (parity) ก็พอ — หน่วยความจำหนึ่งบิต จึงใช้สองสถานะ นี่คือเทคนิคเบื้องหลังโจทย์ DFA ครึ่งหนึ่ง',
+      meaning: { even: 'จนถึงตอนนี้มี 0 เป็นจำนวนคู่ (ศูนย์นับเป็นคู่)', odd: 'จนถึงตอนนี้มี 0 เป็นจำนวนคี่' }
+    },
+    div3: {
+      tab: 'หารด้วย 3 ลงตัว', title: 'เลขฐานสองที่หารด้วย 3 ลงตัว',
+      english: 'อ่านสตริงเป็นเลขฐานสองโดยบิตที่มีนัยสำคัญสูงสุดมาก่อน (มีศูนย์นำหน้าได้) แล้วยอมรับเมื่อค่าของมันเป็นพหุคูณของ 3 สตริงว่างถือเป็นเลข 0 ซึ่งหารด้วย 3 ลงตัว จึงถูกยอมรับ',
+      idea: 'แต่ละสถานะคือเศษ การต่อบิต b ท้ายจำนวนที่มีค่า v ทำให้ค่ากลายเป็น 2v + b ดังนั้นกฎของเศษคือ r ↦ (2r + b) mod 3 — สูตรครบสำหรับ δ โดยไม่ต้องเก็บตัวเลขเลย',
+      meaning: { r0: 'ค่าที่อ่านมา ≡ 0 (mod 3)', r1: 'ค่าที่อ่านมา ≡ 1 (mod 3)', r2: 'ค่าที่อ่านมา ≡ 2 (mod 3)' }
+    }
+  },
+  apps: {
+    turnstile: {
+      symbolNames: { '0': 'เหรียญ', '1': 'ดัน' },
+      meaning: { Locked: 'แขนประตูล็อก ดันไปก็ไม่เกิดอะไร', Unlocked: 'จ่ายเหรียญแล้ว การดันครั้งถัดไปจะให้คนผ่านได้หนึ่งคน' }
+    },
+    validator: {
+      meaning: { start: 'ยังไม่ได้อ่านอะไร — ค่าว่างไม่ใช่เลขที่ถูกต้อง', zero: 'อ่าน "0" ตัวเดียว — ถูกต้อง แต่ห้ามมีอะไรตามมา', lead1: 'ขึ้นต้นด้วย 1 — ตามด้วยเลขโดดใดก็ได้', trap: 'ไม่ถูกต้อง: ศูนย์นำหน้าถูกตามด้วยเลขโดดอื่น' }
+    },
+    scanner: {
+      meaning: { k0: 'ยังไม่มีส่วนนำหน้าของ 0110 ที่ตรงกัน', k1: 'สัญลักษณ์ล่าสุดตรงกับ "0"', k2: 'สองตัวล่าสุดตรงกับ "01"', k3: 'สามตัวล่าสุดตรงกับ "011"', k4: 'เพิ่งพบ 0110 ครบที่ตำแหน่งนี้' }
+    }
+  },
+  exercises: {
+    even1: {
+      title: 'จำนวน 1 เป็นคู่', level: 'อุ่นเครื่อง',
+      prompt: 'สร้าง DFA ที่ยอมรับเฉพาะสตริงที่มี 1 เป็นจำนวนคู่ เช่น 1001101 มี 1 สี่ตัว จึงถูกยอมรับ ส่วน 10 มี 1 ตัวเดียว จึงถูกปฏิเสธ อย่าลืมว่า ε มี 1 อยู่ศูนย์ตัว และศูนย์เป็นจำนวนคู่',
+      hints: [
+        'หลังจากอ่านสตริงไปได้บางส่วน ข้อมูลที่เล็กที่สุดที่ต้องพกติดตัวไปคืออะไร? ไม่ใช่จำนวน 1 — เป็นสิ่งที่เล็กกว่านั้นมาก',
+        'จำนวนที่แน่นอนไม่สำคัญเลย สำคัญแค่ว่าเป็นคู่หรือคี่ มีสองความเป็นไปได้ จึงใช้สองสถานะก็พอ',
+        'การอ่าน 0 ไม่เปลี่ยนภาวะคู่/คี่ ลูกศร 0 ทั้งสองเส้นจึงควรเป็นวงวนตัวเอง ส่วน 1 แต่ละตัวจะพาสลับไปอีกสถานะหนึ่ง สุดท้าย: ε มี 1 ศูนย์ตัว (เป็นคู่) และ ε จบที่สถานะเริ่มต้น — ดังนั้นสถานะเริ่มต้นต้องเป็นสถานะยอมรับ'
+      ],
+      explanation: 'สองสถานะ หน่วยความจำหนึ่งบิต: ภาวะคู่/คี่ของจำนวน 1 ที่เห็นมาแล้ว การอ่าน 0 ไม่เปลี่ยนภาวะนี้ (วงวนตัวเอง) การอ่าน 1 สลับภาวะ สถานะเริ่มต้นคือ “even” เพราะก่อนอ่านอะไรเลยเราเห็น 1 มาศูนย์ตัว — และมันเป็นสถานะยอมรับ ซึ่งเป็นสิ่งที่ทำให้ ε ถูกยอมรับพอดี',
+      meaning: { even: 'จนถึงตอนนี้มี 1 เป็นจำนวนคู่', odd: 'จนถึงตอนนี้มี 1 เป็นจำนวนคี่' }
+    },
+    two0: {
+      title: 'มี 0 อย่างน้อยสองตัว', level: 'การนับ',
+      prompt: 'สร้าง DFA ที่ยอมรับเฉพาะสตริงที่มี 0 อย่างน้อยสองตัว เช่น 0100 ถูกยอมรับ (มี 0 สามตัว) 0111 ถูกปฏิเสธ (มี 0 ตัวเดียว) และ ε ถูกปฏิเสธ',
+      hints: [
+        'คุณต้องนับ 0 — แต่ต้องนับไปถึงเท่าไรคำตอบจึงจะหยุดเปลี่ยน?',
+        'สามสถานการณ์ก็พอ: “ยังไม่มี 0”, “มี 0 ตัวเดียวพอดี” และ “สองตัวขึ้นไป” การอ่าน 1 ไม่ทำให้ย้ายไปกลุ่มอื่นเลย',
+        'สถานะที่สามเป็นสถานะดูดกลืน: เมื่อเห็น 0 สองตัวแล้ว สตริงจะถูกยอมรับไม่ว่าจะตามด้วยอะไร ลูกศรทั้งสองเส้นของมันจึงวนกลับเข้าตัวเอง และมันเป็นสถานะยอมรับเพียงสถานะเดียว'
+      ],
+      explanation: 'นับ แต่จำกัดเพดานของตัวนับ สถานะหมายถึง “0 ศูนย์ตัว”, “0 หนึ่งตัว”, “0 ตั้งแต่สองตัว” เพราะเงื่อนไขคือ “อย่างน้อย” สถานะสุดท้ายจึงออกไปไม่ได้อีก — นี่คือเหตุผลที่การเปลี่ยนสถานะทั้งสองเป็นวงวนตัวเอง การตัดเพดานการนับไว้ตรงจุดที่มันไม่มีผลอีกต่อไป คือวิธีมาตรฐานที่ทำให้เงื่อนไขที่ดูเหมือนไม่มีขอบเขตใส่ลงในสถานะจำนวนจำกัดได้',
+      meaning: { z0: 'ยังไม่เห็น 0', z1: 'เห็น 0 หนึ่งตัวพอดี', z2: 'เห็น 0 ตั้งแต่สองตัว — ยอมรับตลอดไป' }
+    },
+    start011: {
+      title: 'ขึ้นต้นด้วย 011', level: 'สถานะกับดัก',
+      prompt: 'สร้าง DFA ที่ยอมรับเฉพาะสตริงที่สามสัญลักษณ์แรกคือ 0, 1, 1 ตามลำดับ ดังนั้น 011, 0110, 011000 ถูกยอมรับ ส่วน 01, 0101, 111 และ ε ถูกปฏิเสธ',
+      hints: [
+        'มีแค่สามสัญลักษณ์แรกที่ตัดสินคำตอบ หลังจากนั้นผลก็ถูกล็อกไว้แล้ว — จะดีหรือร้ายก็ตาม',
+        'คุณต้องมีสถานะสำหรับ “ยังไม่อ่านอะไร”, “อ่าน 0”, “อ่าน 01” และ “อ่าน 011 — ยอมรับไม่ว่าจะตามด้วยอะไร” แต่ลองคิดให้ดีว่าจะเกิดอะไรขึ้นเมื่อสัญลักษณ์ที่มาไม่ตรงกับรูปแบบ',
+        'DFA ต้องนิยามการเปลี่ยนสถานะสำหรับทุกสถานะและทุกสัญลักษณ์ สัญลักษณ์ที่ผิดจึง “ไม่มีลูกศร” เฉย ๆ ไม่ได้ ให้เพิ่มสถานะที่ห้า — สถานะกับดัก (dead state) — ที่ไม่ใช่สถานะยอมรับ และวนกลับเข้าตัวเองทั้งบน 0 และ 1 ทุกครั้งที่ไม่ตรงรูปแบบให้ไปที่นั่น'
+      ],
+      explanation: 'สามสถานะแรกเดินตามส่วนนำหน้าที่ต้องการ 0 → 01 → 011 สถานะ “ok” ดูดกลืน เพราะเมื่อส่วนนำหน้าถูกต้องแล้ว ไม่มีอะไรที่ตามมาทำให้เสียได้ ทุกสัญลักษณ์ที่ทำให้รูปแบบผิดจะไปที่สถานะกับดัก “dead” ซึ่งดูดกลืนเช่นกัน — นี่คือราคาของความเชิงกำหนด: คุณละลูกศรไม่ได้ “ความล้มเหลว” จึงต้องมีสถานะเป็นของตัวเอง สังเกตว่า s0, s1 และ s2 ไม่ใช่สถานะยอมรับทั้งหมด ซึ่งทำให้ ε, 0 และ 01 ถูกปฏิเสธอย่างถูกต้อง: ส่วนนำหน้าต้องครบ',
+      meaning: { s0: 'ยังไม่ได้อ่านอะไร', s1: 'อ่าน 0 แล้ว — ส่วนนำหน้ายังถูกทาง', s2: 'อ่าน 01 แล้ว — ยังถูกทาง', ok: 'อ่าน 011 แล้ว — ยอมรับไม่ว่าจะตามด้วยอะไร', dead: 'กับดัก: ส่วนนำหน้าผิดไปแล้ว และแก้คืนไม่ได้' }
+    },
+    no11: {
+      title: 'ไม่มี 1 สองตัวติดกัน', level: 'ไม่บังคับ',
+      prompt: '(ไม่บังคับ) สร้าง DFA ที่ยอมรับเฉพาะสตริงที่ไม่มี 11 เป็นสตริงย่อย ดังนั้น ε, 0, 1, 0101, 1010 ถูกยอมรับ ส่วน 11, 0110, 111 ถูกปฏิเสธ',
+      hints: [
+        'สิ่งต้องห้ามคือ 1 ที่ตามหลัง 1 ทันที คุณต้องจำอะไรเกี่ยวกับสัญลักษณ์ที่เพิ่งอ่าน?',
+        'มีสองสถานะที่ “ยังรอด”: “สัญลักษณ์ล่าสุดไม่ใช่ 1” และ “สัญลักษณ์ล่าสุดเป็น 1” ทั้งคู่เป็นสถานะยอมรับ — สตริงที่ยังไม่ทำผิดกฎก็คือสตริงที่ดี',
+        'สถานะที่สามคือกับดัก เข้าไปเมื่อ 1 มาถึงขณะที่สัญลักษณ์ล่าสุดเป็น 1 อยู่แล้ว ไม่ใช่สถานะยอมรับ และวนกลับเข้าตัวเองทั้งสองสัญลักษณ์ ลองเทียบกับแบบฝึกหัดที่ 3: นี่คือกับดักสำหรับ “ทำผิดไปแล้ว” แทนที่จะเป็น “ส่วนนำหน้าผิด”'
+      ],
+      explanation: 'สองสถานะยอมรับติดตามว่าคุณเสี่ยงแค่ไหน: “สัญลักษณ์ล่าสุดไม่ใช่ 1” ปลอดภัย ส่วน “สัญลักษณ์ล่าสุดเป็น 1” ห่างหายนะแค่ก้าวเดียว การอ่าน 0 พากลับสู่ความปลอดภัยเสมอ สถานะกับดักบันทึกความล้มเหลวถาวร รูปร่างนี้เหมือนเครื่องค้นหาสตริงย่อยในส่วนที่ 3 — การจับคู่รูปแบบที่จำว่าจับคู่บางส่วนได้แค่ไหนแล้ว',
+      meaning: { safe: 'ยังไม่มี 11 และสัญลักษณ์ล่าสุดเป็น 0 (หรือยังไม่ได้อ่าน)', one1: 'ยังไม่มี 11 แต่สัญลักษณ์ล่าสุดเป็น 1 — ถ้าได้ 1 ตอนนี้จะแพ้ทันที', dead: 'กับดัก: เกิด 11 ขึ้นแล้ว' }
+    },
+    len3: {
+      title: 'ความยาวหารด้วย 3 ลงตัว', level: 'ไม่บังคับ',
+      prompt: '(ไม่บังคับ) สร้าง DFA ที่ยอมรับเฉพาะสตริงที่มีความยาวเป็นพหุคูณของ 3 เช่น ε (ยาว 0), 010, 110011 ถูกยอมรับ ส่วน 1, 01, 1111 ถูกปฏิเสธ',
+      hints: [
+        'อะไรที่มีผลต่อคำตอบจริง ๆ — สัญลักษณ์ที่อ่าน หรือแค่จำนวนที่อ่าน?',
+        'คุณต้องการความยาว mod 3 จึงใช้สามสถานะ และในแต่ละสถานะ สัญลักษณ์ทั้งสองทำสิ่งเดียวกัน',
+        'จัดสามสถานะเป็นวง ทุกสัญลักษณ์พาเดินหน้าไปหนึ่งช่องรอบวง ยอมรับที่สถานะซึ่งหมายถึง “ความยาว ≡ 0” ซึ่งเป็นสถานะเริ่มต้นด้วย ε จึงถูกยอมรับ'
+      ],
+      explanation: 'เครื่องไม่สนใจว่าอ่านอะไร นับแค่ว่าอ่านไปเท่าไร mod 3 ลูกศรทั้งสองเส้นจากแต่ละสถานะไปที่เดียวกัน — เป็น DFA ที่ถูกต้องสมบูรณ์ สถานะยอมรับคือสถานะเริ่มต้น สตริงว่าง (ยาว 0) จึงถูกยอมรับ',
+      meaning: { m0: 'ความยาว ≡ 0 (mod 3)', m1: 'ความยาว ≡ 1 (mod 3)', m2: 'ความยาว ≡ 2 (mod 3)' }
+    },
+    evenboth: {
+      title: '0 เป็นจำนวนคู่ และ 1 เป็นจำนวนคู่', level: 'ท้าทาย',
+      prompt: '(ท้าทาย) สร้าง DFA ที่ยอมรับเฉพาะสตริงที่มี 0 เป็นจำนวนคู่ และในขณะเดียวกันมี 1 เป็นจำนวนคู่ด้วย ε, 0011, 0101, 1100 ถูกยอมรับ ส่วน 0, 1, 001 ถูกปฏิเสธ',
+      hints: [
+        'คุณรู้จักเครื่องสองสถานะสำหรับ “จำนวน 0 เป็นคู่” และอีกเครื่องสำหรับ “จำนวน 1 เป็นคู่” อยู่แล้ว จะรันทั้งสองเครื่องพร้อมกันได้ไหม?',
+        'ติดตามคู่อันดับ (ภาวะคู่/คี่ของ 0, ภาวะคู่/คี่ของ 1) แต่ละพิกัดมีสองทางเลือก จึงได้ 2 × 2 = 4 สถานะ',
+        'ตั้งชื่อสถานะ ee, eo, oe, oo โดยตัวอักษรแรกคือภาวะของ 0 และตัวที่สองคือภาวะของ 1 (e = คู่, o = คี่) การอ่าน 0 สลับตัวอักษรแรก การอ่าน 1 สลับตัวที่สอง มีแค่ ee ที่ยอมรับ — และเป็นสถานะเริ่มต้นด้วย'
+      ],
+      explanation: 'นี่คือการสร้างแบบผลคูณ (product construction) ฉบับย่อ: รันเครื่องสองสถานะสองเครื่องที่เป็นอิสระต่อกันไปพร้อมกัน แล้วให้สถานะรวมเป็นคู่ของสถานะทั้งสอง การอ่าน 0 ขยับพิกัด “ภาวะของ 0” และไม่แตะอีกพิกัด การอ่าน 1 ทำกลับกัน เซตยอมรับคือคู่ที่ทั้งสองพิกัดเป็นคู่ เทคนิคเดียวกันนี้เปลี่ยน DFA สองเครื่องใด ๆ ให้เป็นเครื่องเดียวที่ตัดสิน AND (หรือ OR) ของภาษาทั้งสองได้',
+      meaning: { ee: '0 คู่, 1 คู่', oe: '0 คี่, 1 คู่', eo: '0 คู่, 1 คี่', oo: '0 คี่, 1 คี่' }
+    }
+  }
+};
+INTRO.th = { name: TH.intro.name }; INTRO.meaningTh = TH.intro.meaning;
+EXAMPLES.forEach(function (e) { e.th = TH.examples[e.id]; e.dfa.meaningTh = e.th.meaning; });
+TURNSTILE.meaningTh = TH.apps.turnstile.meaning; TURNSTILE.symbolNamesTh = TH.apps.turnstile.symbolNames;
+VALIDATOR.meaningTh = TH.apps.validator.meaning;
+SCANNER.meaningTh = TH.apps.scanner.meaning;
+EXERCISES.forEach(function (x) { x.th = TH.exercises[x.id]; x.solution.meaningTh = x.th.meaning; });
+
 root.DFALib = {
-  SIGMA: SIGMA, BRUTE_LEN: BRUTE_LEN,
+  SIGMA: SIGMA, BRUTE_LEN: BRUTE_LEN, setLang: setLang, TH: TH,
   makeDFA: makeDFA, cloneDFA: cloneDFA, step: step, isAccept: isAccept, describe: describe,
   validate: validate, run: run, accepts: accepts, traceString: traceString,
   forEachString: forEachString, bruteForce: bruteForce, findDifference: findDifference,
@@ -1159,9 +1501,9 @@ root.DFALib = {
 </script>
 
 <!-- ===================================================================
-     UI LAYER, PART 1 — diagram renderer, table renderer, simulator
-     widget, quiz widget. Nothing here knows about any particular
-     machine: everything is driven by the data model above.
+     UI LAYER, PART 1 — language state, diagram renderer, table renderer,
+     simulator widget, quiz widget. Nothing here knows about any
+     particular machine: everything is driven by the data model above.
      =================================================================== -->
 <script>
 (function () {
@@ -1170,6 +1512,43 @@ var L = window.DFALib;
 var SVGNS = 'http://www.w3.org/2000/svg';
 var R = 26;               // state radius, in diagram units
 var uid = 0;
+
+/* =====================================================================
+   LANGUAGE
+   Thai is the default. Order of precedence: ?lang=en|th in the URL,
+   then the viewer's last choice (localStorage), then Thai.
+   Every string drawn by script goes through tx(english, thai).
+   ===================================================================== */
+var LANG_KEY = 'dfa-intro-lang';
+var LANG = (function () {
+  var m = /[?&]lang=(th|en)\b/.exec(location.search);
+  if (m) return m[1];
+  try { var saved = localStorage.getItem(LANG_KEY); if (saved === 'th' || saved === 'en') return saved; } catch (e) {}
+  return 'th';
+})();
+document.documentElement.setAttribute('data-lang', LANG);
+document.documentElement.setAttribute('lang', LANG);
+L.setLang(LANG);
+
+function tx(en, th) { return LANG === 'th' ? th : en; }
+function getLang() { return LANG; }
+function setLang(l) {
+  LANG = (l === 'en') ? 'en' : 'th';
+  L.setLang(LANG);
+  try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
+}
+/* Thai text for catalogue entries lives in entry.th; fall back to English. */
+function loc(obj, field) {
+  return (LANG === 'th' && obj.th && obj.th[field] != null) ? obj.th[field] : obj[field];
+}
+function meaningOf(dfa, q) {
+  var m = (LANG === 'th' && dfa.meaningTh) ? dfa.meaningTh : dfa.meaning;
+  return (m && m[q]) || '';
+}
+function symbolName(dfa, a) {
+  var m = (LANG === 'th' && dfa.symbolNamesTh) ? dfa.symbolNamesTh : dfa.symbolNames;
+  return m ? m[a] : null;
+}
 
 /* --- tiny DOM helpers (textContent only — never innerHTML with data) -- */
 function el(tag, attrs, kids) {
@@ -1183,7 +1562,6 @@ function svg(tag, attrs, kids) {
 function apply(n, attrs, kids) {
   if (attrs) Object.keys(attrs).forEach(function (k) {
     if (k === 'text') n.textContent = attrs[k];
-    else if (k === 'html') n.innerHTML = attrs[k];        // only ever static markup
     else if (k === 'class') n.setAttribute('class', attrs[k]);
     else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
     else if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
@@ -1254,6 +1632,8 @@ function curve(p, q, bend) {
            lx: mx + nx * off, ly: my + ny * off };
 }
 
+/* Self-loops normally sit above a state; below=true hangs them underneath
+   so they never collide with arrows converging on it from above. */
 function selfLoop(p, below) {
   var k = below ? 1 : -1;
   var p1 = [p[0] - 0.574 * R, p[1] + k * 0.819 * R], p2 = [p[0] + 0.574 * R, p[1] + k * 0.819 * R];
@@ -1336,9 +1716,9 @@ function renderDiagram(dfa, opts) {
     var lbl = svg('text', { 'class': 'edge-label' + (emph === 'Sigma' ? ' emph' : ''), x: geom.lx, y: geom.ly });
     g.syms.forEach(function (s, i) {
       if (i) lbl.appendChild(svg('tspan', { text: ', ' }));
-      var name = dfa.symbolNames ? s + ' (' + dfa.symbolNames[s] + ')' : s;
+      var nm = symbolName(dfa, s);
       lbl.appendChild(svg('tspan', {
-        'class': 'sym' + (isActive && opts.activeEdge.sym === s ? ' active' : ''), text: name
+        'class': 'sym' + (isActive && opts.activeEdge.sym === s ? ' active' : ''), text: nm ? s + ' (' + nm + ')' : s
       }));
     });
     gLabels.appendChild(lbl);
@@ -1356,13 +1736,14 @@ function renderDiagram(dfa, opts) {
     else if (emph === 'Q' || (emph === 'q0' && q === dfa.start) || (emph === 'F' && acc)) extra = ' emph';
     if (active && !opts.verdict) g.appendChild(svg('circle', { 'class': 'pulse', r: 30 }));
     g.appendChild(svg('circle', { 'class': 'st-ring' + extra, r: R }));
-    if (acc) g.appendChild(svg('circle', { 'class': 'st-inner' + (extra ? extra : ''), r: R - 5 }));
+    if (acc) g.appendChild(svg('circle', { 'class': 'st-inner' + extra, r: R - 5 }));
     var fs = q.length <= 3 ? 15 : (q.length <= 5 ? 12 : 10);
     var room = 2 * (R - 4), est = q.length * 0.62 * fs;       // monospace ≈ 0.62em per glyph
     var label = svg('text', { 'class': 'st-label', y: 1, 'font-size': fs, text: q });
     if (est > room) { label.setAttribute('textLength', room); label.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
     g.appendChild(label);
-    g.appendChild(svg('title', { text: q + (acc ? ' (accept state)' : '') + (dfa.meaning[q] ? ' — ' + dfa.meaning[q] : '') }));
+    var mean = meaningOf(dfa, q);
+    g.appendChild(svg('title', { text: q + (acc ? tx(' (accept state)', ' (สถานะยอมรับ)') : '') + (mean ? ' — ' + mean : '') }));
     gStates.appendChild(g);
   });
 
@@ -1375,7 +1756,7 @@ function renderDiagram(dfa, opts) {
       d: 'M' + (sp[0] - R - 44) + ',' + sp[1] + ' L' + (sp[0] - R - 2) + ',' + sp[1],
       'marker-end': 'url(#' + id + '-' + (emphStart ? 'e' : 'a') + ')'
     }));
-    gStates.appendChild(svg('text', { 'class': 'start-label', x: sp[0] - R - 23, y: sp[1] - 11, text: 'start' }));
+    gStates.appendChild(svg('text', { 'class': 'start-label', x: sp[0] - R - 23, y: sp[1] - 11, text: tx('start', 'เริ่ม') }));
   }
   return root;
 }
@@ -1390,13 +1771,14 @@ function renderTable(dfa, opts) {
   var t = el('table', { 'class': 'ttable' });
   if (opts.caption) t.appendChild(el('caption', { text: opts.caption }));
   var thead = el('thead'), hr = el('tr');
-  hr.appendChild(el('th', { scope: 'col', text: 'State', 'class': emph === 'Q' ? 'emph' : '' }));
+  hr.appendChild(el('th', { scope: 'col', text: tx('State', 'สถานะ'), 'class': emph === 'Q' ? 'emph' : '' }));
   dfa.alphabet.forEach(function (a) {
+    var nm = symbolName(dfa, a);
     hr.appendChild(el('th', { scope: 'col', 'class': emph === 'Sigma' ? 'emph' : '',
-      text: 'δ(q, ' + (dfa.symbolNames ? a + '=' + dfa.symbolNames[a] : a) + ')' }));
+      text: 'δ(q, ' + (nm ? a + '=' + nm : a) + ')' }));
   });
-  hr.appendChild(el('th', { scope: 'col', text: 'Accepting?', 'class': emph === 'F' ? 'emph' : '' }));
-  if (opts.meaning) hr.appendChild(el('th', { scope: 'col', text: 'What this state remembers' }));
+  hr.appendChild(el('th', { scope: 'col', text: tx('Accepting?', 'ยอมรับ?'), 'class': emph === 'F' ? 'emph' : '' }));
+  if (opts.meaning) hr.appendChild(el('th', { scope: 'col', text: tx('What this state remembers', 'สถานะนี้จำอะไร') }));
   thead.appendChild(hr); t.appendChild(thead);
 
   var tb = el('tbody');
@@ -1406,7 +1788,7 @@ function renderTable(dfa, opts) {
     var th = el('th', { scope: 'row', 'class': (emph === 'Q' || (emph === 'q0' && isStart)) ? 'emph' : '' });
     th.appendChild(el('span', { 'class': 'mark', text: (isStart ? '→' : '  ') + (acc ? '*' : ' ') + ' ' }));
     th.appendChild(document.createTextNode(q));
-    if (isStart) th.appendChild(el('span', { 'class': 'sr-only', text: ' (start state)' }));
+    if (isStart) th.appendChild(el('span', { 'class': 'sr-only', text: tx(' (start state)', ' (สถานะเริ่มต้น)') }));
     tr.appendChild(th);
     dfa.alphabet.forEach(function (a) {
       var target = L.step(dfa, q, a);
@@ -1416,13 +1798,13 @@ function renderTable(dfa, opts) {
       tr.appendChild(el('td', { 'class': cls, 'data-state': q, 'data-sym': a,
         text: (target === undefined || target === null || target === '') ? '—' : target }));
     });
-    tr.appendChild(el('td', { 'class': emph === 'F' ? 'emph' : '', text: acc ? '✓ accept' : '— no' }));
-    if (opts.meaning) tr.appendChild(el('td', { 'class': 'meaning', text: dfa.meaning[q] || '' }));
+    tr.appendChild(el('td', { 'class': emph === 'F' ? 'emph' : '',
+      text: acc ? tx('✓ accept', '✓ ยอมรับ') : tx('— no', '— ไม่') }));
+    if (opts.meaning) tr.appendChild(el('td', { 'class': 'meaning', text: meaningOf(dfa, q) }));
     tb.appendChild(tr);
   });
   t.appendChild(tb);
-  var wrap = el('div', { 'class': 'scroll-x' }, [t]);
-  return wrap;
+  return el('div', { 'class': 'scroll-x' }, [t]);
 }
 
 /* Tuple written out in symbols, e.g.  Q = {q0, q1} ... */
@@ -1439,7 +1821,7 @@ function tupleLines(dfa) {
   });
   lines.push(['δ', d.join('   ')]);
   lines.push(['q₀', dfa.start || '—']);
-  lines.push(['F', '{' + dfa.accept.join(', ') + '}' + (dfa.accept.length ? '' : '  (empty)')]);
+  lines.push(['F', '{' + dfa.accept.join(', ') + '}' + (dfa.accept.length ? '' : tx('  (empty)', '  (เซตว่าง)'))]);
   return lines;
 }
 
@@ -1456,7 +1838,7 @@ function createTester(cfg) {
 
   var input = el('input', { type: 'text', id: myId + '-in', spellcheck: 'false',
     autocomplete: 'off', autocapitalize: 'off', maxlength: '40',
-    'aria-describedby': myId + '-msg', placeholder: 'e.g. 1011' });
+    'aria-describedby': myId + '-msg', placeholder: tx('e.g. 1011', 'เช่น 1011') });
   var msg = el('p', { 'class': 'msg', id: myId + '-msg', role: 'status', 'aria-live': 'polite' });
   var samples = el('div', { 'class': 'samples' });
   var tape = el('div', { 'class': 'tape', 'aria-hidden': 'true' });
@@ -1465,16 +1847,17 @@ function createTester(cfg) {
   var diagWrap = el('div', { 'class': 'diagram-wrap' });
   var tableWrap = el('div');
 
-  var bReset = el('button', { 'class': 'btn small', text: '⟲ Reset', onclick: function () { stop(); pos = 0; update(); } });
-  var bBack  = el('button', { 'class': 'btn small', text: '◀ Back', onclick: function () { stop(); if (pos > 0) pos--; update(); } });
-  var bStep  = el('button', { 'class': 'btn primary small', text: 'Step ▶', onclick: function () { stop(); stepOnce(); } });
-  var bPlay  = el('button', { 'class': 'btn small', text: '▶ Play', onclick: togglePlay });
-  var bEnd   = el('button', { 'class': 'btn small', text: '⏭ Run to end', onclick: function () { stop(); if (trace && trace.ok) { pos = word.length; update(); } } });
-  var controls = el('div', { 'class': 'row', role: 'group', 'aria-label': 'Simulation controls' }, [bReset, bBack, bStep, bPlay, bEnd]);
+  var PLAY = tx('▶ Play', '▶ เล่นอัตโนมัติ'), PAUSE = tx('⏸ Pause', '⏸ หยุดชั่วคราว');
+  var bReset = el('button', { 'class': 'btn small', text: tx('⟲ Reset', '⟲ เริ่มใหม่'), onclick: function () { stop(); pos = 0; update(); } });
+  var bBack  = el('button', { 'class': 'btn small', text: tx('◀ Back', '◀ ย้อน'), onclick: function () { stop(); if (pos > 0) pos--; update(); } });
+  var bStep  = el('button', { 'class': 'btn primary small', text: tx('Step ▶', 'ก้าวถัดไป ▶'), onclick: function () { stop(); stepOnce(); } });
+  var bPlay  = el('button', { 'class': 'btn small', text: PLAY, onclick: togglePlay });
+  var bEnd   = el('button', { 'class': 'btn small', text: tx('⏭ Run to end', '⏭ รันจนจบ'), onclick: function () { stop(); if (trace && trace.ok) { pos = word.length; update(); } } });
+  var controls = el('div', { 'class': 'row', role: 'group', 'aria-label': tx('Simulation controls', 'ปุ่มควบคุมการจำลอง') }, [bReset, bBack, bStep, bPlay, bEnd]);
 
   var root = el('div', { 'class': 'tester' }, [
     el('div', {}, [
-      el('label', { 'for': myId + '-in', text: cfg.label || 'Input string (0s and 1s only)' }),
+      el('label', { 'for': myId + '-in', text: cfg.label || tx('Input string (0s and 1s only)', 'สตริงข้อมูลเข้า (0 และ 1 เท่านั้น)') }),
       el('div', { 'class': 'row', style: 'margin-top:.3rem' }, [input]),
       samples, msg
     ]),
@@ -1488,12 +1871,12 @@ function createTester(cfg) {
 
   (cfg.samples || []).forEach(function (s) {
     samples.appendChild(el('button', {
-      'class': 'chip', text: s === '' ? 'ε (empty)' : s,
-      'aria-label': s === '' ? 'try the empty string' : 'try ' + s.split('').join(' '),
+      'class': 'chip', text: s === '' ? tx('ε (empty)', 'ε (ว่าง)') : s,
+      'aria-label': s === '' ? tx('try the empty string', 'ลองสตริงว่าง') : tx('try ', 'ลอง ') + s.split('').join(' '),
       onclick: function () { input.value = s; onInput(); input.focus(); }
     }));
   });
-  if ((cfg.samples || []).length) samples.insertBefore(el('span', { 'class': 'small muted', text: 'Try:' }), samples.firstChild);
+  if ((cfg.samples || []).length) samples.insertBefore(el('span', { 'class': 'small muted', text: tx('Try:', 'ลอง:') }), samples.firstChild);
 
   input.addEventListener('input', onInput);
   root.addEventListener('keydown', function (e) {
@@ -1503,13 +1886,15 @@ function createTester(cfg) {
   });
 
   function stepOnce() { if (trace && trace.ok && pos < word.length) { pos++; update(); } }
-  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.textContent = '▶ Play'; bPlay.setAttribute('aria-pressed', 'false'); } }
+  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.textContent = PLAY; bPlay.setAttribute('aria-pressed', 'false'); } }
   function togglePlay() {
     if (timer) { stop(); return; }
     if (!trace || !trace.ok || word.length === 0) return;
     if (pos >= word.length) pos = 0;
-    bPlay.textContent = '⏸ Pause'; bPlay.setAttribute('aria-pressed', 'true');
-    timer = setInterval(function () { if (pos >= word.length) { stop(); } else { pos++; update(); } }, 750);
+    bPlay.textContent = PAUSE; bPlay.setAttribute('aria-pressed', 'true');
+    timer = setInterval(function () {
+      if (!root.isConnected || pos >= word.length) { stop(); } else { pos++; update(); }   // widget may have been rebuilt
+    }, 750);
   }
 
   function onInput() { stop(); pos = 0; update(); }
@@ -1525,8 +1910,10 @@ function createTester(cfg) {
 
     if (bad.length) {
       msg.className = 'msg err';
-      msg.appendChild(document.createTextNode('Not in the alphabet Σ = {0, 1}: ' + bad.map(function (c) { return '“' + c + '”'; }).join(', ') + '. '));
-      msg.appendChild(el('button', { 'class': 'btn small', text: 'Remove them', onclick: function () {
+      var list = bad.map(function (c) { return '“' + c + '”'; }).join(', ');
+      msg.appendChild(document.createTextNode(tx('Not in the alphabet Σ = {0, 1}: ' + list + '. ',
+                                                 'ไม่อยู่ในชุดสัญลักษณ์ Σ = {0, 1}: ' + list + ' ')));
+      msg.appendChild(el('button', { 'class': 'btn small', text: tx('Remove them', 'ลบออก'), onclick: function () {
         input.value = input.value.split('').filter(function (c) { return dfa.alphabet.indexOf(c) !== -1; }).join('');
         onInput(); input.focus();
       } }));
@@ -1535,11 +1922,14 @@ function createTester(cfg) {
       trace = dfa ? L.run(dfa, word) : null;
       if (trace && !trace.ok && trace.reason === 'undefined') {
         msg.className = 'msg err';
-        msg.textContent = 'This machine has no transition for δ(' + trace.state + ', ' + trace.sym + '), so it cannot finish. ' +
-                          'An incomplete machine is not a DFA — fill in every cell of the table.';
+        var cell = 'δ(' + trace.state + ', ' + trace.sym + ')';
+        msg.textContent = tx('This machine has no transition for ' + cell + ', so it cannot finish. ' +
+                             'An incomplete machine is not a DFA — fill in every cell of the table.',
+                             'เครื่องนี้ไม่มีการเปลี่ยนสถานะสำหรับ ' + cell + ' จึงทำงานต่อจนจบไม่ได้ ' +
+                             'เครื่องที่ไม่ครบไม่ใช่ DFA — กรอกตารางให้ครบทุกช่อง');
       } else if (trace && !trace.ok && trace.reason === 'nostart') {
         msg.className = 'msg err';
-        msg.textContent = 'This machine has no start state yet.';
+        msg.textContent = tx('This machine has no start state yet.', 'เครื่องนี้ยังไม่มีสถานะเริ่มต้น');
       }
     }
 
@@ -1554,31 +1944,34 @@ function createTester(cfg) {
 
     /* tape */
     clear(tape);
-    if (word.length === 0) tape.appendChild(el('span', { 'class': 'eps', text: 'ε — the empty string: zero symbols to read' }));
+    if (word.length === 0) tape.appendChild(el('span', { 'class': 'eps', text: tx('ε — the empty string: zero symbols to read', 'ε — สตริงว่าง: ไม่มีสัญลักษณ์ให้อ่านเลย') }));
     else {
       word.split('').forEach(function (c, i) {
         tape.appendChild(el('span', { 'class': 'sym ' + (i < pos ? 'done' : (i === pos ? 'next' : '')), text: c }));
         if (i === pos - 1) tape.appendChild(el('span', { 'class': 'caret', text: '▲' }));
       });
-      if (pos === word.length) tape.appendChild(el('span', { 'class': 'small muted', text: ' ⟵ input exhausted' }));
+      if (pos === word.length) tape.appendChild(el('span', { 'class': 'small muted', text: tx(' ⟵ input exhausted', ' ⟵ อ่านข้อมูลเข้าหมดแล้ว') }));
     }
 
     /* readout */
     clear(readout);
     var cur = canRun ? trace.states[pos] : (dfa ? dfa.start : null);
     var line1 = el('div', { 'class': 'big' });
-    line1.appendChild(document.createTextNode('Step ' + pos + ' of ' + word.length + ' · current state '));
+    line1.appendChild(document.createTextNode(tx('Step ' + pos + ' of ' + word.length + ' · current state ',
+                                                 'ขั้นที่ ' + pos + ' จาก ' + word.length + ' · สถานะปัจจุบัน ')));
     line1.appendChild(el('span', { 'class': 'state-now', text: cur || '—' }));
     readout.appendChild(line1);
-    if (dfa && cur && dfa.meaning[cur]) readout.appendChild(el('div', { 'class': 'small muted', text: 'meaning: ' + dfa.meaning[cur] }));
+    var mean = (dfa && cur) ? meaningOf(dfa, cur) : '';
+    if (mean) readout.appendChild(el('div', { 'class': 'small muted', text: tx('meaning: ', 'ความหมาย: ') + mean }));
     if (canRun && pos > 0) {
       var t = trace.transitions[pos - 1];
-      readout.appendChild(el('div', { 'class': 'small mono', text: 'just took  δ(' + t.from + ', ' + t.sym + ') = ' + t.to }));
+      readout.appendChild(el('div', { 'class': 'small mono', text: tx('just took  ', 'เพิ่งใช้  ') + 'δ(' + t.from + ', ' + t.sym + ') = ' + t.to }));
     } else if (canRun) {
-      readout.appendChild(el('div', { 'class': 'small muted', text: 'nothing read yet — the machine sits in its start state' }));
+      readout.appendChild(el('div', { 'class': 'small muted', text: tx('nothing read yet — the machine sits in its start state', 'ยังไม่ได้อ่านอะไร — เครื่องอยู่ที่สถานะเริ่มต้น') }));
     }
     var left = canRun ? word.slice(pos) : '';
-    readout.appendChild(el('div', { 'class': 'small mono', text: 'consumed: ' + show(word.slice(0, pos)) + '   ·   remaining: ' + show(left) }));
+    readout.appendChild(el('div', { 'class': 'small mono', text:
+      tx('consumed: ', 'อ่านแล้ว: ') + show(word.slice(0, pos)) + '   ·   ' + tx('remaining: ', 'เหลือ: ') + show(left) }));
 
     /* verdict */
     var done = canRun && pos === word.length;
@@ -1587,9 +1980,11 @@ function createTester(cfg) {
       verdict.className = 'verdict ' + (trace.accepted ? 'accept' : 'reject');
       clear(verdict);
       verdict.appendChild(el('span', { 'class': 'glyph', text: trace.accepted ? '✓' : '✗', 'aria-hidden': 'true' }));
-      verdict.appendChild(document.createTextNode(
-        (trace.accepted ? 'ACCEPTED' : 'REJECTED') + ' — the whole input was read and the machine ended in ' +
-        trace.end + ', which is ' + (trace.accepted ? 'an accept state.' : 'not an accept state.')));
+      verdict.appendChild(document.createTextNode(trace.accepted
+        ? tx('ACCEPTED — the whole input was read and the machine ended in ' + trace.end + ', which is an accept state.',
+             'ยอมรับ — อ่านข้อมูลเข้าครบแล้ว และเครื่องจบที่ ' + trace.end + ' ซึ่งเป็นสถานะยอมรับ')
+        : tx('REJECTED — the whole input was read and the machine ended in ' + trace.end + ', which is not an accept state.',
+             'ปฏิเสธ — อ่านข้อมูลเข้าครบแล้ว และเครื่องจบที่ ' + trace.end + ' ซึ่งไม่ใช่สถานะยอมรับ')));
     }
 
     /* diagram + table */
@@ -1605,7 +2000,8 @@ function createTester(cfg) {
       meaning: cfg.meaning !== false,
       activeState: cur,
       activeCell: (canRun && pos < word.length) ? { state: cur, sym: word[pos] } : null,
-      caption: 'Transition table' + (canRun && pos < word.length ? ' — outlined cell is the move about to be made' : '')
+      caption: tx('Transition table', 'ตารางการเปลี่ยนสถานะ') + (canRun && pos < word.length
+        ? tx(' — outlined cell is the move about to be made', ' — ช่องที่มีกรอบคือการเคลื่อนที่ที่กำลังจะเกิดขึ้น') : '')
     }));
   }
 
@@ -1615,28 +2011,28 @@ function createTester(cfg) {
 
 /* =====================================================================
    CHECK-YOUR-UNDERSTANDING WIDGET
+   cfg = { q, options:[{ t, correct, why }] }  (already in the page language)
    ===================================================================== */
 function createQuiz(cfg) {
   var name = 'quiz' + (++uid);
   var fs = el('fieldset', { 'class': 'quiz' });
-  fs.appendChild(el('legend', { text: 'Check your understanding' }));
+  fs.appendChild(el('legend', { text: tx('Check your understanding', 'ทดสอบความเข้าใจ') }));
   fs.appendChild(el('p', { 'class': 'tight', text: cfg.q }));
   var fb = el('p', { 'class': 'fb', role: 'status', 'aria-live': 'polite' });
   cfg.options.forEach(function (o, i) {
     var id = name + '-' + i;
-    var lab = el('label', { 'class': 'opt', 'for': id }, [
+    fs.appendChild(el('label', { 'class': 'opt', 'for': id }, [
       el('input', { type: 'radio', name: name, id: id, value: String(i) }),
       document.createTextNode(o.t)
-    ]);
-    fs.appendChild(lab);
+    ]));
   });
   fs.appendChild(el('div', { 'class': 'row', style: 'margin-top:.5rem' }, [
-    el('button', { 'class': 'btn small', text: 'Check', onclick: function () {
+    el('button', { 'class': 'btn small', text: tx('Check', 'ตรวจ'), onclick: function () {
       var picked = fs.querySelector('input[name="' + name + '"]:checked');
-      if (!picked) { fb.className = 'fb'; fb.textContent = 'Pick an answer first.'; return; }
+      if (!picked) { fb.className = 'fb'; fb.textContent = tx('Pick an answer first.', 'เลือกคำตอบก่อน'); return; }
       var o = cfg.options[+picked.value];
       fb.className = 'fb ' + (o.correct ? 'right' : 'wrong');
-      fb.textContent = (o.correct ? '✓ Correct. ' : '✗ Not quite. ') + o.why;
+      fb.textContent = (o.correct ? tx('✓ Correct. ', '✓ ถูกต้อง ') : tx('✗ Not quite. ', '✗ ยังไม่ถูก ')) + o.why;
     } })
   ]));
   fs.appendChild(fb);
@@ -1645,6 +2041,7 @@ function createQuiz(cfg) {
 
 window.DFAUI = {
   el: el, svg: svg, apply: apply, clear: clear, show: show,
+  tx: tx, getLang: getLang, setLang: setLang, loc: loc, meaningOf: meaningOf,
   renderDiagram: renderDiagram, renderTable: renderTable, tupleLines: tupleLines,
   createTester: createTester, createQuiz: createQuiz, autoLayout: autoLayout
 };
@@ -1653,13 +2050,15 @@ window.DFAUI = {
 
 <!-- ===================================================================
      UI LAYER, PART 2 — page assembly: section 1 widgets, the worked
-     examples, and the three application demos.
+     examples, and the three application demos. Every builder here can
+     be called again after a language switch; it draws into an emptied
+     mount point.
      =================================================================== -->
 <script>
 (function () {
 'use strict';
 var L = window.DFALib, U = window.DFAUI;
-var el = U.el, svg = U.svg, clear = U.clear;
+var el = U.el, svg = U.svg, clear = U.clear, tx = U.tx;
 
 /* ---------------------------------------------------------------
    Small hand-drawn counter-examples: three ways to fail to be a DFA
@@ -1710,8 +2109,9 @@ function mini(cfg) {
 function buildBadExamples() {
   var host = document.getElementById('bad-examples');
   host.appendChild(mini({
-    title: 'Missing transition', vb: [240, 180],
-    alt: 'Two states p and q. An arrow labelled 1 goes from p to q, and q has a self-loop labelled 0, 1. From p there is a dashed arrow labelled 0 that leads nowhere.',
+    title: tx('Missing transition', 'การเปลี่ยนสถานะขาดหายไป'), vb: [240, 180],
+    alt: tx('Two states p and q. An arrow labelled 1 goes from p to q, and q has a self-loop labelled 0, 1. From p there is a dashed arrow labelled 0 that leads nowhere.',
+            'สองสถานะ p และ q ลูกศรป้าย 1 จาก p ไป q และ q มีวงวนตัวเองป้าย 0, 1 จาก p มีลูกศรเส้นประป้าย 0 ที่ไม่ได้ชี้ไปที่ใด'),
     nodes: [{ id: 'p', x: 60, y: 80 }, { id: 'q', x: 180, y: 80, accept: true }],
     edges: [
       { from: 'p', to: 'q', label: '1' },
@@ -1719,37 +2119,56 @@ function buildBadExamples() {
       { from: 'p', x2: 60, y2: 140, label: '0', bad: true }
     ],
     badges: [{ x: 60, y: 166, t: '?' }],
-    note: 'δ(p, 0) is not defined, so the machine gets stuck on the input 0. Rule 2 says every state needs an arrow for every symbol. Fix: add a trap state.'
+    note: tx('δ(p, 0) is not defined, so the machine gets stuck on the input 0. Rule 2 says every state needs an arrow for every symbol. Fix: add a trap state.',
+             'δ(p, 0) ไม่ได้ถูกนิยาม เครื่องจึงติดค้างเมื่อเจอข้อมูลเข้า 0 เงื่อนไขข้อ 2 บอกว่าทุกสถานะต้องมีลูกศรสำหรับทุกสัญลักษณ์ วิธีแก้: เพิ่มสถานะกับดัก')
   }));
   host.appendChild(mini({
-    title: 'Two arrows with the same label', vb: [240, 180],
-    alt: 'State p has two arrows both labelled 0, one going to q and one going to r.',
+    title: tx('Two arrows with the same label', 'ลูกศรสองเส้นที่มีป้ายเดียวกัน'), vb: [240, 180],
+    alt: tx('State p has two arrows both labelled 0, one going to q and one going to r.',
+            'สถานะ p มีลูกศรสองเส้นที่มีป้าย 0 ทั้งคู่ เส้นหนึ่งไป q อีกเส้นไป r'),
     nodes: [{ id: 'p', x: 58, y: 90 }, { id: 'q', x: 186, y: 44 }, { id: 'r', x: 186, y: 136 }],
     edges: [
       { from: 'p', to: 'q', label: '0', bad: true },
       { from: 'p', to: 'r', label: '0', bad: true }
     ],
-    note: 'Reading a 0 in state p, which arrow does the machine take? A function cannot return two answers. This is a nondeterministic machine (an NFA), not a DFA.'
+    note: tx('Reading a 0 in state p, which arrow does the machine take? A function cannot return two answers. This is a nondeterministic machine (an NFA), not a DFA.',
+             'เมื่ออ่าน 0 ที่สถานะ p เครื่องจะไปทางไหน? ฟังก์ชันให้คำตอบสองค่าไม่ได้ นี่คือเครื่องไม่เชิงกำหนด (NFA) ไม่ใช่ DFA')
   }));
   host.appendChild(mini({
-    title: 'An ε-transition', vb: [240, 180],
-    alt: 'An arrow labelled epsilon goes from state p to state q without reading a symbol.',
+    title: tx('An ε-transition', 'การเปลี่ยนสถานะแบบ ε'), vb: [240, 180],
+    alt: tx('An arrow labelled epsilon goes from state p to state q without reading a symbol.',
+            'ลูกศรป้ายเอปไซลอนจากสถานะ p ไปสถานะ q โดยไม่อ่านสัญลักษณ์'),
     nodes: [{ id: 'p', x: 60, y: 90 }, { id: 'q', x: 180, y: 90, accept: true }],
     edges: [{ from: 'p', to: 'q', label: 'ε', bad: true }],
-    note: 'This arrow moves the machine without consuming an input symbol, so the number of steps is no longer fixed by the length of the input. Allowed in NFAs, forbidden in DFAs.'
+    note: tx('This arrow moves the machine without consuming an input symbol, so the number of steps is no longer fixed by the length of the input. Allowed in NFAs, forbidden in DFAs.',
+             'ลูกศรนี้ย้ายเครื่องโดยไม่อ่านสัญลักษณ์ข้อมูลเข้า จำนวนขั้นจึงไม่ถูกกำหนดด้วยความยาวของข้อมูลเข้าอีกต่อไป NFA อนุญาต แต่ DFA ห้าม')
   }));
 }
 
 /* ---------------------------------------------------------------
    Section 1: the tuple ⇄ diagram ⇄ table explorer
    --------------------------------------------------------------- */
-var TUPLE_TEXT = {
-  Q: 'Q = {q0, q1} — the set of states. In the diagram these are the two circles; in the table they are the two rows. This machine’s entire memory is which circle it is standing in: “I have not seen a 1 yet” or “I have seen a 1”.',
-  Sigma: 'Σ = {0, 1} — the input alphabet. In the diagram these are the labels on the arrows; in the table they are the two δ columns. Every input string is a sequence of these symbols and nothing else.',
-  delta: 'δ — the transition function, one arrow per (state, symbol) pair. Here: δ(q0,0) = q0, δ(q0,1) = q1, δ(q1,0) = q1, δ(q1,1) = q1. Count them: 2 states × 2 symbols = 4 arrows and 4 inner cells of the table. Not 3, not 5 — that is what determinism means.',
-  q0: 'q₀ = q0 — the start state, shown by the little unattached “start” arrow and by → in the table. Before reading anything, the machine sits here.',
-  F: 'F = {q1} — the accept states, drawn as a double circle and spelled out in the “Accepting?” column. Because q0 ∉ F, the empty string is rejected: ε contains no 1, so rejecting it is correct.'
-};
+function tupleText(part) {
+  switch (part) {
+    case 'Q': return tx(
+      'Q = {q0, q1} — the set of states. In the diagram these are the two circles; in the table they are the two rows. This machine’s entire memory is which circle it is standing in: “I have not seen a 1 yet” or “I have seen a 1”.',
+      'Q = {q0, q1} — เซตของสถานะ ในแผนภาพคือวงกลมสองวง ในตารางคือสองแถว หน่วยความจำทั้งหมดของเครื่องนี้คือมันกำลังยืนอยู่ที่วงกลมไหน: “ยังไม่เคยเห็น 1” หรือ “เห็น 1 แล้ว”');
+    case 'Sigma': return tx(
+      'Σ = {0, 1} — the input alphabet. In the diagram these are the labels on the arrows; in the table they are the two δ columns. Every input string is a sequence of these symbols and nothing else.',
+      'Σ = {0, 1} — ชุดสัญลักษณ์ของข้อมูลเข้า ในแผนภาพคือป้ายบนลูกศร ในตารางคือคอลัมน์ δ ทั้งสอง สตริงข้อมูลเข้าทุกตัวเป็นลำดับของสัญลักษณ์เหล่านี้เท่านั้น');
+    case 'delta': return tx(
+      'δ — the transition function, one arrow per (state, symbol) pair. Here: δ(q0,0) = q0, δ(q0,1) = q1, δ(q1,0) = q1, δ(q1,1) = q1. Count them: 2 states × 2 symbols = 4 arrows and 4 inner cells of the table. Not 3, not 5 — that is what determinism means.',
+      'δ — ฟังก์ชันการเปลี่ยนสถานะ ลูกศรหนึ่งเส้นต่อหนึ่งคู่ (สถานะ, สัญลักษณ์) ในที่นี้: δ(q0,0) = q0, δ(q0,1) = q1, δ(q1,0) = q1, δ(q1,1) = q1 ลองนับดู: 2 สถานะ × 2 สัญลักษณ์ = ลูกศร 4 เส้น และช่องในตาราง 4 ช่อง ไม่ใช่ 3 ไม่ใช่ 5 — นี่คือความหมายของความเชิงกำหนด');
+    case 'q0': return tx(
+      'q₀ = q0 — the start state, shown by the little unattached “start” arrow and by → in the table. Before reading anything, the machine sits here.',
+      'q₀ = q0 — สถานะเริ่มต้น แสดงด้วยลูกศร “เริ่ม” ที่ลอยอยู่ และด้วย → ในตาราง ก่อนอ่านอะไรเลย เครื่องอยู่ที่นี่');
+    case 'F': return tx(
+      'F = {q1} — the accept states, drawn as a double circle and spelled out in the “Accepting?” column. Because q0 ∉ F, the empty string is rejected: ε contains no 1, so rejecting it is correct.',
+      'F = {q1} — สถานะยอมรับ วาดเป็นวงกลมสองชั้น และเขียนไว้ชัดในคอลัมน์ “ยอมรับ?” เพราะ q0 ∉ F สตริงว่างจึงถูกปฏิเสธ — ซึ่งถูกต้อง เพราะ ε ไม่มี 1 เลย');
+  }
+  return tx('Click a part of the tuple above to light it up in the diagram and the table below.',
+            'คลิกส่วนใดส่วนหนึ่งของสิ่งอันดับข้างบน เพื่อให้ส่วนนั้นสว่างขึ้นในแผนภาพและตารางข้างล่าง');
+}
 function buildTupleExplorer() {
   var host = document.getElementById('tuple-explorer');
   var dfa = L.INTRO, emph = null;
@@ -1760,16 +2179,17 @@ function buildTupleExplorer() {
   var buttons = {};
 
   function paint() {
-    clear(diag); diag.appendChild(U.renderDiagram(dfa, { emph: emph, caption: 'the machine for “contains at least one 1”' }));
-    clear(tab); tab.appendChild(U.renderTable(dfa, { meaning: true, emph: emph, caption: 'Transition table' }));
-    explain.textContent = emph ? TUPLE_TEXT[emph] : 'Click a part of the tuple above to light it up in the diagram and the table below.';
+    clear(diag); diag.appendChild(U.renderDiagram(dfa, { emph: emph,
+      caption: tx('the machine for “contains at least one 1”', 'เครื่องสำหรับ “มี 1 อย่างน้อยหนึ่งตัว”') }));
+    clear(tab); tab.appendChild(U.renderTable(dfa, { meaning: true, emph: emph, caption: tx('Transition table', 'ตารางการเปลี่ยนสถานะ') }));
+    explain.textContent = tupleText(emph);
     Object.keys(buttons).forEach(function (k) { buttons[k].setAttribute('aria-pressed', String(emph === k)); });
   }
   line.appendChild(el('span', { text: 'M = (' }));
   [['Q', 'Q'], ['Sigma', 'Σ'], ['delta', 'δ'], ['q0', 'q₀'], ['F', 'F']].forEach(function (p, i) {
     if (i) line.appendChild(el('span', { text: ', ' }));
     var b = el('button', { 'class': 'part', type: 'button', text: p[1], 'aria-pressed': 'false',
-      'aria-label': 'highlight ' + p[1] + ', part ' + (i + 1) + ' of the tuple',
+      'aria-label': tx('highlight ' + p[1] + ', part ' + (i + 1) + ' of the tuple', 'เน้น ' + p[1] + ' ส่วนที่ ' + (i + 1) + ' ของสิ่งอันดับ'),
       onclick: function () { emph = (emph === p[0]) ? null : p[0]; paint(); } });
     buttons[p[0]] = b; line.appendChild(b);
   });
@@ -1779,7 +2199,7 @@ function buildTupleExplorer() {
   host.appendChild(explain);
   host.appendChild(el('div', { 'class': 'two-col', style: 'margin-top:1rem' }, [diag, tab]));
   host.appendChild(el('details', { style: 'margin-top:.8rem' }, [
-    el('summary', { text: 'See the same machine written out as plain text' }),
+    el('summary', { text: tx('See the same machine written out as plain text', 'ดูเครื่องเดียวกันในรูปข้อความล้วน') }),
     el('pre', { 'class': 'mono small', style: 'overflow-x:auto', text: U.tupleLines(dfa).map(function (r) { return r[0] + ' = ' + r[1]; }).join('\n') })
   ]));
   paint();
@@ -1788,13 +2208,14 @@ function buildTupleExplorer() {
 /* ---------------------------------------------------------------
    Section 2: the worked examples
    --------------------------------------------------------------- */
+var currentExample = L.EXAMPLES[0].id;     // survives a language switch
 function buildExamples() {
   var nav = document.getElementById('example-nav');
   var host = document.getElementById('example-host');
-  var built = {}, current = null;
+  var built = {};
 
   function select(id) {
-    current = id;
+    currentExample = id;
     Array.prototype.forEach.call(nav.children, function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.id === id));
     });
@@ -1805,11 +2226,12 @@ function buildExamples() {
 
   function makeCard(ex) {
     var card = el('div', { 'class': 'card' });
-    card.appendChild(el('h3', { text: ex.title }));
-    card.appendChild(el('p', { text: ex.english }));
-    card.appendChild(el('div', { 'class': 'note' }, [el('p', {}, [el('span', { 'class': 'tag', text: 'Key idea. ' }), document.createTextNode(ex.idea)])]));
+    card.appendChild(el('h3', { text: U.loc(ex, 'title') }));
+    card.appendChild(el('p', { text: U.loc(ex, 'english') }));
+    card.appendChild(el('div', { 'class': 'note' }, [el('p', {}, [
+      el('span', { 'class': 'tag', text: tx('Key idea. ', 'แนวคิดสำคัญ ') }), document.createTextNode(U.loc(ex, 'idea'))])]));
     var tup = el('div', { 'class': 'card', style: 'background:var(--panel-2); margin:0 0 1rem' });
-    tup.appendChild(el('h4', { text: 'Formal definition' }));
+    tup.appendChild(el('h4', { text: tx('Formal definition', 'นิยามเชิงรูปนัย') }));
     var dl = el('div', { 'class': 'mono small', style: 'display:grid; gap:.25rem' });
     U.tupleLines(ex.dfa).forEach(function (r) {
       dl.appendChild(el('div', { style: 'overflow-x:auto; white-space:nowrap' }, [
@@ -1818,19 +2240,19 @@ function buildExamples() {
     });
     tup.appendChild(dl);
     card.appendChild(tup);
-    card.appendChild(el('h4', { text: 'Run it yourself' }));
-    var t = U.createTester({ dfa: ex.dfa, samples: ex.samples, caption: ex.title });
+    card.appendChild(el('h4', { text: tx('Run it yourself', 'ลองรันด้วยตัวเอง') }));
+    var t = U.createTester({ dfa: ex.dfa, samples: ex.samples, caption: U.loc(ex, 'title') });
     card.appendChild(t.el);
     return card;
   }
 
   L.EXAMPLES.forEach(function (ex) {
-    var b = el('button', { 'class': 'tab', type: 'button', text: ex.tab, 'aria-pressed': 'false' });
+    var b = el('button', { 'class': 'tab', type: 'button', text: U.loc(ex, 'tab'), 'aria-pressed': 'false' });
     b.dataset.id = ex.id;
     b.addEventListener('click', function () { select(ex.id); });
     nav.appendChild(b);
   });
-  select(L.EXAMPLES[0].id);
+  select(currentExample);
 }
 
 /* ---------------------------------------------------------------
@@ -1839,48 +2261,53 @@ function buildExamples() {
 function buildTurnstile() {
   var host = document.getElementById('demo-turnstile');
   var dfa = L.APPS.turnstile, state = dfa.start, last = null, history = [];
-  var gate = el('div', { 'class': 'gate' });
+  var gate = el('div', { 'class': 'gate', 'aria-hidden': 'true' });
   var label = el('p', { 'class': 'readout big', role: 'status', 'aria-live': 'polite' });
   var diag = el('div', { 'class': 'diagram-wrap' });
-  var log = el('div', { 'class': 'log', role: 'log', 'aria-label': 'event log' });
+  var log = el('div', { 'class': 'log', role: 'log', 'aria-label': tx('event log', 'บันทึกเหตุการณ์') });
   var word = el('p', { 'class': 'small mono' });
 
   function fire(sym) {
     var to = L.step(dfa, state, sym);
     last = { from: state, sym: sym };
     history.push(sym);
-    var name = dfa.symbolNames[sym];
+    var name = tx(dfa.symbolNames[sym], dfa.symbolNamesTh[sym]);
     var before = state; state = to;
     log.insertBefore(el('div', { text: name + ' (' + sym + '): ' + before + ' → ' + state +
-      (before === state ? '   (nothing happens)' : '') }), log.firstChild);
+      (before === state ? tx('   (nothing happens)', '   (ไม่มีอะไรเกิดขึ้น)') : '') }), log.firstChild);
     paint();
   }
   function paint() {
     var open = state === 'Unlocked';
     gate.textContent = open ? '🔓' : '🔒';
-    gate.setAttribute('aria-hidden', 'true');
     clear(label);
-    label.appendChild(document.createTextNode('The turnstile is '));
-    label.appendChild(el('strong', { text: open ? 'UNLOCKED' : 'LOCKED' }));
-    label.appendChild(document.createTextNode(open ? ' — one push will let someone through.' : ' — pushing achieves nothing; insert a coin.'));
+    label.appendChild(document.createTextNode(tx('The turnstile is ', 'ประตูหมุน')));
+    label.appendChild(el('strong', { text: open ? tx('UNLOCKED', 'ปลดล็อกอยู่') : tx('LOCKED', 'ล็อกอยู่') }));
+    label.appendChild(document.createTextNode(open
+      ? tx(' — one push will let someone through.', ' — ดันหนึ่งครั้งจะให้คนผ่านได้หนึ่งคน')
+      : tx(' — pushing achieves nothing; insert a coin.', ' — ดันไปก็ไม่เกิดอะไร ต้องหยอดเหรียญก่อน')));
     clear(diag);
-    diag.appendChild(U.renderDiagram(dfa, { active: state, activeEdge: last, caption: 'turnstile controller' }));
-    word.textContent = 'Event string so far: ' + U.show(history.join('')) +
-      '   (length ' + history.length + ', currently ' + (open ? 'in F — accepted' : 'not in F — rejected') + ')';
+    diag.appendChild(U.renderDiagram(dfa, { active: state, activeEdge: last, caption: tx('turnstile controller', 'ตัวควบคุมประตูหมุน') }));
+    var w = U.show(history.join(''));
+    word.textContent = open
+      ? tx('Event string so far: ' + w + '   (length ' + history.length + ', currently in F — accepted)',
+           'สตริงเหตุการณ์จนถึงตอนนี้: ' + w + '   (ยาว ' + history.length + ', ขณะนี้อยู่ใน F — ยอมรับ)')
+      : tx('Event string so far: ' + w + '   (length ' + history.length + ', currently not in F — rejected)',
+           'สตริงเหตุการณ์จนถึงตอนนี้: ' + w + '   (ยาว ' + history.length + ', ขณะนี้ไม่อยู่ใน F — ปฏิเสธ)');
   }
   host.appendChild(el('div', { 'class': 'two-col' }, [
     el('div', { 'class': 'stack' }, [
       gate, label,
       el('div', { 'class': 'row' }, [
-        el('button', { 'class': 'btn primary', text: '🪙 Insert coin (0)', onclick: function () { fire('0'); } }),
-        el('button', { 'class': 'btn', text: '🚶 Push arm (1)', onclick: function () { fire('1'); } }),
-        el('button', { 'class': 'btn ghost small', text: 'Reset', onclick: function () { state = dfa.start; last = null; history = []; clear(log); paint(); } })
+        el('button', { 'class': 'btn primary', text: tx('🪙 Insert coin (0)', '🪙 หยอดเหรียญ (0)'), onclick: function () { fire('0'); } }),
+        el('button', { 'class': 'btn', text: tx('🚶 Push arm (1)', '🚶 ดันแขนประตู (1)'), onclick: function () { fire('1'); } }),
+        el('button', { 'class': 'btn ghost small', text: tx('Reset', 'เริ่มใหม่'), onclick: function () { state = dfa.start; last = null; history = []; clear(log); paint(); } })
       ]),
       word, log
     ]),
     diag
   ]));
-  host.appendChild(U.renderTable(dfa, { meaning: true, caption: 'The same controller as a table' }));
+  host.appendChild(U.renderTable(dfa, { meaning: true, caption: tx('The same controller as a table', 'ตัวควบคุมเดียวกันในรูปตาราง') }));
   paint();
 }
 
@@ -1891,29 +2318,30 @@ function buildValidator() {
   var host = document.getElementById('demo-validator');
   var dfa = L.APPS.validator;
   var input = el('input', { type: 'text', id: 'val-in', spellcheck: 'false', autocomplete: 'off',
-    maxlength: '20', placeholder: 'type 0s and 1s', value: '1011' });
+    maxlength: '20', placeholder: tx('type 0s and 1s', 'พิมพ์ 0 และ 1'), value: '1011' });
   var verdict = el('p', { 'class': 'verdict', role: 'status', 'aria-live': 'polite' });
   var path = el('p', { 'class': 'trace-line' });
   var diag = el('div', { 'class': 'diagram-wrap' });
   var note = el('p', { 'class': 'msg' });
+  var WHY = {
+    start: tx('a numeral cannot be empty.', 'เลขต้องไม่เป็นค่าว่าง'),
+    trap: tx('it has a leading zero followed by more digits.', 'มีศูนย์นำหน้าแล้วตามด้วยเลขโดดอื่น')
+  };
 
   function paint() {
     var w = input.value, bad = [];
     w.split('').forEach(function (c) { if ('01'.indexOf(c) === -1 && bad.indexOf(c) === -1) bad.push(c); });
     note.className = 'msg' + (bad.length ? ' err' : '');
-    note.textContent = bad.length ? 'Ignoring characters outside Σ = {0,1}: ' + bad.join(', ') : '';
+    note.textContent = bad.length ? tx('Ignoring characters outside Σ = {0,1}: ', 'ข้ามอักขระที่อยู่นอก Σ = {0,1}: ') + bad.join(', ') : '';
     var clean = w.split('').filter(function (c) { return '01'.indexOf(c) !== -1; }).join('');
     var r = L.run(dfa, clean);
     verdict.className = 'verdict ' + (r.accepted ? 'accept' : 'reject');
     clear(verdict);
     verdict.appendChild(el('span', { 'class': 'glyph', 'aria-hidden': 'true', text: r.accepted ? '✓' : '✗' }));
-    verdict.appendChild(document.createTextNode(
-      r.accepted ? '“' + U.show(clean) + '” is a well-formed binary numeral.'
-                 : '“' + U.show(clean) + '” is rejected — ' + ({
-                     start: 'a numeral cannot be empty.',
-                     zero: 'valid.', lead1: 'valid.',
-                     trap: 'it has a leading zero followed by more digits.'
-                   })[r.end]));
+    var q = '“' + U.show(clean) + '”';
+    verdict.appendChild(document.createTextNode(r.accepted
+      ? tx(q + ' is a well-formed binary numeral.', q + ' เป็นเลขฐานสองที่เขียนถูกรูปแบบ')
+      : tx(q + ' is rejected — ', q + ' ถูกปฏิเสธ — ') + WHY[r.end]));
     var line = r.states[0];
     r.transitions.forEach(function (t) { line += '  --' + t.sym + '-->  ' + t.to; });
     path.textContent = line;
@@ -1922,24 +2350,24 @@ function buildValidator() {
       active: r.end,
       activeEdge: r.transitions.length ? { from: r.transitions[r.transitions.length - 1].from, sym: r.transitions[r.transitions.length - 1].sym } : null,
       verdict: r.accepted ? 'accept' : 'reject',
-      caption: 'binary numeral validator'
+      caption: tx('binary numeral validator', 'ตัวตรวจเลขฐานสอง')
     }));
   }
   input.addEventListener('input', paint);
   host.appendChild(el('div', { 'class': 'two-col' }, [
     el('div', { 'class': 'stack' }, [
-      el('div', {}, [el('label', { 'for': 'val-in', text: 'Candidate literal' }),
+      el('div', {}, [el('label', { 'for': 'val-in', text: tx('Candidate literal', 'เลขที่จะตรวจ') }),
                      el('div', { style: 'margin-top:.3rem' }, [input])]),
       note, verdict,
-      el('div', {}, [el('h4', { text: 'Path through the machine' }), path]),
+      el('div', {}, [el('h4', { text: tx('Path through the machine', 'เส้นทางในเครื่อง') }), path]),
       el('div', { 'class': 'samples' }, ['0', '1', '10', '00', '011', '1111', ''].map(function (s) {
-        return el('button', { 'class': 'chip', text: s === '' ? 'ε (empty)' : s,
+        return el('button', { 'class': 'chip', text: s === '' ? tx('ε (empty)', 'ε (ว่าง)') : s,
           onclick: function () { input.value = s; paint(); input.focus(); } });
       }))
     ]),
     diag
   ]));
-  host.appendChild(U.renderTable(dfa, { meaning: true, caption: 'Transition table' }));
+  host.appendChild(U.renderTable(dfa, { meaning: true, caption: tx('Transition table', 'ตารางการเปลี่ยนสถานะ') }));
   paint();
 }
 
@@ -1955,6 +2383,7 @@ function buildScanner() {
   var stateLine = el('div', { 'class': 'scan-out', 'aria-hidden': 'true' });
   var status = el('p', { 'class': 'readout big', role: 'status', 'aria-live': 'polite' });
   var diag = el('div', { 'class': 'diagram-wrap' });
+  var SCAN = tx('▶ Scan', '▶ ค้นหา'), PAUSE = tx('⏸ Pause', '⏸ หยุดชั่วคราว');
   var bStep, bPlay, bReset;
 
   function text() { return input.value.split('').filter(function (c) { return '01'.indexOf(c) !== -1; }).join(''); }
@@ -1971,36 +2400,37 @@ function buildScanner() {
         text: idx < i ? r.states[idx + 1].slice(1) : '·' }));
     });
     clear(status);
-    status.appendChild(document.createTextNode('Read ' + i + ' of ' + w.length + ' symbols · state ' ));
+    status.appendChild(document.createTextNode(tx('Read ' + i + ' of ' + w.length + ' symbols · state ',
+                                                  'อ่านแล้ว ' + i + ' จาก ' + w.length + ' สัญลักษณ์ · สถานะ ')));
     status.appendChild(el('span', { 'class': 'state-now', text: r.states[i] }));
-    status.appendChild(document.createTextNode(' · matches found so far: ' + hits.length +
-      (r.states[i] === 'k4' ? ' — a match just completed!' : '')));
+    status.appendChild(document.createTextNode(tx(' · matches found so far: ' + hits.length, ' · พบแล้ว ' + hits.length + ' ตำแหน่ง') +
+      (r.states[i] === 'k4' ? tx(' — a match just completed!', ' — เพิ่งพบรูปแบบครบ!') : '')));
     clear(diag);
     diag.appendChild(U.renderDiagram(dfa, {
       active: r.states[i],
       activeEdge: i > 0 ? { from: r.transitions[i - 1].from, sym: r.transitions[i - 1].sym } : null,
-      caption: 'substring scanner for 0110'
+      caption: tx('substring scanner for 0110', 'เครื่องค้นหาสตริงย่อย 0110')
     }));
     bStep.disabled = i >= w.length;
     bReset.disabled = i === 0;
   }
-  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.textContent = '▶ Scan'; } }
-  bStep = el('button', { 'class': 'btn primary small', text: 'Step ▶', onclick: function () { stop(); if (i < text().length) { i++; paint(); } } });
-  bPlay = el('button', { 'class': 'btn small', text: '▶ Scan', onclick: function () {
+  function stop() { if (timer) { clearInterval(timer); timer = null; bPlay.textContent = SCAN; } }
+  bStep = el('button', { 'class': 'btn primary small', text: tx('Step ▶', 'ก้าวถัดไป ▶'), onclick: function () { stop(); if (i < text().length) { i++; paint(); } } });
+  bPlay = el('button', { 'class': 'btn small', text: SCAN, onclick: function () {
     if (timer) { stop(); return; }
     if (i >= text().length) i = 0;
-    bPlay.textContent = '⏸ Pause';
-    timer = setInterval(function () { if (i >= text().length) stop(); else { i++; paint(); } }, 380);
+    bPlay.textContent = PAUSE;
+    timer = setInterval(function () { if (!host.contains(bPlay) || i >= text().length) stop(); else { i++; paint(); } }, 380);
   } });
-  bReset = el('button', { 'class': 'btn small', text: '⟲ Reset', onclick: function () { stop(); i = 0; paint(); } });
+  bReset = el('button', { 'class': 'btn small', text: tx('⟲ Reset', '⟲ เริ่มใหม่'), onclick: function () { stop(); i = 0; paint(); } });
   input.addEventListener('input', function () { stop(); i = 0; paint(); });
 
   host.appendChild(el('div', { 'class': 'two-col' }, [
     el('div', { 'class': 'stack' }, [
-      el('div', {}, [el('label', { 'for': 'scan-in', text: 'Text to scan' }), el('div', { style: 'margin-top:.3rem' }, [input])]),
+      el('div', {}, [el('label', { 'for': 'scan-in', text: tx('Text to scan', 'ข้อความที่จะค้น') }), el('div', { style: 'margin-top:.3rem' }, [input])]),
       el('div', {}, [
-        el('div', { 'class': 'small muted', text: 'text:' }), charLine,
-        el('div', { 'class': 'small muted', style: 'margin-top:.3rem', text: 'state after each symbol:' }), stateLine
+        el('div', { 'class': 'small muted', text: tx('text:', 'ข้อความ:') }), charLine,
+        el('div', { 'class': 'small muted', style: 'margin-top:.3rem', text: tx('state after each symbol:', 'สถานะหลังอ่านแต่ละสัญลักษณ์:') }), stateLine
       ]),
       status,
       el('div', { 'class': 'row' }, [bStep, bPlay, bReset])
@@ -2015,30 +2445,53 @@ function buildScanner() {
    --------------------------------------------------------------- */
 function buildQuizzes() {
   document.getElementById('quiz-compute').appendChild(U.createQuiz({
-    q: 'A DFA has start state q₀, and q₀ is NOT an accept state. What does the machine do with the empty string ε?',
+    q: tx('A DFA has start state q₀, and q₀ is NOT an accept state. What does the machine do with the empty string ε?',
+          'DFA มีสถานะเริ่มต้น q₀ และ q₀ ไม่ใช่สถานะยอมรับ เครื่องจะทำอย่างไรกับสตริงว่าง ε?'),
     options: [
-      { t: 'Rejects it.', correct: true, why: 'Running ε takes zero steps, so the machine finishes where it started — in q₀ — and q₀ ∉ F means reject.' },
-      { t: 'Accepts it, because there is nothing to disagree with.', why: 'Acceptance is decided only by the state you end in, and with no input you end in the start state.' },
-      { t: 'Crashes — ε is not a legal input.', why: 'ε is a perfectly legal string of length 0. Every DFA has a defined answer for it.' },
-      { t: 'It depends on δ.', why: 'δ is never consulted: there are no symbols to read.' }
+      { t: tx('Rejects it.', 'ปฏิเสธ'), correct: true,
+        why: tx('Running ε takes zero steps, so the machine finishes where it started — in q₀ — and q₀ ∉ F means reject.',
+                'การรัน ε คือการเดินศูนย์ขั้น เครื่องจึงจบที่เดิม — ที่ q₀ — และ q₀ ∉ F แปลว่าปฏิเสธ') },
+      { t: tx('Accepts it, because there is nothing to disagree with.', 'ยอมรับ เพราะไม่มีอะไรให้ขัดแย้ง'),
+        why: tx('Acceptance is decided only by the state you end in, and with no input you end in the start state.',
+                'การยอมรับตัดสินจากสถานะที่จบเท่านั้น และถ้าไม่มีข้อมูลเข้า ก็จะจบที่สถานะเริ่มต้น') },
+      { t: tx('Crashes — ε is not a legal input.', 'เครื่องพัง — ε ไม่ใช่ข้อมูลเข้าที่ถูกต้อง'),
+        why: tx('ε is a perfectly legal string of length 0. Every DFA has a defined answer for it.',
+                'ε เป็นสตริงความยาว 0 ที่ถูกต้องสมบูรณ์ DFA ทุกตัวมีคำตอบที่แน่นอนสำหรับมัน') },
+      { t: tx('It depends on δ.', 'ขึ้นอยู่กับ δ'),
+        why: tx('δ is never consulted: there are no symbols to read.', 'ไม่มีการใช้ δ เลย เพราะไม่มีสัญลักษณ์ให้อ่าน') }
     ]
   }));
   document.getElementById('quiz-notation').appendChild(U.createQuiz({
-    q: 'A DFA over Σ = {0,1} has 5 states. Exactly how many arrows (transitions) does its diagram contain, counting an arrow labelled “0, 1” as two?',
+    q: tx('A DFA over Σ = {0,1} has 5 states. Exactly how many arrows (transitions) does its diagram contain, counting an arrow labelled “0, 1” as two?',
+          'DFA บน Σ = {0,1} มี 5 สถานะ แผนภาพของมันมีลูกศร (การเปลี่ยนสถานะ) ทั้งหมดกี่เส้นพอดี ถ้านับลูกศรที่มีป้าย “0, 1” เป็นสองเส้น?'),
     options: [
-      { t: '10', correct: true, why: '|Q| × |Σ| = 5 × 2 = 10. δ is a total function, so every state contributes exactly one transition per symbol — no more, no fewer.' },
-      { t: '5', why: 'That would be one arrow per state, leaving one symbol undefined in each.' },
-      { t: '25', why: 'That would be an arrow from every state to every state; δ only needs one target per (state, symbol) pair.' },
-      { t: 'It depends on the machine.', why: 'The count is forced by determinism: |Q| × |Σ| exactly, for every DFA over this alphabet.' }
+      { t: '10', correct: true,
+        why: tx('|Q| × |Σ| = 5 × 2 = 10. δ is a total function, so every state contributes exactly one transition per symbol — no more, no fewer.',
+                '|Q| × |Σ| = 5 × 2 = 10 เพราะ δ นิยามครบทุกคู่ ทุกสถานะจึงมีการเปลี่ยนสถานะหนึ่งเส้นพอดีต่อหนึ่งสัญลักษณ์ ไม่มากไม่น้อย') },
+      { t: '5', why: tx('That would be one arrow per state, leaving one symbol undefined in each.',
+                        'นั่นคือลูกศรหนึ่งเส้นต่อสถานะ ซึ่งจะทำให้แต่ละสถานะขาดการกำหนดสำหรับสัญลักษณ์หนึ่งตัว') },
+      { t: '25', why: tx('That would be an arrow from every state to every state; δ only needs one target per (state, symbol) pair.',
+                         'นั่นคือลูกศรจากทุกสถานะไปทุกสถานะ แต่ δ ต้องการแค่ปลายทางเดียวต่อคู่ (สถานะ, สัญลักษณ์)') },
+      { t: tx('It depends on the machine.', 'ขึ้นอยู่กับเครื่อง'),
+        why: tx('The count is forced by determinism: |Q| × |Σ| exactly, for every DFA over this alphabet.',
+                'จำนวนนี้ถูกบังคับโดยความเชิงกำหนด: |Q| × |Σ| พอดีสำหรับ DFA ทุกตัวบนชุดสัญลักษณ์นี้') }
     ]
   }));
   document.getElementById('quiz-limits').appendChild(U.createQuiz({
-    q: 'Which of these languages over {0,1} can a DFA decide?',
+    q: tx('Which of these languages over {0,1} can a DFA decide?', 'ภาษาใดต่อไปนี้บน {0,1} ที่ DFA ตัดสินได้?'),
     options: [
-      { t: 'Strings with an even number of 0s.', correct: true, why: 'One bit of memory (parity) is enough, and one bit fits in finitely many states.' },
-      { t: 'Strings of the form 0ⁿ1ⁿ.', why: 'This needs an unbounded counter: the machine would have to remember n exactly, and n is unbounded.' },
-      { t: 'Strings that are palindromes.', why: 'To check a palindrome you must remember the whole first half, which is unbounded.' },
-      { t: 'Strings with equally many 0s and 1s.', why: 'Same problem as 0ⁿ1ⁿ — the difference between the counts is unbounded, so no finite memory tracks it.' }
+      { t: tx('Strings with an even number of 0s.', 'สตริงที่มี 0 เป็นจำนวนคู่'), correct: true,
+        why: tx('One bit of memory (parity) is enough, and one bit fits in finitely many states.',
+                'หน่วยความจำหนึ่งบิต (คู่/คี่) ก็เพียงพอ และหนึ่งบิตใส่ในสถานะจำนวนจำกัดได้') },
+      { t: tx('Strings of the form 0ⁿ1ⁿ.', 'สตริงในรูป 0ⁿ1ⁿ'),
+        why: tx('This needs an unbounded counter: the machine would have to remember n exactly, and n is unbounded.',
+                'ต้องใช้ตัวนับที่ไม่มีขอบเขต: เครื่องต้องจำ n ให้ได้พอดี และ n ไม่มีขอบเขต') },
+      { t: tx('Strings that are palindromes.', 'สตริงที่เป็นพาลินโดรม'),
+        why: tx('To check a palindrome you must remember the whole first half, which is unbounded.',
+                'การตรวจพาลินโดรมต้องจำครึ่งแรกทั้งหมด ซึ่งยาวได้ไม่จำกัด') },
+      { t: tx('Strings with equally many 0s and 1s.', 'สตริงที่มีจำนวน 0 เท่ากับจำนวน 1'),
+        why: tx('Same problem as 0ⁿ1ⁿ — the difference between the counts is unbounded, so no finite memory tracks it.',
+                'ปัญหาเดียวกับ 0ⁿ1ⁿ — ผลต่างของจำนวนไม่มีขอบเขต หน่วยความจำจำกัดจึงติดตามไม่ได้') }
     ]
   }));
 }
@@ -2051,13 +2504,14 @@ window.DFAPage1 = { buildBadExamples: buildBadExamples, buildTupleExplorer: buil
 
 <!-- ===================================================================
      UI LAYER, PART 3 — the exercise laboratory (DFA builder, live
-     validation, answer checking, hints, progress) and page start-up.
+     validation, answer checking, hints, progress), the language switch
+     and page start-up.
      =================================================================== -->
 <script>
 (function () {
 'use strict';
 var L = window.DFALib, U = window.DFAUI, P = window.DFAPage1;
-var el = U.el, clear = U.clear;
+var el = U.el, clear = U.clear, tx = U.tx;
 
 var STORE_KEY = 'dfa-intro-v1';
 var progress = {}, models = {}, hintsShown = {}, currentEx = L.EXERCISES[0].id;
@@ -2111,9 +2565,7 @@ function toDFA(model) {
       '1': (row['1'] && ids.indexOf(row['1']) !== -1) ? label[row['1']] : undefined
     };
   });
-  var dfa = L.makeDFA(spec);
-  dfa.namesUnique = unique;
-  return dfa;
+  return L.makeDFA(spec);
 }
 /* Validation shown to the student: the library's checks, plus a
    name-uniqueness check that only matters in the editor. */
@@ -2121,8 +2573,10 @@ function builderChecks(model, dfa) {
   var names = model.states.map(function (s) { return (s.name || '').trim(); });
   var blank = names.some(function (n) { return !n; });
   var dup = names.filter(function (n, i) { return n && names.indexOf(n) !== i; });
-  var mine = { key: 'names', label: 'Every state has a distinct, non-empty name', ok: !blank && dup.length === 0,
-    detail: blank ? 'One state has an empty name.' : (dup.length ? 'Repeated name: ' + dup[0] : '') };
+  var mine = { key: 'names', label: tx('Every state has a distinct, non-empty name', 'ทุกสถานะมีชื่อที่ไม่ว่างและไม่ซ้ำกัน'),
+    ok: !blank && dup.length === 0,
+    detail: blank ? tx('One state has an empty name.', 'มีสถานะหนึ่งที่ชื่อว่าง')
+                  : (dup.length ? tx('Repeated name: ', 'ชื่อซ้ำ: ') + dup[0] : '') };
   var rest = L.validate(dfa).checks.filter(function (c) { return c.key !== 'names'; });
   return [mine].concat(rest);
 }
@@ -2138,8 +2592,8 @@ function buildLab() {
     var b = el('button', { 'class': 'tab', type: 'button', 'aria-pressed': 'false' });
     b.dataset.id = ex.id;
     b.appendChild(el('span', { 'class': 'num', text: ex.tab }));
-    b.appendChild(document.createTextNode(ex.title));
-    b.appendChild(el('span', { 'class': 'sr-only', text: ' (' + ex.level + ')' }));
+    b.appendChild(document.createTextNode(U.loc(ex, 'title')));
+    b.appendChild(el('span', { 'class': 'sr-only', text: ' (' + U.loc(ex, 'level') + ')' }));
     b.addEventListener('click', function () { openExercise(ex.id); });
     nav.appendChild(b);
   });
@@ -2152,14 +2606,15 @@ function buildLab() {
     L.EXERCISES.forEach(function (ex) {
       var st = progress[ex.id];
       var li = el('li', { 'class': st === 'solved' ? 'solved' : (st ? 'seen' : '') });
-      li.textContent = (st === 'solved' ? '✓ ' : (st === 'revealed' ? '👁 ' : (st ? '… ' : '○ '))) + ex.tab + '. ' + ex.title;
+      li.textContent = (st === 'solved' ? '✓ ' : (st === 'revealed' ? '👁 ' : (st ? '… ' : '○ '))) + ex.tab + '. ' + U.loc(ex, 'title');
       li.appendChild(el('span', { 'class': 'sr-only', text: ' — ' +
-        (st === 'solved' ? 'solved' : st === 'revealed' ? 'solution viewed' : st ? 'attempted' : 'not started') }));
+        (st === 'solved' ? tx('solved', 'ทำได้แล้ว') : st === 'revealed' ? tx('solution viewed', 'ดูเฉลยแล้ว')
+          : st ? tx('attempted', 'กำลังทำ') : tx('not started', 'ยังไม่เริ่ม')) }));
       list.appendChild(li);
     });
     Array.prototype.forEach.call(nav.children, function (b) {
       var st = progress[b.dataset.id];
-      b.setAttribute('aria-label', (st === 'solved' ? 'solved: ' : '') + b.textContent);
+      b.setAttribute('aria-label', (st === 'solved' ? tx('solved: ', 'ทำได้แล้ว: ') : '') + b.textContent);
     });
   }
 
@@ -2176,20 +2631,21 @@ function buildLab() {
   /* ---------------- one exercise ---------------- */
   function makePanel(ex) {
     var model = modelFor(ex.id);
+    var title = U.loc(ex, 'title'), hints = U.loc(ex, 'hints');
     var card = el('div', { 'class': 'card' });
     card.appendChild(el('h3', {}, [
-      document.createTextNode('Exercise ' + ex.tab + ' · ' + ex.title + ' '),
-      el('span', { 'class': 'small muted', text: '(' + ex.level + ')' })
+      document.createTextNode(tx('Exercise ', 'แบบฝึกหัดที่ ') + ex.tab + ' · ' + title + ' '),
+      el('span', { 'class': 'small muted', text: '(' + U.loc(ex, 'level') + ')' })
     ]));
-    card.appendChild(el('p', { text: ex.prompt }));
+    card.appendChild(el('p', { text: U.loc(ex, 'prompt') }));
 
-    var checksList = el('ul', { 'class': 'checks', role: 'status', 'aria-live': 'polite', 'aria-label': 'DFA validity' });
+    var checksList = el('ul', { 'class': 'checks', role: 'status', 'aria-live': 'polite', 'aria-label': tx('DFA validity', 'ความถูกต้องของ DFA') });
     var tableHost = el('div', { 'class': 'scroll-x' });
     var resultHost = el('div');
     var hintHost = el('div');
     var solutionHost = el('div');
     var tester = U.createTester({ dfa: toDFA(model), samples: ex.samples, table: false, meaning: false,
-      label: 'Test a string on YOUR machine', caption: 'your machine' });
+      label: tx('Test a string on YOUR machine', 'ทดสอบสตริงกับเครื่องของคุณ'), caption: tx('your machine', 'เครื่องของคุณ') });
 
     /* --- the editable transition table --- */
     var optionRefs = [];      // <option> elements to relabel when a name changes
@@ -2205,42 +2661,46 @@ function buildLab() {
       checks.forEach(function (c) {
         var li = el('li', { 'class': c.ok ? 'ok' : 'no' });
         li.appendChild(el('span', { 'class': 'g', 'aria-hidden': 'true', text: c.ok ? '✓' : '✗' }));
-        var txt = el('span', {}, [el('strong', { text: c.ok ? '' : 'Not yet: ' }), document.createTextNode(c.label)]);
+        var txt = el('span', {}, [el('strong', { text: c.ok ? '' : tx('Not yet: ', 'ยังไม่ผ่าน: ') }), document.createTextNode(c.label)]);
         if (c.detail) { txt.appendChild(el('br')); txt.appendChild(el('span', { 'class': 'small', text: c.detail })); }
         li.appendChild(txt);
         checksList.appendChild(li);
       });
       var allOK = checks.every(function (c) { return c.ok; });
       checkBtn.disabled = !allOK;
-      checkBtn.title = allOK ? '' : 'Finish the machine first — the checklist says what is missing.';
+      checkBtn.title = allOK ? '' : tx('Finish the machine first — the checklist says what is missing.',
+                                       'สร้างเครื่องให้เสร็จก่อน — รายการตรวจบอกว่ายังขาดอะไร');
     }
+    function stateRef(s, idx) { return s.name || tx('state ', 'สถานะที่ ') + (idx + 1); }
     function renderBuilderTable() {
       optionRefs = [];
       clear(tableHost);
       var t = el('table', { 'class': 'builder-table' });
       var head = el('tr');
-      ['State name', 'Start', 'Accept', 'δ(·, 0)', 'δ(·, 1)', ''].forEach(function (h, i) {
-        head.appendChild(el('th', { scope: 'col' }, [i === 5 ? el('span', { 'class': 'sr-only', text: 'Delete' }) : document.createTextNode(h)]));
+      [tx('State name', 'ชื่อสถานะ'), tx('Start', 'เริ่มต้น'), tx('Accept', 'ยอมรับ'), 'δ(·, 0)', 'δ(·, 1)', ''].forEach(function (h, i) {
+        head.appendChild(el('th', { scope: 'col' }, [i === 5 ? el('span', { 'class': 'sr-only', text: tx('Delete', 'ลบ') }) : document.createTextNode(h)]));
       });
       t.appendChild(el('thead', {}, [head]));
       var body = el('tbody');
       model.states.forEach(function (s, idx) {
         var tr = el('tr');
         /* name */
-        var nameIn = el('input', { type: 'text', value: s.name, 'aria-label': 'name of state ' + (idx + 1) });
+        var nameIn = el('input', { type: 'text', value: s.name, 'aria-label': tx('name of state ', 'ชื่อของสถานะที่ ') + (idx + 1) });
         nameIn.addEventListener('input', function () {
           s.name = nameIn.value;
-          optionRefs.forEach(function (o) { if (o.value === s.id) o.textContent = s.name || '(unnamed)'; });
+          optionRefs.forEach(function (o) { if (o.value === s.id) o.textContent = s.name || tx('(unnamed)', '(ไม่มีชื่อ)'); });
           sync(false);
         });
         tr.appendChild(el('td', {}, [nameIn]));
         /* start */
-        var radio = el('input', { type: 'radio', name: 'start-' + ex.id, 'aria-label': 'make ' + (s.name || 'state ' + (idx + 1)) + ' the start state' });
+        var radio = el('input', { type: 'radio', name: 'start-' + ex.id,
+          'aria-label': tx('make ' + stateRef(s, idx) + ' the start state', 'ให้ ' + stateRef(s, idx) + ' เป็นสถานะเริ่มต้น') });
         radio.checked = model.start === s.id;
         radio.addEventListener('change', function () { model.start = s.id; sync(false); });
         tr.appendChild(el('td', {}, [radio]));
         /* accept */
-        var acc = el('input', { type: 'checkbox', 'aria-label': 'make ' + (s.name || 'state ' + (idx + 1)) + ' an accept state' });
+        var acc = el('input', { type: 'checkbox',
+          'aria-label': tx('make ' + stateRef(s, idx) + ' an accept state', 'ให้ ' + stateRef(s, idx) + ' เป็นสถานะยอมรับ') });
         acc.checked = model.accept.indexOf(s.id) !== -1;
         acc.addEventListener('change', function () {
           var i = model.accept.indexOf(s.id);
@@ -2251,10 +2711,11 @@ function buildLab() {
         tr.appendChild(el('td', {}, [acc]));
         /* transitions */
         ['0', '1'].forEach(function (sym) {
-          var sel = el('select', { 'aria-label': 'delta of ' + (s.name || 'state ' + (idx + 1)) + ' on ' + sym });
-          sel.appendChild(el('option', { value: '', text: '— choose —' }));
+          var sel = el('select', { 'aria-label': tx('delta of ' + stateRef(s, idx) + ' on ' + sym,
+                                                    'เดลตาของ ' + stateRef(s, idx) + ' เมื่ออ่าน ' + sym) });
+          sel.appendChild(el('option', { value: '', text: tx('— choose —', '— เลือก —') }));
           model.states.forEach(function (o) {
-            var opt = el('option', { value: o.id, text: o.name || '(unnamed)' });
+            var opt = el('option', { value: o.id, text: o.name || tx('(unnamed)', '(ไม่มีชื่อ)') });
             optionRefs.push(opt);
             sel.appendChild(opt);
           });
@@ -2264,7 +2725,7 @@ function buildLab() {
         });
         /* delete */
         var del = el('button', { 'class': 'btn small danger', text: '✕',
-          'aria-label': 'delete state ' + (s.name || idx + 1), disabled: model.states.length <= 1 ? 'disabled' : null,
+          'aria-label': tx('delete state ', 'ลบสถานะ ') + (s.name || idx + 1), disabled: model.states.length <= 1 ? 'disabled' : null,
           onclick: function () { deleteState(s.id); } });
         tr.appendChild(el('td', {}, [del]));
         body.appendChild(tr);
@@ -2293,7 +2754,7 @@ function buildLab() {
       sync(true);
     }
 
-    var checkBtn = el('button', { 'class': 'btn primary', text: '✓ Check my answer', onclick: doCheck });
+    var checkBtn = el('button', { 'class': 'btn primary', text: tx('✓ Check my answer', '✓ ตรวจคำตอบ'), onclick: doCheck });
 
     /* --- answer checking --- */
     function doCheck() {
@@ -2302,36 +2763,46 @@ function buildLab() {
       clear(resultHost);
       if (res.status === 'invalid') {
         var c = el('div', { 'class': 'result-card invalid' });
-        c.appendChild(el('h4', { text: 'Not a DFA yet' }));
-        c.appendChild(el('p', { 'class': 'small', text: 'Fix these before submitting: ' +
-          res.validation.checks.filter(function (x) { return !x.ok; }).map(function (x) { return x.label; }).join('; ') + '.' }));
+        c.appendChild(el('h4', { text: tx('Not a DFA yet', 'ยังไม่เป็น DFA') }));
+        var todo = res.validation.checks.filter(function (x) { return !x.ok; }).map(function (x) { return x.label; }).join('; ');
+        c.appendChild(el('p', { 'class': 'small', text: tx('Fix these before submitting: ' + todo + '.', 'แก้ข้อเหล่านี้ก่อนส่ง: ' + todo) }));
         resultHost.appendChild(c);
         if (progress[ex.id] !== 'solved') progress[ex.id] = 'attempted';
       } else if (res.status === 'pass') {
         var p = el('div', { 'class': 'result-card pass' });
-        p.appendChild(el('h4', { text: '✓ Correct — that machine is exactly right' }));
-        p.appendChild(el('p', { 'class': 'small', text:
-          'Checked two independent ways: an exact equivalence test against a reference machine (a breadth-first search of the product automaton, which would find a disagreement of any length), and brute force over all ' +
-          '8191 strings of length ≤ 12. No string is classified differently. Your machine may look nothing like the reference one — different machines can define the same language.' }));
-        p.appendChild(el('button', { 'class': 'btn small', text: 'Compare with the reference solution', onclick: showSolution }));
+        p.appendChild(el('h4', { text: tx('✓ Correct — that machine is exactly right', '✓ ถูกต้อง — เครื่องนี้ถูกต้องสมบูรณ์') }));
+        p.appendChild(el('p', { 'class': 'small', text: tx(
+          'Checked two independent ways: an exact equivalence test against a reference machine (a breadth-first search of the product automaton, which would find a disagreement of any length), and brute force over all 8191 strings of length ≤ 12. No string is classified differently. Your machine may look nothing like the reference one — different machines can define the same language.',
+          'ตรวจด้วยสองวิธีที่เป็นอิสระต่อกัน: ทดสอบความสมมูลแบบแม่นตรงกับเครื่องอ้างอิง (ค้นแบบกว้างก่อนบนออโต้มาตาผลคูณ ซึ่งจะพบความต่างได้ไม่ว่าสตริงจะยาวเท่าไร) และลองทุกสตริงทั้ง 8191 ตัวที่ยาวไม่เกิน 12 ไม่มีสตริงใดที่ถูกจำแนกต่างกัน เครื่องของคุณอาจหน้าตาไม่เหมือนเครื่องอ้างอิงเลยก็ได้ — เครื่องที่ต่างกันอาจกำหนดภาษาเดียวกันได้') }));
+        p.appendChild(el('button', { 'class': 'btn small', text: tx('Compare with the reference solution', 'เทียบกับเฉลยอ้างอิง'), onclick: showSolution }));
         resultHost.appendChild(p);
         progress[ex.id] = 'solved';
       } else {
         var f = el('div', { 'class': 'result-card fail' });
         var ce = res.counterexample;
-        f.appendChild(el('h4', { text: '✗ Not yet — here is the shortest string you get wrong' }));
+        f.appendChild(el('h4', { text: tx('✗ Not yet — here is the shortest string you get wrong', '✗ ยังไม่ถูก — นี่คือสตริงที่สั้นที่สุดที่เครื่องของคุณตอบผิด') }));
         var line = el('p');
-        line.appendChild(document.createTextNode('On the input '));
-        line.appendChild(el('strong', { 'class': 'mono', text: ce.w === '' ? 'ε (the empty string)' : ce.w }));
-        line.appendChild(document.createTextNode(' your machine says '));
-        line.appendChild(el('strong', { text: ce.got ? 'ACCEPT' : 'REJECT' }));
-        line.appendChild(document.createTextNode(', but the language says it should be '));
-        line.appendChild(el('strong', { text: ce.expected ? 'ACCEPTED' : 'REJECTED' }));
-        line.appendChild(document.createTextNode('.'));
+        var wNode = el('strong', { 'class': 'mono', text: ce.w === '' ? tx('ε (the empty string)', 'ε (สตริงว่าง)') : ce.w });
+        if (U.getLang() === 'th') {
+          line.appendChild(document.createTextNode('สำหรับข้อมูลเข้า '));
+          line.appendChild(wNode);
+          line.appendChild(document.createTextNode(' เครื่องของคุณ'));
+          line.appendChild(el('strong', { text: ce.got ? 'ยอมรับ' : 'ปฏิเสธ' }));
+          line.appendChild(document.createTextNode(' แต่ตามภาษาเป้าหมายแล้วควร'));
+          line.appendChild(el('strong', { text: ce.expected ? 'ยอมรับ' : 'ปฏิเสธ' }));
+        } else {
+          line.appendChild(document.createTextNode('On the input '));
+          line.appendChild(wNode);
+          line.appendChild(document.createTextNode(' your machine says '));
+          line.appendChild(el('strong', { text: ce.got ? 'ACCEPT' : 'REJECT' }));
+          line.appendChild(document.createTextNode(', but the language says it should be '));
+          line.appendChild(el('strong', { text: ce.expected ? 'ACCEPTED' : 'REJECTED' }));
+          line.appendChild(document.createTextNode('.'));
+        }
         f.appendChild(line);
-        f.appendChild(el('h4', { text: 'How your machine runs it' }));
+        f.appendChild(el('h4', { text: tx('How your machine runs it', 'เครื่องของคุณรันสตริงนี้อย่างไร') }));
         f.appendChild(el('p', { 'class': 'trace-line', text: res.trace }));
-        f.appendChild(el('button', { 'class': 'btn small', text: 'Load this string into the tester',
+        f.appendChild(el('button', { 'class': 'btn small', text: tx('Load this string into the tester', 'ใส่สตริงนี้ลงในตัวทดสอบ'),
           onclick: function () { tester.setString(ce.w); tester.el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }));
         resultHost.appendChild(f);
         if (progress[ex.id] !== 'solved') progress[ex.id] = 'attempted';
@@ -2342,41 +2813,45 @@ function buildLab() {
     }
 
     /* --- hints --- */
+    function hintLabel(n) {          // label for the button that would reveal hint n (1-based)
+      return n > hints.length ? tx('No more hints', 'หมดคำใบ้แล้ว') : tx('Hint ' + n + ' →', 'คำใบ้ ' + n + ' →');
+    }
     function showHint() {
       var n = (hintsShown[ex.id] || 0);
-      if (n >= ex.hints.length) return;
+      if (n >= hints.length) return;
       hintsShown[ex.id] = n + 1;
       var h = el('div', { 'class': 'hint' });
-      h.appendChild(el('strong', { text: 'Hint ' + (n + 1) + ' of ' + ex.hints.length + '. ' }));
-      h.appendChild(document.createTextNode(ex.hints[n]));
+      h.appendChild(el('strong', { text: tx('Hint ' + (n + 1) + ' of ' + hints.length + '. ', 'คำใบ้ ' + (n + 1) + ' จาก ' + hints.length + ' ') }));
+      h.appendChild(document.createTextNode(hints[n]));
       hintHost.appendChild(h);
-      hintBtn.textContent = (n + 1 >= ex.hints.length) ? 'No more hints' : 'Hint ' + (n + 2) + ' →';
-      hintBtn.disabled = (n + 1 >= ex.hints.length);
+      hintBtn.textContent = hintLabel(n + 2);
+      hintBtn.disabled = (n + 1 >= hints.length);
       if (!progress[ex.id]) progress[ex.id] = 'attempted';
       renderProgress(); save();
     }
     var hintBtn = el('button', { 'class': 'btn', onclick: showHint });
-    (function initHints() {
+    (function initHints() {         // replay hints already revealed (e.g. after a language switch)
       var n = hintsShown[ex.id] || 0;
       hintsShown[ex.id] = 0;
       for (var i = 0; i < n; i++) showHint();
-      hintBtn.textContent = n >= ex.hints.length ? 'No more hints' : 'Hint ' + (n + 1) + ' →';
-      hintBtn.disabled = n >= ex.hints.length;
+      hintBtn.textContent = hintLabel(n + 1);
+      hintBtn.disabled = n >= hints.length;
     })();
 
     /* --- reference solution --- */
     function showSolution() {
       clear(solutionHost);
       var s = el('div', { 'class': 'card', style: 'background:var(--panel-2)' });
-      s.appendChild(el('h4', { text: 'One correct machine' }));
-      s.appendChild(el('p', { text: ex.explanation }));
+      s.appendChild(el('h4', { text: tx('One correct machine', 'เครื่องที่ถูกต้องเครื่องหนึ่ง') }));
+      s.appendChild(el('p', { text: U.loc(ex, 'explanation') }));
       s.appendChild(el('div', { 'class': 'two-col' }, [
-        el('div', { 'class': 'diagram-wrap' }, [U.renderDiagram(ex.solution, { caption: 'reference solution for ' + ex.title })]),
-        U.renderTable(ex.solution, { meaning: true, caption: 'Reference solution' })
+        el('div', { 'class': 'diagram-wrap' }, [U.renderDiagram(ex.solution, { caption: tx('reference solution for ', 'เฉลยอ้างอิงของ ') + title })]),
+        U.renderTable(ex.solution, { meaning: true, caption: tx('Reference solution', 'เฉลยอ้างอิง') })
       ]));
-      s.appendChild(el('p', { 'class': 'small muted', style: 'margin-top:.7rem',
-        text: 'This is only one correct answer. Any machine that accepts exactly the same set of strings is equally right, and the checker will say so.' }));
-      s.appendChild(el('button', { 'class': 'btn small', text: 'Load this machine into my builder', onclick: function () {
+      s.appendChild(el('p', { 'class': 'small muted', style: 'margin-top:.7rem', text: tx(
+        'This is only one correct answer. Any machine that accepts exactly the same set of strings is equally right, and the checker will say so.',
+        'นี่เป็นเพียงคำตอบที่ถูกต้องคำตอบหนึ่ง เครื่องใดก็ตามที่ยอมรับเซตของสตริงเดียวกันพอดีก็ถูกต้องเท่ากัน และตัวตรวจจะบอกเช่นนั้น') }));
+      s.appendChild(el('button', { 'class': 'btn small', text: tx('Load this machine into my builder', 'ใส่เครื่องนี้ลงในตัวสร้างของฉัน'), onclick: function () {
         var sol = ex.solution, m = { seq: 0, states: [], start: null, accept: [], delta: {} };
         var idOf = {};
         sol.states.forEach(function (q, i) { var id = 'sol' + i; idOf[q] = id; m.states.push({ id: id, name: q }); m.delta[id] = { '0': null, '1': null }; });
@@ -2395,24 +2870,25 @@ function buildLab() {
     /* --- assemble the panel --- */
     var left = el('div', { 'class': 'stack' }, [
       el('div', {}, [
-        el('h4', { text: 'Your machine' }),
-        el('p', { 'class': 'small muted', style: 'margin:.2em 0 .6em',
-          text: 'Edit the transition table directly: name your states, pick the start state, tick the accept states, and choose where each symbol leads. The diagram on the right redraws itself as you type.' }),
+        el('h4', { text: tx('Your machine', 'เครื่องของคุณ') }),
+        el('p', { 'class': 'small muted', style: 'margin:.2em 0 .6em', text: tx(
+          'Edit the transition table directly: name your states, pick the start state, tick the accept states, and choose where each symbol leads. The diagram redraws itself as you type.',
+          'แก้ไขตารางการเปลี่ยนสถานะได้โดยตรง: ตั้งชื่อสถานะ เลือกสถานะเริ่มต้น ติ๊กสถานะยอมรับ และเลือกว่าแต่ละสัญลักษณ์พาไปที่ใด แผนภาพจะวาดใหม่ทันทีที่คุณแก้ไข') }),
         tableHost,
         el('div', { 'class': 'row', style: 'margin-top:.6rem' }, [
-          el('button', { 'class': 'btn small', text: '+ Add state', onclick: addState }),
-          el('button', { 'class': 'btn small ghost', text: 'Start over', onclick: function () {
+          el('button', { 'class': 'btn small', text: tx('+ Add state', '+ เพิ่มสถานะ'), onclick: addState }),
+          el('button', { 'class': 'btn small ghost', text: tx('Start over', 'เริ่มใหม่ทั้งหมด'), onclick: function () {
             models[ex.id] = newModel(); model = models[ex.id]; sync(true);
           } })
         ])
       ]),
-      el('div', {}, [el('h4', { text: 'Is it a valid DFA?' }), checksList])
+      el('div', {}, [el('h4', { text: tx('Is it a valid DFA?', 'เป็น DFA ที่ถูกต้องหรือยัง?') }), checksList])
     ]);
-    var right = el('div', {}, [el('h4', { text: 'Try it out' }), tester.el]);
+    var right = el('div', {}, [el('h4', { text: tx('Try it out', 'ลองใช้งาน') }), tester.el]);
     card.appendChild(el('div', { 'class': 'two-col' }, [left, right]));
     card.appendChild(el('div', { 'class': 'row', style: 'margin-top:1rem' }, [
       checkBtn, hintBtn,
-      el('button', { 'class': 'btn', text: '👁 Show a solution', onclick: showSolution })
+      el('button', { 'class': 'btn', text: tx('👁 Show a solution', '👁 ดูเฉลย'), onclick: showSolution })
     ]));
     card.appendChild(resultHost);
     card.appendChild(hintHost);
@@ -2425,7 +2901,7 @@ function buildLab() {
 }
 
 /* =====================================================================
-   TAB NAVIGATION + START-UP
+   TAB NAVIGATION
    ===================================================================== */
 function initTabs() {
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs .tab'));
@@ -2434,8 +2910,7 @@ function initTabs() {
       var on = t === tab;
       t.setAttribute('aria-selected', String(on));
       t.tabIndex = on ? 0 : -1;
-      var panel = document.getElementById(t.getAttribute('aria-controls'));
-      panel.hidden = !on;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
     });
     if (focus) tab.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2457,8 +2932,32 @@ function initTabs() {
   });
 }
 
-function init() {
-  load();
+/* =====================================================================
+   LANGUAGE SWITCH
+   Static prose flips by CSS (html[data-lang]); everything drawn by
+   script is rebuilt. Builder machines, hints and progress live in this
+   module's state, so they survive the rebuild.
+   ===================================================================== */
+var MOUNTS = ['bad-examples', 'tuple-explorer', 'quiz-compute', 'quiz-notation', 'quiz-limits',
+              'example-nav', 'example-host', 'demo-turnstile', 'demo-validator', 'demo-scanner',
+              'progress-list', 'lab-nav', 'lab-host'];
+
+function applyStaticLang() {
+  var lang = U.getLang(), root = document.documentElement;
+  root.setAttribute('lang', lang);
+  root.setAttribute('data-lang', lang);
+  document.title = tx('Deterministic Finite Automata — an interactive introduction',
+                      'ออโต้มาตาจำกัดเชิงกำหนด — บทนำแบบโต้ตอบ');
+  document.querySelectorAll('[data-aria-th]').forEach(function (n) {
+    n.setAttribute('aria-label', n.getAttribute(lang === 'th' ? 'data-aria-th' : 'data-aria-en'));
+  });
+  document.querySelectorAll('[data-setlang]').forEach(function (b) {
+    b.setAttribute('aria-pressed', String(b.getAttribute('data-setlang') === lang));
+  });
+}
+
+function buildAll() {
+  MOUNTS.forEach(function (id) { clear(document.getElementById(id)); });
   P.buildBadExamples();
   P.buildTupleExplorer();
   P.buildQuizzes();
@@ -2467,7 +2966,27 @@ function init() {
   P.buildValidator();
   P.buildScanner();
   buildLab();
+}
+
+function initLangSwitch() {
+  document.querySelectorAll('[data-setlang]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var next = b.getAttribute('data-setlang');
+      if (next === U.getLang()) return;
+      U.setLang(next);
+      applyStaticLang();
+      buildAll();
+      b.focus();
+    });
+  });
+}
+
+function init() {
+  load();
+  applyStaticLang();
+  buildAll();
   initTabs();
+  initLangSwitch();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
