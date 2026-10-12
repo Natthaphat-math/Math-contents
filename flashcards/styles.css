@@ -578,6 +578,67 @@ svg { width: 22px; height: 22px; flex: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* =========================================================
+   9b. Step 1 additions: streak line, notices, undo toast, missed cards,
+       welcome, backup / restore, install help
+   ========================================================= */
+.hero-meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; opacity: .92; }
+.hero-meta b { font-weight: 700; }
+.hero-meta .streak { display: inline-flex; align-items: center; gap: 4px; }
+.hero-meta .streak svg { width: 16px; height: 16px; color: var(--sun); }
+.notice-warn { border-color: var(--sun); }
+.notice-actions a.pill-btn { display: inline-flex; align-items: center; text-decoration: none; color: inherit; }
+.notice-actions a.pill-ink { color: var(--bg); }
+.new-note { margin: -28px 0 40px; font-size: 13.5px; color: var(--muted); text-align: center; }
+
+.toast { display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100% - 32px); white-space: nowrap; }
+#toast-text { overflow: hidden; text-overflow: ellipsis; }
+.toast.has-action { pointer-events: auto; padding: 6px 6px 6px 18px; }
+.toast-action {
+  flex: none; white-space: nowrap;
+  min-height: 40px; padding: 0 14px; border-radius: 20px; border: 0; font-weight: 700;
+  background: color-mix(in srgb, var(--bg) 18%, transparent); color: var(--sun);
+}
+
+.summary { max-height: 100%; overflow: auto; }
+.missed { margin-top: 14px; text-align: left; border-radius: var(--radius-m); background: var(--surface-2); padding: 4px 14px; }
+.missed summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+.missed-list { margin: 0 0 10px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; }
+.missed-list li { font-size: 15px; line-height: 1.55; }
+.missed-q { font-weight: 600; }
+.missed-a { color: var(--muted); margin-top: 2px; }
+
+.sheet { max-height: calc(100% - 16px); overflow: auto; }
+.act-btn { min-height: 48px; padding: 0 18px; border-radius: 24px; border: 2px solid var(--line); font-weight: 600; background: none; color: var(--ink); }
+.act-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.act-btn:disabled { opacity: .45; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.code-box { width: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); font: 13px/1.5 ui-monospace, monospace; word-break: break-all; resize: vertical; }
+.qr { width: min(280px, 100%); margin: 12px auto 4px; padding: 10px; border-radius: 16px; background: #FFFFFF; }
+.qr svg { display: block; width: 100%; height: auto; }
+.steps-list { padding-left: 22px; line-height: 1.8; margin: 8px 0 12px; }
+
+.welcome .sheet-inner { display: flex; flex-direction: column; }
+.welcome-head { text-align: center; padding: 8px 4px 4px; }
+.welcome-logo { justify-content: center; margin-bottom: 10px; }
+.welcome-logo .shape { width: 16px; height: 16px; }
+.welcome-logo .shape.ps { background: var(--lv-ps); }
+.welcome-logo .shape.jh { background: var(--lv-jh); }
+.welcome-logo .shape.sh { background: var(--lv-sh); }
+.welcome-logo .shape.uni { background: var(--lv-uni); }
+.welcome-head h2 { font-size: 24px; font-weight: 800; }
+.welcome-head .field-note { margin: 6px auto 0; max-width: 42ch; }
+.welcome-list { margin-top: 12px; }
+.welcome-group { border: 0; margin: 0 0 12px; padding: 4px 14px 8px; border-radius: var(--radius-m); background: var(--surface-2); position: relative; }
+.welcome-group legend { float: left; display: flex; align-items: center; gap: 8px; font-weight: 700; min-height: 44px; padding: 0; }
+.welcome-group legend .shape { width: 12px; height: 12px; }
+.welcome-group > .text-btn { float: right; }
+.welcome-group .topic-row { clear: both; }
+.welcome-group .topic-row:first-of-type { border-top: 1px solid var(--line); }
+.welcome-actions { position: sticky; bottom: 0; padding: 12px 0 4px; background: linear-gradient(to top, var(--surface) 80%, transparent); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.welcome-actions .cta:disabled { background: var(--surface-2); color: var(--muted); }
+.welcome-skip { color: var(--muted); }
+
+/* =========================================================
    10. Responsive
    ========================================================= */
 @media (min-width: 600px) {

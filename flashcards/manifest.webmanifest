@@ -1,0 +1,17 @@
+{
+  "name": "บัตรคำคณิตศาสตร์",
+  "short_name": "บัตรคำ",
+  "description": "ทบทวนคณิตศาสตร์ด้วยบัตรคำ การ์ดที่ยังจำไม่ได้จะกลับมาเร็วขึ้น",
+  "lang": "th",
+  "start_url": "../flashcards.html",
+  "scope": "../flashcards",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EEF0F8",
+  "theme_color": "#2D3A8C",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

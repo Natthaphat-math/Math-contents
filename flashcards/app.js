@@ -114,7 +114,20 @@
   // Pinned decks are "my decks": once a student has any, the app opens on them.
   if (settings.pins.some(t => DECKS.some(d => d.topic === t))) settings.filter = 'pinned';
   if (!['all', 'pinned', ...LEVELS.map(l => l.code)].includes(settings.filter)) settings.filter = 'all';
+  if (!SRS.NEW_PER_DAY_CHOICES.includes(settings.newPerDay)) settings.newPerDay = SRS.DEFAULT_NEW_PER_DAY;
   function saveSettings() { try { storage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ } }
+
+  // Answers per day (streak) and how many new cards were started today
+  let stats = SRS.loadStats(storage, today());
+  const saveStats = () => SRS.saveStats(storage, stats);
+  const allowance = () => SRS.newAllowance(stats, today(), settings.newPerDay);
+  /* "ใบที่รอทวน" for a set of cards (in teaching order): every studied card that is due,
+     plus the first few never-studied cards — at most today's new-card allowance. */
+  function dueSet(cards) {
+    const r = SRS.selectDue(srs, cards.map(idOf), today(), allowance());
+    const pick = new Set([...r.reviews, ...r.fresh]);
+    return { cards: cards.filter(c => pick.has(idOf(c))), reviews: r.reviews.length, fresh: r.fresh.length, newTotal: r.newTotal };
+  }
 
   // Topics the student ticked in a unit (all, if the unit has no หัวข้อ)
   const isSectionOn = (deck, key) => !(settings.off[deck.topic] || []).includes(key);
@@ -132,17 +145,18 @@
   // Per-deck numbers used across screens
   function deckStats(cards) {
     const t = today();
-    let due = 0, mastered = 0, nextDue = null;
+    let mastered = 0, nextDue = null;
     const boxes = [0, 0, 0, 0, 0, 0]; // index 0 = new
     cards.forEach(c => {
       const id = idOf(c);
       const box = SRS.boxOf(srs, id);
       boxes[box]++;
-      if (SRS.isDue(srs, id, t)) due++;
-      else { const d = srs.cards[id].due; if (!nextDue || d < nextDue) nextDue = d; }
+      const r = srs.cards[id];
+      if (r && r.due > t && (!nextDue || r.due < nextDue)) nextDue = r.due;
       if (SRS.isMastered(srs, id)) mastered++;
     });
-    return { total: cards.length, due, mastered, boxes, nextDue };
+    const d = dueSet(cards);
+    return { total: cards.length, due: d.cards.length, fresh: d.fresh, newTotal: d.newTotal, mastered, boxes, nextDue };
   }
 
   /* =======================================================================
@@ -270,13 +284,19 @@
   }
 
   let toastTimer = null;
-  function toast(msg) {
-    const el = $('toast');
-    el.textContent = msg;
+  // toast('ข้อความ') or toast('ข้อความ', { label: 'เลิกทำ', onClick }, 5000)
+  function toast(msg, action, ms) {
+    const el = $('toast'), btn = $('toast-action');
+    $('toast-text').textContent = msg;
+    btn.hidden = !action;
+    btn.onclick = action ? () => { hideToast(); action.onClick(); } : null;
+    if (action) btn.textContent = action.label;
+    el.classList.toggle('has-action', !!action);
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    toastTimer = setTimeout(hideToast, ms || 2200);
   }
+  function hideToast() { $('toast').classList.remove('show'); $('toast-action').onclick = null; }
   function announce(msg) { $('live').textContent = msg; }
 
   /* =======================================================================
@@ -341,9 +361,10 @@
         '<div class="empty-state">' +
           '<div class="empty-art" aria-hidden="true"><span class="shape ps"></span><span class="shape jh"></span><span class="shape sh"></span><span class="shape uni"></span></div>' +
           '<h3>' + title + '</h3><p>' + text + '</p>' +
-          '<button class="pill-btn" type="button" id="empty-reset">' + (searching ? 'ล้างการค้นหา' : noPins ? 'ดูทุกชุด' : 'ดูทุกระดับชั้น') + '</button>' +
+          '<button class="pill-btn" type="button" id="empty-reset">' + (searching ? 'ล้างการค้นหา' : noPins ? 'เลือกบทที่เรียนอยู่' : 'ดูทุกระดับชั้น') + '</button>' +
         '</div>';
       $('empty-reset').addEventListener('click', () => {
+        if (noPins) { openWelcome(); return; }
         query = ''; searchEl.value = '';
         settings.filter = 'all'; saveSettings();
         renderHome(); searchEl.focus();
@@ -405,6 +426,12 @@
   function renderDueLine() {
     const cards = decksInFilter().flatMap(activeCards);
     const st = deckStats(cards);
+    renderHeroMeta();
+    // new cards arrive a few per day: say how many are still waiting
+    const waiting = st.newTotal - st.fresh;
+    const note = $('new-note');
+    note.hidden = !(waiting > 0);
+    if (waiting > 0) note.textContent = 'การ์ดใหม่ทยอยมาวันละ ' + settings.newPerDay + ' ใบ ยังรออีก ' + waiting + ' ใบ (ปรับได้ในตั้งค่า)';
     const line = $('due-line');
     const cta = $('study-due-all');
     const pinnedTab = settings.filter === 'pinned';
@@ -424,6 +451,18 @@
     }
   }
 
+  // "วันนี้ทวนแล้ว 12 ใบ · ต่อเนื่อง 5 วัน"
+  function renderHeroMeta() {
+    const n = SRS.todayCount(stats, today());
+    const run = SRS.streak(stats, today());
+    const el = $('hero-meta');
+    const parts = [];
+    if (n) parts.push('<span>วันนี้ทวนแล้ว <b>' + n + '</b> ใบ</span>');
+    if (run >= 2) parts.push('<span class="streak"><svg aria-hidden="true"><use href="#i-flame"/></svg>ต่อเนื่อง <b>' + run + '</b> วัน</span>');
+    el.innerHTML = parts.join('');
+    el.hidden = !parts.length;
+  }
+
   function renderNotice() {
     $('notice').hidden = !(srs.migratedFromV1 && !settings.noticeDone);
   }
@@ -439,26 +478,28 @@
   searchEl.addEventListener('input', () => { query = searchEl.value; renderDecks(); });
   $('study-due-all').addEventListener('click', () => {
     if (settings.filter === 'pinned') { openStudyChoice(); return; }
-    const t = today();
-    const due = decksInFilter().flatMap(activeCards).filter(c => SRS.isDue(srs, idOf(c), t));
-    if (due.length) startSession(due, { title: 'การ์ดที่รอทวน', mixed: true, ordered: true });
+    const scope = decksInFilter().flatMap(activeCards);
+    const due = dueSet(scope).cards;
+    if (due.length) startSession(due, { title: 'การ์ดที่รอทวน', mixed: true, ordered: true, scope });
   });
 
   // The three ways to study a set of cards (used by the deck page and the pinned tab)
   function studyModes(cards, title, opts) {
-    const t = today();
     const st = deckStats(cards);
     const mixed = !!(opts && opts.mixed);
-    const dueCards = cards.filter(c => SRS.isDue(srs, idOf(c), t));
+    const dueCards = dueSet(cards).cards;
     const notYet = cards.filter(c => SRS.lastAnswer(srs, idOf(c)) !== 'remembered');
     const none = !cards.length;
     const then = fn => () => { if (opts && opts.before) opts.before(); fn(); };
     return [
       modeButton({
         primary: true, icon: String(dueCards.length), title: 'ใบที่รอทวนอยู่',
-        sub: none ? 'เลือกอย่างน้อย 1 หัวข้อ' : dueCards.length ? dueCards.length + ' ใบ ใบที่ยังจำไม่ได้จะมาก่อน' : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
+        sub: none ? 'เลือกอย่างน้อย 1 หัวข้อ'
+          : dueCards.length ? dueCards.length + ' ใบ' + (st.fresh ? ' (การ์ดใหม่ ' + st.fresh + ')' : '') + ' ใบที่ยังจำไม่ได้จะมาก่อน'
+          : st.newTotal ? 'วันนี้เรียนการ์ดใหม่ครบแล้ว ใช้ “ทบทวนทั้งหมด” ได้ไม่จำกัด'
+          : 'ไม่มีใบรอทวนวันนี้ กลับมาอีกที' + comeBackWhen(st.nextDue),
         disabled: !dueCards.length,
-        onClick: then(() => startSession(dueCards, { title, mixed, ordered: true })),
+        onClick: then(() => startSession(dueCards, { title, mixed, ordered: true, scope: cards })),
       }),
       modeButton({
         icon: '∀', title: 'ทบทวนทั้งหมด', sub: none ? 'เลือกอย่างน้อย 1 หัวข้อ' : cards.length + ' ใบ สุ่มลำดับ',
@@ -555,7 +596,7 @@
     if (hasSections(deck)) {
       $('topic-list').querySelectorAll('.topic-row').forEach((row, i) => {
         const sec = deck.sections[i];
-        const due = sec.cards.filter(c => SRS.isDue(srs, idOf(c), t)).length;
+        const due = dueSet(sec.cards).cards.length;
         row.querySelector('.topic-meta').innerHTML = sec.cards.length + ' ใบ' + (due ? ' <span class="due-badge">' + due + ' รอทวน</span>' : '');
       });
       const allOn = deck.sections.every(s => isSectionOn(deck, s.key));
@@ -658,7 +699,9 @@
     session = {
       title: opts.title, mixed: !!opts.mixed, pool: cards.slice(),
       cards: order, index: 0, answers: new Map(), before: new Map(),
+      dueMode: !!opts.ordered, scope: opts.scope || null,
     };
+    lastAction = null;
     $('study-title').textContent = session.title;
     if (currentScreen === 'study') { renderCard(); return; } // restarting from the summary
     renderCard();
@@ -722,7 +765,6 @@
     cardFlip.classList.toggle('flipped', revealed);
     $('face-front').setAttribute('aria-hidden', revealed ? 'true' : 'false');
     $('face-back').setAttribute('aria-hidden', revealed ? 'false' : 'true');
-    cardDrag.setAttribute('aria-label', revealed ? 'ด้านคำตอบ แตะเพื่อพลิกกลับ' : 'ด้านคำถาม แตะเพื่อดูคำตอบ');
     $('nav-row').hidden = revealed;
     $('answer-row').hidden = !revealed;
   }
@@ -763,15 +805,25 @@
     const card = currentCard();
     const id = idOf(card);
 
+    // Everything needed to take this answer back (undo)
+    const firstInSession = !session.before.has(id);
+    lastAction = {
+      id, index: session.index, knew, firstInSession,
+      record: srs.cards[id] ? Object.assign({}, srs.cards[id]) : null,
+      prevAnswer: session.answers.get(id),
+      wasNew: firstInSession && !srs.cards[id],
+    };
     // Undo this round's earlier answer for the same card before applying the new one
-    if (!session.before.has(id)) session.before.set(id, srs.cards[id] ? Object.assign({}, srs.cards[id]) : null);
+    if (firstInSession) session.before.set(id, srs.cards[id] ? Object.assign({}, srs.cards[id]) : null);
     else {
       const prev = session.before.get(id);
       if (prev) srs.cards[id] = Object.assign({}, prev); else delete srs.cards[id];
     }
     SRS.answer(srs, id, knew, today());
     saveProgress();
+    if (firstInSession) { stats = SRS.recordAnswer(stats, today(), lastAction.wasNew); saveStats(); }
     session.answers.set(id, knew);
+    toast(knew ? 'บันทึกว่า จำได้' : 'บันทึกว่า ยังจำไม่ได้', { label: 'เลิกทำ', onClick: undoLast }, 4500);
 
     const advance = () => {
       session.index++;
@@ -787,6 +839,24 @@
     cardDrag.style.transform = 'translateX(' + (dir * (window.innerWidth || 600)) + 'px) rotate(' + (dir * 18) + 'deg)';
     cardDrag.style.opacity = '0';
     setTimeout(advance, 380);
+  }
+
+  // Take back the last answer (a mis-swipe): restore the card, counts and position
+  let lastAction = null;
+  function undoLast() {
+    const a = lastAction;
+    if (!a || !session || animating) return;
+    lastAction = null;
+    if (a.record) srs.cards[a.id] = a.record; else delete srs.cards[a.id];
+    saveProgress();
+    if (a.firstInSession) {
+      session.before.delete(a.id);
+      stats = SRS.unrecordAnswer(stats, today(), a.wasNew); saveStats();
+    }
+    if (a.prevAnswer === undefined) session.answers.delete(a.id); else session.answers.set(a.id, a.prevAnswer);
+    session.index = a.index;
+    renderCard();
+    announce('เลิกทำแล้ว กลับไปที่การ์ดเดิม');
   }
 
   function go(delta) {
@@ -843,8 +913,35 @@
       $('summary-next').textContent = '';
     }
 
+    // Which cards were answered "ยังจำไม่ได้" — tap to see question + answer
+    const missed = session.cards.filter(c => session.answers.get(idOf(c)) === false);
+    const box = $('summary-missed');
+    box.hidden = !missed.length;
+    box.open = false;
+    if (missed.length) {
+      $('summary-missed-title').textContent = 'ดูใบที่ยังจำไม่ได้ (' + missed.length + ')';
+      const list = $('summary-missed-list');
+      list.innerHTML = '';
+      missed.forEach(c => {
+        const li = document.createElement('li');
+        const q = document.createElement('div'); q.className = 'missed-q';
+        const a = document.createElement('div'); a.className = 'missed-a';
+        renderFace(q, c.front, null); renderFace(a, c.back, null);
+        li.append(q, a); list.appendChild(li);
+      });
+    }
+
     const actions = $('summary-actions');
     actions.innerHTML = '';
+    // Daily new cards used up but more are waiting in this set: offer a few more today
+    const scope = session.scope;
+    const moreNew = session.dueMode && scope && allowance() === 0 && scope.some(c => !srs.cards[idOf(c)]);
+    if (moreNew) {
+      actions.appendChild(actionBtn('เพิ่มการ์ดใหม่อีก ' + settings.newPerDay + ' ใบวันนี้', 'answer-btn ' + (retry.length ? 'ghost-btn' : 'btn-know'), () => {
+        stats = SRS.addExtraNew(stats, today(), settings.newPerDay); saveStats();
+        startSession(dueSet(scope).cards, { title: session.title, mixed: session.mixed, ordered: true, scope });
+      }));
+    }
     if (retry.length) {
       const label = skipped && no ? 'ทบทวนใบที่ยังจำไม่ได้และที่ข้าม' : skipped ? 'ทบทวนใบที่ข้าม' : 'ทบทวนใบที่ยังจำไม่ได้';
       actions.appendChild(actionBtn(label + ' (' + retry.length + ')', 'answer-btn btn-know',
@@ -911,7 +1008,7 @@
 
   // ---- keyboard ----
   document.addEventListener('keydown', e => {
-    if ($('settings').open) return;
+    if (document.querySelector('dialog[open]')) return;
     const tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
@@ -927,6 +1024,10 @@
     if (e.key === 'ArrowLeft') { e.preventDefault(); answer(false); return; }
     if (e.key === 'ArrowUp') { e.preventDefault(); go(-1); return; }
     if (e.key === 'ArrowDown') { e.preventDefault(); go(1); return; }
+  });
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'z' || e.key === 'Z') && currentScreen === 'study' && !document.querySelector('dialog[open]') &&
+        !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { e.preventDefault(); undoLast(); }
   });
 
   /* =======================================================================
@@ -945,6 +1046,8 @@
   function openSettings() {
     dialog.querySelector('input[name="theme"][value="' + (settings.theme || 'system') + '"]').checked = true;
     dialog.querySelector('input[name="palette"][value="' + (settings.palette === 'classic' ? 'classic' : 'bauhaus') + '"]').checked = true;
+    dialog.querySelector('input[name="newPerDay"][value="' + settings.newPerDay + '"]').checked = true;
+    $('install-field').hidden = isStandalone() || !(deferredInstall || isIOS());
     const saved = Object.keys(srs.cards).length;
     $('progress-note').textContent = saved ? 'บันทึกไว้ ' + saved + ' ใบในเบราว์เซอร์นี้' : 'ยังไม่มีความคืบหน้าที่บันทึกไว้';
     resetBtn.hidden = !saved;
@@ -956,6 +1059,7 @@
   dialog.addEventListener('change', e => {
     if (e.target.name === 'theme') settings.theme = e.target.value === 'system' ? null : e.target.value;
     if (e.target.name === 'palette') { settings.palette = e.target.value; settings.noticeDone = true; renderNotice(); }
+    if (e.target.name === 'newPerDay') { settings.newPerDay = Number(e.target.value); settings.newPerDayChosen = true; renderHome(); }
     saveSettings(); applyTheme();
   });
   resetBtn.addEventListener('click', () => {
@@ -969,10 +1073,209 @@
     disarmReset();
     SRS.clearAll(storage);
     srs = SRS.emptyState();
+    stats = SRS.loadStats(storage, today());
     dialog.close();
     renderHome();
     toast('ล้างความคืบหน้าแล้ว');
   });
+
+  /* =======================================================================
+     WELCOME — "เรียนบทไหนอยู่?" → pins (first visit, or from settings)
+     ======================================================================= */
+  const welcome = $('welcome');
+  function openWelcome() {
+    const list = $('welcome-list');
+    list.innerHTML = '';
+    const studied = new Set(DECKS.filter(d => d.cards.some(c => srs.cards[idOf(c)])).map(d => d.topic));
+    LEVELS.forEach(l => {
+      const decks = DECKS.filter(d => d.level === l.code);
+      if (!decks.length) return;
+      const group = document.createElement('fieldset');
+      group.className = 'welcome-group';
+      group.innerHTML = '<legend><span class="shape ' + l.code + '" aria-hidden="true"></span>' + escapeHtml(l.label) + '</legend>' +
+        '<button class="text-btn" type="button">เลือกทั้งหมด</button>';
+      decks.forEach(d => {
+        const row = document.createElement('label');
+        row.className = 'topic-row';
+        row.innerHTML = '<input type="checkbox"><span class="topic-check" aria-hidden="true"></span><span class="topic-name"></span><span class="topic-meta"></span>';
+        const input = row.querySelector('input');
+        input.value = d.topic;
+        input.checked = settings.pins.length ? isPinned(d.topic) : studied.has(d.topic);
+        row.querySelector('.topic-name').textContent = d.topic;
+        row.querySelector('.topic-meta').textContent = d.cards.length + ' ใบ';
+        group.appendChild(row);
+      });
+      group.querySelector('.text-btn').addEventListener('click', () => {
+        const boxes = [...group.querySelectorAll('input')];
+        const all = boxes.every(b => b.checked);
+        boxes.forEach(b => { b.checked = !all; });
+        updateWelcome();
+      });
+      list.appendChild(group);
+    });
+    list.onchange = updateWelcome;
+    updateWelcome();
+    if (welcome.showModal) welcome.showModal(); else welcome.setAttribute('open', '');
+  }
+  function updateWelcome() {
+    const n = welcome.querySelectorAll('#welcome-list input:checked').length;
+    $('welcome-done').textContent = n ? 'เริ่มเลย (' + n + ' บท)' : 'เลือกอย่างน้อย 1 บท';
+    $('welcome-done').disabled = !n;
+    welcome.querySelectorAll('.welcome-group').forEach(g => {
+      const boxes = [...g.querySelectorAll('input')];
+      g.querySelector('.text-btn').textContent = boxes.every(b => b.checked) ? 'ไม่เลือกทั้งหมด' : 'เลือกทั้งหมด';
+    });
+  }
+  $('welcome-done').addEventListener('click', () => {
+    settings.pins = [...welcome.querySelectorAll('#welcome-list input:checked')].map(i => i.value);
+    settings.welcomeDone = true;
+    if (settings.pins.length) settings.filter = 'pinned';
+    saveSettings(); welcome.close(); renderHome();
+    toast('ปักหมุด ' + settings.pins.length + ' บทแล้ว');
+  });
+  $('welcome-skip').addEventListener('click', () => { settings.welcomeDone = true; saveSettings(); welcome.close(); });
+  welcome.addEventListener('cancel', () => { settings.welcomeDone = true; saveSettings(); });
+  $('open-welcome').addEventListener('click', () => { dialog.close(); openWelcome(); });
+
+  /* =======================================================================
+     MOVE / BACK UP PROGRESS — QR code or text code, merged by latest answer
+     ======================================================================= */
+  const QR_MAX_URL = 1400;   // longer links make QR codes too dense to scan from a phone screen
+  let qrLoading = null;
+  function loadQr() {
+    if (window.qrcode) return Promise.resolve();
+    if (!qrLoading) qrLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'flashcards/vendor/qrcode.js'; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return qrLoading;
+  }
+  function restoreUrl(code) { return location.origin + location.pathname + '#restore=' + code; }
+  async function openBackup() {
+    const body = $('backup-body');
+    body.innerHTML = '<p class="field-note">กำลังสร้างรหัส…</p>';
+    const bd = $('backup-dialog');
+    if (bd.showModal) bd.showModal(); else bd.setAttribute('open', '');
+    const count = Object.keys(srs.cards).length;
+    const code = await SRS.encodeBackup(SRS.makeBackup(srs, stats, settings, today()));
+    const url = restoreUrl(code);
+    body.innerHTML = '';
+    const note = document.createElement('p'); note.className = 'field-note';
+    note.textContent = 'ความคืบหน้า ' + count + ' ใบ และบทที่ปักหมุด (ไม่มีข้อมูลส่วนตัว) เครื่องใหม่จะรวมกับของเดิม ไม่ลบอะไร';
+    body.appendChild(note);
+    if (url.length <= QR_MAX_URL) {
+      try {
+        await loadQr();
+        const qr = window.qrcode(0, 'L'); qr.addData(url); qr.make();
+        const holder = document.createElement('div'); holder.className = 'qr';
+        holder.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 3, scalable: true });
+        const svg = holder.querySelector('svg'); if (svg) svg.setAttribute('aria-label', 'QR code สำหรับย้ายความคืบหน้า');
+        body.appendChild(holder);
+        const how = document.createElement('p'); how.className = 'field-note';
+        how.textContent = 'ใช้กล้องของเครื่องใหม่สแกน QR นี้ แล้วกด “รวมเข้ากับเครื่องนี้”';
+        body.appendChild(how);
+      } catch (e) { /* no QR: the code below still works */ }
+    } else {
+      const big = document.createElement('p'); big.className = 'field-note';
+      big.textContent = 'ความคืบหน้าเยอะเกินกว่าจะใส่ใน QR ได้ ใช้รหัสด้านล่างแทน (เช่น ส่งให้ตัวเองทาง LINE)';
+      body.appendChild(big);
+    }
+    const box = document.createElement('textarea');
+    box.className = 'code-box'; box.readOnly = true; box.rows = 3; box.value = code; box.setAttribute('aria-label', 'รหัสความคืบหน้า');
+    const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'act-btn primary'; copy.textContent = 'คัดลอกรหัส';
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(code); } catch (e) { box.focus(); box.select(); document.execCommand('copy'); }
+      copy.textContent = 'คัดลอกแล้ว ✓';
+    });
+    const row = document.createElement('div'); row.className = 'btn-row'; row.appendChild(copy);
+    body.append(box, row);
+  }
+  let pendingBackup = null;
+  async function checkRestoreCode() {
+    const code = $('restore-code').value.trim();
+    pendingBackup = null;
+    $('restore-apply').disabled = true;
+    if (!code) { $('restore-result').textContent = ''; return; }
+    try {
+      const b = await SRS.decodeBackup(code);
+      // dry run on copies to show what would change
+      const res = SRS.mergeBackup(JSON.parse(JSON.stringify(srs)), SRS.emptyStats(), { pins: settings.pins.slice(), off: {} }, b);
+      $('restore-result').textContent = 'พบความคืบหน้า ' + b.c.length + ' ใบ: เพิ่มใหม่ ' + res.added + ' ใบ อัปเดต ' + res.updated + ' ใบ คงของเครื่องนี้ ' + res.kept + ' ใบ';
+      pendingBackup = b;
+      $('restore-apply').disabled = false;
+    } catch (e) {
+      $('restore-result').textContent = e.message || 'รหัสไม่ถูกต้อง';
+    }
+  }
+  function openRestore(code) {
+    $('restore-code').value = code || '';
+    $('restore-result').textContent = '';
+    const rd = $('restore-dialog');
+    if (rd.showModal) rd.showModal(); else rd.setAttribute('open', '');
+    checkRestoreCode();
+  }
+  $('restore-code').addEventListener('input', checkRestoreCode);
+  $('restore-apply').addEventListener('click', () => {
+    if (!pendingBackup) return;
+    const res = SRS.mergeBackup(srs, stats, settings, pendingBackup);
+    saveProgress(); saveStats();
+    settings.welcomeDone = true;
+    if (settings.pins.length) settings.filter = 'pinned';
+    saveSettings();
+    $('restore-dialog').close(); renderHome();
+    toast('รวมความคืบหน้าแล้ว (' + (res.added + res.updated) + ' ใบ)');
+  });
+  $('backup-btn').addEventListener('click', () => { dialog.close(); openBackup(); });
+  $('restore-btn').addEventListener('click', () => { dialog.close(); openRestore(''); });
+
+  /* =======================================================================
+     INSTALL AS APP + offline helper + LINE in-app browser
+     ======================================================================= */
+  let deferredInstall = null;
+  const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const inLine = () => /\bLine\//i.test(navigator.userAgent);
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; renderInstallCard(); });
+  window.addEventListener('appinstalled', () => { deferredInstall = null; settings.installDismissed = true; saveSettings(); renderInstallCard(); toast('ติดตั้งแล้ว เปิดได้จากหน้าจอโฮม'); });
+  async function install() {
+    if (deferredInstall) {
+      deferredInstall.prompt();
+      try { await deferredInstall.userChoice; } catch (e) { /* ignore */ }
+      deferredInstall = null; renderInstallCard();
+      return;
+    }
+    // iPhone / iPad: Safari has no install button for websites, so explain the two taps
+    const body = $('install-help-body');
+    body.innerHTML = inLine()
+      ? '<p class="field-note">เปิดหน้านี้ใน Safari ก่อน (แตะ ⋯ แล้วเลือก “เปิดในเบราว์เซอร์”) จากนั้นติดตั้งตามขั้นตอนนี้</p>' : '';
+    body.innerHTML += '<ol class="steps-list"><li>แตะปุ่ม <b>แชร์</b> (สี่เหลี่ยมมีลูกศรชี้ขึ้น) ด้านล่างหรือด้านบนของ Safari</li>' +
+      '<li>เลื่อนลงแล้วแตะ <b>เพิ่มไปยังหน้าจอโฮม</b></li><li>แตะ <b>เพิ่ม</b> แล้วเปิดแอป “บัตรคำ” จากหน้าจอโฮม</li></ol>' +
+      '<p class="field-note">เมื่อติดตั้งแล้ว iPhone จะไม่ลบความคืบหน้าแม้ไม่ได้เปิดหลายวัน</p>';
+    const d = $('install-help');
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
+  document.querySelectorAll('.js-install').forEach(b => b.addEventListener('click', () => { if (dialog.open) dialog.close(); install(); }));
+  // Suggest installing once the student has really started (≥ 10 answers), never in the installed app
+  function renderInstallCard() {
+    const answered = Object.values(stats.days || {}).reduce((a, b) => a + b, 0);
+    const show = !isStandalone() && !inLine() && !settings.installDismissed && answered >= 10 && !!(deferredInstall || isIOS());
+    $('install-card').hidden = !show;
+    if (show && isIOS()) $('install-card-text').textContent = 'เปิดได้ในแตะเดียว ใช้ได้แม้ไม่มีอินเทอร์เน็ต และ iPhone จะไม่ลบความคืบหน้าของคุณ';
+  }
+  $('install-later').addEventListener('click', () => { settings.installDismissed = true; saveSettings(); renderInstallCard(); });
+  function renderLineBanner() {
+    $('line-banner').hidden = !(inLine() && !sessionStorageGet('lineDismissed'));
+  }
+  function sessionStorageGet(k) { try { return sessionStorage.getItem('mathFlashcards.' + k); } catch (e) { return null; } }
+  $('line-dismiss').addEventListener('click', () => { try { sessionStorage.setItem('mathFlashcards.lineDismissed', '1'); } catch (e) { /* ignore */ } renderLineBanner(); });
+
+  // Offline helper (service worker): only on the real site / local test server
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('flashcards-sw.js', { scope: './flashcards' }).catch(() => { /* offline mode is optional */ });
+    });
+  }
 
   /* =======================================================================
      Go
@@ -980,5 +1283,15 @@
   applyTheme();
   history.replaceState({ screen: 'home' }, '');
   renderHome();
+  renderLineBanner();
+  renderInstallCard();
   show('home');
+  // Opened from a QR code: "#restore=FC1…"
+  const restoreMatch = location.hash.match(/^#restore=(FC1[zj]\.[A-Za-z0-9_-]+)/);
+  if (restoreMatch) {
+    history.replaceState({ screen: 'home' }, '', location.pathname + location.search);
+    openRestore(restoreMatch[1]);
+  } else if (!settings.welcomeDone && !settings.pins.length && DECKS.length) {
+    openWelcome();
+  }
 })();
