@@ -32,7 +32,7 @@
 <link rel="stylesheet" href="flashcards/vendor/prompt/prompt.css">
 <link rel="stylesheet" href="flashcards/vendor/katex/katex.min.css">
 <!-- ?v= forces phones to fetch the new files after an update (GitHub Pages caches ~10 min). -->
-<link rel="stylesheet" href="flashcards/styles.css?v=2.6.0">
+<link rel="stylesheet" href="flashcards/styles.css?v=2.7.0">
 </head>
 <body>
 <noscript>แอปนี้ต้องเปิดใช้งาน JavaScript จึงจะทำงานได้</noscript>
@@ -223,10 +223,10 @@
 
         <!-- Deck complete -->
         <div class="summary" id="summary" hidden>
-          <div class="summary-art" aria-hidden="true">
-            <span class="shape ps"></span><span class="shape jh"></span><span class="shape sh"></span><span class="shape uni"></span>
-          </div>
+          <div class="cel-art" id="summary-art" aria-hidden="true"></div>
           <h3 class="summary-title" id="summary-title" tabindex="-1">จบชุดนี้แล้ว!</h3>
+          <p class="summary-milestone" id="summary-milestone" hidden></p>
+          <p class="summary-today" id="summary-today" hidden></p>
           <p class="summary-praise" id="summary-praise" hidden>เยี่ยมมาก! จำได้ครบทุกใบ</p>
           <div class="summary-stats" id="summary-stats"></div>
           <p class="summary-next" id="summary-next"></p>
@@ -286,6 +286,24 @@
           <span class="palette-name">สีคลาสสิก</span>
         </label>
       </div>
+    </fieldset>
+
+    <fieldset class="field">
+      <legend>ฉลองเมื่อทวนจบ</legend>
+      <div class="segmented" id="celebrate-options">
+        <label><input type="radio" name="celebrate" value="ring"><span>วงแหวน</span></label>
+        <label><input type="radio" name="celebrate" value="stack"><span>ประกอบร่าง</span></label>
+        <label><input type="radio" name="celebrate" value="burst"><span>ระเบิด</span></label>
+      </div>
+      <div class="cel-try">
+        <div class="cel-art" id="cel-try-art" aria-hidden="true"></div>
+        <button class="text-btn" type="button" id="cel-try-btn">ดูอีกครั้ง</button>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="sound-on"><span>เสียง</span></label>
+        <label class="toggle" id="vibe-field"><input type="checkbox" id="vibe-on"><span>สั่น</span></label>
+      </div>
+      <p class="field-note" id="feedback-note">เล่นตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น</p>
     </fieldset>
 
     <fieldset class="field">
@@ -398,8 +416,9 @@
 <!-- cards.js has no ?v=: the offline helper always checks for the newest cards first -->
 <script defer src="flashcards/cards.js"></script>
 <script defer src="flashcards/figures/index.js"></script>
-<script defer src="flashcards/cards-format.js?v=2.6.0"></script>
-<script defer src="flashcards/srs.js?v=2.6.0"></script>
-<script defer src="flashcards/app.js?v=2.6.0"></script>
+<script defer src="flashcards/cards-format.js?v=2.7.0"></script>
+<script defer src="flashcards/srs.js?v=2.7.0"></script>
+<script defer src="flashcards/celebrate.js?v=2.7.0"></script>
+<script defer src="flashcards/app.js?v=2.7.0"></script>
 </body>
 </html>

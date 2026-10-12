@@ -252,10 +252,16 @@ svg { width: 22px; height: 22px; flex: none; }
   font-size: 12.5px; font-weight: 600; padding: 2px 10px; border-radius: 12px;
   background: var(--ink); color: var(--bg);
 }
-.deck-foot { margin-top: auto; position: relative; width: calc(100% - 84px); }
-.deck-bar { display: block; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
-.deck-bar span { display: block; height: 100%; border-radius: 3px; background: var(--ink); }
-.deck-pct { display: block; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+.deck-foot { margin-top: auto; position: relative; width: calc(100% - 84px); display: flex; align-items: center; gap: 8px; }
+.deck-pct { display: block; font-size: 12.5px; color: var(--muted); }
+.deck-pct b { color: var(--ink); font-weight: 700; }
+/* mastery ring: fills as the unit's cards reach boxes 2–4; gold with a star when all are in box 4+ */
+.m-ring { width: 30px; height: 30px; flex: none; }
+.m-track { fill: none; stroke: var(--surface-2); stroke-width: 4; }
+.m-fill { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.m-star { fill: var(--sun); }
+.deck.expert .m-fill { stroke: var(--sun); }
+.deck.expert { box-shadow: inset 0 0 0 3px var(--sun); }
 
 /* the level shape cropped by the tile corner, with the topic symbol inside */
 .big-shape {
@@ -514,11 +520,6 @@ svg { width: 22px; height: 22px; flex: none; }
   background: var(--surface); color: var(--ink); box-shadow: var(--shadow);
   text-align: center;
 }
-.summary-art { display: flex; justify-content: center; align-items: flex-end; gap: 10px; height: 64px; }
-.summary-art .shape { width: 44px; height: 44px; animation: pop .5s var(--ease) both; }
-.summary-art .shape:nth-child(2) { animation-delay: .08s; width: 52px; height: 52px; }
-.summary-art .shape:nth-child(3) { animation-delay: .16s; }
-.summary-art .shape:nth-child(4) { animation-delay: .24s; width: 52px; height: 52px; }
 @keyframes pop { from { opacity: 0; transform: translateY(24px) scale(.6); } to { opacity: 1; transform: none; } }
 .summary-title { margin-top: 16px; font-size: 26px; font-weight: 800; }
 .summary-title:focus { outline: none; }
@@ -687,3 +688,40 @@ svg { width: 22px; height: 22px; flex: none; }
   .card-flip.flipped .card-back { visibility: visible; }
   .card-flip.flipped .card-front { visibility: hidden; }
 }
+
+/* =========================================================
+   9c. Celebration (celebrate.js), mastery, done-for-today
+   ========================================================= */
+.cel-art { position: relative; width: 240px; max-width: 100%; height: 132px; margin: 0 auto; }
+.cel-shape { position: absolute; }
+.cel-sun { background: var(--sun); }
+.cel-ground { position: absolute; left: 30px; right: 30px; bottom: 0; height: 3px; border-radius: 2px; background: var(--surface-2); }
+.cel-row { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; align-items: flex-end; gap: 12px; }
+.cel-ring { position: absolute; left: calc(50% - 66px); top: 0; width: 132px; height: 132px; overflow: visible; }
+.cel-track { fill: none; stroke: var(--surface-2); }
+.cel-fill { fill: none; stroke: var(--lv, var(--brand)); stroke-linecap: round; }
+.cel-rip { fill: none; stroke: var(--lv, var(--brand)); transform-box: fill-box; transform-origin: center; }
+.cel-count { position: absolute; left: calc(50% - 66px); top: 0; width: 132px; height: 132px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.cel-count b { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cel-count span { font-size: 13px; color: var(--muted); }
+.cel-art .cel-center { left: calc(50% - 24px); }
+.cel-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
+
+/* the summary text waits for the animation (tap skips it) */
+.summary.pre > :not(.cel-art), .summary-actions.pre { opacity: 0; }
+.summary-milestone { display: inline-block; margin-top: 8px; padding: 4px 14px; border-radius: 14px; background: var(--sun); color: #15163A; font-weight: 700; font-size: 14px; }
+.summary-today { margin-top: 2px; font-size: 14px; color: var(--muted); }
+.stat.streak b { display: flex; align-items: center; justify-content: center; gap: 2px; overflow: hidden; }
+.stat.streak svg { width: 20px; height: 20px; flex: none; color: var(--sun); }
+.stat.streak .num { display: inline-block; min-width: 1ch; font-size: inherit; color: inherit; }
+
+/* settings: celebration style + sound / vibration */
+.cel-try { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 10px; padding: 12px 8px 4px; border-radius: var(--radius-m); box-shadow: inset 0 0 0 1px var(--line); }
+.toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.toggle { flex: 1; min-width: 120px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: 24px; background: var(--surface-2); cursor: pointer; font-weight: 500; }
+.toggle input { width: 22px; height: 22px; margin: 0; accent-color: var(--ink); }
+.toggle[hidden] { display: none; }
+
+/* home: the day is done */
+.done-mark { display: inline-block; width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; background: var(--sun); vertical-align: -1px; }
+.hero-meta .streak small { font-size: 12.5px; opacity: .85; }

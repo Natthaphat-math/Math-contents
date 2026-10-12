@@ -20,6 +20,9 @@
   const MAX_SEGMENTS = 40;      // above this the progress bar becomes one continuous bar
 
   const $ = id => document.getElementById(id);
+  // A preview copy (tools/make-preview.mjs) shares progress with the live app but must not
+  // install itself or take over the offline helper.
+  const PREVIEW = window.FLASHCARDS_PREVIEW === true;
   const reduceMotion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   const prefersDark = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : { matches: false };
 
@@ -115,6 +118,10 @@
   if (settings.pins.some(t => DECKS.some(d => d.topic === t))) settings.filter = 'pinned';
   if (!['all', 'pinned', ...LEVELS.map(l => l.code)].includes(settings.filter)) settings.filter = 'all';
   if (!SRS.NEW_PER_DAY_CHOICES.includes(settings.newPerDay)) settings.newPerDay = SRS.DEFAULT_NEW_PER_DAY;
+  // End-of-round celebration style; sound and vibration stay off unless the student turns them on
+  if (!Celebrate.STYLES.includes(settings.celebrate)) settings.celebrate = Celebrate.DEFAULT_STYLE;
+  settings.sound = settings.sound === true;
+  settings.vibe = settings.vibe === true && Celebrate.canVibrate();
   function saveSettings() { try { storage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ } }
 
   // Answers per day (streak) and how many new cards were started today
@@ -127,6 +134,19 @@
     const r = SRS.selectDue(srs, cards.map(idOf), today(), allowance());
     const pick = new Set([...r.reviews, ...r.fresh]);
     return { cards: cards.filter(c => pick.has(idOf(c))), reviews: r.reviews.length, fresh: r.fresh.length, newTotal: r.newTotal };
+  }
+
+  // How many cards will be waiting tomorrow: reviews due by then + tomorrow's new cards
+  function tomorrowCount(cards) {
+    const tomorrow = SRS.addDays(today(), 1);
+    let reviews = 0, unseen = 0;
+    cards.forEach(c => { const r = srs.cards[idOf(c)]; if (r) { if (r.due <= tomorrow) reviews++; } else unseen++; });
+    return reviews + Math.min(settings.newPerDay, unseen);
+  }
+  // Cards answered today (each card once), for the "X จาก Y ใบ" ring
+  function answeredToday(cards) {
+    const t = today();
+    return cards.filter(c => { const r = srs.cards[idOf(c)]; return r && r.t && SRS.toDay(new Date(r.t)) === t; }).length;
   }
 
   // Topics the student ticked in a unit (all, if the unit has no หัวข้อ)
@@ -221,6 +241,7 @@
   }
   function route(state, moveFocus) {
     const s = state || { screen: 'home' };
+    if (s.screen !== 'study') stopCelebration();
     if (s.topic) currentTopic = s.topic;
     if (s.screen === 'hub' && deckByTopic(currentTopic)) renderHub();
     else if (s.screen === 'grid' && deckByTopic(currentTopic)) renderGrid();
@@ -402,21 +423,21 @@
       const st = deckStats(deck.cards);
       const dueTicked = deckStats(activeCards(deck)).due; // due count follows the ticked หัวข้อ
       const code = levelCode(deck.level);
-      const mastery = pct(st.mastered, st.total);
+      const m = SRS.mastery(srs, deck.cards.map(idOf));
       const cell = document.createElement('div');
       cell.className = 'deck-cell';
       cell.style.animationDelay = Math.min(i * 40, 400) + 'ms';
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'deck lv-' + code;
+      btn.className = 'deck lv-' + code + (m.expert ? ' expert' : '');
       btn.innerHTML =
         '<span class="big-shape ' + code + '" aria-hidden="true"><span class="glyph">' + escapeHtml(glyphFor(deck.topic)) + '</span></span>' +
         '<span class="level-tag">' + levelTagHtml(deck.level) + '</span>' +
         '<span class="deck-title">' + escapeHtml(deck.topic) + '</span>' +
         '<span class="deck-count">' + st.total + ' ใบ</span>' +
         (dueTicked ? '<span class="due-badge">' + dueTicked + ' ใบรอทวน</span>' : '') +
-        '<span class="deck-foot"><span class="deck-bar"><span style="width:' + mastery + '%"></span></span>' +
-          '<span class="deck-pct">จำได้ ' + mastery + '%</span></span>';
+        '<span class="deck-foot">' + masteryRing(m) +
+          '<span class="deck-pct">' + (m.expert ? '<b>เชี่ยวชาญแล้ว</b>' : 'ชำนาญ ' + Math.round(m.score * 100) + '%') + '</span></span>';
       btn.addEventListener('click', () => navigate('hub', { topic: deck.topic }));
 
       // Pin toggle sits beside (not inside) the tile button: buttons can't be nested.
@@ -430,6 +451,15 @@
       cell.append(btn, pin);
       grid.appendChild(cell);
     });
+  }
+  // The unit's mastery ring: fills as its cards reach boxes 2–4; gold with a star when all are in box 4+
+  const RING_C = 2 * Math.PI * 15;
+  function masteryRing(m) {
+    return '<svg class="m-ring" viewBox="0 0 36 36" aria-hidden="true">' +
+      '<circle class="m-track" cx="18" cy="18" r="15"/>' +
+      '<circle class="m-fill" cx="18" cy="18" r="15" transform="rotate(-90 18 18)" stroke-dasharray="' + RING_C.toFixed(2) + '" stroke-dashoffset="' + (RING_C * (1 - m.score)).toFixed(2) + '"/>' +
+      (m.expert ? '<path class="m-star" d="M18 10.5l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.5-4.5 2.5 1-5-3.7-3.4 5-.6z"/>' : '') +
+      '</svg>';
   }
   function setPinState(btn, topic, withText) {
     const on = isPinned(topic);
@@ -465,6 +495,13 @@
       line.innerHTML = 'ได้เวลาทวนแล้ว <b>' + st.due + '</b> ใบ';
       $('study-due-all-label').textContent = 'เริ่มทวน ' + st.due + ' ใบ';
       cta.disabled = false;
+    } else if (cards.length && SRS.todayCount(stats, today())) {
+      // Studied today and nothing left: a clear finish line
+      const next = tomorrowCount(cards);
+      line.innerHTML = '<span class="done-mark" aria-hidden="true"></span><b>เสร็จแล้ววันนี้</b> · ' +
+        (next ? 'พรุ่งนี้มี ' + next + ' ใบ' : 'กลับมาอีกที' + comeBackWhen(st.nextDue));
+      $('study-due-all-label').textContent = pinnedTab ? 'เลือกวิธีทวน' : 'วันนี้ทวนครบแล้ว';
+      cta.disabled = !pinnedTab;
     } else if (cards.length) {
       line.textContent = 'วันนี้ทวนครบแล้ว กลับมาอีกที' + comeBackWhen(st.nextDue);
       // In the pinned tab students can still review everything (e.g. before a test)
@@ -480,11 +517,17 @@
   // "วันนี้ทวนแล้ว 12 ใบ · ต่อเนื่อง 5 วัน"
   function renderHeroMeta() {
     const n = SRS.todayCount(stats, today());
-    const run = SRS.streak(stats, today());
+    const info = SRS.streakInfo(stats, today());
+    const run = info.count;
     const el = $('hero-meta');
     const parts = [];
     if (n) parts.push('<span>วันนี้ทวนแล้ว <b>' + n + '</b> ใบ</span>');
-    if (run >= 2) parts.push('<span class="streak"><svg aria-hidden="true"><use href="#i-flame"/></svg>ต่อเนื่อง <b>' + run + '</b> วัน</span>');
+    if (run >= 2) {
+      // yesterday was missed but forgiven: say so, and that today keeps it going
+      const restYesterday = info.rest[0] === SRS.addDays(today(), -1) && !info.todayDone;
+      parts.push('<span class="streak"><svg aria-hidden="true"><use href="#i-flame"/></svg>ต่อเนื่อง <b>' + run + '</b> วัน' +
+        (restYesterday ? '<small> (เมื่อวานเป็นวันพัก ทวนวันนี้เพื่อไปต่อ)</small>' : '') + '</span>');
+    }
     el.innerHTML = parts.join('');
     el.hidden = !parts.length;
   }
@@ -577,8 +620,10 @@
     $('hub-level').innerHTML = levelTagHtml(deck.level);
     $('hub-topic').textContent = deck.topic;
     setPinState($('hub-pin'), deck.topic, true);
+    const m = SRS.mastery(srs, deck.cards.map(idOf));
     $('hub-sub').textContent = 'การ์ด ' + st.total + ' ใบ' + (hasSections(deck) ? ' ' + deck.sections.length + ' หัวข้อ' : '') +
-      ' จำได้แล้ว ' + st.mastered + ' ใบ (' + pct(st.mastered, st.total) + '%)';
+      ' จำได้แล้ว ' + st.mastered + ' ใบ (' + pct(st.mastered, st.total) + '%) · ' +
+      (m.expert ? 'เชี่ยวชาญแล้ว ★' : 'ชำนาญ ' + Math.round(m.score * 100) + '%');
     renderTopicList(deck);
     renderHubStudy(deck);
   }
@@ -726,8 +771,10 @@
       title: opts.title, mixed: !!opts.mixed, pool: cards.slice(),
       cards: order, index: 0, answers: new Map(), before: new Map(),
       dueMode: !!opts.ordered, scope: opts.scope || null,
+      streakBefore: SRS.streak(stats, today()),
     };
     lastAction = null;
+    stopCelebration();
     order.forEach(preloadFigures); // diagrams are small; having them all makes a session work offline
     $('study-title').textContent = session.title;
     if (currentScreen === 'study') { renderCard(); return; } // restarting from the summary
@@ -829,6 +876,7 @@
 
   function answer(knew) {
     if (!session || animating || !$('summary').hidden) return;
+    Celebrate.unlock(settings.sound); // inside the tap, so iPhones allow the sound at the end
     const card = currentCard();
     const id = idOf(card);
 
@@ -921,17 +969,37 @@
     renderProgress();
     $('counter-pos').textContent = n;
 
-    $('summary-title').textContent = n === yes ? 'จบชุดนี้แล้ว!' : 'จบรอบนี้แล้ว!';
+    // Today so far: cards answered today vs. still waiting (in the cards this round came from)
+    const home = homeScope();
+    const scopeCards = session.scope || home;
+    const left = dueSet(scopeCards).cards.length;
+    const done = answeredToday([...new Set([...scopeCards, ...session.pool])]);
+    const full = left === 0 && done > 0;  // nothing left to review today
+    const answered = yes + no;
+    const streakNow = SRS.streak(stats, today());
+    const streakUp = streakNow > session.streakBefore;
+    const milestone = SRS.streakMilestone(session.streakBefore, streakNow);
+
+    $('summary-title').textContent = full ? 'ทวนครบแล้ววันนี้!' : n === yes ? 'จบชุดนี้แล้ว!' : 'จบรอบนี้แล้ว!';
+    $('summary-milestone').hidden = !milestone;
+    $('summary-milestone').textContent = milestone ? 'ทวนต่อเนื่องครบ ' + milestone + ' วัน!' : '';
+    $('summary-today').hidden = full || !left || !answered;
+    $('summary-today').textContent = 'วันนี้ยังมีการ์ดรอทวนอีก ' + left + ' ใบ';
     $('summary-praise').hidden = !(n > 0 && yes === n);
+    const streakShown = streakUp ? session.streakBefore : streakNow;
     $('summary-stats').innerHTML =
       '<div class="stat yes"><b>' + yes + '</b><span>จำได้</span></div>' +
       '<div class="stat no"><b>' + no + '</b><span>ยังจำไม่ได้</span></div>' +
-      (skipped ? '<div class="stat"><b>' + skipped + '</b><span>ข้าม</span></div>' : '');
+      (skipped ? '<div class="stat"><b>' + skipped + '</b><span>ข้าม</span></div>' : '') +
+      (streakNow ? '<div class="stat streak"><b><svg aria-hidden="true"><use href="#i-flame"/></svg><span class="num" id="summary-streak">' + streakShown + '</span></b><span>วันต่อเนื่อง</span></div>' : '');
 
-    // When do these cards come back?
+    // When do these cards come back? (After a cleared day: how many are waiting tomorrow.)
     const t = today();
     const future = session.pool.map(c => srs.cards[idOf(c)]).filter(r => r && r.due > t).map(r => r.due).sort();
-    if (future.length) {
+    const tomorrow = full ? tomorrowCount(home.length ? home : scopeCards) : 0;
+    if (full && tomorrow) {
+      $('summary-next').textContent = 'พรุ่งนี้มีการ์ดรอทวน ' + tomorrow + ' ใบ แล้วเจอกันพรุ่งนี้';
+    } else if (future.length) {
       const first = future[0];
       const count = future.filter(d => d === first).length;
       const days = SRS.daysBetween(t, first);
@@ -978,9 +1046,34 @@
       () => startSession(session.pool, { title: session.title, mixed: session.mixed })));
     actions.appendChild(actionBtn('กลับ', 'answer-btn ghost-btn', () => history.back()));
 
-    announce('จบรอบนี้ จำได้ ' + yes + ' จาก ' + n + ' ใบ');
+    announce((full ? 'ทวนครบแล้ววันนี้ ' : 'จบรอบนี้ ') + 'จำได้ ' + yes + ' จาก ' + n + ' ใบ');
     $('summary-title').focus({ preventScroll: true });
+
+    // The celebration; the text and buttons appear when it says so
+    const summary = $('summary');
+    summary.classList.add('pre'); actions.classList.add('pre');
+    const lastLevel = levelCode((session.cards[n - 1] || session.cards[0]).level);
+    celebration = Celebrate.play({
+      art: $('summary-art'), style: settings.celebrate, full, done, goal: done + left, shape: lastLevel,
+      sound: settings.sound && answered > 0, vibe: settings.vibe && answered > 0,
+      reduce: reduceMotion.matches || !answered,
+      onReveal: () => revealSummary(!reduceMotion.matches && answered > 0),
+      onStreak: () => { if (streakUp) Celebrate.tickNumber($('summary-streak'), streakNow, settings.sound); if (milestone) Celebrate.buzz(settings.vibe, [30, 60, 30]); },
+    });
   }
+  let celebration = null;
+  function stopCelebration() { if (celebration) { celebration.skip(); celebration = null; } }
+  function revealSummary(animate) {
+    const summary = $('summary'), actions = $('summary-actions');
+    if (!summary.classList.contains('pre')) return;
+    summary.classList.remove('pre'); actions.classList.remove('pre');
+    if (!animate) return;
+    [...summary.children].filter(el => el.id !== 'summary-art' && !el.hidden).concat([actions]).forEach((el, i) =>
+      el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: i * 60, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+  }
+  // Tap the end screen to skip the animation
+  $('summary').addEventListener('click', () => { if (celebration && celebration.playing()) celebration.skip(); });
+  function homeScope() { return decksInFilter().flatMap(activeCards); }
   function actionBtn(label, cls, onClick) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = cls; b.textContent = label;
@@ -1074,19 +1167,41 @@
     dialog.querySelector('input[name="theme"][value="' + (settings.theme || 'system') + '"]').checked = true;
     dialog.querySelector('input[name="palette"][value="' + (settings.palette === 'classic' ? 'classic' : 'bauhaus') + '"]').checked = true;
     dialog.querySelector('input[name="newPerDay"][value="' + settings.newPerDay + '"]').checked = true;
-    $('install-field').hidden = isStandalone() || !(deferredInstall || isIOS());
+    dialog.querySelector('input[name="celebrate"][value="' + settings.celebrate + '"]').checked = true;
+    $('sound-on').checked = settings.sound;
+    $('vibe-on').checked = settings.vibe;
+    $('vibe-field').hidden = !Celebrate.canVibrate(); // iPhones and iPads can't vibrate from a website
+    $('feedback-note').textContent = Celebrate.canVibrate() ? 'เล่นตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น' : 'เล่นเสียงตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น';
+    $('install-field').hidden = PREVIEW || isStandalone() || !(deferredInstall || isIOS());
     const saved = Object.keys(srs.cards).length;
     $('progress-note').textContent = saved ? 'บันทึกไว้ ' + saved + ' ใบในเบราว์เซอร์นี้' : 'ยังไม่มีความคืบหน้าที่บันทึกไว้';
     resetBtn.hidden = !saved;
     disarmReset();
     if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
+    tryCelebration(false);
   }
+  // A small preview of the chosen celebration inside the settings sheet
+  let tryPlay = null;
+  function tryCelebration(animate) {
+    if (tryPlay) tryPlay.skip();
+    const pin = DECKS.find(d => isPinned(d.topic));
+    tryPlay = Celebrate.play({
+      art: $('cel-try-art'), style: settings.celebrate, full: true, done: 20, goal: 20,
+      shape: levelCode(pin ? pin.level : 'jh'), layer: dialog,
+      sound: animate && settings.sound, vibe: animate && settings.vibe, reduce: !animate || reduceMotion.matches,
+    });
+  }
+  $('cel-try-btn').addEventListener('click', () => { Celebrate.unlock(settings.sound); tryCelebration(true); });
+  dialog.addEventListener('close', () => { if (tryPlay) { tryPlay.skip(); tryPlay = null; } });
   document.querySelectorAll('.js-open-settings').forEach(b => b.addEventListener('click', openSettings));
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); }); // tap outside closes
   dialog.addEventListener('change', e => {
     if (e.target.name === 'theme') settings.theme = e.target.value === 'system' ? null : e.target.value;
     if (e.target.name === 'palette') { settings.palette = e.target.value; settings.noticeDone = true; renderNotice(); }
     if (e.target.name === 'newPerDay') { settings.newPerDay = Number(e.target.value); settings.newPerDayChosen = true; renderHome(); }
+    if (e.target.name === 'celebrate') { settings.celebrate = e.target.value; Celebrate.unlock(settings.sound); saveSettings(); tryCelebration(true); }
+    if (e.target.id === 'sound-on') { settings.sound = e.target.checked; if (settings.sound) { Celebrate.unlock(true); Celebrate.tone(true, 'C6'); } }
+    if (e.target.id === 'vibe-on') { settings.vibe = e.target.checked; Celebrate.buzz(settings.vibe, 20); }
     saveSettings(); applyTheme();
   });
   resetBtn.addEventListener('click', () => {
@@ -1286,7 +1401,7 @@
   // Suggest installing once the student has really started (≥ 10 answers), never in the installed app
   function renderInstallCard() {
     const answered = Object.values(stats.days || {}).reduce((a, b) => a + b, 0);
-    const show = !isStandalone() && !inLine() && !settings.installDismissed && answered >= 10 && !!(deferredInstall || isIOS());
+    const show = !PREVIEW && !isStandalone() && !inLine() && !settings.installDismissed && answered >= 10 && !!(deferredInstall || isIOS());
     $('install-card').hidden = !show;
     if (show && isIOS()) $('install-card-text').textContent = 'เปิดได้ในแตะเดียว ใช้ได้แม้ไม่มีอินเทอร์เน็ต และ iPhone จะไม่ลบความคืบหน้าของคุณ';
   }
@@ -1297,8 +1412,8 @@
   function sessionStorageGet(k) { try { return sessionStorage.getItem('mathFlashcards.' + k); } catch (e) { return null; } }
   $('line-dismiss').addEventListener('click', () => { try { sessionStorage.setItem('mathFlashcards.lineDismissed', '1'); } catch (e) { /* ignore */ } renderLineBanner(); });
 
-  // Offline helper (service worker): only on the real site / local test server
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  // Offline helper (service worker): only on the real site / local test server, never in a preview
+  if (!PREVIEW && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('flashcards-sw.js', { scope: './flashcards' }).catch(() => { /* offline mode is optional */ });
     });

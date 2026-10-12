@@ -29,25 +29,43 @@
   }
   // Call from a tap/key handler so iPhones allow sound later in the round
   function unlock(on) { const a = audio(on); if (a && a.state === 'suspended') a.resume(); }
-  const NOTE = { C5: 523.25, E5: 659.25, G5: 783.99, C6: 1046.5, E6: 1318.5, G6: 1568 };
+  const NOTE = { C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5, D6: 1174.7, E6: 1318.5, G6: 1568, A6: 1760 };
+  // One note: soft attack (no click), exponential tail; `to` glides the pitch (the bubble pop)
   function tone(on, f, o) {
     const a = audio(on); if (!a) return;
-    o = Object.assign({ dur: .45, type: 'sine', vol: .14, at: 0 }, o || {});
+    o = Object.assign({ dur: .45, type: 'sine', vol: .14, at: 0, attack: .012 }, o || {});
     const t = a.currentTime + o.at, osc = a.createOscillator(), g = a.createGain();
-    osc.type = o.type; osc.frequency.value = f;
+    osc.type = o.type; osc.frequency.setValueAtTime(f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + (o.glide || .12));
     g.gain.setValueAtTime(.0001, t);
-    g.gain.exponentialRampToValueAtTime(o.vol, t + .012);
+    g.gain.exponentialRampToValueAtTime(o.vol, t + o.attack);
     g.gain.exponentialRampToValueAtTime(.0001, t + o.dur);
     osc.connect(g).connect(a.destination); osc.start(t); osc.stop(t + o.dur + .05);
   }
   const chord = (on, notes) => notes.forEach((n, i) => tone(on, NOTE[n], { at: i * .03, dur: 1.1, vol: .08, type: i ? 'sine' : 'triangle' }));
-  function pop(on) {
+  // Filtered noise: a short low "puff", or (swell) a whoosh that rises while the sun grows
+  function noise(on, o) {
     const a = audio(on); if (!a) return;
-    const len = Math.floor(a.sampleRate * .09), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
-    const src = a.createBufferSource(), bp = a.createBiquadFilter(), g = a.createGain();
-    src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = .8; g.gain.value = .45;
-    src.connect(bp).connect(g).connect(a.destination); src.start();
+    o = Object.assign({ dur: .1, vol: .1, type: 'lowpass', f: 800, f2: 0, q: .7, swell: false }, o || {});
+    const len = Math.floor(a.sampleRate * (o.dur + .05)), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const t = a.currentTime, src = a.createBufferSource(), flt = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf; flt.type = o.type; flt.Q.value = o.q;
+    flt.frequency.setValueAtTime(o.f, t);
+    if (o.f2) flt.frequency.exponentialRampToValueAtTime(o.f2, t + o.dur);
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.vol, t + (o.swell ? o.dur * .9 : .005));
+    g.gain.exponentialRampToValueAtTime(.0001, t + o.dur);
+    src.connect(flt).connect(g).connect(a.destination); src.start(t); src.stop(t + o.dur + .05);
+  }
+  // The burst ("ฟู่ ปุ๊บ ระยิบ"): a soft bubble pop that drops in pitch, a puff under it,
+  // one warm note, then faint sparkles while the confetti falls
+  function bubblePop(on) {
+    tone(on, 560, { to: 150, glide: .12, dur: .2, vol: .2, attack: .006 });
+    noise(on, { dur: .07, vol: .07, f: 700 });
+    tone(on, NOTE.G5, { at: .08, dur: .7, vol: .05 });
+    const notes = ['C6', 'D6', 'E6', 'G6', 'A6'];
+    for (let i = 0; i < 9; i++) tone(on, NOTE[notes[(i * 3) % 5]], { at: .2 + i * .11 + (i % 2) * .03, dur: .22, vol: .018 + (i % 3) * .004, attack: .004 });
   }
   const canVibrate = () => typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
   function buzz(on, pattern) { if (on && canVibrate()) { try { navigator.vibrate(pattern); } catch (e) { /* ignore */ } } }
@@ -182,17 +200,17 @@
     } else if (o.style === 'burst') {
       const { items, sun } = drawBurst(art);
       anim(sun, [{ transform: 'scale(0)' }, { transform: 'scale(1.18)', offset: .7 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
-      later(80, () => tone(snd, NOTE.C5, { dur: .35, vol: .07, type: 'triangle' }));
+      noise(snd, { dur: .45, vol: .045, type: 'bandpass', f: 300, f2: 1500, q: 1.2, swell: true }); // whoosh
       later(470, () => {
         anim(sun, [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.5)', opacity: 0 }], { duration: 180, easing: 'ease-out' });
         const r = sun.getBoundingClientRect();
         burst(r.left + r.width / 2, r.top + r.height / 2, full ? 80 : 28, full);
-        pop(snd); ['C6', 'E6', 'G6'].forEach((n, i) => tone(snd, NOTE[n], { at: .05 + i * .06, dur: .4, vol: .06 }));
+        bubblePop(snd);
         buzz(vib, full ? [25, 30, 45] : 20);
       });
       items.forEach((el, i) => anim(el, [{ opacity: 0, transform: 'translateY(24px) scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 620 + i * 80, easing: 'cubic-bezier(.2,1.3,.4,1)' }));
       later(820, reveal);
-      later(1500, () => { streak(); if (full) chord(snd, ['C5', 'G5', 'C6']); });
+      later(1500, () => { streak(); if (full) ['C5', 'E5', 'G5'].forEach((n, i) => tone(snd, NOTE[n], { at: i * .04, dur: 1.3, vol: .045 })); });
       later(full ? 2900 : 2000, finish);
     } else {
       const g = drawRing(art, frac, 0, o.goal, o.shape);

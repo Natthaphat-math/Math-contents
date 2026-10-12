@@ -131,6 +131,19 @@
     return !r || r.due <= today; // new cards are always due
   }
   function isMastered(state, id) { return boxOf(state, id) >= MASTERED_BOX; }
+  /* How well a unit is known, for its ring: each card counts 0 (new / box 1), ⅓ (box 2),
+     ⅔ (box 3) or 1 (box 4–5). score 1 ⇔ every card is in box 4 or 5 ("เชี่ยวชาญแล้ว"). */
+  const EXPERT_BOX = 4;
+  function mastery(state, ids) {
+    if (!ids.length) return { score: 0, expert: false };
+    let sum = 0, expert = 0;
+    ids.forEach(id => {
+      const b = boxOf(state, id);
+      sum += b <= 1 ? 0 : (Math.min(b, EXPERT_BOX) - 1) / (EXPERT_BOX - 1);
+      if (b >= EXPERT_BOX) expert++;
+    });
+    return { score: sum / ids.length, expert: expert === ids.length };
+  }
   function lastAnswer(state, id) { const r = state.cards[id]; return r ? r.last : null; }
 
   // v1 mirror of the current state (what the old app would show).
@@ -204,14 +217,40 @@
   }
   function addExtraNew(st, today, n) { const s = normStats(st, today); s.extraNew += n; return s; }
   function todayCount(st, today) { return (st && st.days && st.days[today]) || 0; }
-  // Days in a row with at least STREAK_MIN answers, ending today (or yesterday while
-  // today isn't finished yet, so the streak doesn't look broken in the morning).
-  function streak(st, today) {
+  /* The streak: days with at least STREAK_MIN answers, counted back from today (or from
+     yesterday while today isn't done yet, so it doesn't look broken in the morning).
+     One missed day is forgiven as a "วันพัก" (rest day) if the days on both sides were
+     studied and no other rest day is within REST_GAP days. A rest day keeps the streak
+     alive but doesn't add to it; two missed days in a row end it.
+     → { count, rest: ['YYYY-MM-DD' …] (newest first), todayDone } */
+  const REST_GAP = 7;
+  const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 150, 200, 365];
+  function streakInfo(st, today) {
     const days = (st && st.days) || {};
-    let d = (days[today] || 0) >= STREAK_MIN ? today : addDays(today, -1);
-    let n = 0;
-    while ((days[d] || 0) >= STREAK_MIN) { n++; d = addDays(d, -1); }
-    return n;
+    const ok = d => (days[d] || 0) >= STREAK_MIN;
+    const todayDone = ok(today);
+    let d = todayDone ? today : addDays(today, -1);
+    let count = 0;
+    const rest = [];
+    for (let guard = 0; guard < 1000; guard++) {
+      if (ok(d)) count++;
+      else {
+        const before = addDays(d, -1);
+        const restOk = ok(before) && (!rest.length || daysBetween(d, rest[rest.length - 1]) >= REST_GAP);
+        if (!restOk) break;
+        rest.push(d);
+      }
+      d = addDays(d, -1);
+    }
+    // a rest day at the very start of the chain (yesterday, today not done yet) only
+    // counts while there is a streak to keep
+    if (!count) rest.length = 0;
+    return { count, rest, todayDone };
+  }
+  function streak(st, today) { return streakInfo(st, today).count; }
+  // The milestone reached when the streak grows from `before` to `after` (or 0)
+  function streakMilestone(before, after) {
+    return STREAK_MILESTONES.filter(m => before < m && after >= m).pop() || 0;
   }
   function loadStats(storage, today) { return normStats(readJSON(storage, KEY_STATS), today); }
   function saveStats(storage, st) { writeJSON(storage, KEY_STATS, st); }
@@ -304,10 +343,10 @@
 
   const SRS = {
     KEY_V1, KEY_V2, KEY_STATS, MAX_BOX, INTERVAL_DAYS, MASTERED_BOX, MIGRATED_BOX,
-    NEW_PER_DAY_CHOICES, DEFAULT_NEW_PER_DAY, STREAK_MIN,
+    NEW_PER_DAY_CHOICES, DEFAULT_NEW_PER_DAY, STREAK_MIN, REST_GAP, STREAK_MILESTONES, EXPERT_BOX,
     toDay, addDays, daysBetween, assignIds, emptyState, fromV1, reconcile,
-    answer, boxOf, isDue, isMastered, lastAnswer, toV1, load, save, clearAll,
-    emptyStats, recordAnswer, unrecordAnswer, newAllowance, addExtraNew, todayCount, streak, loadStats, saveStats,
+    answer, boxOf, isDue, isMastered, mastery, lastAnswer, toV1, load, save, clearAll,
+    emptyStats, recordAnswer, unrecordAnswer, newAllowance, addExtraNew, todayCount, streak, streakInfo, streakMilestone, loadStats, saveStats,
     selectDue, makeBackup, encodeBackup, decodeBackup, mergeBackup,
   };
   root.SRS = SRS;
