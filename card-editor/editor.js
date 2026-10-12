@@ -21,6 +21,8 @@
   const BRANCH = 'main';
   const CARDS_PATH = 'flashcards/cards.js';
   const DRAFTS_DIR = 'flashcards/drafts';
+  const FIGURES_DIR = 'flashcards/figures/';
+  const FIGURES_INDEX = FIGURES_DIR + 'index.js';
   const WORK_KEY = 'cardEditor.work.v1';
   const LEVELS = [
     { code: 'ps', label: 'ประถม' }, { code: 'jh', label: 'ม.ต้น' },
@@ -216,6 +218,18 @@
     return out;
   }
 
+  // Pictures of the diagrams, drawn by the GitHub Action (flashcards/render-figures.mjs)
+  async function loadFigures() {
+    let text;
+    try {
+      text = await fetchText(`https://api.github.com/repos/${REPO}/contents/${FIGURES_INDEX}?ref=${BRANCH}`, { headers: { Accept: 'application/vnd.github.raw' } });
+    } catch (e) {
+      try { text = await fetchText(FIGURES_INDEX + '?t=' + Date.now()); } catch (e2) { return { sizes: {}, errors: {} }; }
+    }
+    const read = name => { const m = new RegExp(name + ' = (\\{[\\s\\S]*?\\});').exec(text); try { return m ? JSON.parse(m[1]) : {}; } catch (e) { return {}; } };
+    return { sizes: read('CARD_FIGURES'), errors: read('CARD_FIGURE_ERRORS') };
+  }
+
   async function init() {
     if (!CF || !CF.parseDocument) { $('status').textContent = 'โหลดไม่สำเร็จ: ไม่พบ cards-format.js รุ่นใหม่'; return; }
     let base;
@@ -251,7 +265,9 @@
       showBanner('cards.js มี ' + loadErrors.length + ' จุดที่เขียนไม่ตรงรูปแบบ ตรวจดูการ์ดที่ขึ้นป้าย "ผิด" แล้วแก้ก่อนส่งออก', null, 'bad');
     }
     renderAll();
+    const figures = loadFigures();
     state.drafts = await loadDrafts();
+    state.figures = await figures;
     renderAll();
   }
 
@@ -635,14 +651,34 @@
     s.onload = () => { window.__tikzjaxLoaded = true; };
     document.head.append(s);
   }
+  function tikzScript(holder, tikz) {
+    ensureTikzJax();
+    const sc = document.createElement('script'); sc.type = 'text/tikz'; sc.textContent = tikz;
+    holder.replaceChildren(sc);
+  }
   function face(text, tikz) {
     const inner = h('div', { class: 'pv-inner' });
     inner.innerHTML = formatFace(text || '');
     if (tikz && tikz.trim()) {
-      ensureTikzJax();
       const holder = h('div', { class: 'tikz-holder' });
-      const sc = document.createElement('script'); sc.type = 'text/tikz'; sc.textContent = tikz;
-      holder.append(sc); inner.append(holder);
+      const id = CF.figureId(tikz);
+      const figs = state.figures;
+      const size = figs && figs.sizes[id];
+      if (size) {
+        const img = new Image(size[0], size[1]);
+        img.alt = 'รูปประกอบ';
+        img.onerror = () => tikzScript(holder, tikz); // picture not on the website yet
+        img.src = FIGURES_DIR + id + '.svg';
+        holder.append(img);
+      } else {
+        tikzScript(holder, tikz);
+      }
+      inner.append(holder);
+      if (figs && figs.errors[id]) {
+        inner.append(h('p', { class: 'pv-fig-note bad' }, 'วาดรูปนี้เป็นภาพไม่สำเร็จ แอปจะใช้วิธีเดิม (โหลดช้ากว่า) ข้อความจาก TeX: ' + figs.errors[id]));
+      } else if (figs && !size) {
+        inner.append(h('p', { class: 'pv-fig-note' }, 'รูปนี้ยังไม่ได้วาดเป็นภาพ ระบบจะวาดให้อัตโนมัติภายในไม่กี่นาทีหลัง Commit'));
+      }
     }
     if (window.renderMathInElement) window.renderMathInElement(inner, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
     return inner;

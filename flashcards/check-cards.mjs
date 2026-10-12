@@ -26,6 +26,8 @@ function load(file) {
   if (!/\*\/\};\s*$/.test(text)) err(file, 'the last line must be */};');
   return { file, text, split, doc: CF.parseDocument(split.text), parsed: CF.parse(split.text, split.lineOffset) };
 }
+// Thai letters outside % comments (a % after a backslash is a literal percent sign)
+const thaiInTikz = tikz => tikz.split('\n').some(l => /[\u0E00-\u0E7F]/.test(l.replace(/(^|[^\\])%.*$/, '$1')));
 const cardsOf = doc => doc.units.flatMap(u => u.topics.flatMap(t => t.cards.map(c => ({ u, t, c }))));
 
 const cardsFile = path.join(here, 'cards.js');
@@ -67,6 +69,9 @@ for (const f of draftFiles) {
     [['ถาม', c.front], ['ตอบ', c.back], ['รูปถาม', c.frontTikz], ['รูปตอบ', c.backTikz]].forEach(([label, v]) =>
       CF.contentProblems(v).forEach(p => err(name, `${c.id} ${label}: ${p}`)));
     if (!c.front || !c.back) err(name, `${c.id}: needs both ถาม: and ตอบ:`);
+    [['รูปถาม', c.frontTikz], ['รูปตอบ', c.backTikz]].forEach(([label, v]) => {
+      if (v && thaiInTikz(v)) warn(name, `${c.id} ${label}: Thai text inside a diagram cannot be drawn (TeX has no Thai font) — put it in ถาม:/ตอบ: or a % comment`);
+    });
   });
 }
 

@@ -44,13 +44,16 @@ tied to each card's id, so published ids must never change.
 6. Content: Thai, in the style of the existing cards; one definition / formula / property /
    short skill per card; question on `ถาม:`, answer on `ตอบ:`; keep both short; bold key
    words with `**…**`. Only add TikZ (`รูปถาม:` / `รูปตอบ:`) when a picture really helps.
+   Keep Thai text out of diagrams (TeX has no Thai font; `%` comments are fine).
    Check every formula against the PDF.
    For a theorem or property of the form "if … then …", write the question as
    `ถาม: ถ้า … แล้วจะสรุปได้ว่า ?` and put the conclusion on `ตอบ:`. Never use arrows such as
    → in place of "ถ้า … แล้ว": students who don't know the symbol may not understand the card.
 7. Run `node flashcards/check-cards.mjs` and fix every ✗ it reports (warnings: judge).
-8. Commit only the new draft file and push to `main`. Drafts are not shown to students.
-   **Never commit the PDF**: the repo is public.
+8. Commit only the new draft file and push to `main` (`git pull --rebase` first: a bot commits
+   diagram pictures). Drafts are not shown to students. **Never commit the PDF**: the repo is public.
+   After the push, a GitHub Action draws the draft's diagrams into `flashcards/figures/`
+   (generated: never edit or commit that folder yourself).
 9. Tell the teacher how many cards were drafted per unit/topic, anything you were unsure about,
    and to review them at https://natthaphat-math.github.io/Math-contents/card-editor.html
    (tab "ร่างจาก Claude"), then export and paste the new `cards.js`.

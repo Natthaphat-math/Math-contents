@@ -175,8 +175,13 @@ details.more[open] summary { margin-bottom: 8px; }
 .pv-card.back .pv-inner strong { color: var(--sun); }
 .pv-inner .katex-display { margin: .4em 0; overflow-x: auto; overflow-y: hidden; }
 .tikz-holder { margin: 10px auto 0; display: flex; justify-content: center; max-width: 100%; padding: 8px; border-radius: 12px; background: #fff; color: #000; }
-.tikz-holder:not(:has(svg)) { display: none; }
-.tikz-holder svg { max-width: 100%; height: auto; }
+.tikz-holder:not(:has(svg, img)) { display: none; }
+.tikz-holder svg, .tikz-holder img { max-width: 100%; height: auto; }
+.tikz-holder img { display: block; }
+.pv-fig-note { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.pv-fig-note.bad { color: var(--bad); }
+.pv-card.back .pv-fig-note { color: rgba(255, 255, 255, .72); }
+.pv-card.back .pv-fig-note.bad { color: #FFB4A3; }
 .pv-hidden { padding: 8px 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; }
 
 /* ---------- drafts ---------- */

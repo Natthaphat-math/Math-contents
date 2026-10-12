@@ -2,17 +2,19 @@
    Registered by flashcards/app.js with scope "./flashcards", so it controls
    flashcards.html and flashcards/… but none of the site's other pages or games.
 
-   - flashcards.html and flashcards/cards.js: network first (students always get the newest
-     cards when online), cached copy when offline.
-   - Everything else (versioned with ?v=, fonts, icons): cache first.
-   - Other websites (TikZJax diagrams): not touched.
+   - flashcards.html, flashcards/cards.js and flashcards/figures/index.js: network first
+     (students always get the newest cards when online), cached copy when offline.
+   - Everything else (versioned with ?v=, fonts, icons, diagram pictures — their names change
+     whenever the diagram changes): cache first.
+   - Other websites (TikZJax, only for diagrams without a picture): not touched.
    Bump CACHE when this file changes; ASSETS should match the ?v= numbers in flashcards.html
    (a mismatch only means those files are cached on first use instead of at install). */
-const VERSION = '2.5.0';
+const VERSION = '2.6.0';
 const CACHE = 'flashcards-' + VERSION;
 const ASSETS = [
   'flashcards.html',
   'flashcards/cards.js',
+  'flashcards/figures/index.js',
   'flashcards/styles.css?v=' + VERSION,
   'flashcards/app.js?v=' + VERSION,
   'flashcards/srs.js?v=' + VERSION,
@@ -72,7 +74,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;          // TikZJax etc.: browser handles it
   const path = url.pathname;
-  if (req.mode === 'navigate' || path.endsWith('/flashcards.html') || path.endsWith('/flashcards/cards.js')) {
+  if (req.mode === 'navigate' || path.endsWith('/flashcards.html') || path.endsWith('/flashcards/cards.js') || path.endsWith('/flashcards/figures/index.js')) {
     event.respondWith(networkFirst(req));
   } else if (path.includes('/flashcards/')) {
     event.respondWith(cacheFirst(req));

@@ -314,7 +314,27 @@
     return problems;
   }
 
-  const CardsFormat = { parse, extractSource, splitFile, parseDocument, serialize, contentProblems, LEVEL_ALIASES };
+  // Diagrams are pre-drawn as flashcards/figures/<figureId>.svg by render-figures.mjs (GitHub Action).
+  // The id depends only on the TikZ code (spaces at line ends and blank lines don't count),
+  // so the app, the editor and the Action always agree on which picture belongs to a card.
+  function normalizeTikz(tikz) {
+    return String(tikz || '').split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+  }
+  function figureId(tikz) {
+    const s = normalizeTikz(tikz);
+    if (!s) return '';
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57; // cyrb53
+    for (let i = 0; i < s.length; i++) {
+      const ch = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0');
+  }
+
+  const CardsFormat = { parse, extractSource, splitFile, parseDocument, serialize, contentProblems, normalizeTikz, figureId, LEVEL_ALIASES };
   root.CardsFormat = CardsFormat;
   if (typeof module !== 'undefined' && module.exports) module.exports = CardsFormat;
 

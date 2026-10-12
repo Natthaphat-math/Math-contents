@@ -482,8 +482,9 @@ svg { width: 22px; height: 22px; flex: none; }
 
 /* TikZ diagrams are drawn in black, so give them a white "paper" panel on any background */
 .tikz-holder { margin: 12px auto 0; display: flex; justify-content: center; max-width: 100%; padding: 10px; border-radius: 14px; background: #FFFFFF; color: #000; }
-.tikz-holder:not(:has(svg)) { display: none; } /* hide the white panel until the diagram exists */
-.tikz-holder svg { width: auto; max-width: 100%; height: auto; }
+.tikz-holder:not(:has(svg, img)) { display: none; } /* hide the white panel until the diagram exists */
+.tikz-holder svg, .tikz-holder img { width: auto; max-width: 100%; height: auto; }
+.tikz-holder img { display: block; }
 
 /* swipe feedback */
 .wash { position: absolute; inset: 0; border-radius: var(--radius-xl); display: grid; place-items: center; opacity: 0; pointer-events: none; z-index: 3; }

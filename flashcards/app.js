@@ -263,16 +263,42 @@
     });
     return tikzLoading;
   }
+  // Diagrams are normally ready-made pictures (flashcards/figures/, drawn by a GitHub Action);
+  // TikZJax is only the fallback for a diagram that has no picture yet.
+  const FIGURE_DIR = 'flashcards/figures/';
+  function figureOf(tikz) {
+    const id = window.CardsFormat ? CardsFormat.figureId(tikz) : '';
+    const size = id && window.CARD_FIGURES && window.CARD_FIGURES[id];
+    return size ? { src: FIGURE_DIR + id + '.svg', w: size[0], h: size[1] } : null;
+  }
+  function tikzScript(holder, tikz) {
+    ensureTikzJax();
+    const scriptEl = document.createElement('script');
+    scriptEl.type = 'text/tikz';
+    scriptEl.textContent = tikz;
+    holder.replaceChildren(scriptEl);
+  }
+  // Fetch a card's pictures ahead of time (also keeps them for offline use)
+  function preloadFigures(card) {
+    if (!card) return;
+    [card.frontTikz, card.backTikz].forEach(t => { const f = t && figureOf(t); if (f) new Image().src = f.src; });
+  }
   function renderFace(el, text, tikz) {
     el.innerHTML = formatFace(text);
     if (tikz) {
-      ensureTikzJax();
       const holder = document.createElement('div');
       holder.className = 'tikz-holder';
-      const scriptEl = document.createElement('script');
-      scriptEl.type = 'text/tikz';
-      scriptEl.textContent = tikz;
-      holder.appendChild(scriptEl);
+      const fig = figureOf(tikz);
+      if (fig) {
+        const img = new Image(fig.w, fig.h);
+        img.alt = 'รูปประกอบ';
+        img.decoding = 'async';
+        img.onerror = () => tikzScript(holder, tikz);
+        img.src = fig.src;
+        holder.appendChild(img);
+      } else {
+        tikzScript(holder, tikz);
+      }
       el.appendChild(holder);
     }
     if (window.renderMathInElement) {
@@ -702,6 +728,7 @@
       dueMode: !!opts.ordered, scope: opts.scope || null,
     };
     lastAction = null;
+    order.forEach(preloadFigures); // diagrams are small; having them all makes a session work offline
     $('study-title').textContent = session.title;
     if (currentScreen === 'study') { renderCard(); return; } // restarting from the summary
     renderCard();
