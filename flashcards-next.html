@@ -268,81 +268,86 @@
       <button class="icon-btn" value="close" aria-label="ปิด"><svg><use href="#i-close"/></svg></button>
     </div>
 
-    <fieldset class="field">
-      <legend>โหมดสี</legend>
-      <div class="segmented">
-        <label><input type="radio" name="theme" value="system"><span>ตามเครื่อง</span></label>
-        <label><input type="radio" name="theme" value="light"><span>สว่าง</span></label>
-        <label><input type="radio" name="theme" value="dark"><span>มืด</span></label>
+    <section class="settings-group" aria-labelledby="set-g-study">
+      <h3 class="settings-group-title" id="set-g-study">การเรียน</h3>
+      <fieldset class="field">
+        <legend>การ์ดใหม่ต่อวัน</legend>
+        <div class="segmented" id="new-per-day">
+          <label><input type="radio" name="newPerDay" value="5"><span>5</span></label>
+          <label><input type="radio" name="newPerDay" value="10"><span>10</span></label>
+          <label><input type="radio" name="newPerDay" value="15"><span>15</span></label>
+          <label><input type="radio" name="newPerDay" value="20"><span>20</span></label>
+          <label><input type="radio" name="newPerDay" value="30"><span>30</span></label>
+        </div>
+        <p class="field-note">การ์ดที่ยังไม่เคยเรียนจะทยอยเข้ามาวันละเท่านี้ ส่วนการ์ดที่ถึงเวลาทวนจะมาครบเสมอ (โหมด “ทบทวนทั้งหมด” ไม่จำกัด)</p>
+      </fieldset>
+      <div class="field">
+        <p class="legend-like">บทที่เรียนอยู่</p>
+        <button class="act-btn" type="button" id="open-welcome">เลือกบทที่เรียนอยู่</button>
       </div>
-    </fieldset>
+    </section>
 
-    <fieldset class="field">
-      <legend>ชุดสี</legend>
-      <div class="palette-options">
-        <label class="palette-card" data-preview="bauhaus">
-          <input type="radio" name="palette" value="bauhaus">
-          <span class="swatches"><i style="background:#FFC229"></i><i style="background:#CF3A1D"></i><i style="background:#2D3A8C"></i><i style="background:#0B7A54"></i></span>
-          <span class="palette-name">สีใหม่</span>
-        </label>
-        <label class="palette-card" data-preview="classic">
-          <input type="radio" name="palette" value="classic">
-          <span class="swatches"><i style="background:#E2793D"></i><i style="background:#17797A"></i><i style="background:#7A52C9"></i><i style="background:#B23A5A"></i></span>
-          <span class="palette-name">สีคลาสสิก</span>
-        </label>
-      </div>
-    </fieldset>
+    <section class="settings-group" aria-labelledby="set-g-look">
+      <h3 class="settings-group-title" id="set-g-look">หน้าตาและเสียง</h3>
+      <fieldset class="field">
+        <legend>โหมดสี</legend>
+        <div class="segmented">
+          <label><input type="radio" name="theme" value="system"><span>ตามเครื่อง</span></label>
+          <label><input type="radio" name="theme" value="light"><span>สว่าง</span></label>
+          <label><input type="radio" name="theme" value="dark"><span>มืด</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="field">
+        <legend>ชุดสี</legend>
+        <div class="palette-options">
+          <label class="palette-card" data-preview="bauhaus">
+            <input type="radio" name="palette" value="bauhaus">
+            <span class="swatches"><i style="background:#FFC229"></i><i style="background:#CF3A1D"></i><i style="background:#2D3A8C"></i><i style="background:#0B7A54"></i></span>
+            <span class="palette-name">สีใหม่</span>
+          </label>
+          <label class="palette-card" data-preview="classic">
+            <input type="radio" name="palette" value="classic">
+            <span class="swatches"><i style="background:#E2793D"></i><i style="background:#17797A"></i><i style="background:#7A52C9"></i><i style="background:#B23A5A"></i></span>
+            <span class="palette-name">สีคลาสสิก</span>
+          </label>
+        </div>
+      </fieldset>
+      <fieldset class="field">
+        <legend>ฉลองเมื่อทวนจบ</legend>
+        <div class="segmented" id="celebrate-options">
+          <label><input type="radio" name="celebrate" value="ring"><span>วงแหวน</span></label>
+          <label><input type="radio" name="celebrate" value="stack"><span>ประกอบร่าง</span></label>
+          <label><input type="radio" name="celebrate" value="burst"><span>ระเบิด</span></label>
+        </div>
+        <div class="cel-try">
+          <div class="cel-art" id="cel-try-art" aria-hidden="true"></div>
+          <button class="text-btn" type="button" id="cel-try-btn">ดูอีกครั้ง</button>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="sound-on"><span>เสียง</span></label>
+          <label class="toggle" id="vibe-field"><input type="checkbox" id="vibe-on"><span>สั่น</span></label>
+        </div>
+        <p class="field-note" id="feedback-note">เล่นตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น</p>
+      </fieldset>
+    </section>
 
-    <fieldset class="field">
-      <legend>ฉลองเมื่อทวนจบ</legend>
-      <div class="segmented" id="celebrate-options">
-        <label><input type="radio" name="celebrate" value="ring"><span>วงแหวน</span></label>
-        <label><input type="radio" name="celebrate" value="stack"><span>ประกอบร่าง</span></label>
-        <label><input type="radio" name="celebrate" value="burst"><span>ระเบิด</span></label>
+    <section class="settings-group" aria-labelledby="set-g-app">
+      <h3 class="settings-group-title" id="set-g-app">ความคืบหน้าและแอป</h3>
+      <div class="field" id="install-field" hidden>
+        <p class="legend-like">ติดตั้งเป็นแอป</p>
+        <p class="field-note">เปิดจากหน้าจอโฮมได้ทันที ใช้ได้แม้ไม่มีอินเทอร์เน็ต</p>
+        <button class="act-btn js-install" type="button">ติดตั้งบนเครื่องนี้</button>
       </div>
-      <div class="cel-try">
-        <div class="cel-art" id="cel-try-art" aria-hidden="true"></div>
-        <button class="text-btn" type="button" id="cel-try-btn">ดูอีกครั้ง</button>
+      <div class="field">
+        <p class="legend-like">ความคืบหน้า</p>
+        <p class="field-note" id="progress-note"></p>
+        <div class="btn-row">
+          <button class="act-btn" type="button" id="backup-btn">ย้ายไปเครื่องอื่น (QR / รหัส)</button>
+          <button class="act-btn" type="button" id="restore-btn">ใส่รหัสจากเครื่องเดิม</button>
+        </div>
+        <button class="reset-btn" type="button" id="reset-btn">ล้างความคืบหน้าที่บันทึกไว้</button>
       </div>
-      <div class="toggle-row">
-        <label class="toggle"><input type="checkbox" id="sound-on"><span>เสียง</span></label>
-        <label class="toggle" id="vibe-field"><input type="checkbox" id="vibe-on"><span>สั่น</span></label>
-      </div>
-      <p class="field-note" id="feedback-note">เล่นตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น</p>
-    </fieldset>
-
-    <fieldset class="field">
-      <legend>การ์ดใหม่ต่อวัน</legend>
-      <div class="segmented" id="new-per-day">
-        <label><input type="radio" name="newPerDay" value="5"><span>5</span></label>
-        <label><input type="radio" name="newPerDay" value="10"><span>10</span></label>
-        <label><input type="radio" name="newPerDay" value="15"><span>15</span></label>
-        <label><input type="radio" name="newPerDay" value="20"><span>20</span></label>
-        <label><input type="radio" name="newPerDay" value="30"><span>30</span></label>
-      </div>
-      <p class="field-note">การ์ดที่ยังไม่เคยเรียนจะทยอยเข้ามาวันละเท่านี้ ส่วนการ์ดที่ถึงเวลาทวนจะมาครบเสมอ (โหมด “ทบทวนทั้งหมด” ไม่จำกัด)</p>
-    </fieldset>
-
-    <div class="field">
-      <p class="legend-like">บทที่เรียนอยู่</p>
-      <button class="act-btn" type="button" id="open-welcome">เลือกบทที่เรียนอยู่</button>
-    </div>
-
-    <div class="field" id="install-field" hidden>
-      <p class="legend-like">ติดตั้งเป็นแอป</p>
-      <p class="field-note">เปิดจากหน้าจอโฮมได้ทันที ใช้ได้แม้ไม่มีอินเทอร์เน็ต</p>
-      <button class="act-btn js-install" type="button">ติดตั้งบนเครื่องนี้</button>
-    </div>
-
-    <div class="field">
-      <p class="legend-like">ความคืบหน้า</p>
-      <p class="field-note" id="progress-note"></p>
-      <div class="btn-row">
-        <button class="act-btn" type="button" id="backup-btn">ย้ายไปเครื่องอื่น (QR / รหัส)</button>
-        <button class="act-btn" type="button" id="restore-btn">ใส่รหัสจากเครื่องเดิม</button>
-      </div>
-      <button class="reset-btn" type="button" id="reset-btn">ล้างความคืบหน้าที่บันทึกไว้</button>
-    </div>
+    </section>
   </form>
 </dialog>
 

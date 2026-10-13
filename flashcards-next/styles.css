@@ -756,3 +756,7 @@ button.badge { cursor: pointer; }
   padding: 6px 14px; border-radius: 18px; background: rgba(21, 22, 58, .78); color: #FFFFFF; font-size: 13px; white-space: nowrap; pointer-events: none; }
 .swipe-hint b { font-weight: 600; }
 .swipe-hint span { opacity: .85; }
+
+/* Settings: three groups (การเรียน · หน้าตาและเสียง · ความคืบหน้าและแอป) */
+.settings-group + .settings-group { margin-top: 22px; padding-top: 6px; border-top: 2px solid var(--line); }
+.settings-group-title { margin: 16px 0 0; font-size: 18px; font-weight: 800; color: var(--ink); }
