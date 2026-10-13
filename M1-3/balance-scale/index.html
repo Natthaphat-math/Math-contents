@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ตาชั่งสมการ</title>
+<meta name="description" content="ตาชั่งสองแขนสำหรับเรียนการแก้สมการเชิงเส้นตัวแปรเดียวด้วยสมบัติการเท่ากัน (ม.1)">
+<meta name="theme-color" content="#f6f2e9">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip" href="#controls">ข้ามไปที่ปุ่มควบคุม</a>
+
+<header class="topbar">
+  <h1 class="brand">
+    <svg class="brand-icon" width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 5v20M6 9h20M6 9l-4 9h8zM26 9l-4 9h8zM10 27h12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    ตาชั่งสมการ
+  </h1>
+  <div class="topbar-actions">
+    <button type="button" class="btn btn-ghost" id="openEq" aria-haspopup="dialog">เลือกสมการ</button>
+    <button type="button" class="btn btn-ghost btn-icon" id="bigToggle" aria-pressed="false" title="ขยายตัวอักษร (ฉายจอ)">
+      <span aria-hidden="true">ก<small>ก</small></span><span class="sr-only">ขยายตัวอักษรสำหรับฉายจอ</span>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ซ้าย/บน: สมการ + ตาชั่ง -->
+  <section class="stage" aria-label="ตาชั่งและสมการ">
+    <div class="teacher-flag" id="teacherFlag" hidden>โหมดครู</div>
+
+    <div class="sticky-top">
+    <div class="equation-card" id="equationCard">
+      <div class="eq-labels" aria-hidden="true"><span>ข้างซ้าย</span><span></span><span>ข้างขวา</span></div>
+      <p class="eq-row" id="eqRow" aria-live="polite">
+        <span class="eq-side" id="eqLeft"></span>
+        <span class="eq-rel" id="eqRel"></span>
+        <span class="eq-side" id="eqRight"></span>
+      </p>
+      <p class="eq-start" id="eqStart"></p>
+    </div>
+
+    <div class="check-banner" id="checkBanner" hidden>
+      <span id="checkBannerText"></span>
+      <button type="button" class="btn btn-small" id="exitCheck">กลับไปที่ตาชั่ง</button>
+    </div>
+
+    <figure class="scale-wrap">
+      <svg id="scale" viewBox="-14 0 428 236" role="img" aria-labelledby="scaleTitle">
+        <title id="scaleTitle">ตาชั่ง</title>
+        <g class="dial" aria-hidden="true">
+          <path class="s-dial" d="M176 14 A 34 34 0 0 1 224 14"/>
+          <line class="s-tick" x1="200" y1="2" x2="200" y2="10"/>
+        </g>
+        <g aria-hidden="true">
+          <path class="s-post" d="M194 34 L190 214 L210 214 L206 34 Z"/>
+          <rect class="s-base" x="146" y="212" width="108" height="14" rx="7"/>
+        </g>
+        <g id="beam" aria-hidden="true">
+          <line class="s-beam" x1="64" y1="34" x2="336" y2="34"/>
+          <line class="s-needle" x1="200" y1="34" x2="200" y2="10"/>
+        </g>
+        <g id="panL" class="pan" aria-hidden="true"></g>
+        <g id="panR" class="pan" aria-hidden="true"></g>
+        <circle class="s-pivot" cx="200" cy="34" r="7" aria-hidden="true"/>
+        <circle class="s-pivot-dot" cx="200" cy="34" r="2.5" aria-hidden="true"/>
+      </svg>
+      <figcaption>
+        <span class="status" id="status"></span>
+        <span class="legend" aria-hidden="true">
+          <span><svg viewBox="0 0 20 20" class="lg-x"><rect x="1" y="1" width="18" height="18" rx="3"/><text x="10" y="10.5">x</text></svg> หนัก <i class="var">x</i></span>
+          <span><svg viewBox="0 0 12 12" class="lg-u"><rect x="1" y="1" width="10" height="10" rx="2"/></svg> หนัก 1</span>
+        </span>
+      </figcaption>
+    </figure>
+    </div>
+
+  </section>
+
+  <!-- ขวา/ล่าง: แผงควบคุม -->
+  <section class="panel" id="controls" aria-label="แผงควบคุม">
+    <div class="card">
+      <h2 class="card-title"><span class="num" aria-hidden="true">1</span> จะทำอะไรกับตาชั่ง</h2>
+      <div class="seg seg-ops" role="group" aria-label="การกระทำ">
+        <button type="button" class="seg-btn" data-op="sub" aria-pressed="false"><b aria-hidden="true">−</b> นำก้อนออก</button>
+        <button type="button" class="seg-btn" data-op="add" aria-pressed="false"><b aria-hidden="true">+</b> เพิ่มก้อน</button>
+        <button type="button" class="seg-btn" data-op="div" aria-pressed="false"><b aria-hidden="true">÷</b> แบ่งกลุ่ม</button>
+        <button type="button" class="seg-btn" data-op="mul" aria-pressed="false"><b aria-hidden="true">×</b> คูณ</button>
+      </div>
+
+      <div class="stepper" role="group" aria-labelledby="amountLabel">
+        <span class="stepper-label" id="amountLabel">จำนวน</span>
+        <button type="button" class="btn step-btn" id="kMinus" aria-label="ลดจำนวน">−</button>
+        <output class="step-value" id="kValue" aria-live="polite">1</output>
+        <button type="button" class="btn step-btn" id="kPlus" aria-label="เพิ่มจำนวน">+</button>
+        <span class="stepper-unit" id="kUnit">ก้อน</span>
+      </div>
+
+      <h2 class="card-title"><span class="num" aria-hidden="true">2</span> ทำกับข้างใด</h2>
+      <div class="seg seg-target" role="group" aria-label="ข้างที่จะทำ">
+        <button type="button" class="seg-btn" data-target="left" aria-pressed="false">ข้างซ้าย<small>เท่านั้น</small></button>
+        <button type="button" class="seg-btn" data-target="both" aria-pressed="false">ทั้งสองข้าง</button>
+        <button type="button" class="seg-btn" data-target="right" aria-pressed="false">ข้างขวา<small>เท่านั้น</small></button>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-go" id="goBtn" disabled>เลือกการกระทำและข้างก่อน</button>
+
+      <div class="row-2">
+        <button type="button" class="btn" id="undoBtn"><span aria-hidden="true">↶</span> ย้อนกลับ</button>
+        <button type="button" class="btn" id="resetBtn"><span aria-hidden="true">⟲</span> เริ่มใหม่</button>
+      </div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+      <label class="switch">
+        <input type="checkbox" id="predictToggle">
+        <span class="switch-ui" aria-hidden="true"></span>
+        <span>ทายผลก่อนทำ <small>(เมื่อทำกับข้างเดียว)</small></span>
+      </label>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">ตรวจสอบคำตอบ</h2>
+      <p class="hint" id="checkHint"></p>
+      <form class="check-form" id="checkForm" novalidate>
+        <label for="checkInput" class="check-label"><i class="var">x</i> =</label>
+        <input id="checkInput" type="number" inputmode="numeric" min="0" max="999" step="1" autocomplete="off" placeholder="?">
+        <button type="submit" class="btn btn-primary">ตรวจสอบ</button>
+      </form>
+      <div class="check-result" id="checkResult" aria-live="polite"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">บันทึกขั้นตอน</h2>
+      <div id="logGate">
+        <p class="hint">เขียนสมการแต่ละขั้นลงในใบงานของตัวเองก่อน แล้วค่อยเปิดเทียบกับบันทึกของเครื่อง</p>
+        <button type="button" class="btn" id="logAsk">เทียบกับบันทึกของเครื่อง</button>
+        <div class="confirm" id="logConfirm" hidden>
+          <p>เขียนขั้นตอนลงในใบงานแล้วใช่ไหม?</p>
+          <div class="row-2">
+            <button type="button" class="btn btn-primary" id="logYes">เขียนแล้ว เปิดดู</button>
+            <button type="button" class="btn" id="logNo">ยังก่อน</button>
+          </div>
+        </div>
+      </div>
+      <div id="logBox" hidden>
+        <ol class="log" id="logList"></ol>
+        <button type="button" class="btn btn-small" id="logHide">ซ่อนบันทึก</button>
+      </div>
+    </div>
+
+    <div class="card teacher-card" id="teacherCard" hidden>
+      <h2 class="card-title">เครื่องมือครู</h2>
+      <label class="switch">
+        <input type="checkbox" id="logAlwaysToggle">
+        <span class="switch-ui" aria-hidden="true"></span>
+        <span>แสดงบันทึกขั้นตอนตลอดเวลา</span>
+      </label>
+      <div class="row-2">
+        <button type="button" class="btn" id="stepBtn">ทำขั้นถัดไปให้ดู</button>
+        <button type="button" class="btn" id="solveBtn">แก้สมการให้ดูทั้งหมด</button>
+      </div>
+      <button type="button" class="btn" id="revealBtn">เปิดเผยค่า x</button>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <a href="teacher-guide.html">คู่มือครู</a>
+  <span aria-hidden="true">·</span>
+  <span>ไม่เก็บข้อมูลผู้ใช้ ทำงานได้แม้ไม่มีอินเทอร์เน็ต (หลังเปิดครั้งแรก)</span>
+</footer>
+
+<!-- กล่องเลือกสมการ -->
+<dialog id="eqDialog" aria-labelledby="eqDialogTitle">
+  <div class="dlg">
+    <div class="dlg-head">
+      <h2 id="eqDialogTitle">เลือกสมการ</h2>
+      <button type="button" class="btn btn-ghost btn-icon" data-close aria-label="ปิด">✕</button>
+    </div>
+    <h3>ตอนที่ 1 · การบวกและการลบ</h3>
+    <div class="preset-grid" id="presets1"></div>
+    <h3>ตอนที่ 2 · การคูณและการหาร</h3>
+    <div class="preset-grid" id="presets2"></div>
+    <form class="custom" id="customForm" hidden novalidate>
+      <h3>สร้างสมการเอง (ครู)</h3>
+      <p class="hint">รูปแบบ x + a = b, ax = b หรือ ax + b = c ใช้จำนวนเต็มบวก และคำตอบต้องเป็นจำนวนเต็มบวก</p>
+      <label for="customInput" class="sr-only">สมการ</label>
+      <div class="custom-row">
+        <input id="customInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="เช่น 3x + 2 = 14">
+        <button type="submit" class="btn btn-primary">ใช้สมการนี้</button>
+      </div>
+      <p class="form-error" id="customError" role="alert"></p>
+      <div id="shareBox" hidden>
+        <label for="shareLink" class="hint">ลิงก์สำหรับนักเรียน (เปิดสมการนี้โดยไม่มีโหมดครู)</label>
+        <div class="custom-row">
+          <input id="shareLink" type="text" readonly>
+          <button type="button" class="btn" id="copyLink">คัดลอก</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<!-- กล่องทายผล -->
+<dialog id="predictDialog" aria-labelledby="predictTitle">
+  <div class="dlg">
+    <h2 id="predictTitle">ทายก่อน!</h2>
+    <p id="predictQuestion"></p>
+    <div class="predict-grid">
+      <button type="button" class="btn predict-btn" data-predict="-1">
+        <svg viewBox="0 0 48 28" aria-hidden="true"><path d="M24 4v22M6 20L42 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="6" cy="20" r="4"/><circle cx="42" cy="8" r="4"/></svg>
+        ข้างซ้ายหนักกว่า
+      </button>
+      <button type="button" class="btn predict-btn" data-predict="0">
+        <svg viewBox="0 0 48 28" aria-hidden="true"><path d="M24 4v22M6 14h36" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="6" cy="14" r="4"/><circle cx="42" cy="14" r="4"/></svg>
+        สมดุล
+      </button>
+      <button type="button" class="btn predict-btn" data-predict="1">
+        <svg viewBox="0 0 48 28" aria-hidden="true"><path d="M24 4v22M6 8L42 20" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="6" cy="8" r="4"/><circle cx="42" cy="20" r="4"/></svg>
+        ข้างขวาหนักกว่า
+      </button>
+    </div>
+    <button type="button" class="btn btn-small" data-close>ยกเลิก</button>
+  </div>
+</dialog>
+
+<script src="js/model.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

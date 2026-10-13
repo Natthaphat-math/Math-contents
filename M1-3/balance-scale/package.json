@@ -1,0 +1,9 @@
+{
+  "name": "balance-scale-equations",
+  "private": true,
+  "description": "Thai balance-scale app for solving one-variable linear equations (Grade 7). No dependencies.",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  }
+}

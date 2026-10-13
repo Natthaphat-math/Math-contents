@@ -1,0 +1,11 @@
+{
+  "name": "ตาชั่งสมการ",
+  "short_name": "ตาชั่งสมการ",
+  "lang": "th",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f2e9",
+  "theme_color": "#f6f2e9",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
