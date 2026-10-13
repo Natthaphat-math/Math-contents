@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>แก้ไขหน้าแรก · คลังสื่อคณิตศาสตร์</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pridi:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF6; --line:#E4DFD2; --ink:#1B3A6B; --ink-soft:rgba(27,58,107,0.62);
+    --green:#1E3B32; --yellow:#F0C33B; --red:#D9503F; --muted:#8b8474; --card:#fff;
+    --lvl-ps:#E2793D; --lvl-jh:#1E8C8C; --lvl-sh:#7A52C9; --lvl-uni:#B23A5A; --lvl-other:#6B6F76;
+    --font-display:'Pridi',serif; --font-body:'IBM Plex Sans Thai',sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ margin:0; background:var(--paper); color:#233; font-family:var(--font-body); font-size:14.5px; }
+  h1,h2,h3{ font-family:var(--font-display); margin:0; font-weight:600; }
+  button,input,select,textarea{ font:inherit; color:inherit; }
+  :focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  [hidden]{ display:none !important; }
+
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:12px 18px; background:var(--green); color:#F7F5EE;
+  }
+  .topbar h1{ font-size:20px; }
+  .status{ margin:2px 0 0; font-size:13px; opacity:.85; }
+  .status.dirty{ color:var(--yellow); opacity:1; }
+  .top-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .btn{
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+    border-radius:9px; padding:7px 13px; cursor:pointer; font-weight:500; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .btn:hover{ border-color:var(--ink); }
+  .btn.primary{ background:var(--yellow); border-color:var(--yellow); color:#132922; font-weight:600; }
+  .btn.primary:hover{ filter:brightness(1.05); }
+  .btn.dark{ background:transparent; color:#F7F5EE; border-color:rgba(247,245,238,.35); }
+  .btn.dark:hover{ border-color:#F7F5EE; }
+  .btn.small{ padding:4px 9px; font-size:13px; border-radius:7px; }
+  .btn.danger{ color:var(--red); }
+  .btn.danger:hover{ border-color:var(--red); }
+  .btn:disabled{ opacity:.4; cursor:default; }
+
+  .layout{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0; height:calc(100vh - 62px); }
+  .panel{ overflow:auto; }
+  .editor{ padding:16px 18px 60px; border-right:2px solid var(--line); }
+  .preview{ display:flex; flex-direction:column; background:#EDEAE0; }
+  .preview-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--paper); }
+  .preview-head h2{ font-size:16px; color:var(--ink); }
+  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .seg button{ border:0; background:#fff; padding:5px 11px; cursor:pointer; font-size:13px; }
+  .seg button.on{ background:var(--ink); color:#fff; }
+  .preview-body{ flex:1; display:flex; justify-content:center; padding:12px; min-height:0; }
+  #preview{ width:100%; height:100%; border:1px solid var(--line); border-radius:10px; background:#fff; transition:width .2s; }
+  #preview.mobile{ width:390px; max-width:100%; }
+
+  @media (max-width:900px){
+    .topbar{ position:static; }
+    .layout{ display:block; height:auto; }
+    .editor{ border-right:0; }
+    .preview-body{ height:75vh; }
+  }
+
+  .tabs{ display:flex; gap:4px; border-bottom:2px solid var(--line); margin-bottom:14px; flex-wrap:wrap; }
+  .tab{ border:0; background:none; padding:9px 14px; cursor:pointer; font-weight:600; color:var(--ink-soft); border-bottom:3px solid transparent; margin-bottom:-2px; }
+  .tab.on{ color:var(--ink); border-bottom-color:var(--yellow); }
+  .tab .n{ font-family:var(--font-mono); font-size:12px; background:rgba(27,58,107,.08); border-radius:20px; padding:1px 7px; margin-left:4px; }
+
+  .help{ background:#FFF8E1; border:1px solid #F2E3A6; border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:13.5px; line-height:1.7; }
+  .help ol{ margin:4px 0 0; padding-left:20px; }
+  .help summary{ cursor:pointer; font-weight:600; }
+  .note{ color:var(--muted); font-size:13px; line-height:1.6; }
+  .banner{ border-radius:10px; padding:12px 14px; margin-bottom:14px; line-height:1.6; }
+  .banner.warn{ background:#FCE9E6; border:1px solid #F1C3BC; }
+  .banner.info{ background:#E6EEF8; border:1px solid #C3D4EA; }
+  .banner .row-actions{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+
+  .toolbar{ display:flex; gap:10px 16px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .toolbar input[type=search]{ flex:1 1 180px; padding:7px 12px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+  .switch{ display:inline-flex; align-items:center; gap:7px; cursor:pointer; user-select:none; }
+  .switch input{ width:17px; height:17px; accent-color:var(--ink); }
+  .summary{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); margin:0 0 8px; }
+
+  .list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .group-label{ font-family:var(--font-display); font-weight:600; color:var(--ink); margin:12px 0 2px; display:flex; align-items:center; gap:8px; }
+  .group-label::before{ content:""; width:10px; height:10px; border-radius:50%; background:var(--c, var(--lvl-other)); }
+  .row{ background:var(--card); border:1px solid var(--line); border-radius:11px; }
+  .row.off{ background:#F3F1EA; }
+  .row.off .row-title{ color:var(--muted); text-decoration:line-through; }
+  .row.drag-over{ border-color:var(--ink); box-shadow:0 0 0 2px var(--ink) inset; }
+  .row.dragging{ opacity:.45; }
+  .row-head{ display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .handle{ cursor:grab; color:#b7ae9b; font-size:16px; padding:0 2px; user-select:none; }
+  .handle.disabled{ cursor:default; opacity:.3; }
+  .row-head input[type=checkbox]{ width:18px; height:18px; accent-color:var(--ink); flex:none; cursor:pointer; }
+  .mini{ width:58px; height:36px; flex:none; border-radius:6px; border:1px solid var(--line); background:#F1EFE6; object-fit:cover; display:block; }
+  .row-main{ flex:1; min-width:0; }
+  .row-title{ font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row-sub{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lvl{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:1px; }
+  .row-warn{ color:var(--red); font-size:12.5px; }
+  .new-toggle{ border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:20px; padding:2px 9px; font-size:12px; cursor:pointer; font-weight:600; }
+  .new-toggle.on{ background:var(--red); border-color:var(--red); color:#fff; }
+  .icon-btn{ border:1px solid var(--line); background:#fff; border-radius:7px; width:28px; height:28px; cursor:pointer; color:var(--ink); flex:none; }
+  .icon-btn:hover:not(:disabled){ border-color:var(--ink); }
+  .icon-btn:disabled{ opacity:.3; cursor:default; }
+  .row-body{ border-top:1px dashed var(--line); padding:12px 14px 14px; display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+  .row-body .full{ grid-column:1 / -1; }
+  @media (max-width:560px){ .row-body{ grid-template-columns:1fr; } .mini{ display:none; } }
+
+  label.f{ display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:500; color:var(--ink); }
+  label.f input, label.f select, label.f textarea, .fs input{ padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; font-weight:400; color:#233; width:100%; }
+  label.f textarea{ resize:vertical; min-height:58px; line-height:1.55; }
+  label.f input:focus, label.f select:focus, label.f textarea:focus{ outline:none; border-color:var(--ink); }
+  .hint{ font-weight:400; color:var(--muted); font-size:12px; }
+  .checks{ display:flex; gap:14px; flex-wrap:wrap; padding-top:4px; }
+  .checks label{ display:inline-flex; gap:6px; align-items:center; font-weight:400; }
+  .fieldset{ border:1px solid var(--line); border-radius:11px; padding:14px; margin:0 0 14px; background:#fff; display:flex; flex-direction:column; gap:10px; }
+  .fieldset legend{ font-family:var(--font-display); font-weight:600; color:var(--ink); padding:0 6px; }
+
+  .page-item{ display:flex; align-items:center; gap:10px; padding:9px 12px; background:#fff; border:1px solid var(--line); border-radius:10px; }
+  .page-item .p{ flex:1; min-width:0; font-family:var(--font-mono); font-size:13px; overflow-wrap:anywhere; }
+  .page-item .p small{ display:block; font-family:var(--font-body); color:var(--muted); }
+
+  .modal-back{ position:fixed; inset:0; background:rgba(19,41,34,.5); z-index:50; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal{ background:var(--paper); border-radius:14px; padding:18px; width:min(640px,100%); max-height:90vh; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  .modal textarea{ width:100%; min-height:220px; font-family:var(--font-mono); font-size:12px; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .toast{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--green); color:#fff; padding:10px 16px; border-radius:10px; z-index:60; box-shadow:0 8px 24px rgba(0,0,0,.2); max-width:calc(100% - 32px); }
+</style>
+</head>
+<body>
+<noscript>หน้านี้ต้องเปิดใช้งาน JavaScript</noscript>
+
+<header class="topbar">
+  <div>
+    <h1>แก้ไขหน้าแรก (index.html)</h1>
+    <p class="status" id="status" aria-live="polite">กำลังโหลด…</p>
+  </div>
+  <div class="top-actions">
+    <button class="btn primary" type="button" id="copy-btn" disabled>📋 คัดลอกโค้ด index.html</button>
+    <a class="btn dark" id="github-btn" href="#" target="_blank" rel="noopener">เปิด index.html บน GitHub ↗</a>
+    <button class="btn dark" type="button" id="download-btn" disabled>ดาวน์โหลด</button>
+    <button class="btn dark" type="button" id="reload-btn">โหลดใหม่…</button>
+  </div>
+</header>
+
+<div class="layout">
+  <section class="panel editor" aria-label="ตัวแก้ไข">
+    <div id="banners"></div>
+
+    <details class="help">
+      <summary>วิธีนำไปใช้บนเว็บจริง</summary>
+      <ol>
+        <li>แก้ไขการ์ดและข้อความในหน้านี้ (ดูผลได้ทันทีในช่องตัวอย่าง) — งานที่แก้จะบันทึกไว้ในเบราว์เซอร์นี้อัตโนมัติ</li>
+        <li>กด <b>📋 คัดลอกโค้ด index.html</b></li>
+        <li>กด <b>เปิด index.html บน GitHub</b> → ไอคอนดินสอ ✏️ → กด Ctrl+A (มือถือ: เลือกทั้งหมด) แล้ววางทับ</li>
+        <li>กด <b>Commit changes</b> แล้วรอ 1–2 นาที หน้าเว็บจะอัปเดต</li>
+        <li>การ์ดใหม่จะยังไม่มีรูปตัวอย่างในตอนแรก บอตของ GitHub จะถ่ายภาพหน้าจอให้อัตโนมัติภายในไม่กี่นาที</li>
+      </ol>
+    </details>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab on" type="button" data-tab="cards" role="tab">การ์ด <span class="n" id="n-cards">0</span></button>
+      <button class="tab" type="button" data-tab="texts" role="tab">ข้อความบนหน้า</button>
+      <button class="tab" type="button" data-tab="pages" role="tab">หน้าที่ยังไม่อยู่ในรายการ <span class="n" id="n-pages">…</span></button>
+    </nav>
+
+    <div data-pane="cards">
+      <div class="toolbar">
+        <input type="search" id="card-search" placeholder="ค้นหาการ์ด" aria-label="ค้นหาการ์ด">
+        <button class="btn" type="button" id="add-card-btn">+ การ์ดใหม่</button>
+      </div>
+      <div class="toolbar">
+        <label class="switch"><input type="checkbox" id="opt-group"> แบ่งหัวข้อตามระดับชั้น</label>
+        <label class="switch"><input type="checkbox" id="opt-placeholder"> แสดงการ์ด “เร็ว ๆ นี้”</label>
+      </div>
+      <p class="summary" id="card-summary"></p>
+      <p class="note" id="order-note"></p>
+      <ul class="list" id="card-list"></ul>
+    </div>
+
+    <div data-pane="texts" hidden>
+      <fieldset class="fieldset" id="text-fields"><legend>ส่วนหัว และท้ายหน้า</legend></fieldset>
+      <fieldset class="fieldset" id="placeholder-fields"><legend>การ์ด “เร็ว ๆ นี้”</legend></fieldset>
+      <fieldset class="fieldset" id="group-fields"><legend>ชื่อหัวข้อระดับชั้น (เมื่อเปิด “แบ่งหัวข้อตามระดับชั้น”)</legend></fieldset>
+    </div>
+
+    <div data-pane="pages" hidden>
+      <p class="note">ไฟล์ .html ใน repo ที่ยังไม่มีการ์ดบนหน้าแรก (รวมการ์ดที่ซ่อนไว้ด้วย) กด “เพิ่ม” เพื่อสร้างการ์ดใหม่ไว้บนสุดของรายการ พร้อมป้าย “ใหม่”</p>
+      <div class="list" id="page-list"><p class="note">กำลังโหลดรายชื่อไฟล์จาก GitHub…</p></div>
+    </div>
+  </section>
+
+  <section class="panel preview" aria-label="ตัวอย่าง">
+    <div class="preview-head">
+      <h2>ตัวอย่าง</h2>
+      <div class="seg" role="group" aria-label="ขนาดจอ">
+        <button type="button" class="on" data-size="desktop">คอม</button>
+        <button type="button" data-size="mobile">มือถือ</button>
+      </div>
+    </div>
+    <div class="preview-body"><iframe id="preview" title="ตัวอย่างหน้าแรก"></iframe></div>
+  </section>
+</div>
+
+<datalist id="cta-list"></datalist>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- constants ----------
+  const LEVELS = [
+    { key:'ประถม',  cls:'ps',    heading:'ประถมศึกษา' },
+    { key:'ม.ต้น',  cls:'jh',    heading:'มัธยมศึกษาตอนต้น' },
+    { key:'ม.ปลาย', cls:'sh',    heading:'มัธยมศึกษาตอนปลาย' },
+    { key:'มหาลัย', cls:'uni',   heading:'มหาวิทยาลัย' },
+    { key:'อื่น ๆ',  cls:'other', heading:'อื่น ๆ' },
+  ];
+  const CATEGORIES = ['สื่อการสอน', 'เกม'];
+  const CTA_PRESETS = ['เปิดเรียนรู้', 'เปิดเรียน', 'เปิดเล่น', 'ฝึกฝนกันเลย'];
+  const TEXT_FIELDS = [
+    { key:'pageTitle',    label:'ชื่อแท็บเบราว์เซอร์',            kind:'title' },
+    { key:'metaDesc',     label:'คำอธิบายสำหรับ Google และการแชร์ลิงก์', kind:'meta', multiline:true },
+    { key:'eyebrow',      label:'ป้ายเล็กเหนือหัวข้อ',             edit:'eyebrow' },
+    { key:'heroTitle',    label:'หัวข้อใหญ่',                      edit:'hero-title' },
+    { key:'heroDesc',     label:'คำอธิบายใต้หัวข้อ',               edit:'hero-desc', multiline:true },
+    { key:'sectionTitle', label:'หัวข้อรายการสื่อ',                edit:'section-title' },
+    { key:'creditName',   label:'ชื่อผู้จัดทำ (ท้ายหน้า ต่อจาก “จัดทำโดย”)', edit:'credit-name' },
+    { key:'footerMeta',   label:'ข้อความเล็กมุมขวาท้ายหน้า',       edit:'footer-meta' },
+  ];
+  const START_MARK = '<!-- EDITOR:CARDS START';
+  const START_LINE = '<!-- EDITOR:CARDS START — this part is generated by index-editor.html -->';
+  const END_MARK = '<!-- EDITOR:CARDS END -->';
+  const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  const DRAFT_KEY = 'index-editor-draft-v1';
+
+  // repo info: derived from the GitHub Pages address, with this site as the fallback
+  let OWNER = 'natthaphat-math', REPO = 'Math-contents';
+  const BRANCH = 'main';
+  if (/\.github\.io$/i.test(location.hostname)) {
+    OWNER = location.hostname.split('.')[0];
+    const first = location.pathname.split('/').filter(Boolean)[0];
+    if (first && !/\.html$/i.test(first)) REPO = first;
+  }
+
+  // ---------- state ----------
+  let st = null;          // { source, cards, texts, placeholder, groupLabels, groupByLevel, showPlaceholder }
+  let repoPaths = null;   // Set of .html paths in the repo (null = not loaded / failed)
+  const expanded = new Set();
+  let uidN = 0;
+  const uid = () => 'c' + (++uidN);
+
+  // ---------- helpers ----------
+  const $ = (s, r = document) => r.querySelector(s);
+  const T = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const A = s => T(s).replace(/"/g, '&quot;');
+  const pad = n => String(n).padStart(2, '0');
+  function h(tag, attrs = {}, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (v === true) el.setAttribute(k, '');
+      else el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid);
+    return el;
+  }
+  function levelOf(key) {
+    return LEVELS.find(l => l.key === key) || { key, cls:'other', heading:key };
+  }
+  function isExternal(href) { return /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href); }
+  function normPath(href) {
+    let p = String(href || '').trim().replace(/[?#].*$/, '').replace(/^\.\//, '').replace(/^\//, '');
+    if (p === '' || p.endsWith('/')) p += 'index.html';
+    try { p = decodeURI(p); } catch (e) {}
+    return p;
+  }
+  function autoThumb(href) {
+    if (!href || isExternal(href)) return null;
+    const p = normPath(href);
+    if (!/\.html$/i.test(p)) return null;
+    return 'thumbnails/' + p.replace(/\.html$/i, '.png');
+  }
+  function thumbSrc(c) {
+    if (c.thumb === 'none') return null;
+    if (c.thumb === 'auto') return autoThumb(c.href);
+    return c.thumb || null;
+  }
+  function toast(msg) {
+    const t = h('div', { class:'toast', role:'status', text:msg });
+    document.body.append(t);
+    setTimeout(() => t.remove(), 3200);
+  }
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+  };
+
+  // ---------- parse index.html ----------
+  function parseSource(src) {
+    const s = src.indexOf(START_MARK), e = src.indexOf(END_MARK);
+    if (s < 0 || e < 0 || e < s) throw new Error('ไม่พบเครื่องหมาย <!-- EDITOR:CARDS START/END --> ใน index.html จึงไม่รู้ว่าจะแก้ส่วนไหน');
+    const doc = new DOMParser().parseFromString(src, 'text/html');
+
+    const texts = {};
+    for (const f of TEXT_FIELDS) {
+      if (f.kind === 'title') texts[f.key] = doc.querySelector('title') ? doc.querySelector('title').textContent : null;
+      else if (f.kind === 'meta') { const m = doc.querySelector('meta[name="description"]'); texts[f.key] = m ? m.getAttribute('content') : null; }
+      else { const el = doc.querySelector(`[data-edit="${f.edit}"]`); texts[f.key] = el ? el.textContent : null; }
+    }
+
+    const readCard = (a, visible) => {
+      const img = a.querySelector('.card-preview img');
+      const href = a.getAttribute('href') || '';
+      const src = img ? img.getAttribute('src') : null;
+      const cta = a.querySelector('.cta');
+      return {
+        id: uid(), href,
+        thumb: !img ? 'none' : (src === autoThumb(href) ? 'auto' : src),
+        tags: Array.from(a.querySelectorAll('.tag')).map(t => t.textContent.trim()).filter(Boolean),
+        level: a.getAttribute('data-level') || 'อื่น ๆ',
+        categories: (a.getAttribute('data-categories') || '').split(/\s+/).filter(Boolean),
+        title: (a.querySelector('h3') || {}).textContent?.trim() || '',
+        desc: (a.querySelector('p') || {}).textContent?.trim() || '',
+        cta: (cta && cta.firstChild ? cta.firstChild.textContent : '').trim() || 'เปิดเรียนรู้',
+        isNew: a.hasAttribute('data-new'),
+        visible,
+      };
+    };
+    const cards = Array.from(doc.querySelectorAll('a.card')).map(a => readCard(a, true));
+    const tpl = doc.querySelector('template#hidden-cards');
+    if (tpl) tpl.content.querySelectorAll('a.card').forEach(a => cards.push(readCard(a, false)));
+
+    const ph = doc.querySelector('.card.placeholder');
+    const placeholder = {
+      title: ph?.querySelector('h3')?.textContent.trim() || 'เร็ว ๆ นี้',
+      desc: ph?.querySelector('p')?.textContent.trim() || 'สื่อการสอนใหม่กำลังจะถูกเพิ่มเข้ามาในคลังนี้',
+    };
+    const groupLabels = {};
+    LEVELS.forEach(l => groupLabels[l.key] = l.heading);
+    doc.querySelectorAll('.level-group[data-level-group]').forEach(g => {
+      const head = g.querySelector('.level-heading');
+      if (head) groupLabels[g.getAttribute('data-level-group')] = head.textContent.trim();
+    });
+
+    return {
+      source: src, cards, texts, placeholder, groupLabels,
+      groupByLevel: !!doc.querySelector('.level-group'),
+      showPlaceholder: !!ph,
+    };
+  }
+
+  // ---------- generate index.html ----------
+  function cardHTML(c, ind) {
+    const L = levelOf(c.level);
+    const label = 'เปิด' + c.title;
+    const src = thumbSrc(c);
+    const badge = '<span class="new-badge">ใหม่</span>';
+    const lines = [
+      `<a class="card" href="${A(c.href)}" target="_blank" aria-label="${A(label)}" data-categories="${A(c.categories.join(' '))}" data-level="${A(L.key)}"${c.isNew ? ' data-new' : ''}>`,
+      '  <span class="hole"></span>',
+    ];
+    if (src) {
+      lines.push('  <div class="card-preview">', `    <img src="${A(src)}" loading="lazy" alt="${A(label)}">`);
+      if (c.isNew) lines.push('    ' + badge);
+      lines.push('  </div>');
+    }
+    const tagRow = c.tags.map(t => `<span class="tag">${T(t)}</span>`).join('')
+      + `<span class="level-tag lvl-${L.cls}">${T(L.key)}</span>`
+      + (c.isNew && !src ? badge : '');
+    lines.push(
+      `  <div class="tag-row">${tagRow}</div>`,
+      `  <h3>${T(c.title)}</h3>`,
+      `  <p>${T(c.desc)}</p>`,
+      `  <span class="cta">${T(c.cta)}`,
+      '    ' + ARROW,
+      '  </span>',
+      '</a>'
+    );
+    return lines.map(l => ind + l).join('\n');
+  }
+  function placeholderHTML(ind) {
+    return [
+      '<div class="card placeholder">',
+      '  <span class="plus">+</span>',
+      `  <h3>${T(st.placeholder.title)}</h3>`,
+      `  <p>${T(st.placeholder.desc)}</p>`,
+      '</div>',
+    ].map(l => ind + l).join('\n');
+  }
+  // level groups in display order: known levels first, then any unknown level in list order
+  function levelOrder(cards) {
+    const keys = LEVELS.map(l => l.key);
+    cards.forEach(c => { if (!keys.includes(c.level)) keys.push(c.level); });
+    return keys;
+  }
+  function displayOrder() {
+    if (!st.groupByLevel) return st.cards.slice();
+    const order = levelOrder(st.cards);
+    return order.flatMap(k => st.cards.filter(c => c.level === k));
+  }
+  function regionHTML() {
+    const vis = st.cards.filter(c => c.visible);
+    const hid = st.cards.filter(c => !c.visible);
+    const out = ['    ' + START_LINE];
+    if (!st.groupByLevel) {
+      out.push('    <div class="grid">', '');
+      vis.forEach(c => out.push(cardHTML(c, '      '), ''));
+      if (st.showPlaceholder) out.push(placeholderHTML('      '), '');
+      out.push('    </div>');
+    } else {
+      levelOrder(vis).forEach(k => {
+        const cs = vis.filter(c => c.level === k);
+        if (!cs.length) return;
+        const L = levelOf(k);
+        out.push(
+          `    <div class="level-group" data-level-group="${A(k)}">`,
+          `      <h3 class="level-heading lvl-${L.cls}">${T(st.groupLabels[k] || L.heading)}</h3>`,
+          '      <div class="grid">', ''
+        );
+        cs.forEach(c => out.push(cardHTML(c, '        '), ''));
+        out.push('      </div>', '    </div>');
+      });
+      if (st.showPlaceholder) out.push('    <div class="level-group">', '      <div class="grid">', '', placeholderHTML('        '), '', '      </div>', '    </div>');
+    }
+    if (hid.length) {
+      out.push('    <template id="hidden-cards">', '      <!-- hidden cards: not shown on the page; turn them back on in index-editor.html -->', '');
+      hid.forEach(c => out.push(cardHTML(c, '      '), ''));
+      out.push('    </template>');
+    }
+    out.push('    ' + END_MARK);
+    return out.join('\n');
+  }
+  function buildOutput() {
+    let out = st.source;
+    const s = out.indexOf(START_MARK);
+    const lineStart = out.lastIndexOf('\n', s) + 1;
+    const e = out.indexOf(END_MARK, s) + END_MARK.length;
+    out = out.slice(0, lineStart) + regionHTML() + out.slice(e);
+
+    for (const f of TEXT_FIELDS) {
+      const v = st.texts[f.key];
+      if (v == null) continue;
+      if (f.kind === 'title') out = out.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${T(v)}</title>`);
+      else if (f.kind === 'meta') out = out.replace(/(<meta name="description" content=")[^"]*(")/, (m, a, b) => a + A(v) + b);
+      else {
+        const re = new RegExp(`(<(\\w+)\\b[^>]*\\sdata-edit="${f.edit}"[^>]*>)([\\s\\S]*?)(</\\2>)`);
+        out = out.replace(re, (m, open, tag, inner, close) => open + T(v) + close);
+      }
+    }
+    const n = st.cards.filter(c => c.visible).length;
+    out = out.replace(/(<b id="hero-count">)[^<]*(<\/b>)/, (m, a, b) => a + pad(n) + b);
+    out = out.replace(/(id="resource-count">)[^<]*(<)/, (m, a, b) => a + pad(n) + ' รายการ' + b);
+    return out;
+  }
+
+  // ---------- problems ----------
+  function cardProblems(c) {
+    const p = [];
+    if (!c.title.trim()) p.push('ยังไม่มีชื่อเรื่อง');
+    if (!c.href.trim()) p.push('ยังไม่มีลิงก์');
+    else if (/^\s*javascript:/i.test(c.href)) p.push('ลิงก์ไม่ปลอดภัย');
+    else if (repoPaths && !isExternal(c.href) && !repoPaths.has(normPath(c.href))) p.push('ไม่พบไฟล์นี้ใน repo (สะกดผิด?)');
+    if (!c.categories.length) p.push('ไม่ได้เลือกหมวดหมู่ (จะเห็นเฉพาะตอนเลือก “ทั้งหมด”)');
+    return p;
+  }
+
+  // ---------- rendering: card list ----------
+  function catsText(c) { return c.categories.length ? c.categories.join(', ') : '— ไม่มีหมวดหมู่ —'; }
+  function rowSubText(c) { return `${c.level} · ${catsText(c)} · ${c.href || '(ไม่มีลิงก์)'}`; }
+
+  function renderList() {
+    const list = $('#card-list');
+    list.textContent = '';
+    const q = $('#card-search').value.trim().toLowerCase();
+    const searching = q !== '';
+    const order = displayOrder();
+    let lastLevel = null;
+    order.forEach(c => {
+      const hay = (c.title + ' ' + c.desc + ' ' + c.tags.join(' ') + ' ' + c.href + ' ' + c.level).toLowerCase();
+      if (searching && !hay.includes(q)) return;
+      if (st.groupByLevel && c.level !== lastLevel) {
+        lastLevel = c.level;
+        const L = levelOf(c.level);
+        list.append(h('li', { class:'group-label', style:`--c:var(--lvl-${L.cls})`, text: st.groupLabels[c.level] || L.heading }));
+      }
+      list.append(renderRow(c, searching));
+    });
+    if (!list.children.length) list.append(h('li', { class:'note', text: searching ? 'ไม่พบการ์ดที่ตรงกับคำค้น' : 'ยังไม่มีการ์ด' }));
+
+    const vis = st.cards.filter(c => c.visible).length;
+    const hid = st.cards.length - vis;
+    const news = st.cards.filter(c => c.visible && c.isNew).length;
+    $('#card-summary').textContent = `แสดง ${vis} · ซ่อน ${hid} · ป้าย “ใหม่” ${news}`;
+    $('#n-cards').textContent = st.cards.length;
+    $('#order-note').textContent = searching
+      ? 'ปิดการค้นหาก่อน จึงจะเลื่อนลำดับการ์ดได้'
+      : st.groupByLevel
+        ? 'ลากที่ ⋮⋮ หรือกด ↑ ↓ เพื่อเรียงลำดับภายในระดับชั้นเดียวกัน (ระดับชั้นของการ์ดเปลี่ยนได้ใน “แก้ไข”)'
+        : 'ลากที่ ⋮⋮ หรือกด ↑ ↓ เพื่อเรียงลำดับ — ติ๊กช่องสี่เหลี่ยมออกเพื่อซ่อนการ์ด';
+  }
+
+  // neighbour in the same displayed sequence (same level when grouped)
+  function neighbour(c, dir) {
+    const peers = st.groupByLevel ? st.cards.filter(x => x.level === c.level) : st.cards;
+    const i = peers.indexOf(c);
+    return peers[i + dir] || null;
+  }
+  function moveCard(c, target, after) {
+    if (!target || target === c) return;
+    st.cards.splice(st.cards.indexOf(c), 1);
+    const ti = st.cards.indexOf(target);
+    st.cards.splice(after ? ti + 1 : ti, 0, c);
+    changed(true);
+  }
+
+  let dragId = null;
+  function renderRow(c, searching) {
+    const problems = cardProblems(c);
+    const src = thumbSrc(c);
+    const isOpen = expanded.has(c.id);
+    const canMove = !searching;
+
+    const titleEl = h('div', { class:'row-title', text: c.title || '(ไม่มีชื่อ)' });
+    const subEl = h('div', { class:'row-sub' },
+      h('span', { class:'lvl', style:`background:var(--lvl-${levelOf(c.level).cls})` }), rowSubText(c));
+    const warnEl = h('div', { class:'row-warn', text: problems.length ? '⚠ ' + problems.join(' · ') : '' });
+    const mini = src
+      ? h('img', { class:'mini', src, alt:'', loading:'lazy', onerror: e => { e.target.style.visibility = 'hidden'; } })
+      : h('span', { class:'mini' });
+
+    const li = h('li', { class:'row' + (c.visible ? '' : ' off'), 'data-id': c.id });
+    const head = h('div', { class:'row-head' },
+      h('span', { class:'handle' + (canMove ? '' : ' disabled'), title:'ลากเพื่อย้าย', 'aria-hidden':'true', text:'⋮⋮' }),
+      h('input', { type:'checkbox', checked: c.visible, title:'แสดงบนหน้าเว็บ', 'aria-label':'แสดงการ์ดนี้บนหน้าเว็บ',
+        onchange: e => { c.visible = e.target.checked; changed(true); } }),
+      mini,
+      h('div', { class:'row-main' }, titleEl, subEl, warnEl),
+      h('button', { type:'button', class:'new-toggle' + (c.isNew ? ' on' : ''), title:'ป้าย “ใหม่”', 'aria-pressed': String(c.isNew),
+        onclick: () => { c.isNew = !c.isNew; changed(true); }, text:'ใหม่' }),
+      h('button', { type:'button', class:'icon-btn', 'aria-label':'เลื่อนขึ้น', disabled: !canMove || !neighbour(c, -1),
+        onclick: () => moveCard(c, neighbour(c, -1), false), text:'↑' }),
+      h('button', { type:'button', class:'icon-btn', 'aria-label':'เลื่อนลง', disabled: !canMove || !neighbour(c, 1),
+        onclick: () => moveCard(c, neighbour(c, 1), true), text:'↓' }),
+      h('button', { type:'button', class:'btn small', 'aria-expanded': String(isOpen),
+        onclick: () => { isOpen ? expanded.delete(c.id) : expanded.add(c.id); renderList(); }, text: isOpen ? 'ปิด ▴' : 'แก้ไข ▾' })
+    );
+    li.append(head);
+
+    if (canMove) {
+      const handle = head.querySelector('.handle');
+      handle.addEventListener('mousedown', () => { li.draggable = true; });
+      handle.addEventListener('touchstart', () => {}, { passive:true });
+      li.addEventListener('dragstart', e => { dragId = c.id; li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.id); });
+      li.addEventListener('dragend', () => { li.draggable = false; li.classList.remove('dragging'); dragId = null; document.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over')); });
+      li.addEventListener('dragover', e => {
+        const d = st.cards.find(x => x.id === dragId);
+        if (!d || d === c || (st.groupByLevel && d.level !== c.level)) return;
+        e.preventDefault(); li.classList.add('drag-over');
+      });
+      li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+      li.addEventListener('drop', e => {
+        e.preventDefault(); li.classList.remove('drag-over');
+        const d = st.cards.find(x => x.id === dragId);
+        if (!d || d === c) return;
+        const r = li.getBoundingClientRect();
+        moveCard(d, c, e.clientY > r.top + r.height / 2);
+      });
+    }
+
+    if (isOpen) li.append(renderRowBody(c, { titleEl, subEl, warnEl, mini }));
+    return li;
+  }
+
+  function renderRowBody(c, refs) {
+    // edits here update only this row's header (not the whole list) so typing keeps focus
+    const refresh = () => {
+      refs.titleEl.textContent = c.title || '(ไม่มีชื่อ)';
+      refs.subEl.lastChild.textContent = rowSubText(c);
+      refs.subEl.firstChild.style.background = `var(--lvl-${levelOf(c.level).cls})`;
+      const p = cardProblems(c);
+      refs.warnEl.textContent = p.length ? '⚠ ' + p.join(' · ') : '';
+      const src = thumbSrc(c);
+      if (refs.mini.tagName === 'IMG' && src && refs.mini.getAttribute('src') !== src) { refs.mini.style.visibility = ''; refs.mini.src = src; }
+      thumbHint.textContent = src ? 'ใช้รูป: ' + src : 'ไม่มีรูปตัวอย่าง';
+      changed(false);
+    };
+    const field = (label, el, cls, hint) => h('label', { class:'f' + (cls ? ' ' + cls : '') }, label, el, hint ? h('span', { class:'hint', text:hint }) : null);
+    const input = (key, attrs = {}) => h('input', Object.assign({ value: c[key], oninput: e => { c[key] = e.target.value; refresh(); } }, attrs));
+
+    const levelSel = h('select', { onchange: e => { c.level = e.target.value; refresh(); if (st.groupByLevel) renderList(); } },
+      levelOrder(st.cards).map(k => h('option', { value:k, selected: c.level === k, text:k })));
+
+    const allCats = Array.from(new Set(CATEGORIES.concat(c.categories)));
+    const cats = h('div', { class:'checks' }, allCats.map(cat => h('label', {},
+      h('input', { type:'checkbox', checked: c.categories.includes(cat), onchange: e => {
+        c.categories = e.target.checked ? allCats.filter(x => x === cat || c.categories.includes(x)) : c.categories.filter(x => x !== cat);
+        refresh();
+      } }), cat)));
+
+    const mode = c.thumb === 'auto' || c.thumb === 'none' ? c.thumb : 'custom';
+    const thumbHint = h('span', { class:'hint' });
+    const customInput = h('input', { value: mode === 'custom' ? c.thumb : '', placeholder:'thumbnails/… หรือ URL ของรูป', hidden: mode !== 'custom',
+      oninput: e => { c.thumb = e.target.value; refresh(); } });
+    const thumbSel = h('select', { onchange: e => {
+      const v = e.target.value;
+      customInput.hidden = v !== 'custom';
+      c.thumb = v === 'custom' ? (customInput.value || autoThumb(c.href) || '') : v;
+      if (v === 'custom' && !customInput.value) customInput.value = c.thumb;
+      refresh();
+    } },
+      h('option', { value:'auto', selected: mode === 'auto', text:'อัตโนมัติ (ภาพหน้าจอจากลิงก์)' }),
+      h('option', { value:'none', selected: mode === 'none', text:'ไม่มีรูป' }),
+      h('option', { value:'custom', selected: mode === 'custom', text:'กำหนดเอง' }));
+
+    const body = h('div', { class:'row-body' },
+      field('ชื่อเรื่อง', input('title'), 'full'),
+      field('คำอธิบาย', h('textarea', { rows:2, oninput: e => { c.desc = e.target.value; refresh(); } }, c.desc), 'full'),
+      field('ลิงก์', input('href', { placeholder:'เช่น M1-3/circle.html' }), 'full', 'ไฟล์ใน repo เช่น M1-3/circle.html หรือโฟลเดอร์ที่ลงท้ายด้วย / หรือ URL เต็ม'),
+      field('แท็ก', h('input', { value: c.tags.join(', '), oninput: e => { c.tags = e.target.value.split(',').map(s => s.trim()).filter(Boolean); refresh(); } }), '', 'คั่นหลายแท็กด้วยจุลภาค ,'),
+      field('ระดับชั้น', levelSel),
+      h('div', { class:'f full' }, h('span', { class:'hint', style:'color:var(--ink);font-weight:500;font-size:13px', text:'หมวดหมู่' }), cats),
+      field('ข้อความปุ่ม', input('cta', { list:'cta-list' })),
+      h('label', { class:'f' }, 'รูปตัวอย่าง', thumbSel, customInput, thumbHint),
+      h('div', { class:'full', style:'display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center' },
+        c.href && !isExternal(c.href) ? h('a', { class:'btn small', href:c.href, target:'_blank', rel:'noopener', text:'เปิดดูหน้านี้ ↗' }) : h('span'),
+        h('button', { type:'button', class:'btn small danger', text:'ลบการ์ดนี้ทิ้ง', onclick: () => {
+          if (!confirm(`ลบการ์ด “${c.title || '(ไม่มีชื่อ)'}” ออกถาวร?\n(ถ้าแค่ไม่อยากให้แสดง ให้ติ๊กช่องสี่เหลี่ยมออกแทน)`)) return;
+          st.cards.splice(st.cards.indexOf(c), 1); expanded.delete(c.id); changed(true); renderPages();
+        } }))
+    );
+    thumbHint.textContent = thumbSrc(c) ? 'ใช้รูป: ' + thumbSrc(c) : 'ไม่มีรูปตัวอย่าง';
+    return body;
+  }
+
+  // ---------- rendering: text fields ----------
+  function renderTexts() {
+    const box = $('#text-fields');
+    box.querySelectorAll(':scope > :not(legend)').forEach(x => x.remove());
+    TEXT_FIELDS.forEach(f => {
+      if (st.texts[f.key] == null) return;
+      const on = e => { st.texts[f.key] = e.target.value; changed(false); };
+      const el = f.multiline
+        ? h('textarea', { rows:3, oninput:on }, st.texts[f.key])
+        : h('input', { value: st.texts[f.key], oninput:on });
+      box.append(h('label', { class:'f' }, f.label, el));
+    });
+
+    const pbox = $('#placeholder-fields');
+    pbox.querySelectorAll(':scope > :not(legend)').forEach(x => x.remove());
+    pbox.append(
+      h('label', { class:'f' }, 'หัวข้อ', h('input', { value: st.placeholder.title, oninput: e => { st.placeholder.title = e.target.value; changed(false); } })),
+      h('label', { class:'f' }, 'คำอธิบาย', h('input', { value: st.placeholder.desc, oninput: e => { st.placeholder.desc = e.target.value; changed(false); } })),
+      h('p', { class:'note', text:'เปิด/ปิดการ์ดนี้ได้ที่แท็บ “การ์ด”' })
+    );
+
+    const gbox = $('#group-fields');
+    gbox.querySelectorAll(':scope > :not(legend)').forEach(x => x.remove());
+    levelOrder(st.cards).forEach(k => {
+      gbox.append(h('label', { class:'f' }, k, h('input', { value: st.groupLabels[k] || levelOf(k).heading,
+        oninput: e => { st.groupLabels[k] = e.target.value; changed(false); } })));
+    });
+  }
+
+  // ---------- pages not yet listed ----------
+  const EXCLUDE_FILES = /^(index|index-editor|card-editor|flashcards-preview)\.html$/i;
+  const EXCLUDE_DIRS = /^(flashcards|card-editor|scripts|thumbnails|node_modules|\.github)\//i;
+  function guessLevel(path) {
+    if (/^P1-6\//i.test(path)) return 'ประถม';
+    if (/^M1-3\//i.test(path)) return 'ม.ต้น';
+    if (/^M4-6\//i.test(path)) return 'ม.ปลาย';
+    if (/^University\//i.test(path)) return 'มหาลัย';
+    return 'อื่น ๆ';
+  }
+  async function loadRepoPaths() {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${BRANCH}?recursive=1`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      repoPaths = new Set(data.tree.filter(t => t.type === 'blob' && /\.html$/i.test(t.path)).map(t => t.path));
+    } catch (e) {
+      repoPaths = null;
+      $('#page-list').textContent = '';
+      $('#page-list').append(h('p', { class:'note', text:'โหลดรายชื่อไฟล์จาก GitHub ไม่สำเร็จ (' + e.message + ') ลองโหลดหน้านี้ใหม่ภายหลัง หรือกด “+ การ์ดใหม่” แล้วพิมพ์ลิงก์เอง' }));
+      $('#n-pages').textContent = '?';
+      return;
+    }
+    renderPages();
+    if (st) renderList();
+  }
+  function renderPages() {
+    if (!repoPaths || !st) return;
+    const listed = new Set(st.cards.filter(c => !isExternal(c.href)).map(c => normPath(c.href)));
+    const pages = Array.from(repoPaths).filter(p => !EXCLUDE_FILES.test(p) && !EXCLUDE_DIRS.test(p) && !listed.has(p)).sort();
+    const box = $('#page-list');
+    box.textContent = '';
+    $('#n-pages').textContent = pages.length;
+    if (!pages.length) { box.append(h('p', { class:'note', text:'ทุกหน้าใน repo มีการ์ดแล้ว 🎉' })); return; }
+    pages.forEach(p => {
+      const href = /(^|\/)index\.html$/i.test(p) ? p.replace(/index\.html$/i, '') : p;
+      box.append(h('div', { class:'page-item' },
+        h('div', { class:'p' }, href, h('small', { text:'ระดับที่เดาไว้: ' + guessLevel(p) })),
+        h('a', { class:'btn small', href, target:'_blank', rel:'noopener', text:'เปิดดู ↗' }),
+        h('button', { type:'button', class:'btn small primary', text:'+ เพิ่ม', onclick: e => addPage(href, p, e.target) })
+      ));
+    });
+  }
+  async function addPage(href, path, btn) {
+    btn.disabled = true;
+    let title = path.split('/').filter(Boolean).slice(-1)[0].replace(/\.html$/i, '');
+    if (title === 'index') title = path.split('/').slice(-2)[0];
+    try {
+      const res = await fetch(href, { cache:'no-store' });
+      if (res.ok) {
+        const t = new DOMParser().parseFromString(await res.text(), 'text/html').title.trim();
+        if (t) title = t;
+      }
+    } catch (e) {}
+    const c = { id: uid(), href, thumb:'auto', tags:[], level: guessLevel(path), categories:['สื่อการสอน'],
+      title, desc:'', cta:'เปิดเรียนรู้', isNew:true, visible:true };
+    st.cards.unshift(c);
+    expanded.add(c.id);
+    changed(true);
+    renderPages();
+    showTab('cards');
+    $('#card-search').value = '';
+    renderList();
+    const row = document.querySelector(`.row[data-id="${c.id}"]`);
+    if (row) row.scrollIntoView({ behavior:'smooth', block:'center' });
+    toast('เพิ่มการ์ด “' + title + '” แล้ว — ตรวจชื่อ คำอธิบาย และหมวดหมู่อีกที');
+  }
+
+  // ---------- preview, status, draft ----------
+  let previewTimer = null, draftTimer = null;
+  function changed(rerenderList) {
+    if (rerenderList) renderList();
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(updatePreview, 250);
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 400);
+    updateStatus();
+  }
+  function updatePreview() {
+    const frame = $('#preview');
+    let y = 0;
+    try { y = frame.contentWindow.scrollY || 0; } catch (e) {}
+    // in the preview, skip the scroll fade-in so cards don't flash on every keystroke
+    const html = buildOutput().replace('</head>', '<style>.card{opacity:1!important;transform:none!important;transition:none!important}</style></head>');
+    frame.onload = () => { try { frame.contentWindow.scrollTo(0, y); } catch (e) {} };
+    frame.srcdoc = html;
+  }
+  let baseOutput = '';
+  function updateStatus() {
+    const s = $('#status');
+    const dirty = buildOutput() !== baseOutput;
+    s.textContent = dirty
+      ? 'มีการเปลี่ยนแปลง — คัดลอกโค้ดไปวางบน GitHub เมื่อพร้อม (งานถูกบันทึกในเบราว์เซอร์นี้แล้ว)'
+      : 'ยังไม่มีการเปลี่ยนแปลงจาก index.html';
+    s.classList.toggle('dirty', dirty);
+  }
+  function snapshot() {
+    return { source: st.source, cards: st.cards, texts: st.texts, placeholder: st.placeholder,
+      groupLabels: st.groupLabels, groupByLevel: st.groupByLevel, showPlaceholder: st.showPlaceholder };
+  }
+  function saveDraft() {
+    if (!st) return;
+    if (buildOutput() === baseOutput) { store.del(DRAFT_KEY); return; }
+    store.set(DRAFT_KEY, { v:1, savedAt: Date.now(), state: snapshot() });
+  }
+
+  // ---------- loading ----------
+  function start(state, base) {
+    st = state;
+    st.cards.forEach(c => { c.id = uid(); });
+    expanded.clear();
+    baseOutput = base;
+    $('#opt-group').checked = st.groupByLevel;
+    $('#opt-placeholder').checked = st.showPlaceholder;
+    $('#copy-btn').disabled = false;
+    $('#download-btn').disabled = false;
+    renderList();
+    renderTexts();
+    renderPages();
+    updatePreview();
+    updateStatus();
+  }
+  function loadSource(src, opts = {}) {
+    let parsed;
+    try { parsed = parseSource(src); }
+    catch (e) { showBanner('warn', e.message); return false; }
+    // "unchanged" means what the editor would write back from this exact file
+    const prev = st; st = parsed; const base = buildOutput(); st = prev;
+
+    const draft = opts.skipDraft ? null : store.get(DRAFT_KEY);
+    if (draft && draft.state && draft.v === 1) {
+      const when = new Date(draft.savedAt).toLocaleString('th-TH');
+      const sameBase = draft.state.source === src;
+      showBanner('info',
+        `พบงานที่แก้ค้างไว้ (บันทึกเมื่อ ${when})` + (sameBase ? '' : ' — แต่ index.html บน GitHub เปลี่ยนไปหลังจากนั้นแล้ว ถ้าทำต่อ สิ่งที่เปลี่ยนบน GitHub จะถูกเขียนทับ'),
+        [['ทำต่อจากที่ค้างไว้', () => {
+            const s = draft.state;
+            let b = base;
+            if (!sameBase) { const keep = st; st = parseSource(s.source); b = buildOutput(); st = keep; }
+            start(s, b); clearBanners(); updateStatus();
+          }],
+         ['ทิ้ง แล้วเริ่มจาก index.html ล่าสุด', () => { store.del(DRAFT_KEY); clearBanners(); }]]);
+    } else clearBanners();
+    start(parsed, base);
+    return true;
+  }
+  async function loadFromSite() {
+    $('#status').textContent = 'กำลังโหลด index.html…';
+    try {
+      const res = await fetch('index.html?t=' + Date.now(), { cache:'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      loadSource(await res.text());
+    } catch (e) {
+      $('#status').textContent = 'โหลด index.html อัตโนมัติไม่ได้';
+      showBanner('warn', 'โหลด index.html อัตโนมัติไม่ได้ (' + e.message + ') — ถ้าเปิดไฟล์นี้จากเครื่องโดยตรง ให้กด “โหลดใหม่…” แล้ววางโค้ดหรือเลือกไฟล์ index.html',
+        [['วางโค้ด / เลือกไฟล์', openReloadDialog]]);
+    }
+  }
+
+  // ---------- banners & dialogs ----------
+  function clearBanners() { $('#banners').textContent = ''; }
+  function showBanner(kind, msg, actions = []) {
+    clearBanners();
+    $('#banners').append(h('div', { class:'banner ' + kind }, msg,
+      actions.length ? h('div', { class:'row-actions' }, actions.map(([label, fn], i) =>
+        h('button', { type:'button', class:'btn small' + (i === 0 ? ' primary' : ''), text:label, onclick:fn }))) : null));
+  }
+  function openReloadDialog() {
+    const ta = h('textarea', { placeholder:'วางโค้ด index.html ทั้งหมดที่นี่', 'aria-label':'โค้ด index.html' });
+    const file = h('input', { type:'file', accept:'.html,text/html', onchange: async e => {
+      const f = e.target.files[0]; if (f) ta.value = await f.text();
+    } });
+    const back = h('div', { class:'modal-back', onclick: e => { if (e.target === back) back.remove(); } },
+      h('div', { class:'modal', role:'dialog', 'aria-modal':'true', 'aria-label':'โหลดใหม่' },
+        h('h2', { text:'โหลด index.html ใหม่' }),
+        h('p', { class:'note', text:'งานที่แก้ค้างอยู่จะถูกแทนที่ ถ้าเพิ่งวางโค้ดบน GitHub แต่ยังโหลดได้ฉบับเก่า ให้รอ 1–2 นาที หรือคัดลอกโค้ดจาก GitHub มาวางที่นี่' }),
+        h('div', { style:'display:flex;gap:8px;flex-wrap:wrap' },
+          h('button', { type:'button', class:'btn primary', text:'โหลดจากเว็บไซต์', onclick: async () => {
+            if (!confirmDiscard()) return;
+            back.remove(); store.del(DRAFT_KEY); await loadFromSite();
+          } })),
+        h('p', { class:'note', text:'หรือเลือกไฟล์ / วางโค้ด:' }), file, ta,
+        h('div', { style:'display:flex;gap:8px;justify-content:flex-end' },
+          h('button', { type:'button', class:'btn', text:'ยกเลิก', onclick: () => back.remove() }),
+          h('button', { type:'button', class:'btn primary', text:'ใช้โค้ดนี้', onclick: () => {
+            if (!ta.value.trim()) return;
+            if (!confirmDiscard()) return;
+            if (loadSource(ta.value, { skipDraft:true })) { store.del(DRAFT_KEY); back.remove(); }
+          } }))));
+    document.body.append(back);
+    ta.focus();
+  }
+  function confirmDiscard() {
+    return !st || buildOutput() === baseOutput || confirm('ทิ้งงานที่แก้ไว้ แล้วโหลดใหม่?');
+  }
+
+  // ---------- copy & download ----------
+  function allProblems() {
+    return st.cards.filter(c => c.visible).map(c => [c, cardProblems(c).filter(p => !p.startsWith('ไม่ได้เลือกหมวดหมู่'))]).filter(([, p]) => p.length);
+  }
+  function checkBeforeExport() {
+    const bad = allProblems();
+    if (!bad.length) return true;
+    return confirm('มีการ์ดที่อาจมีปัญหา:\n\n' + bad.map(([c, p]) => '• ' + (c.title || '(ไม่มีชื่อ)') + ': ' + p.join(', ')).join('\n') + '\n\nใช้โค้ดนี้ต่อไหม?');
+  }
+  async function copyOutput() {
+    if (!checkBeforeExport()) return;
+    const code = buildOutput();
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('คัดลอกแล้ว ✓ ต่อไปเปิด index.html บน GitHub → ✏️ → เลือกทั้งหมด → วาง → Commit');
+    } catch (e) {
+      const ta = h('textarea', { readonly:true }, code);
+      const back = h('div', { class:'modal-back', onclick: ev => { if (ev.target === back) back.remove(); } },
+        h('div', { class:'modal' }, h('h2', { text:'คัดลอกโค้ดเอง' }),
+          h('p', { class:'note', text:'เบราว์เซอร์ไม่อนุญาตให้คัดลอกอัตโนมัติ — โค้ดถูกเลือกไว้แล้ว กด Ctrl+C (หรือ ⌘C)' }), ta,
+          h('button', { type:'button', class:'btn', text:'ปิด', onclick: () => back.remove() })));
+      document.body.append(back);
+      ta.select();
+    }
+  }
+  function downloadOutput() {
+    if (!checkBeforeExport()) return;
+    const url = URL.createObjectURL(new Blob([buildOutput()], { type:'text/html' }));
+    const a = h('a', { href:url, download:'index.html' });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // ---------- wiring ----------
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+    document.querySelectorAll('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== name);
+    if (name === 'texts' && st) renderTexts();
+  }
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  $('#card-search').addEventListener('input', renderList);
+  $('#opt-group').addEventListener('change', e => { st.groupByLevel = e.target.checked; changed(true); });
+  $('#opt-placeholder').addEventListener('change', e => { st.showPlaceholder = e.target.checked; changed(false); });
+  $('#add-card-btn').addEventListener('click', () => {
+    const c = { id: uid(), href:'', thumb:'auto', tags:[], level:'อื่น ๆ', categories:['สื่อการสอน'],
+      title:'', desc:'', cta:'เปิดเรียนรู้', isNew:true, visible:true };
+    st.cards.unshift(c); expanded.add(c.id);
+    $('#card-search').value = '';
+    changed(true);
+    const row = document.querySelector(`.row[data-id="${c.id}"]`);
+    if (row) { row.scrollIntoView({ behavior:'smooth', block:'center' }); const i = row.querySelector('.row-body input'); if (i) i.focus(); }
+  });
+  $('#copy-btn').addEventListener('click', copyOutput);
+  $('#download-btn').addEventListener('click', downloadOutput);
+  $('#reload-btn').addEventListener('click', openReloadDialog);
+  $('#github-btn').href = `https://github.com/${OWNER}/${REPO}/edit/${BRANCH}/index.html`;
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+    $('#preview').classList.toggle('mobile', b.dataset.size === 'mobile');
+  }));
+  $('#cta-list').append(...CTA_PRESETS.map(v => h('option', { value:v })));
+  window.addEventListener('beforeunload', () => saveDraft());
+
+  // test hook (used by automated checks only)
+  window.__indexEditor = { parseSource, buildOutput: () => buildOutput(), get state() { return st; } };
+
+  loadFromSite();
+  loadRepoPaths();
+})();
+</script>
+</body>
+</html>
