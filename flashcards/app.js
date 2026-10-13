@@ -1208,6 +1208,7 @@
     $('sound-on').checked = settings.sound;
     $('vibe-on').checked = settings.vibe;
     $('vibe-field').hidden = !Celebrate.canVibrate(); // iPhones and iPads can't vibrate from a website
+    renderClassInfo();
     $('feedback-note').textContent = Celebrate.canVibrate() ? 'เล่นตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น' : 'เล่นเสียงตอนจบรอบ ปิดไว้ก่อนเป็นค่าเริ่มต้น';
     $('install-field').hidden = PREVIEW || isStandalone() || !(deferredInstall || isIOS());
     const saved = Object.keys(srs.cards).length;
@@ -1544,10 +1545,104 @@
   }
 
   /* =======================================================================
+     CLASS LINKS: flashcards.html?class=<code> (classes are written in cards.js)
+     Joining pins the class's units and ticks only its หัวข้อ. On every later visit the app
+     follows the teacher's changes (a topic added or removed, a unit added or dropped)
+     without undoing what the student changed themselves: only differences between the
+     class as last seen (settings.classSnap) and the class now are applied.
+     ======================================================================= */
+  const CLASS_LIST = (typeof CLASSES !== 'undefined' && Array.isArray(CLASSES)) ? CLASSES : [];
+  const classByCode = code => CLASS_LIST.find(k => k.code === code);
+  const topicKey = name => (name === 'ทั่วไป' ? NO_SECTION : name);
+  // unit → set of หัวข้อ keys the class wants (only units and topics that exist)
+  function classTarget(k) {
+    const m = new Map();
+    k.picks.forEach(p => {
+      const deck = deckByTopic(p.unit);
+      if (!deck) return;
+      const all = deck.sections.map(s => s.key);
+      m.set(p.unit, new Set(p.topics ? p.topics.map(topicKey).filter(x => all.includes(x)) : all));
+    });
+    return m;
+  }
+  function syncClass(k, joining) {
+    const target = classTarget(k);
+    const prev = (!joining && settings.classSnap) || {};
+    const snap = {};
+    let pinned = 0;
+    if (joining) settings.classPinned = [];
+    target.forEach((want, unit) => {
+      const deck = deckByTopic(unit), all = deck.sections.map(s => s.key), p = prev[unit];
+      if (!p) {
+        if (!isPinned(unit)) { settings.pins.push(unit); settings.classPinned.push(unit); pinned++; }
+        all.forEach(key => setSectionOn(deck, key, want.has(key)));
+      } else {
+        const wasOn = new Set(p.on), known = new Set(p.known);
+        // a topic that is new (to this phone) follows the class; otherwise only what the class changed
+        all.forEach(key => { if (!known.has(key) || want.has(key) !== wasOn.has(key)) setSectionOn(deck, key, want.has(key)); });
+      }
+      snap[unit] = { on: [...want], known: all };
+    });
+    // units the class no longer has: unpin the ones the class pinned
+    Object.keys(prev).forEach(unit => {
+      if (!target.has(unit) && settings.classPinned.includes(unit)) {
+        settings.pins = settings.pins.filter(x => x !== unit);
+        settings.classPinned = settings.classPinned.filter(x => x !== unit);
+      }
+    });
+    settings.classSnap = snap;
+    settings.className = k.name;
+    saveSettings();
+    return { units: target.size, pinned };
+  }
+  function joinClassFromLink() {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('class');
+    if (!code) return false;
+    params.delete('class'); params.delete('openExternalBrowser');
+    history.replaceState({ screen: 'home' }, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
+    const k = classByCode(code);
+    if (!k) { toast('ไม่พบห้องเรียนนี้ ลิงก์อาจเก่าแล้ว ลองขอลิงก์ใหม่จากครู'); return false; }
+    const again = settings.classCode === code;
+    settings.classCode = code;
+    if (!Array.isArray(settings.classPinned)) settings.classPinned = [];
+    const r = syncClass(k, !again);
+    settings.welcomeDone = true;
+    settings.filter = 'pinned';
+    saveSettings();
+    renderHome();
+    toast(again ? 'อัปเดตห้อง ' + k.name + ' แล้ว' : 'เข้าห้อง ' + k.name + ' แล้ว · ปักหมุด ' + r.units + ' บท');
+    return true;
+  }
+  function followClass() {
+    if (!settings.classCode) return;
+    const k = classByCode(settings.classCode);
+    if (!k) return;                    // the class is gone from cards.js: keep everything as it is
+    if (!Array.isArray(settings.classPinned)) settings.classPinned = [];
+    syncClass(k, false);
+  }
+  function renderClassInfo() {
+    const on = !!settings.classCode;
+    $('class-info').hidden = !on;
+    if (!on) return;
+    const k = classByCode(settings.classCode);
+    $('class-note').textContent = k
+      ? k.name + ' · ' + classTarget(k).size + ' บท (ครูเพิ่มหัวข้อใหม่ได้ แอปจะอัปเดตเอง)'
+      : (settings.className || settings.classCode) + ' (ครูปิดห้องนี้แล้ว)';
+  }
+  $('leave-class').addEventListener('click', () => {
+    const name = settings.className || '';
+    settings.classCode = null; settings.classSnap = null; settings.classPinned = []; settings.className = null;
+    saveSettings(); renderClassInfo();
+    toast('ออกจากห้อง ' + name + ' แล้ว บทที่ปักหมุดไว้ยังอยู่');
+  });
+
+  /* =======================================================================
      Go
      ======================================================================= */
   applyTheme();
   history.replaceState({ screen: 'home' }, '');
+  followClass();                       // before the first render: today's units and topics
   renderHome();
   renderLineBanner();
   renderInstallCard();
@@ -1557,6 +1652,8 @@
   if (restoreMatch) {
     history.replaceState({ screen: 'home' }, '', location.pathname + location.search);
     openRestore(restoreMatch[1]);
+  } else if (joinClassFromLink()) {
+    /* joined (or updated) a class from its link: no welcome screen */
   } else if (!settings.welcomeDone && !settings.pins.length && DECKS.length) {
     openWelcome();
   }

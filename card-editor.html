@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="flashcards/vendor/prompt/prompt.css">
 <link rel="stylesheet" href="flashcards/vendor/katex/katex.min.css">
 <link rel="icon" type="image/png" href="flashcards/icons/favicon-64.png">
-<link rel="stylesheet" href="card-editor/editor.css?v=1.3.0">
+<link rel="stylesheet" href="card-editor/editor.css?v=1.4.0">
 </head>
 <body>
 <noscript>หน้านี้ต้องเปิดใช้งาน JavaScript</noscript>
@@ -45,10 +45,12 @@
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" type="button" id="tab-cards" aria-selected="true">การ์ดทั้งหมด</button>
       <button class="tab" role="tab" type="button" id="tab-drafts" aria-selected="false">ร่างจาก Claude <span class="tab-count" id="draft-count"></span></button>
+      <button class="tab" role="tab" type="button" id="tab-classes" aria-selected="false">ห้องเรียน</button>
     </div>
     <div class="pane-scroll" id="outline-scroll">
       <div id="outline"></div>
       <div id="drafts" hidden></div>
+      <div id="classes" hidden></div>
     </div>
   </aside>
 
@@ -89,12 +91,24 @@
   </div>
 </dialog>
 
+<!-- A class link's QR code, big enough for the projector -->
+<dialog class="qr-full" id="qr-full" aria-labelledby="qr-full-name">
+  <div class="qr-full-inner">
+    <p class="qr-full-name" id="qr-full-name"></p>
+    <div class="qr-full-code" id="qr-full-code"></div>
+    <p class="qr-full-hint">สแกนด้วยกล้องมือถือ เพื่อเปิดบัตรคำของห้องนี้</p>
+    <p class="qr-full-url" id="qr-full-url"></p>
+    <button class="btn primary" type="button" data-close>ปิด</button>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script defer src="flashcards/vendor/katex/katex.min.js"></script>
 <script defer src="flashcards/vendor/katex/auto-render.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
-<script defer src="flashcards/cards-format.js?v=1.3.0"></script>
-<script defer src="card-editor/editor.js?v=1.3.0"></script>
+<script defer src="flashcards/vendor/qrcode.js"></script>
+<script defer src="flashcards/cards-format.js?v=1.4.0"></script>
+<script defer src="card-editor/editor.js?v=1.4.0"></script>
 </body>
 </html>

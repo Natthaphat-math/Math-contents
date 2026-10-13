@@ -9,7 +9,7 @@
    - Other websites (TikZJax, only for diagrams without a picture): not touched.
    Bump CACHE when this file changes; ASSETS should match the ?v= numbers in flashcards.html
    (a mismatch only means those files are cached on first use instead of at install). */
-const VERSION = '2.8.0';
+const VERSION = '2.9.0';
 const CACHE = 'flashcards-' + VERSION;
 const ASSETS = [
   'flashcards.html',

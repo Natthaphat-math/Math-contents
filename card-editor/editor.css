@@ -237,3 +237,30 @@ details.more[open] summary { margin-bottom: 8px; }
 .review-done { text-align: center; padding: 20px 0 8px; }
 .review-done-title { font-size: 22px; font-weight: 800; margin: 0 0 6px; }
 .review-done .form-actions { justify-content: center; }
+
+/* ---------- class links (1.4.0) ---------- */
+.class-row { display: grid; gap: 2px; padding: 10px 12px; margin-bottom: 8px; border-radius: 14px; background: var(--surface-2); cursor: pointer; border: 2px solid transparent; }
+.class-row.selected { border-color: var(--ink); }
+.class-row .badge { justify-self: start; }
+.class-sub { font-size: 12.5px; color: var(--muted); font-family: "JetBrains Mono", ui-monospace, monospace; }
+.class-level { border: 0; padding: 0; margin: 16px 0 0; }
+.class-level legend { font-weight: 700; padding: 0; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+.class-level legend .shape { width: 12px; height: 12px; }
+.class-unit { padding: 8px 10px; border-radius: 12px; background: var(--surface-2); margin-bottom: 6px; }
+.class-unit-name { display: flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; }
+.class-unit input, .class-topic input { width: 18px; height: 18px; accent-color: var(--ink); }
+.class-topics { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 4px 0 2px 26px; }
+.class-topic { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; font-size: 14px; cursor: pointer; }
+.class-link .qr { width: min(240px, 100%); margin: 6px auto 10px; padding: 10px; border-radius: 14px; background: #FFFFFF; }
+.class-link .qr svg { display: block; width: 100%; height: auto; }
+.class-url { width: 100%; min-height: 38px; padding: 0 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface-2); color: var(--ink); font: 12.5px ui-monospace, monospace; }
+.problems-note { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 22%, transparent); font-size: 13px; }
+/* full-screen QR for the projector: always light, as large as the screen allows */
+.qr-full { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; background: #FFFFFF; color: #15163A; }
+.qr-full::backdrop { background: #FFFFFF; }
+.qr-full-inner { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+.qr-full-name { margin: 0; font-size: clamp(28px, 5vw, 56px); font-weight: 800; }
+.qr-full-code { width: min(70vh, 86vw); }
+.qr-full-code svg { display: block; width: 100%; height: auto; }
+.qr-full-hint { margin: 0; font-size: clamp(16px, 2.4vw, 26px); }
+.qr-full-url { margin: 0; font: clamp(13px, 1.6vw, 18px) ui-monospace, monospace; color: #555878; word-break: break-all; }

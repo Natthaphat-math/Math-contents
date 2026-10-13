@@ -14,7 +14,8 @@ tied to each card's id, so published ids must never change.
 1. Read the rules at the top of `flashcards/cards.js` and follow them exactly. The cards are
    plain text inside a JavaScript comment: LaTeX uses single backslashes, and the only text
    that may never appear is `*` directly followed by `/`.
-2. **Never edit `flashcards/cards.js`.** Write a new draft file instead:
+2. **Never edit `flashcards/cards.js`** (its `# ห้องเรียน:` section at the end holds the teacher's
+   class links; drafts never contain one). Write a new draft file instead:
    `flashcards/drafts/YYYY-MM-DD-<short-ascii-slug>.js`, one per request. Never overwrite or
    edit another draft file.
 3. Draft layout (first two lines and last line exactly like this):

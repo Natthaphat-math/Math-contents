@@ -11,6 +11,14 @@
      CARDS        [{ topic, section?, level, id, front, back, frontTikz?, backTikz?, line }]
      TOPIC_GLYPH  { [topic]: symbol }
      CARD_ERRORS  [{ line, message }]  — problems found; bad cards are skipped
+     CLASSES      [{ name, code, picks: [{ unit, topics: null | [หัวข้อ …] }] }] — class links
+                  (flashcards.html?class=<code>); topics null = the whole unit
+
+   Classes (written after the units, made in card-editor.html → ห้องเรียน):
+     # ห้องเรียน: ม.2/3
+     # ลิงก์: m2-3                                  ← a-z 0-9 -
+     # เลือก: จำนวนเต็ม                              ← the whole unit
+     # เลือก: เศษส่วน › การบวกเศษส่วน | การลบเศษส่วน   ← only these หัวข้อ ("ทั่วไป" = cards without one)
    Cards marked "ซ่อน: ใช่" are left out of CARDS (their id stays reserved).
 
    For the card editor (card-editor.html) there is also a lossless round trip:
@@ -35,8 +43,16 @@
   const YES = ['ใช่', 'yes', 'true', '1'];
   const isYes = v => YES.includes(String(v || '').trim().split('\n')[0].trim().toLowerCase());
   // Lines of card content may not start like this (they would be read as structure)
-  const RESERVED_LINE_RE = /^(\s*\/\/|==|(รูปถาม|รูปตอบ|ถาม|ตอบ|ซ่อน)\s*:|#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์)\s*:)/;
-  const HEADER_RE = /^#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์)\s*:\s*(.*)$/;
+  const RESERVED_LINE_RE = /^(\s*\/\/|==|(รูปถาม|รูปตอบ|ถาม|ตอบ|ซ่อน)\s*:|#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์|ห้องเรียน|ลิงก์|เลือก)\s*:)/;
+  const HEADER_RE = /^#\s*(บท|หัวข้อ|ระดับ|สัญลักษณ์|ห้องเรียน|ลิงก์|เลือก)\s*:\s*(.*)$/;
+  const CLASS_CODE_RE = /^[a-z0-9-]+$/;
+  // "# เลือก: unit" or "# เลือก: unit › topic | topic"
+  function parsePick(value) {
+    const i = value.indexOf('›');
+    if (i < 0) return { unit: value.trim(), topics: null };
+    return { unit: value.slice(0, i).trim(), topics: value.slice(i + 1).split('|').map(x => x.trim()).filter(Boolean) };
+  }
+  const pickText = p => p.unit + (p.topics ? ' › ' + p.topics.join(' | ') : '');
   const CARD_RE = /^==\s*(.*)$/;
   const COMMENT_RE = /^\s*\/\//;
 
@@ -65,6 +81,8 @@
     const errors = [];
     const topicLevel = {};
     const seenIds = new Map(); // id → line
+    const classes = [];
+    let cls = null;            // the class being read (after "# ห้องเรียน:")
     let topic = null, level = null, section = null;
     let card = null, field = null, buf = [];
 
@@ -101,6 +119,22 @@
       if (h) {
         closeCard();
         const value = h[2].trim();
+        if (h[1] === 'ห้องเรียน') {
+          cls = { name: value, code: '', picks: [], line: n };
+          classes.push(cls);
+          topic = null; section = null; level = null;
+          if (!value) err(n, '"# ห้องเรียน:" ต้องมีชื่อห้อง');
+          return;
+        }
+        if (h[1] === 'ลิงก์' || h[1] === 'เลือก') {
+          if (!cls) { err(n, '"# ' + h[1] + ':" ต้องอยู่หลัง "# ห้องเรียน:"'); return; }
+          if (h[1] === 'ลิงก์') {
+            if (!CLASS_CODE_RE.test(value)) err(n, 'ลิงก์ห้อง "' + value + '" ใช้ได้เฉพาะ a-z 0-9 และ -');
+            cls.code = value;
+          } else if (value) cls.picks.push(parsePick(value));
+          return;
+        }
+        cls = null;
         if (h[1] === 'บท') {
           topic = value || null;
           section = null;
@@ -124,6 +158,7 @@
       const c = t.match(CARD_RE);
       if (c) {
         closeCard();
+        if (cls) { err(n, 'การ์ดต้องอยู่ใต้ "# บท:" ไม่ใช่ใต้ "# ห้องเรียน:"'); return; }
         card = { topic, level, id: c[1].trim(), front: '', back: '', line: n };
         if (section) card.section = section;
         return;
@@ -146,7 +181,16 @@
 
     // Remove empty optional fields so the app sees "no diagram"
     cards.forEach(c => { if (!c.frontTikz) delete c.frontTikz; if (!c.backTikz) delete c.backTikz; });
-    return { cards, glyphs, errors };
+
+    // Classes: a link code each (no two alike), units that exist
+    const units = new Set(cards.map(c => c.topic)), codes = new Map();
+    classes.forEach(k => {
+      if (!k.code) err(k.line, 'ห้องเรียน "' + k.name + '" ยังไม่มี "# ลิงก์:"');
+      else if (codes.has(k.code)) err(k.line, 'ลิงก์ห้อง "' + k.code + '" ซ้ำกับห้อง "' + codes.get(k.code) + '"');
+      else codes.set(k.code, k.name);
+      k.picks.forEach(pk => { if (!units.has(pk.unit)) err(k.line, 'ห้องเรียน "' + k.name + '": ไม่พบบท "' + pk.unit + '"'); });
+    });
+    return { cards, glyphs, errors, classes: classes.filter(k => k.code && codes.get(k.code) === k.name) };
   }
 
   /* ======================================================================
@@ -169,8 +213,8 @@
 
   function parseDocument(text) {
     const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
-    const doc = { preamble: [], units: [], trailing: [] };
-    let unit = null, topic = null, card = null, field = null, buf = [];
+    const doc = { preamble: [], units: [], classes: [], trailing: [] };
+    let unit = null, topic = null, card = null, field = null, buf = [], cls = null;
     let pending = [];          // comment lines waiting for the next unit/topic/card
     let started = false;
 
@@ -234,6 +278,19 @@
       if (h) {
         closeCard();
         const value = h[2].trim();
+        if (h[1] === 'ห้องเรียน') {
+          cls = { name: value, code: '', picks: [], comments: takeComments() };
+          doc.classes.push(cls);
+          unit = null; topic = null;
+          return;
+        }
+        if (h[1] === 'ลิงก์' || h[1] === 'เลือก') {
+          if (!cls) { pending.push({ raw: '// ' + t, comment: true }); return; }   // keep stray lines as notes
+          if (pending.length) cls.comments.push(...takeComments());
+          if (h[1] === 'ลิงก์') cls.code = value; else if (value) cls.picks.push(parsePick(value));
+          return;
+        }
+        cls = null;
         if (h[1] === 'บท') {
           unit = getUnit(value, n);
           unit.comments.push(...takeComments());
@@ -300,6 +357,9 @@
         });
       });
     });
+    (doc.classes || []).forEach(k => {
+      out.push('', '', ...k.comments, '# ห้องเรียน: ' + k.name, '# ลิงก์: ' + k.code, ...k.picks.map(p => '# เลือก: ' + pickText(p)));
+    });
     if (doc.trailing.length) out.push('', ...doc.trailing);
     return out.join('\n') + '\n\n';
   }
@@ -334,7 +394,7 @@
     return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0');
   }
 
-  const CardsFormat = { parse, extractSource, splitFile, parseDocument, serialize, contentProblems, normalizeTikz, figureId, LEVEL_ALIASES };
+  const CardsFormat = { parse, extractSource, splitFile, parseDocument, serialize, contentProblems, normalizeTikz, figureId, parsePick, pickText, CLASS_CODE_RE, LEVEL_ALIASES };
   root.CardsFormat = CardsFormat;
   if (typeof module !== 'undefined' && module.exports) module.exports = CardsFormat;
 
@@ -345,6 +405,7 @@
     window.CARDS = out.cards;
     window.TOPIC_GLYPH = out.glyphs;
     window.CARD_ERRORS = out.errors;
+    window.CLASSES = out.classes;
     if (out.errors.length && window.console) {
       console.warn('cards.js: ' + out.errors.length + ' problem(s)\n' +
         out.errors.map(e => '  บรรทัด ' + e.line + ': ' + e.message).join('\n'));

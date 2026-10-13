@@ -79,6 +79,8 @@
   };
 
   function withUids(doc) {
+    doc.classes = doc.classes || [];          // work saved before class links existed has none
+    doc.classes.forEach(k => { k.uid = k.uid || uid(); });
     doc.units.forEach(u => {
       u.uid = u.uid || uid();
       u.topics.forEach(t => {
@@ -92,6 +94,7 @@
   const findCard = id => allCards().find(x => x.c.uid === id);
   const findTopic = id => { for (const u of state.doc.units) for (const t of u.topics) if (t.uid === id) return { u, t }; return null; };
   const findUnit = id => state.doc.units.find(u => u.uid === id);
+  const findClass = id => (state.doc.classes || []).find(k => k.uid === id);
 
   // What a card looked like in the published file, for "แก้แล้ว" badges and the export summary
   const snapOf = (c, u, t) => JSON.stringify({ front: c.front, back: c.back, frontTikz: c.frontTikz, backTikz: c.backTikz, hidden: !!c.hidden, comments: c.comments, unit: u.name, topic: t.name });
@@ -145,6 +148,16 @@
       }));
     });
     state.doc.units.forEach(u => { if (unitNames.get(u.name) > 1) add(u.uid, 'มีบทชื่อนี้ซ้ำ (จะถูกรวมเป็นบทเดียว)'); });
+    const codes = new Map();
+    (state.doc.classes || []).forEach(k => {
+      if (!k.name.trim()) add(k.uid, 'ห้องเรียนต้องมีชื่อ');
+      if (!CF.CLASS_CODE_RE.test(k.code)) add(k.uid, 'ลิงก์ห้องใช้ได้เฉพาะ a-z 0-9 และ - (เช่น m2-3)');
+      else if (codes.has(k.code)) add(k.uid, 'ลิงก์ห้อง "' + k.code + '" ซ้ำกับห้องอื่น');
+      codes.set(k.code, k.uid);
+      if (!k.picks.length) add(k.uid, 'ยังไม่ได้เลือกบท', true);
+      k.picks.forEach(p => { if (!state.doc.units.some(u => u.name === p.unit)) add(k.uid, 'ไม่พบบท "' + p.unit + '"'); });
+      if (/\*\//.test(k.name + k.code)) add(k.uid, 'ห้ามมี * ตามด้วย / ติดกัน');
+    });
     return issues;
   }
   const errorsOnly = issues => [...issues.entries()].filter(([, list]) => list.some(x => !x.warn));
@@ -197,7 +210,7 @@
     state.doc = o.doc; state.decisions = o.decisions || {};
     undoHistory.last = snap; undoHistory.lastKey = '';
     const s = state.sel;
-    if (s && s.uid && !findCard(s.uid) && !findTopic(s.uid) && !findUnit(s.uid)) state.sel = null;
+    if (s && s.uid && !findCard(s.uid) && !findTopic(s.uid) && !findUnit(s.uid) && !findClass(s.uid)) state.sel = null;
     saveWork(); renderAll(); renderUndo();
     if ($('review-dialog').open) renderReview();
   }
@@ -345,9 +358,9 @@
     renderStatus();
     $('outline').hidden = state.tab !== 'cards';
     $('drafts').hidden = state.tab !== 'drafts';
-    $('tab-cards').setAttribute('aria-selected', String(state.tab === 'cards'));
-    $('tab-drafts').setAttribute('aria-selected', String(state.tab === 'drafts'));
-    if (state.tab === 'cards') renderOutline(); else renderDrafts();
+    $('classes').hidden = state.tab !== 'classes';
+    ['cards', 'drafts', 'classes'].forEach(t => $('tab-' + t).setAttribute('aria-selected', String(state.tab === t)));
+    if (state.tab === 'cards') renderOutline(); else if (state.tab === 'drafts') renderDrafts(); else renderClasses();
     renderEditor();
     renderPreview();
   }
@@ -596,6 +609,7 @@
     if (sel && sel.kind === 'topic' && findTopic(sel.uid)) return root.replaceChildren(topicForm(findTopic(sel.uid)));
     if (sel && sel.kind === 'unit' && findUnit(sel.uid)) return root.replaceChildren(unitForm(findUnit(sel.uid)));
     if (sel && sel.kind === 'draft') return root.replaceChildren(draftInfo(sel));
+    if (sel && sel.kind === 'class' && findClass(sel.uid)) return root.replaceChildren(classForm(findClass(sel.uid)));
     root.replaceChildren(h('div', { class: 'empty' },
       h('div', { class: 'shapes', 'aria-hidden': 'true' }, h('i', { class: 'shape ps' }), h('i', { class: 'shape jh' }), h('i', { class: 'shape sh' }), h('i', { class: 'shape uni' })),
       h('p', {}, 'เลือกการ์ด หัวข้อ หรือบททางซ้ายเพื่อแก้ไข'),
@@ -660,7 +674,7 @@
 
   function topicForm({ u, t }) {
     const name = h('input', { type: 'text', id: 'f-topic-name', value: t.name, autocomplete: 'off' });
-    name.addEventListener('input', onType(t.uid, v => { t.name = v.trim(); }));
+    name.addEventListener('input', onType(t.uid, v => { const old = t.name; t.name = v.trim(); renameTopicInClasses(u.name, old, t.name); }));
     return h('div', {},
       h('p', { class: 'crumb' }, h('span', { class: 'shape ' + (LEVEL_LABEL[u.level] ? u.level : 'sh') }), u.name),
       h('div', { class: 'form-head' }, h('h2', {}, 'หัวข้อ')),
@@ -681,13 +695,14 @@
     nullTopic.cards.push(...t.cards);
     if (t.comments.length) nullTopic.cards.length && nullTopic.cards[0].comments.unshift(...t.comments);
     u.topics.splice(u.topics.indexOf(t), 1);
+    renameTopicInClasses(u.name, t.name, null);
     state.sel = { kind: 'unit', uid: u.uid }; changed(); renderAll(); toast('ลบหัวข้อแล้ว การ์ดยังอยู่ในบท');
   }
 
   function unitForm(u) {
     const published = state.base.unitNames.has(u.name);
     const name = h('input', { type: 'text', id: 'f-unit-name', value: u.name, autocomplete: 'off' });
-    name.addEventListener('input', onType(u.uid, v => { u.name = v.trim(); }));
+    name.addEventListener('input', onType(u.uid, v => { const old = u.name; u.name = v.trim(); renameUnitInClasses(old, u.name); }));
     const level = h('select', { id: 'f-level' }, LEVELS.map(l => { const o = h('option', { value: l.code }, l.label + ' (' + l.code + ')'); if (u.level === l.code) o.selected = true; return o; }));
     level.addEventListener('change', () => { u.level = level.value; refreshAfterTyping(u.uid); });
     const glyph = h('input', { type: 'text', id: 'f-glyph', value: u.glyph, maxlength: '6', autocomplete: 'off' });
@@ -713,6 +728,7 @@
     const used = allCards().filter(x => x.u === u && state.base.ids.has(x.c.id)).length;
     if (!confirm('ลบบท "' + u.name + '" และการ์ดทั้งหมด ' + count + ' ใบ?' + (used ? '\nมี ' + used + ' ใบที่นักเรียนใช้อยู่ ความคืบหน้าของการ์ดเหล่านั้นจะหายไป' : ''))) return;
     state.doc.units.splice(state.doc.units.indexOf(u), 1);
+    renameUnitInClasses(u.name, null);
     state.sel = null; changed(); renderAll(); toast('ลบบทแล้ว');
   }
 
@@ -781,6 +797,7 @@
     const sel = state.sel;
     if (sel && sel.kind === 'card' && findCard(sel.uid)) { const { u, t, c } = findCard(sel.uid); return root.replaceChildren(previewCard(c, u, t.name)); }
     if (sel && sel.kind === 'draft') { const d = draftCardOf(sel); if (d) return root.replaceChildren(previewCard(d.c, d.u, d.t.name)); }
+    if (sel && sel.kind === 'class' && findClass(sel.uid)) return root.replaceChildren(classLinkPanel(findClass(sel.uid)));
     root.replaceChildren(h('p', { class: 'hint' }, 'เลือกการ์ดเพื่อดูตัวอย่าง'));
   }
 
@@ -962,6 +979,141 @@
   $('review-dialog').addEventListener('close', () => { state.review = null; renderAll(); });
 
   /* =======================================================================
+     Class links: one permanent link per class (flashcards.html?class=<code>).
+     The class lists units (whole) or chosen หัวข้อ; students who opened the link follow
+     every change after the next export + Commit.
+     ======================================================================= */
+  const ALL_TOPICS = 'ทั่วไป';           // cards without a หัวข้อ, as written in "# เลือก:"
+  // the หัวข้อ students see: "ทั่วไป" only when cards without a หัวข้อ exist
+  const topicNames = u => u.topics.filter(t => t.name !== null || t.cards.length).map(t => t.name === null ? ALL_TOPICS : t.name).filter((n, i, a) => a.indexOf(n) === i);
+  function renameUnitInClasses(oldName, newName) {
+    (state.doc.classes || []).forEach(k => {
+      k.picks = k.picks.map(p => p.unit === oldName ? (newName === null ? null : Object.assign({}, p, { unit: newName })) : p).filter(Boolean);
+    });
+  }
+  function renameTopicInClasses(unitName, oldName, newName) {
+    (state.doc.classes || []).forEach(k => k.picks.forEach(p => {
+      if (p.unit !== unitName || !p.topics) return;
+      p.topics = p.topics.map(t => t === oldName ? newName : t).filter(t => t !== null);
+    }));
+    (state.doc.classes || []).forEach(k => { k.picks = k.picks.filter(p => !p.topics || p.topics.length); });
+  }
+  function classUrl(k) {
+    const u = new URL('flashcards.html', location.href);
+    u.search = '?class=' + encodeURIComponent(k.code) + '&openExternalBrowser=1';   // LINE opens it in the phone's browser
+    return u.href;
+  }
+  function suggestCode() {
+    const codes = new Set((state.doc.classes || []).map(k => k.code));
+    let n = 1; while (codes.has('class-' + n)) n++;
+    return 'class-' + n;
+  }
+  function newClass() {
+    const k = { uid: uid(), name: 'ห้องใหม่', code: suggestCode(), picks: [], comments: [] };
+    state.doc.classes = state.doc.classes || [];
+    state.doc.classes.push(k);
+    state.tab = 'classes'; changed(); select({ kind: 'class', uid: k.uid });
+    setTimeout(() => { const f = $('f-class-name'); if (f) { f.focus(); f.select(); } }, 0);
+  }
+  function renderClasses() {
+    const issues = validate();
+    const list = (state.doc.classes || []).map(k => {
+      const sel = state.sel && state.sel.uid === k.uid;
+      return h('div', { class: 'class-row' + (sel ? ' selected' : ''), tabindex: '0', role: 'button', 'aria-pressed': String(!!sel),
+        onclick: () => select({ kind: 'class', uid: k.uid }), onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select({ kind: 'class', uid: k.uid }); } } },
+        h('b', {}, k.name || '(ไม่มีชื่อ)'),
+        h('span', { class: 'class-sub' }, '?class=' + k.code + ' · ' + k.picks.length + ' บท'),
+        issues.has(k.uid) && issues.get(k.uid).some(x => !x.warn) ? h('span', { class: 'badge err' }, 'ผิด') : null);
+    });
+    $('classes').replaceChildren(...[   // filter: replaceChildren would print a null as "null"
+      h('p', { class: 'draft-note' }, 'แต่ละห้องมีลิงก์ถาวร 1 ลิงก์ (และ QR) นักเรียนเปิดครั้งเดียว แอปจะปักหมุดบทและติ๊กหัวข้อที่เลือกให้ เมื่อครูเพิ่ม/ลดหัวข้อที่นี่แล้วส่งออก cards.js แอปของนักเรียนจะอัปเดตเอง'),
+      ...list,
+      list.length ? null : h('p', { class: 'hint' }, 'ยังไม่มีห้องเรียน'),
+      h('button', { class: 'new-unit', type: 'button', onclick: newClass }, '+ ห้องเรียนใหม่')].filter(Boolean));
+  }
+  function classForm(k) {
+    const name = h('input', { type: 'text', id: 'f-class-name', value: k.name, autocomplete: 'off' });
+    name.addEventListener('input', onType(k.uid, v => { k.name = v.trim(); }));
+    const code = h('input', { type: 'text', id: 'f-class-code', value: k.code, autocomplete: 'off', spellcheck: 'false' });
+    code.addEventListener('input', onType(k.uid, v => { k.code = v.trim().toLowerCase(); renderPreview(); }));
+    const pickOf = unitName => k.picks.find(p => p.unit === unitName);
+    const setPick = (unitName, topics) => {      // topics: null = whole unit · [] = not in class
+      const i = k.picks.findIndex(p => p.unit === unitName);
+      if (topics && !topics.length) { if (i >= 0) k.picks.splice(i, 1); }
+      else if (i >= 0) k.picks[i] = { unit: unitName, topics };
+      else k.picks.push({ unit: unitName, topics });
+      changed(); renderEditor(); renderPreview(); renderClasses();
+    };
+    const levels = LEVELS.map(l => {
+      const units = state.doc.units.filter(u => u.level === l.code);
+      if (!units.length) return null;
+      return h('fieldset', { class: 'class-level' }, h('legend', {}, h('span', { class: 'shape ' + l.code, 'aria-hidden': 'true' }), ' ' + l.label),
+        units.map(u => {
+          const p = pickOf(u.name), names = topicNames(u), named = u.topics.some(t => t.name !== null);
+          const unitBox = h('input', { type: 'checkbox', id: 'cls-u-' + u.uid });
+          unitBox.checked = !!p && !p.topics;
+          unitBox.indeterminate = !!p && !!p.topics;
+          unitBox.addEventListener('change', () => setPick(u.name, unitBox.checked ? null : []));
+          const topicBoxes = named ? h('div', { class: 'class-topics' }, names.map((tn, i) => {
+            const on = !!p && (!p.topics || p.topics.includes(tn));
+            const box = h('input', { type: 'checkbox', id: 'cls-t-' + u.uid + '-' + i });
+            box.checked = on;
+            box.addEventListener('change', () => {
+              const current = p ? (p.topics || names.slice()) : [];
+              setPick(u.name, box.checked ? names.filter(n => current.includes(n) || n === tn) : current.filter(n => n !== tn));
+            });
+            return h('label', { class: 'class-topic', for: box.id }, box, ' ' + tn);
+          })) : null;
+          return h('div', { class: 'class-unit' },
+            h('label', { class: 'class-unit-name', for: unitBox.id }, unitBox, ' ', h('b', {}, u.name), h('span', { class: 'hint' }, unitBox.checked ? ' ทั้งบท (รวมหัวข้อที่จะเพิ่มในอนาคต)' : p ? ' เฉพาะหัวข้อที่ติ๊ก' : '')),
+            topicBoxes);
+        }));
+    }).filter(Boolean);
+    return h('div', {},
+      h('div', { class: 'form-head' }, h('h2', {}, 'ห้องเรียน')),
+      problemsList(k.uid),
+      h('div', { class: 'row2' },
+        field('ชื่อห้อง', name, 'นักเรียนจะเห็นชื่อนี้ในแอป'),
+        field('ลิงก์ห้อง', code, 'a-z 0-9 และ - เช่น m2-3 ห้ามเปลี่ยนหลังแจกลิงก์แล้ว')),
+      h('p', { class: 'hint' }, 'ติ๊กทั้งบท หรือเปิดบทแล้วติ๊กเฉพาะหัวข้อที่สอนแล้ว (ติ๊กหัวข้อใหม่เพิ่มได้เรื่อย ๆ ตามที่สอน)'),
+      ...levels,
+      h('div', { class: 'form-actions' },
+        h('button', { class: 'act danger', type: 'button', onclick: () => {
+          if (!confirm('ลบห้อง "' + k.name + '"?\nนักเรียนที่เข้าห้องนี้ไว้ จะยังเก็บบทที่ปักหมุดไว้ แต่จะไม่อัปเดตตามห้องอีก')) return;
+          state.doc.classes.splice(state.doc.classes.indexOf(k), 1); state.sel = null; changed(); renderAll(); toast('ลบห้องแล้ว');
+        } }, 'ลบห้องเรียน')));
+  }
+  function qrSvg(text) {
+    if (!window.qrcode) return null;
+    const qr = window.qrcode(0, 'M'); qr.addData(text); qr.make();
+    const holder = h('div', { class: 'qr' });
+    holder.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+    const svg = holder.querySelector('svg'); if (svg) svg.setAttribute('aria-hidden', 'true');
+    return holder;
+  }
+  function classLinkPanel(k) {
+    const url = classUrl(k), ok = CF.CLASS_CODE_RE.test(k.code);
+    const published = (() => { const base = CF.parse(state.base.split.text).classes.find(x => x.code === k.code); return !!base; })();
+    const copy = h('button', { class: 'act primary', type: 'button', disabled: !ok, onclick: async () => {
+      try { await navigator.clipboard.writeText(url); toast('คัดลอกลิงก์แล้ว'); } catch (e) { toast('คัดลอกไม่ได้ เลือกลิงก์แล้วกด Ctrl+C'); }
+    } }, 'คัดลอกลิงก์');
+    return h('div', { class: 'class-link' },
+      h('p', { class: 'pane-title' }, 'ลิงก์และ QR ของห้อง'),
+      ok ? qrSvg(url) : h('p', { class: 'hint' }, 'ใส่ลิงก์ห้องให้ถูกก่อน'),
+      h('input', { class: 'class-url', type: 'text', readonly: true, value: url, 'aria-label': 'ลิงก์ห้อง', onfocus: e => e.target.select() }),
+      h('div', { class: 'form-actions' }, copy,
+        h('button', { class: 'act', type: 'button', disabled: !ok, onclick: () => openQrFull(k, url) }, 'แสดง QR เต็มจอ')),
+      published ? h('p', { class: 'hint' }, 'ห้องนี้อยู่ใน cards.js บนเว็บแล้ว การแก้ไขจะมีผลกับนักเรียนหลังส่งออกและ Commit')
+        : h('p', { class: 'problems-note' }, 'ลิงก์นี้จะใช้ได้หลังกด "ส่งออก cards.js" แล้ว Commit ใน GitHub (ประมาณ 1–10 นาที)'));
+  }
+  function openQrFull(k, url) {
+    $('qr-full-name').textContent = k.name;
+    const q = qrSvg(url); $('qr-full-code').replaceChildren(q || h('p', {}, url));
+    $('qr-full-url').textContent = url.replace(/^https?:\/\//, '').replace('&openExternalBrowser=1', '');
+    $('qr-full').showModal();
+  }
+
+  /* =======================================================================
      Export: complete cards.js to paste over the file on GitHub
      ======================================================================= */
   function exportSummary() {
@@ -1039,6 +1191,8 @@
      ======================================================================= */
   $('tab-cards').addEventListener('click', () => { state.tab = 'cards'; renderAll(); });
   $('tab-drafts').addEventListener('click', () => { state.tab = 'drafts'; renderAll(); });
+  $('tab-classes').addEventListener('click', () => { state.tab = 'classes'; renderAll(); });
+  $('qr-full').addEventListener('click', e => { if (e.target === $('qr-full')) $('qr-full').close(); });
   $('new-card').addEventListener('click', () => {
     const s = state.sel;
     const ctx = s && (s.kind === 'card' ? findCard(s.uid) : s.kind === 'topic' ? findTopic(s.uid) : s.kind === 'unit' ? { u: findUnit(s.uid) } : null);
