@@ -182,17 +182,21 @@
 
   /* ======================================================================
      Daily new cards + streak (mathFlashcards.stats.v1)
-     stats = { days: { 'YYYY-MM-DD': answers }, newDay, newCount, extraNew }
+     stats = { days: { 'YYYY-MM-DD': answers }, newDay, newCount, extraNew,
+               info: { 'YYYY-MM-DD': { f: new cards started, c: 1 when that day's reviews were cleared } },
+               reached: { [milestone]: 'YYYY-MM-DD' first reached } }   ← info/reached: for the poster
      ====================================================================== */
   const KEY_STATS = 'mathFlashcards.stats.v1';
   const NEW_PER_DAY_CHOICES = [5, 10, 15, 20, 30];
   const DEFAULT_NEW_PER_DAY = 10;
   const STREAK_MIN = 5;          // answers needed for a day to count in the streak
 
-  function emptyStats() { return { days: {}, newDay: '', newCount: 0, extraNew: 0 }; }
+  function emptyStats() { return { days: {}, newDay: '', newCount: 0, extraNew: 0, info: {}, reached: {} }; }
   function normStats(st, today) {
     const s = Object.assign(emptyStats(), st || {});
     if (!s.days || typeof s.days !== 'object') s.days = {};
+    if (!s.info || typeof s.info !== 'object') s.info = {};
+    if (!s.reached || typeof s.reached !== 'object') s.reached = {};
     if (s.newDay !== today) { s.newDay = today; s.newCount = 0; s.extraNew = 0; }
     return s;
   }
@@ -200,17 +204,22 @@
   function recordAnswer(st, today, wasNew) {
     const s = normStats(st, today);
     s.days[today] = (s.days[today] || 0) + 1;
-    if (wasNew) s.newCount++;
+    if (wasNew) { s.newCount++; dayInfo(s, today).f++; }
     // keep about a year of history
     Object.keys(s.days).forEach(d => { if (daysBetween(d, today) > 400) delete s.days[d]; });
+    Object.keys(s.info).forEach(d => { if (daysBetween(d, today) > 400) delete s.info[d]; });
     return s;
   }
   function unrecordAnswer(st, today, wasNew) {
     const s = normStats(st, today);
     if (s.days[today]) s.days[today]--;
     if (wasNew && s.newCount > 0) s.newCount--;
+    if (wasNew && s.info[today] && s.info[today].f > 0) s.info[today].f--;
     return s;
   }
+  function dayInfo(s, day) { if (!s.info[day]) s.info[day] = { f: 0, c: 0 }; return s.info[day]; }
+  // Nothing left to review today (shown as ● on the poster)
+  function markCleared(st, today) { const s = normStats(st, today); dayInfo(s, today).c = 1; return s; }
   function newAllowance(st, today, limit) {
     const s = normStats(st, today);
     return Math.max(0, limit + s.extraNew - s.newCount);
@@ -224,7 +233,7 @@
      alive but doesn't add to it; two missed days in a row end it.
      → { count, rest: ['YYYY-MM-DD' …] (newest first), todayDone } */
   const REST_GAP = 7;
-  const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 150, 200, 365];
+  const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
   function streakInfo(st, today) {
     const days = (st && st.days) || {};
     const ok = d => (days[d] || 0) >= STREAK_MIN;
@@ -248,6 +257,51 @@
     return { count, rest, todayDone };
   }
   function streak(st, today) { return streakInfo(st, today).count; }
+
+  /* Day by day from `from` to `to`, what the student saw on each day: the streak after studying
+     (run), the milestone reached that day, and which missed days were forgiven rest days.
+     → { 'YYYY-MM-DD': { n, run, milestone, rest } } */
+  function streakHistory(st, from, to) {
+    const days = (st && st.days) || {};
+    const out = {};
+    let prevRun = streakInfo(st, addDays(from, -1)).count;
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      const n = days[d] || 0;
+      if (n >= STREAK_MIN) {
+        const run = streakInfo(st, d).count;
+        out[d] = { n, run, milestone: streakMilestone(prevRun, run), rest: false };
+        prevRun = run;
+      } else out[d] = { n, run: 0, milestone: 0, rest: false };
+    }
+    // rest days: the ones each streak (and today's, if not done yet) counted on
+    const mark = info => info.rest.forEach(r => { if (out[r]) out[r].rest = true; });
+    Object.keys(out).forEach(d => { if (out[d].run) mark(streakInfo(st, addDays(d, 0))); });
+    mark(streakInfo(st, to));
+    return out;
+  }
+  // The kind of day, as a poster shape: special ◆ (milestone) · cleared ● · fresh ▲ (half or more
+  // of the day's cards were new) · steady ■ (any other day with answers) · null (no answers)
+  function dayKind(st, hist, day) {
+    const h = hist[day];
+    if (!h || !h.n) return null;
+    if (h.milestone) return 'special';
+    const info = (st.info && st.info[day]) || {};
+    if (info.c) return 'cleared';
+    if ((info.f || 0) * 2 >= h.n) return 'fresh';
+    return 'steady';
+  }
+  // Milestones ever reached: remembered ones + any found in the saved history
+  function unlockMilestones(st, today) {
+    const s = normStats(st, today);
+    const first = Object.keys(s.days).sort()[0];
+    if (first) {
+      const hist = streakHistory(s, first, today);
+      Object.keys(hist).sort().forEach(d => { const m = hist[d].milestone; if (m && !s.reached[m]) s.reached[m] = d; });
+      // a longer streak passes every smaller milestone on the way
+      STREAK_MILESTONES.forEach(m => { if (!s.reached[m]) { const d = Object.keys(hist).sort().find(k => hist[k].run >= m); if (d) s.reached[m] = d; } });
+    }
+    return s;
+  }
   // The milestone reached when the streak grows from `before` to `after` (or 0)
   function streakMilestone(before, after) {
     return STREAK_MILESTONES.filter(m => before < m && after >= m).pop() || 0;
@@ -298,7 +352,10 @@
     });
     const days = {};
     Object.keys((stats && stats.days) || {}).forEach(d => { if (daysBetween(d, today) <= 60) days[d] = stats.days[d]; });
-    return { v: 1, d: today, c, p: (settings && settings.pins) || [], o: (settings && settings.off) || {}, n: settings && settings.newPerDay, s: days };
+    const info = {};
+    Object.keys(days).forEach(d => { const x = stats.info && stats.info[d]; if (x && (x.f || x.c)) info[d] = [x.f || 0, x.c ? 1 : 0]; });
+    return { v: 1, d: today, c, p: (settings && settings.pins) || [], o: (settings && settings.off) || {}, n: settings && settings.newPerDay, s: days,
+      i: info, r: (stats && stats.reached) || {} };
   }
   async function encodeBackup(obj) {
     const bytes = new TextEncoder().encode(JSON.stringify(obj));
@@ -333,6 +390,13 @@
     });
     const s = stats || emptyStats();
     Object.keys(backup.s || {}).forEach(d => { s.days[d] = Math.max(s.days[d] || 0, backup.s[d]); });
+    if (!s.info) s.info = {};
+    if (!s.reached) s.reached = {};
+    Object.keys(backup.i || {}).forEach(d => {
+      const [f, c] = backup.i[d], x = dayInfo(s, d);
+      x.f = Math.max(x.f || 0, f || 0); x.c = (x.c || c) ? 1 : 0;
+    });
+    Object.keys(backup.r || {}).forEach(m => { if (!s.reached[m] || backup.r[m] < s.reached[m]) s.reached[m] = backup.r[m]; });
     const pins = settings.pins || [];
     (backup.p || []).forEach(t => { if (!pins.includes(t)) pins.push(t); });
     settings.pins = pins;
@@ -346,7 +410,7 @@
     NEW_PER_DAY_CHOICES, DEFAULT_NEW_PER_DAY, STREAK_MIN, REST_GAP, STREAK_MILESTONES, EXPERT_BOX,
     toDay, addDays, daysBetween, assignIds, emptyState, fromV1, reconcile,
     answer, boxOf, isDue, isMastered, mastery, lastAnswer, toV1, load, save, clearAll,
-    emptyStats, recordAnswer, unrecordAnswer, newAllowance, addExtraNew, todayCount, streak, streakInfo, streakMilestone, loadStats, saveStats,
+    emptyStats, recordAnswer, unrecordAnswer, newAllowance, addExtraNew, todayCount, streak, streakInfo, streakMilestone, streakHistory, dayKind, unlockMilestones, markCleared, loadStats, saveStats,
     selectDue, makeBackup, encodeBackup, decodeBackup, mergeBackup,
   };
   root.SRS = SRS;

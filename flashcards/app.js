@@ -464,8 +464,9 @@
   function setPinState(btn, topic, withText) {
     const on = isPinned(topic);
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    btn.setAttribute('aria-label', (on ? 'เลิกปักหมุด ' : 'ปักหมุด ') + topic);
-    if (withText) btn.querySelector('.pin-text').textContent = on ? 'ปักหมุดแล้ว' : 'ปักหมุด';
+    // a button that shows its words is named by them (+ aria-pressed); the icon-only pins need a label
+    if (withText) { btn.removeAttribute('aria-label'); btn.querySelector('.pin-text').textContent = on ? 'ปักหมุดแล้ว' : 'ปักหมุด'; }
+    else btn.setAttribute('aria-label', (on ? 'เลิกปักหมุด ' : 'ปักหมุด ') + topic);
   }
 
   // Cards written in the wrong format are skipped; tell the teacher where.
@@ -486,8 +487,10 @@
     // new cards arrive a few per day: say how many are still waiting
     const waiting = st.newTotal - st.fresh;
     const note = $('new-note');
-    note.hidden = !(waiting > 0);
-    if (waiting > 0) note.textContent = 'การ์ดใหม่ทยอยมาวันละ ' + settings.newPerDay + ' ใบ ยังรออีก ' + waiting + ' ใบ (ปรับได้ในตั้งค่า)';
+    // explained during the first week of studying; after that students know how it works
+    const studyDays = Object.keys(stats.days || {}).filter(d => stats.days[d] > 0).length;
+    note.hidden = !(waiting > 0 && studyDays < 7);
+    if (!note.hidden) note.textContent = 'การ์ดใหม่มาวันละ ' + settings.newPerDay + ' ใบ · ยังรออีก ' + waiting + ' ใบ (ปรับได้ในตั้งค่า)';
     const line = $('due-line');
     const cta = $('study-due-all');
     const pinnedTab = settings.filter === 'pinned';
@@ -496,7 +499,8 @@
       $('study-due-all-label').textContent = 'เริ่มทวน ' + st.due + ' ใบ';
       cta.disabled = false;
     } else if (cards.length && SRS.todayCount(stats, today())) {
-      // Studied today and nothing left: a clear finish line
+      // Studied today and nothing left: a clear finish line (and a ● on the poster)
+      if (!((stats.info || {})[today()] || {}).c) { stats = SRS.markCleared(stats, today()); saveStats(); }
       const next = tomorrowCount(cards);
       line.innerHTML = '<span class="done-mark" aria-hidden="true"></span><b>เสร็จแล้ววันนี้</b> · ' +
         (next ? 'พรุ่งนี้มี ' + next + ' ใบ' : 'กลับมาอีกที' + comeBackWhen(st.nextDue));
@@ -528,6 +532,8 @@
       parts.push('<span class="streak"><svg aria-hidden="true"><use href="#i-flame"/></svg>ต่อเนื่อง <b>' + run + '</b> วัน' +
         (restYesterday ? '<small> (เมื่อวานเป็นวันพัก ทวนวันนี้เพื่อไปต่อ)</small>' : '') + '</span>');
     }
+    // once there is anything to draw, the student's poster is one tap away
+    if (Object.keys(stats.days || {}).some(d => stats.days[d] > 0)) parts.push('<button class="poster-link" type="button" data-open-poster>โปสเตอร์ของฉัน ›</button>');
     el.innerHTML = parts.join('');
     el.hidden = !parts.length;
   }
@@ -772,8 +778,8 @@
       cards: order, index: 0, answers: new Map(), before: new Map(),
       dueMode: !!opts.ordered, scope: opts.scope || null,
       streakBefore: SRS.streak(stats, today()),
+      history: [], // this round's answers, newest last: ↶ takes them back one by one
     };
-    lastAction = null;
     stopCelebration();
     order.forEach(preloadFigures); // diagrams are small; having them all makes a session work offline
     $('study-title').textContent = session.title;
@@ -827,7 +833,8 @@
 
     updateFaceState();
     renderProgress();
-    $('prev-btn').disabled = session.index === 0;
+    $('undo-btn').disabled = !session.history.length;
+    showSwipeHint();
     announce('การ์ดที่ ' + (session.index + 1) + ' จาก ' + session.cards.length);
     updateThemeColor();
 
@@ -882,7 +889,7 @@
 
     // Everything needed to take this answer back (undo)
     const firstInSession = !session.before.has(id);
-    lastAction = {
+    const action = {
       id, index: session.index, knew, firstInSession,
       record: srs.cards[id] ? Object.assign({}, srs.cards[id]) : null,
       prevAnswer: session.answers.get(id),
@@ -896,9 +903,11 @@
     }
     SRS.answer(srs, id, knew, today());
     saveProgress();
-    if (firstInSession) { stats = SRS.recordAnswer(stats, today(), lastAction.wasNew); saveStats(); }
+    if (firstInSession) { stats = SRS.recordAnswer(stats, today(), action.wasNew); saveStats(); }
     session.answers.set(id, knew);
-    toast(knew ? 'บันทึกว่า จำได้' : 'บันทึกว่า ยังจำไม่ได้', { label: 'เลิกทำ', onClick: undoLast }, 4500);
+    session.history.push(action);
+    // the card's "จำได้ / ทบทวน" stamp confirms the answer; ↶ (bottom left) takes it back any time
+    if (!settings.swipeHintDone) { settings.swipeHintDone = true; saveSettings(); $('swipe-hint').hidden = true; }
 
     const advance = () => {
       session.index++;
@@ -916,12 +925,12 @@
     setTimeout(advance, 380);
   }
 
-  // Take back the last answer (a mis-swipe): restore the card, counts and position
-  let lastAction = null;
+  // Take back the latest answer of this round (a mis-swipe): restore the card, counts and
+  // position. Each tap steps one answer further back; it also works from the end screen.
   function undoLast() {
-    const a = lastAction;
-    if (!a || !session || animating) return;
-    lastAction = null;
+    if (!session || animating || !session.history.length) return;
+    const a = session.history.pop();
+    stopCelebration();
     if (a.record) srs.cards[a.id] = a.record; else delete srs.cards[a.id];
     saveProgress();
     if (a.firstInSession) {
@@ -932,6 +941,19 @@
     session.index = a.index;
     renderCard();
     announce('เลิกทำแล้ว กลับไปที่การ์ดเดิม');
+  }
+
+  // First card ever on this device: show that cards can be swiped, with a gentle wiggle
+  function showSwipeHint() {
+    const hint = $('swipe-hint');
+    hint.hidden = !!settings.swipeHintDone;
+    if (settings.swipeHintDone || session.hinted || reduceMotion.matches || !cardDrag.animate) return;
+    session.hinted = true;
+    const opts = { duration: 1600, delay: 700, easing: 'ease-in-out' };
+    cardDrag.animate([{ transform: 'none' }, { transform: 'translateX(26px) rotate(1.3deg)', offset: .25 }, { transform: 'none', offset: .5 },
+      { transform: 'translateX(-26px) rotate(-1.3deg)', offset: .75 }, { transform: 'none' }], opts);
+    $('wash-yes').animate([{ opacity: 0 }, { opacity: .55, offset: .25 }, { opacity: 0, offset: .5 }, { opacity: 0 }], opts);
+    $('wash-no').animate([{ opacity: 0 }, { opacity: 0, offset: .5 }, { opacity: .55, offset: .75 }, { opacity: 0 }], opts);
   }
 
   function go(delta) {
@@ -979,6 +1001,8 @@
     const streakNow = SRS.streak(stats, today());
     const streakUp = streakNow > session.streakBefore;
     const milestone = SRS.streakMilestone(session.streakBefore, streakNow);
+    if (full) stats = SRS.markCleared(stats, today());
+    if (milestone || full) { stats = SRS.unlockMilestones(stats, today()); saveStats(); }
 
     $('summary-title').textContent = full ? 'ทวนครบแล้ววันนี้!' : n === yes ? 'จบชุดนี้แล้ว!' : 'จบรอบนี้แล้ว!';
     $('summary-milestone').hidden = !milestone;
@@ -1026,25 +1050,38 @@
       });
     }
 
+    /* One clear next step, the picture to keep (if any), everything else as small links:
+       missed cards → review them · cards still waiting today → keep going · otherwise → done */
     const actions = $('summary-actions');
     actions.innerHTML = '';
-    // Daily new cards used up but more are waiting in this set: offer a few more today
     const scope = session.scope;
     const moreNew = session.dueMode && scope && allowance() === 0 && scope.some(c => !srs.cards[idOf(c)]);
-    if (moreNew) {
-      actions.appendChild(actionBtn('เพิ่มการ์ดใหม่อีก ' + settings.newPerDay + ' ใบวันนี้', 'answer-btn ' + (retry.length ? 'ghost-btn' : 'btn-know'), () => {
-        stats = SRS.addExtraNew(stats, today(), settings.newPerDay); saveStats();
-        startSession(dueSet(scope).cards, { title: session.title, mixed: session.mixed, ordered: true, scope });
-      }));
-    }
+    const finish = () => history.back();
+    const keepGoing = () => startSession(dueSet(scopeCards).cards, { title: 'การ์ดที่รอทวน', mixed: true, ordered: true, scope: scopeCards });
     if (retry.length) {
       const label = skipped && no ? 'ทบทวนใบที่ยังจำไม่ได้และที่ข้าม' : skipped ? 'ทบทวนใบที่ข้าม' : 'ทบทวนใบที่ยังจำไม่ได้';
       actions.appendChild(actionBtn(label + ' (' + retry.length + ')', 'answer-btn btn-know',
         () => startSession(retry, { title: session.title, mixed: session.mixed })));
+    } else if (left && answered) {
+      actions.appendChild(actionBtn('ทวนต่ออีก ' + left + ' ใบ', 'answer-btn btn-know', keepGoing));
+    } else {
+      actions.appendChild(actionBtn('เสร็จแล้ว', 'answer-btn btn-know', finish));
     }
-    actions.appendChild(actionBtn('สุ่มใหม่ทั้งชุด', 'answer-btn ' + (retry.length ? 'ghost-btn' : 'btn-know'),
-      () => startSession(session.pool, { title: session.title, mixed: session.mixed })));
-    actions.appendChild(actionBtn('กลับ', 'answer-btn ghost-btn', () => history.back()));
+    // the picture to keep: the new streak card, or this month's poster after a cleared day
+    if (milestone) actions.appendChild(actionBtn('ดูการ์ด ' + milestone + ' วันต่อเนื่อง', 'answer-btn ghost-btn', () => openPoster({ card: milestone })));
+    else if (full) actions.appendChild(actionBtn('ดูโปสเตอร์เดือนนี้', 'answer-btn ghost-btn', () => openPoster()));
+    const links = document.createElement('div');
+    links.className = 'summary-links';
+    if (retry.length || (left && answered)) links.appendChild(actionBtn('เสร็จแล้ว', 'link-btn', finish));
+    links.appendChild(actionBtn('สุ่มใหม่ทั้งชุด', 'link-btn', () => startSession(session.pool, { title: session.title, mixed: session.mixed })));
+    if (moreNew) {
+      links.appendChild(actionBtn('+ การ์ดใหม่อีก ' + settings.newPerDay + ' ใบวันนี้', 'link-btn', () => {
+        stats = SRS.addExtraNew(stats, today(), settings.newPerDay); saveStats();
+        startSession(dueSet(scope).cards, { title: session.title, mixed: session.mixed, ordered: true, scope });
+      }));
+    }
+    if (session.history.length) links.appendChild(actionBtn('↶ แก้คำตอบใบสุดท้าย', 'link-btn', undoLast));
+    actions.appendChild(links);
 
     announce((full ? 'ทวนครบแล้ววันนี้ ' : 'จบรอบนี้ ') + 'จำได้ ' + yes + ' จาก ' + n + ' ใบ');
     $('summary-title').focus({ preventScroll: true });
@@ -1085,7 +1122,7 @@
   $('flip-btn').addEventListener('click', () => { flip(); $('know-btn').focus({ preventScroll: true }); });
   $('know-btn').addEventListener('click', () => { answer(true); $('flip-btn').focus({ preventScroll: true }); });
   $('miss-btn').addEventListener('click', () => { answer(false); $('flip-btn').focus({ preventScroll: true }); });
-  $('prev-btn').addEventListener('click', () => go(-1));
+  $('undo-btn').addEventListener('click', undoLast);
   $('next-btn').addEventListener('click', () => go(1));
   $('shuffle-btn').addEventListener('click', shuffleRest);
 
@@ -1142,7 +1179,7 @@
     if ((e.key === ' ' || e.key === 'Enter') && !onOtherButton) { e.preventDefault(); flip(); return; }
     if (e.key === 'ArrowRight') { e.preventDefault(); answer(true); return; }
     if (e.key === 'ArrowLeft') { e.preventDefault(); answer(false); return; }
-    if (e.key === 'ArrowUp') { e.preventDefault(); go(-1); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); undoLast(); return; }
     if (e.key === 'ArrowDown') { e.preventDefault(); go(1); return; }
   });
   document.addEventListener('keydown', e => {
@@ -1370,6 +1407,93 @@
   });
   $('backup-btn').addEventListener('click', () => { dialog.close(); openBackup(); });
   $('restore-btn').addEventListener('click', () => { dialog.close(); openRestore(''); });
+
+  /* =======================================================================
+     MY POSTER: the month as a picture + streak cards (poster.js draws them)
+     ======================================================================= */
+  const posterDialog = $('poster-dialog');
+  const posterCanvas = document.createElement('canvas');
+  let posterView = { month: '', card: 0 }, posterUrl = null;
+  const ymOf = day => day.slice(0, 7);
+  function shiftMonth(ym, n) { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function firstMonth() { const days = Object.keys(stats.days || {}).filter(d => stats.days[d] > 0).sort(); return days.length ? ymOf(days[0]) : ymOf(today()); }
+  // Everything poster.js needs for one month
+  function monthData(ym) {
+    const [y, m] = ym.split('-').map(Number), len = new Date(y, m, 0).getDate(), t = today();
+    const from = ym + '-01', to = [ym + '-' + String(len).padStart(2, '0'), t].sort()[0];
+    const hist = from <= t ? SRS.streakHistory(stats, from, to) : {};
+    const days = [];
+    for (let d = 1; d <= len; d++) {
+      const k = ym + '-' + String(d).padStart(2, '0'), h = hist[k];
+      const kind = h ? SRS.dayKind(stats, hist, k) : null;
+      days.push({ d, kind, n: h ? h.n : 0, rest: !!(h && h.rest), on: !!(h && (h.run || h.rest)), future: k > t, today: k === t });
+    }
+    return { y, m, days, studied: days.filter(x => x.n).length, cards: days.reduce((a, x) => a + x.n, 0), best: Math.max(0, ...Object.values(hist).map(h => h.run)) };
+  }
+  // The days leading up to a milestone, for the strip on its card
+  function streakCardData(count) {
+    const date = stats.reached[count];
+    const n = Math.min(count, 14), from = SRS.addDays(date, -(n - 1)), hist = SRS.streakHistory(stats, from, date), strip = [];
+    for (let i = 0; i < n; i++) { const k = SRS.addDays(from, i); strip.push(hist[k] && hist[k].n ? SRS.dayKind(stats, hist, k) : hist[k] && hist[k].rest ? 'rest' : null); }
+    return { count, date, strip };
+  }
+  async function renderPoster() {
+    await Poster.fontsReady();
+    const card = posterView.card;
+    if (card) Poster.drawStreak(posterCanvas, streakCardData(card));
+    else Poster.drawMonth(posterCanvas, monthData(posterView.month));
+    const [y, m] = posterView.month.split('-').map(Number);
+    $('poster-nav').hidden = !!card;
+    $('poster-back').hidden = !card;
+    $('poster-label').textContent = Poster.MONTHS[m - 1] + ' ' + (y + 543);
+    $('poster-prev').disabled = posterView.month <= firstMonth();
+    $('poster-next').disabled = posterView.month >= ymOf(today());
+    $('poster-img').alt = card ? 'การ์ดทวนต่อเนื่อง ' + card + ' วัน' : 'โปสเตอร์เดือน' + Poster.MONTHS[m - 1];
+    const blob = await new Promise(r => posterCanvas.toBlob(r, 'image/png'));
+    if (posterUrl) URL.revokeObjectURL(posterUrl);
+    posterUrl = blob ? URL.createObjectURL(blob) : posterCanvas.toDataURL('image/png');
+    $('poster-img').src = posterUrl;
+    renderBadges();
+  }
+  function renderBadges() {
+    const best = SRS.streak(stats, today());
+    $('poster-badges').innerHTML = SRS.STREAK_MILESTONES.map(n => {
+      const date = stats.reached[n];
+      if (!date) return '<div class="badge locked" aria-label="' + n + ' วัน ยังไม่ปลดล็อก"><span class="disc">' + n + '</span><b>' + n + ' วัน</b><small>อีก ' + (n - Math.min(best, n)) + ' วัน</small></div>';
+      const [, mo, d] = date.split('-').map(Number);
+      return '<button class="badge" type="button" data-card="' + n + '"' + (posterView.card === n ? ' aria-pressed="true"' : '') + '><span class="disc">' + n + '</span><b>' + n + ' วัน</b><small>' + d + ' ' + Poster.MONTHS[mo - 1].slice(0, 3) + '.</small></button>';
+    }).join('');
+  }
+  function openPoster(opts) {
+    stats = SRS.unlockMilestones(stats, today()); saveStats();
+    posterView = { month: ymOf(today()), card: (opts && opts.card) || 0 };
+    if (posterView.card && !stats.reached[posterView.card]) posterView.card = 0;
+    renderPoster();
+    if (!posterDialog.open) { if (posterDialog.showModal) posterDialog.showModal(); else posterDialog.setAttribute('open', ''); }
+  }
+  async function sharePoster() {
+    const blob = await new Promise(r => posterCanvas.toBlob(r, 'image/png'));
+    if (!blob) return;
+    const name = posterView.card ? 'streak-' + posterView.card + '.png' : 'poster-' + posterView.month + '.png';
+    const file = typeof File === 'function' ? new File([blob], name, { type: 'image/png' }) : null;
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); } catch (e) { /* closed the share sheet */ }
+      return;
+    }
+    // no share sheet (most computers): save the picture instead
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('บันทึกรูปแล้ว');
+  }
+  $('poster-prev').addEventListener('click', () => { posterView.month = shiftMonth(posterView.month, -1); renderPoster(); });
+  $('poster-next').addEventListener('click', () => { posterView.month = shiftMonth(posterView.month, 1); renderPoster(); });
+  $('poster-back').addEventListener('click', () => { posterView.card = 0; renderPoster(); });
+  $('poster-share').addEventListener('click', sharePoster);
+  $('poster-badges').addEventListener('click', e => { const b = e.target.closest('[data-card]'); if (b) { posterView.card = Number(b.dataset.card); renderPoster(); } });
+  posterDialog.addEventListener('click', e => { if (e.target === posterDialog) posterDialog.close(); });
+  $('hero-meta').addEventListener('click', e => { if (e.target.closest('[data-open-poster]')) openPoster(); });
 
   /* =======================================================================
      INSTALL AS APP + offline helper + LINE in-app browser
