@@ -29,6 +29,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <!-- Font and math rendering are hosted with the app (no outside servers needed) -->
+<link rel="preload" href="flashcards/vendor/prompt/files/prompt-thai-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="flashcards/vendor/prompt/files/prompt-thai-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="flashcards/vendor/prompt/prompt.css">
 <link rel="stylesheet" href="flashcards/vendor/katex/katex.min.css">
 <!-- ?v= forces phones to fetch the new files after an update (GitHub Pages caches ~10 min). -->
@@ -41,6 +43,7 @@
 <!-- Icon sprite: referenced with <svg><use href="#i-…"/></svg> -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
@@ -220,7 +223,8 @@
           <div class="wash wash-yes" id="wash-yes" aria-hidden="true"><span class="stamp">จำได้</span></div>
           <div class="wash wash-no" id="wash-no" aria-hidden="true"><span class="stamp">ทบทวน</span></div>
         </div>
-        <p class="sr-only" id="card-help">แตะหรือกด Space เพื่อพลิกการ์ด ลูกศรขวาเมื่อจำได้ ลูกศรซ้ายเมื่อยังจำไม่ได้ ลูกศรขึ้นลงเพื่อเลื่อนการ์ด กด Z เพื่อเลิกทำคำตอบล่าสุด</p>
+        <p class="sr-only" id="card-help">แตะหรือกด Space เพื่อพลิกการ์ด ลูกศรขวาเมื่อจำได้ ลูกศรซ้ายเมื่อยังจำไม่ได้ ลูกศรลงเพื่อข้าม ลูกศรขึ้นหรือกด Z เพื่อเลิกทำคำตอบล่าสุด</p>
+        <p class="swipe-hint" id="swipe-hint" hidden aria-hidden="true"><span>← ยังจำไม่ได้</span><b>ปัดการ์ดได้</b><span>จำได้ →</span></p>
 
         <!-- Deck complete -->
         <div class="summary" id="summary" hidden>
@@ -241,7 +245,7 @@
       <!-- Thumb zone: actions change with the card state -->
       <div class="study-actions">
         <div class="nav-row" id="nav-row">
-          <button class="round-btn" type="button" id="prev-btn" aria-label="การ์ดก่อนหน้า"><svg><use href="#i-back"/></svg></button>
+          <button class="round-btn" type="button" id="undo-btn" aria-label="เลิกทำคำตอบล่าสุด"><svg><use href="#i-undo"/></svg></button>
           <button class="round-btn" type="button" id="shuffle-btn" aria-label="สลับลำดับการ์ดที่เหลือ"><svg><use href="#i-shuffle"/></svg></button>
           <button class="grow-btn" type="button" id="flip-btn">ดูคำตอบ</button>
           <button class="round-btn" type="button" id="next-btn" aria-label="ข้ามไปการ์ดถัดไป"><svg><use href="#i-next"/></svg></button>
