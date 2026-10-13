@@ -36,6 +36,9 @@ if (!base) process.exit(1);
 console.log(`cards.js: ${base.parsed.cards.length} cards shown to students`);
 base.parsed.errors.forEach(e => err('cards.js', `line ${e.line}: ${e.message}`));
 const baseIds = new Set(cardsOf(base.doc).map(x => x.c.id));
+const baseById = new Map(cardsOf(base.doc).map(x => [x.c.id, x]));
+// A draft card already brought into cards.js through the editor keeps its id: same unit, or same question
+const imported = (u, c) => { const b = baseById.get(c.id); return !!b && (b.u.name === u.name || b.c.front.trim() === c.front.trim()); };
 const baseUnits = new Map(base.doc.units.map(u => [u.name, u]));
 
 const draftsDir = path.join(here, 'drafts');
@@ -50,8 +53,10 @@ for (const f of draftFiles) {
   const name = rel.startsWith('..') ? path.basename(f) : rel;
   const d = load(f);
   if (!d) continue;
-  const list = cardsOf(d.doc);
-  console.log(`${name}: ${list.length} cards in ${d.doc.units.length} unit(s)`);
+  const all = cardsOf(d.doc);
+  const done = all.filter(({ u, c }) => imported(u, c));
+  const list = all.filter(x => !done.includes(x));   // only cards not yet in cards.js are checked
+  console.log(`${name}: ${all.length} cards in ${d.doc.units.length} unit(s)` + (done.length ? ` — ${done.length} already in cards.js` + (done.length === all.length ? ' (all imported: this draft can be deleted)' : '') : ''));
   d.parsed.errors.forEach(e => err(name, `line ${e.line}: ${e.message}`));
   d.doc.units.forEach(u => {
     if (!u.name) err(name, 'a card comes before any "# บท:" line');
