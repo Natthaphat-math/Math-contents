@@ -74,6 +74,8 @@
     sel: null,         // { kind: 'card'|'topic'|'unit'|'draft', uid | file+id }
     tab: 'cards',
     collapsed: {},     // unit uid → true
+    query: '',         // search box
+    review: null,      // fast draft review: { items: [{ file, id }], i }
   };
 
   function withUids(doc) {
@@ -166,9 +168,55 @@
   const currentText = () => state.base.split.before + CF.serialize(state.doc) + state.base.split.after;
   const isDirty = () => currentText() !== state.base.text;
 
-  function changed() {           // call after every edit
+  function changed(typingKey) {  // call after every edit (typingKey: the field being typed in)
+    recordHistory(typingKey);
     saveWork();
     renderStatus();
+  }
+
+  /* =======================================================================
+     Undo / redo: snapshots of the work (cards + decisions on drafts).
+     A burst of typing in one field is one step; every other edit is its own step.
+     ======================================================================= */
+  const undoHistory = { undo: [], redo: [], last: null, lastAt: 0, lastKey: '' };
+  const HISTORY_MAX = 60;
+  const snapshot = () => JSON.stringify({ doc: state.doc, decisions: state.decisions });
+  function resetHistory() { undoHistory.undo = []; undoHistory.redo = []; undoHistory.last = snapshot(); undoHistory.lastKey = ''; renderUndo(); }
+  function recordHistory(typingKey) {
+    if (undoHistory.last === null) return;
+    const now = snapshot();
+    if (now === undoHistory.last) return;
+    const sameBurst = typingKey && typingKey === undoHistory.lastKey && Date.now() - undoHistory.lastAt < 1500;
+    if (!sameBurst) { undoHistory.undo.push(undoHistory.last); if (undoHistory.undo.length > HISTORY_MAX) undoHistory.undo.shift(); }
+    undoHistory.redo = [];
+    undoHistory.last = now; undoHistory.lastAt = Date.now(); undoHistory.lastKey = typingKey || '';
+    renderUndo();
+  }
+  function restoreSnapshot(snap) {
+    const o = JSON.parse(snap);
+    state.doc = o.doc; state.decisions = o.decisions || {};
+    undoHistory.last = snap; undoHistory.lastKey = '';
+    const s = state.sel;
+    if (s && s.uid && !findCard(s.uid) && !findTopic(s.uid) && !findUnit(s.uid)) state.sel = null;
+    saveWork(); renderAll(); renderUndo();
+    if ($('review-dialog').open) renderReview();
+  }
+  function undo() {
+    flushTyping();
+    if (!undoHistory.undo.length) return;
+    undoHistory.redo.push(undoHistory.last);
+    restoreSnapshot(undoHistory.undo.pop());
+    toast('เลิกทำแล้ว');
+  }
+  function redo() {
+    if (!undoHistory.redo.length) return;
+    undoHistory.undo.push(undoHistory.last);
+    restoreSnapshot(undoHistory.redo.pop());
+    toast('ทำซ้ำแล้ว');
+  }
+  function renderUndo() {
+    $('undo-btn').disabled = !undoHistory.undo.length;
+    $('redo-btn').disabled = !undoHistory.redo.length;
   }
 
   /* =======================================================================
@@ -254,8 +302,8 @@
       // The file on GitHub changed since this work started (someone committed something else).
       state.doc = fresh();
       showBanner('cards.js บน GitHub เปลี่ยนไปหลังจากคุณเริ่มแก้ในเบราว์เซอร์นี้ ถ้าทำงานต่อจากที่ค้างไว้แล้วส่งออก การเปลี่ยนแปลงอื่นบน GitHub จะหายไป', [
-        { label: 'เริ่มใหม่จากไฟล์ล่าสุด', primary: true, onClick: () => { clearWork(); state.doc = fresh(); state.decisions = {}; hideBanner(); renderAll(); } },
-        { label: 'ทำงานต่อจากที่ค้างไว้', onClick: () => { state.doc = withUids(saved.doc); state.decisions = saved.decisions || {}; state.base.hash = saved.baseHash; hideBanner(); renderAll(); toast('ใช้งานที่ค้างไว้ ระวังทับการแก้ไขอื่นบน GitHub'); } },
+        { label: 'เริ่มใหม่จากไฟล์ล่าสุด', primary: true, onClick: () => { clearWork(); state.doc = fresh(); state.decisions = {}; resetHistory(); hideBanner(); renderAll(); } },
+        { label: 'ทำงานต่อจากที่ค้างไว้', onClick: () => { state.doc = withUids(saved.doc); state.decisions = saved.decisions || {}; state.base.hash = saved.baseHash; resetHistory(); hideBanner(); renderAll(); toast('ใช้งานที่ค้างไว้ ระวังทับการแก้ไขอื่นบน GitHub'); } },
       ], 'bad');
     } else {
       state.doc = fresh();
@@ -264,6 +312,7 @@
     if (loadErrors.length && !$('banner').textContent) {
       showBanner('cards.js มี ' + loadErrors.length + ' จุดที่เขียนไม่ตรงรูปแบบ ตรวจดูการ์ดที่ขึ้นป้าย "ผิด" แล้วแก้ก่อนส่งออก', null, 'bad');
     }
+    resetHistory();
     renderAll();
     const figures = loadFigures();
     state.drafts = await loadDrafts();
@@ -306,16 +355,32 @@
   /* =======================================================================
      Outline: units → topics → cards, with drag & drop (SortableJS)
      ======================================================================= */
+  /* ---------- search (question, answer, id, notes; Thai ำ/ํา and LaTeX commands ignored) ---------- */
+  const normText = s => String(s || '').replace(/ํา/g, 'ำ').toLowerCase().replace(/\\[a-zA-Z]+/g, ' ').replace(/[$*{}\\^_]/g, ' ');
+  const queryWords = () => normText(state.query).split(/\s+/).filter(Boolean);
+  function cardMatches(c, words) {
+    if (!words.length) return true;
+    const hay = normText([c.id, c.front, c.back, (c.comments || []).join(' ')].join(' '));
+    return words.every(w => hay.includes(w));
+  }
+
   let sortables = [];
   function renderOutline() {
     sortables.forEach(s => s.destroy()); sortables = [];
     const issues = validate();
     const root = $('outline');
+    const words = queryWords(), searching = words.length > 0;
+    let found = 0;
+    root.classList.toggle('searching', searching);
     const unitsEl = h('div', { class: 'units' });
     state.doc.units.forEach((u, ui) => {
       const count = u.topics.reduce((a, t) => a + t.cards.length, 0);
+      const hits = searching ? u.topics.reduce((a, t) => a + t.cards.filter(c => cardMatches(c, words)).length, 0) : count;
+      if (searching && !hits) return;   // while searching, only units with matching cards
+      found += hits;
+      const collapsed = !searching && state.collapsed[u.uid];
       const bad = issues.has(u.uid);
-      const unitEl = h('div', { class: 'unit' + (state.collapsed[u.uid] ? ' collapsed' : '') + (state.sel && state.sel.uid === u.uid ? ' selected' : ''), dataset: { uid: u.uid } },
+      const unitEl = h('div', { class: 'unit' + (collapsed ? ' collapsed' : '') + (state.sel && state.sel.uid === u.uid ? ' selected' : ''), dataset: { uid: u.uid } },
         h('div', { class: 'unit-head' },
           h('span', { class: 'handle unit-handle', title: 'ลากเพื่อย้ายบท', 'aria-hidden': 'true' }, '⋮⋮'),
           h('button', { class: 'toggle', type: 'button', 'aria-label': (state.collapsed[u.uid] ? 'ขยาย ' : 'ย่อ ') + u.name, 'aria-expanded': String(!state.collapsed[u.uid]), onclick: () => { state.collapsed[u.uid] = !state.collapsed[u.uid]; renderOutline(); } }, state.collapsed[u.uid] ? '▸' : '▾'),
@@ -330,8 +395,8 @@
       let num = 0;
       const cardList = t => {
         const list = h('div', { class: 'cards', dataset: { topic: t.uid } });
-        t.cards.forEach(c => list.append(cardRow(u, t, c, ++num, issues)));
-        sortables.push(makeSortable(list, { group: 'cards-' + u.uid, handle: '.card-handle' }));
+        t.cards.forEach(c => { ++num; if (cardMatches(c, words)) list.append(cardRow(u, t, c, num, issues)); });
+        if (!searching) sortables.push(makeSortable(list, { group: 'cards-' + u.uid, handle: '.card-handle' }));
         return list;
       };
       const nullTopic = u.topics.find(t => t.name === null);
@@ -339,6 +404,7 @@
       if (nullTopic && (nullTopic.cards.length || !named.length)) body.append(cardList(nullTopic));
       const topicsEl = h('div', { class: 'topics' });
       named.forEach(t => {
+        if (searching && !t.cards.some(c => cardMatches(c, words))) { num += t.cards.length; return; }
         const sel = state.sel && state.sel.uid === t.uid;
         topicsEl.append(h('div', { class: 'topic' + (sel ? ' selected' : ''), dataset: { uid: t.uid } },
           h('div', { class: 'topic-head' },
@@ -349,12 +415,19 @@
           cardList(t)));
       });
       body.append(topicsEl);
-      sortables.push(makeSortable(topicsEl, { group: 'topics-' + u.uid, handle: '.topic-handle' }));
-      body.append(h('div', { class: 'add-row' },
+      if (!searching) sortables.push(makeSortable(topicsEl, { group: 'topics-' + u.uid, handle: '.topic-handle' }));
+      if (!searching) body.append(h('div', { class: 'add-row' },
         h('button', { class: 'link-btn', type: 'button', onclick: () => newCard(u, (state.sel && findTopic(state.sel.uid) && findTopic(state.sel.uid).u === u) ? findTopic(state.sel.uid).t : null) }, '+ การ์ด'),
         h('button', { class: 'link-btn', type: 'button', onclick: () => newTopic(u) }, '+ หัวข้อ')));
       unitsEl.append(unitEl);
     });
+    if (searching) {
+      $('search-count').textContent = 'พบ ' + found + ' ใบ';
+      const note = h('p', { class: 'search-note' }, found ? 'กำลังค้นหา: ลากจัดลำดับไม่ได้จนกว่าจะล้างคำค้น' : 'ไม่พบการ์ดที่ตรงกับคำค้น');
+      root.replaceChildren(note, unitsEl);
+      return;
+    }
+    $('search-count').textContent = '';
     sortables.push(makeSortable(unitsEl, { group: 'units', handle: '.unit-handle' }));
     const allCollapsed = state.doc.units.length && state.doc.units.every(u => state.collapsed[u.uid]);
     const tools = h('div', { class: 'outline-tools' },
@@ -502,15 +575,19 @@
   }
   function refreshAfterTyping(uidKey) {
     // light refresh while typing: problems, the outline row, preview, status
+    typingTimer = null;
     const old = $('problems'); if (old) old.replaceWith(problemsList(uidKey));
-    renderOutline(); renderPreview(); changed();
+    renderOutline(); renderPreview(); changed('type:' + uidKey);
   }
-  let typingTimer;
+  let typingTimer = null, typingKey = null;
   // Works for text boxes (gets an input event) and the textarea helper (gets the value)
   const onType = (uidKey, fn) => v => {
     fn(v && v.target ? v.target.value : v);
+    typingKey = uidKey;
     clearTimeout(typingTimer); typingTimer = setTimeout(() => refreshAfterTyping(uidKey), 200);
   };
+  // Record what was just typed before an undo looks at the history
+  function flushTyping() { if (typingTimer) { clearTimeout(typingTimer); refreshAfterTyping(typingKey); } }
 
   function renderEditor() {
     const root = $('editor');
@@ -750,9 +827,18 @@
     const kids = [];
     kids.push(h('p', { class: 'draft-note' }, 'การ์ดที่ Claude เขียนไว้ในโฟลเดอร์ flashcards/drafts/ กด "เพิ่ม" เพื่อนำเข้าไปในไฟล์ แล้วแก้/ลากจัดลำดับในแท็บการ์ดทั้งหมดได้'));
     if (state.draftsError) kids.push(h('p', { class: 'draft-errors' }, state.draftsError));
+    const allPending = state.drafts.flatMap(d => draftCards(d).filter(x => draftState(d.name, x) === 'pending').map(x => ({ file: d.name, id: x.c.id })));
+    if (allPending.length) kids.push(h('div', { class: 'draft-actions review-all' },
+      h('button', { class: 'act primary', type: 'button', onclick: () => openReview(allPending) }, 'ตรวจทีละใบ (' + allPending.length + ')'),
+      h('span', { class: 'hint' }, 'ปุ่มลัด: A เพิ่ม · X ไม่ใช้ · E เพิ่มแล้วแก้ · ← →')));
     if (!state.drafts.length && !state.draftsError) kids.push(h('div', { class: 'empty' }, h('p', {}, 'ยังไม่มีไฟล์ร่าง'), h('p', {}, 'ส่ง PDF ให้ Claude ใน repo Math-contents แล้วบอกว่า "ทำการ์ดจากไฟล์นี้"')));
+    const words = queryWords();
+    let found = 0;
     state.drafts.forEach(d => {
       const list = draftCards(d).map(x => ({ x, st: draftState(d.name, x) }));
+      const shown = list.filter(y => (y.st === 'pending' || y.st === 'rejected') && cardMatches(y.x.c, words));
+      if (words.length && !shown.length) return;
+      found += shown.length;
       const pending = list.filter(y => y.st === 'pending');
       const counts = ['pending', 'added', 'rejected', 'published'].map(k => list.filter(y => y.st === k).length);
       const fileEl = h('div', { class: 'draft-file' },
@@ -760,8 +846,10 @@
         h('p', { class: 'draft-meta' }, [d.meta['จาก'] ? 'จาก: ' + d.meta['จาก'] : '', d.meta['วันที่'] ? 'วันที่: ' + d.meta['วันที่'] : ''].filter(Boolean).join('  ') || ' '),
         h('p', { class: 'draft-meta' }, 'รอตรวจ ' + counts[0] + '  เพิ่มแล้ว ' + counts[1] + '  ไม่ใช้ ' + counts[2] + '  เผยแพร่แล้ว ' + counts[3]),
         d.errors.length ? h('ul', { class: 'draft-errors' }, d.errors.map(e => h('li', {}, e))) : null,
-        pending.length > 1 ? h('div', { class: 'draft-actions' }, h('button', { class: 'act primary', type: 'button', onclick: () => { pending.forEach(y => addDraftCard(d.name, y.x, true)); changed(); renderAll(); toast('เพิ่ม ' + pending.length + ' ใบแล้ว'); } }, 'เพิ่มทั้งหมดที่รอตรวจ (' + pending.length + ')')) : null);
-      list.filter(y => y.st === 'pending' || y.st === 'rejected').forEach(({ x, st }) => {
+        pending.length ? h('div', { class: 'draft-actions' },
+          h('button', { class: 'act primary', type: 'button', onclick: () => openReview(pending.map(y => ({ file: d.name, id: y.x.c.id }))) }, 'ตรวจทีละใบ (' + pending.length + ')'),
+          pending.length > 1 ? h('button', { class: 'act', type: 'button', onclick: () => { pending.forEach(y => addDraftCard(d.name, y.x, true)); changed(); renderAll(); toast('เพิ่ม ' + pending.length + ' ใบแล้ว'); } }, 'เพิ่มทั้งหมด (' + pending.length + ')') : null) : null);
+      shown.forEach(({ x, st }) => {
         const sel = state.sel && state.sel.kind === 'draft' && state.sel.file === d.name && state.sel.id === x.c.id;
         fileEl.append(h('div', { class: 'draft-card' + (sel ? ' selected' : ''), tabindex: '0', role: 'button', onclick: e => { if (e.target.closest('button')) return; select({ kind: 'draft', file: d.name, id: x.c.id }); },
           onkeydown: e => { if (e.key === 'Enter') select({ kind: 'draft', file: d.name, id: x.c.id }); } },
@@ -772,9 +860,14 @@
             st === 'pending' ? h('button', { class: 'act', type: 'button', onclick: () => { setDecision(d.name, x.c.id, 'rejected'); changed(); renderAll(); } }, 'ไม่ใช้') : null,
             st === 'rejected' ? h('button', { class: 'act', type: 'button', onclick: () => { setDecision(d.name, x.c.id, null); changed(); renderAll(); } }, 'กู้คืน') : null)));
       });
-      if (!pending.length && !counts[2]) fileEl.append(h('p', { class: 'draft-note' }, 'ตรวจครบทุกใบแล้ว ลบไฟล์นี้ใน GitHub ได้เมื่อ Commit cards.js แล้ว'));
+      if (!pending.length && !counts[2]) {
+        // every card is in cards.js (or in the export waiting to be committed)
+        fileEl.append(h('p', { class: 'draft-note' }, counts[1] ? 'ตรวจครบทุกใบแล้ว ส่งออกและ Commit cards.js ก่อน แล้วจึงลบไฟล์นี้' : 'ตรวจครบทุกใบและอยู่ใน cards.js แล้ว ลบไฟล์ร่างนี้ได้ ',
+          counts[1] ? null : h('a', { href: `https://github.com/${REPO}/delete/${BRANCH}/${DRAFTS_DIR}/${d.name}`, target: '_blank', rel: 'noopener' }, 'ลบไฟล์นี้ใน GitHub ↗')));
+      }
       kids.push(fileEl);
     });
+    $('search-count').textContent = words.length ? 'พบ ' + found + ' ใบในร่าง' : '';
     root.replaceChildren(...kids);
   }
   function draftInfo(sel) {
@@ -793,6 +886,80 @@
         st === 'pending' ? h('button', { class: 'act', type: 'button', onclick: () => { setDecision(sel.file, x.c.id, 'rejected'); changed(); renderAll(); } }, 'ไม่ใช้') : null,
         st === 'rejected' ? h('button', { class: 'act', type: 'button', onclick: () => { setDecision(sel.file, x.c.id, null); changed(); renderAll(); } }, 'กู้คืน') : null));
   }
+
+  /* ---------- fast review: one draft card at a time ---------- */
+  function openReview(items) {
+    state.review = { items, i: 0 };
+    renderReview();
+    if (!$('review-dialog').open) $('review-dialog').showModal();
+  }
+  function reviewMove(d) {
+    const r = state.review; if (!r) return;
+    r.i = Math.max(0, Math.min(r.items.length, r.i + d));
+    renderReview();
+  }
+  function reviewAct(kind) {
+    const r = state.review; if (!r || r.i >= r.items.length) return;
+    const it = r.items[r.i], x = draftCardOf(it); if (!x) return;
+    const st = draftState(it.file, x);
+    if (kind === 'add' && st !== 'pending' && st !== 'rejected') { reviewMove(1); return; }
+    if (kind === 'add' || kind === 'edit') {
+      if (st === 'rejected') setDecision(it.file, x.c.id, null);
+      const c = addDraftCard(it.file, x, true); changed(); renderAll();
+      if (kind === 'edit') { $('review-dialog').close(); state.tab = 'cards'; select({ kind: 'card', uid: c.uid }); setTimeout(() => { const f = $('f-front'); if (f) f.focus(); }, 0); return; }
+      toast('เพิ่มแล้ว');
+    } else if (kind === 'reject') {
+      if (st === 'added') { toast('ใบนี้เพิ่มไปแล้ว กด Ctrl+Z เพื่อเลิกทำ'); return; }
+      setDecision(it.file, x.c.id, 'rejected'); changed(); renderAll();
+    }
+    reviewMove(1);
+  }
+  const STATE_LABEL = { pending: 'รอตรวจ', added: 'เพิ่มแล้ว', rejected: 'ไม่ใช้', published: 'อยู่ใน cards.js แล้ว' };
+  function renderReview() {
+    const r = state.review, body = $('review-body');
+    if (!r) return;
+    const total = r.items.length;
+    if (r.i >= total) {
+      const sts = r.items.map(it => { const x = draftCardOf(it); return x ? draftState(it.file, x) : 'gone'; });
+      $('review-count').textContent = total + ' / ' + total;
+      body.replaceChildren(h('div', { class: 'review-done' },
+        h('p', { class: 'review-done-title' }, 'ตรวจครบแล้ว'),
+        h('p', {}, 'เพิ่ม ' + sts.filter(s => s === 'added').length + ' ใบ · ไม่ใช้ ' + sts.filter(s => s === 'rejected').length + ' ใบ · ยังไม่ตัดสินใจ ' + sts.filter(s => s === 'pending').length + ' ใบ'),
+        h('p', { class: 'hint' }, 'การ์ดที่เพิ่มอยู่ในแท็บการ์ดทั้งหมดแล้ว แก้หรือลากจัดลำดับได้ จากนั้นกด "ส่งออก cards.js"'),
+        h('div', { class: 'form-actions' },
+          h('button', { class: 'act', type: 'button', onclick: () => reviewMove(-1) }, '← ย้อนดูใบสุดท้าย'),
+          h('button', { class: 'act primary', type: 'button', onclick: () => $('review-dialog').close() }, 'เสร็จ'))));
+      return;
+    }
+    const it = r.items[r.i], x = draftCardOf(it);
+    $('review-count').textContent = (r.i + 1) + ' / ' + total;
+    if (!x) { body.replaceChildren(h('p', {}, 'ไม่พบการ์ดนี้ในไฟล์ร่าง'), h('button', { class: 'act', type: 'button', onclick: () => reviewMove(1) }, 'ถัดไป →')); return; }
+    const st = draftState(it.file, x);
+    const exists = state.doc.units.some(u => u.name === x.u.name);
+    body.replaceChildren(...[   // (replaceChildren would print a null as the word "null")
+      h('div', { class: 'review-meta' },
+        h('span', { class: 'review-state st-' + st }, STATE_LABEL[st] || st),
+        h('span', {}, x.u.name + (x.t.name ? ' › ' + x.t.name : '') + (exists ? '' : ' (บทใหม่)')),
+        h('span', { class: 'review-id' }, x.c.id + ' · ' + it.file)),
+      x.c.comments.length ? h('p', { class: 'hint' }, 'โน้ตจาก Claude: ' + notesToText(x.c.comments)) : null,
+      h('div', { class: 'review-preview' }, previewCard(x.c, x.u, x.t.name)),
+      h('div', { class: 'review-actions' },
+        h('button', { class: 'act', type: 'button', disabled: r.i === 0, onclick: () => reviewMove(-1), 'aria-label': 'ใบก่อนหน้า' }, '←'),
+        h('button', { class: 'act', type: 'button', onclick: () => reviewAct('reject'), disabled: st === 'rejected' || st === 'published' }, 'ไม่ใช้ (X)'),
+        h('button', { class: 'act', type: 'button', onclick: () => reviewAct('edit'), disabled: st === 'published' }, 'เพิ่มแล้วแก้ (E)'),
+        h('button', { class: 'act primary', type: 'button', onclick: () => reviewAct('add'), disabled: st === 'published' }, st === 'added' ? 'เพิ่มแล้ว ✓ ถัดไป' : 'เพิ่ม (A)'),
+        h('button', { class: 'act', type: 'button', onclick: () => reviewMove(1), 'aria-label': 'ใบถัดไป' }, '→'))].filter(Boolean));
+  }
+  $('review-dialog').addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'a') { e.preventDefault(); reviewAct('add'); }
+    else if (k === 'x') { e.preventDefault(); reviewAct('reject'); }
+    else if (k === 'e') { e.preventDefault(); reviewAct('edit'); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); reviewMove(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); reviewMove(-1); }
+  });
+  $('review-dialog').addEventListener('close', () => { state.review = null; renderAll(); });
 
   /* =======================================================================
      Export: complete cards.js to paste over the file on GitHub
@@ -878,6 +1045,22 @@
     newCard(ctx && ctx.u, ctx && ctx.t);
   });
   $('export-btn').addEventListener('click', () => { if (state.doc) openExport(); });
+  $('undo-btn').addEventListener('click', undo);
+  $('redo-btn').addEventListener('click', redo);
+  let searchTimer;
+  $('search').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.query = e.target.value; if (state.doc) { renderOutline(); if (state.tab === 'drafts') renderDrafts(); } }, 120);
+  });
+  document.addEventListener('keydown', e => {
+    const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+    const mod = e.ctrlKey || e.metaKey;
+    // Ctrl+Z / Ctrl+Shift+Z (Ctrl+Y): the editor's undo — except inside a text box, which keeps its own
+    if (mod && !inField && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+    if (mod && !inField && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
+    if (e.key === '/' && !inField && !document.querySelector('dialog[open]')) { e.preventDefault(); $('search').focus(); }
+    if (e.key === 'Escape' && e.target === $('search') && e.target.value) { e.target.value = ''; state.query = ''; renderOutline(); if (state.tab === 'drafts') renderDrafts(); }
+  });
   document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
   $('export-dialog').addEventListener('click', e => { if (e.target === $('export-dialog')) $('export-dialog').close(); });
   window.addEventListener('beforeunload', () => { if (state.doc) { clearTimeout(saveTimer); try { localStorage.setItem(WORK_KEY, JSON.stringify({ baseHash: state.base.hash, exportedHash: state.exportedHash, doc: state.doc, decisions: state.decisions, savedAt: Date.now() })); } catch (e) { /* ignore */ } } });
