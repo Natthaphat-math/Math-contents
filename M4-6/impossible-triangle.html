@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Impossible Triangle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=DM+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Anuphan:wght@500;700&display=swap">
+<style>
+/* Layout: a vertical reel of 9:16 story cards, one per screen, each a size container so type scales with the card. */
+:root {
+  --bg: #d6e0ea;
+  --ink: #26292e;
+  --ink-soft: #5b6573;
+  --rule: #b9c6d3;
+  --chip: #e8eef4;
+  --face-light: #ececea;
+  --face-mid: #8e9093;
+  --face-dark: #3a3c40;
+  --va: #cf3f55;
+  --vb: #d98a1c;
+  --vc: #13809a;
+  --font-display: "Archivo", "Anuphan", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "IBM Plex Sans Thai", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "DM Mono", "IBM Plex Sans Thai", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+html { scroll-snap-type: y mandatory; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }
+
+.story {
+  position: relative;
+  height: 100svh;
+  width: min(100%, calc(100svh * 9 / 16));
+  margin-inline: auto;
+  container-type: size;
+  scroll-snap-align: start;
+  overflow: hidden;
+  background: var(--bg);
+}
+@media (min-aspect-ratio: 10/16) {
+  .story { box-shadow: 0 0 0 1px var(--rule); }
+}
+.inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3.2cqh;
+  /* Instagram story safe zones: keep content clear of the top bar and the reply box */
+  padding-block: 12cqh 15cqh;
+  padding-left: max(16px, env(safe-area-inset-left, 0px), 7.5cqw);
+  padding-right: max(16px, env(safe-area-inset-right, 0px), 7.5cqw);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 3.1cqw;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0;
+}
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 0;
+}
+h1 { font-size: 10.4cqw; }
+h2 { font-size: 8.4cqw; }
+p { margin: 0; }
+.lede {
+  font-size: 4.4cqw;
+  line-height: 1.42;
+  color: var(--ink-soft);
+  max-width: 34ch;
+}
+.lede strong { color: var(--ink); font-weight: 600; }
+.mono { font-family: var(--font-mono); font-feature-settings: "zero" 1; }
+.va { color: var(--va); }
+.vb { color: var(--vb); }
+.vc { color: var(--vc); }
+b.v { font-weight: 500; }
+
+.scene {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.scene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.webgl-missing {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 3.4cqw; color: var(--ink-soft);
+  text-align: center;
+}
+
+/* 1 · Hook */
+.hook .scene { animation: float 7s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-1.2cqh); } }
+.hook h1 { font-size: 11.5cqw; }
+.hook .question {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 100%;
+  font-size: 6.6cqw;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.hook .question em { font-style: normal; color: var(--va); }
+.cue {
+  font-family: var(--font-mono);
+  font-size: 3.2cqw;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* 2 · Vectors */
+.claims { display: grid; gap: 2cqh; }
+.claim {
+  display: grid;
+  gap: 0.6cqh;
+  padding: 2.2cqh 4cqw;
+  border-left: 0.9cqw solid var(--ink);
+  background: var(--chip);
+}
+.claim .eq { font-size: 5cqw; }
+.claim .gloss { font-size: 3.6cqw; color: var(--ink-soft); line-height: 1.35; }
+
+/* 3 · Proof */
+.proof { display: grid; gap: 2.4cqh; margin-top: 1cqh; }
+.line { display: grid; gap: 0.5cqh; }
+.line .eq { font-size: 5.6cqw; letter-spacing: 0.02em; white-space: nowrap; }
+.line .gloss { font-family: var(--font-mono); font-size: 3.4cqw; color: var(--ink-soft); }
+.line.final .eq { font-size: 7.4cqw; font-weight: 500; }
+.line.final .eq.boom { color: var(--va); font-size: 9cqw; }
+.proof-end { display: grid; gap: 1.6cqh; margin-top: auto; }
+.proof-end .verdict {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: 7cqw;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.footnote {
+  font-size: 3.4cqw;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  padding-top: 1.6cqh;
+  border-top: 1px solid var(--rule);
+}
+.play .line, .play .proof-end { animation: rise 0.6s cubic-bezier(.2,.7,.2,1) backwards; }
+.play .line:nth-child(1) { animation-delay: 0.1s; }
+.play .line:nth-child(2) { animation-delay: 0.5s; }
+.play .line:nth-child(3) { animation-delay: 0.9s; }
+.play .line:nth-child(4) { animation-delay: 1.3s; }
+.play .line:nth-child(5) { animation-delay: 1.8s; }
+.play .proof-end { animation-delay: 2.5s; }
+@keyframes rise { from { opacity: 0; transform: translateY(1.4cqh); } }
+
+/* 4 · Reveal */
+.reveal .scene { touch-action: none; cursor: grab; }
+.reveal .scene:active { cursor: grabbing; }
+.readout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.8cqh 4cqw;
+  font-family: var(--font-mono);
+  font-size: 3.7cqw;
+  font-variant-numeric: tabular-nums;
+  padding: 1.8cqh 4cqw;
+  background: var(--chip);
+}
+.readout dt { color: var(--ink-soft); }
+.readout dd { margin: 0; text-align: right; }
+.readout .big { color: var(--va); font-weight: 500; }
+.controls { display: flex; gap: 3cqw; flex-wrap: wrap; }
+.btn {
+  font: 500 3.6cqw/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 1.4cqh 4.2cqw;
+  cursor: pointer;
+}
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.btn:focus-visible, .dots button:focus-visible, #clean:focus-visible, #lang:focus-visible { outline: 2px solid var(--va); outline-offset: 3px; }
+.caption { font-size: 3.9cqw; line-height: 1.4; color: var(--ink-soft); }
+.caption strong { color: var(--ink); font-weight: 600; }
+
+/* 5 · Ending */
+.ending .inner { justify-content: center; gap: 4cqh; }
+.ending .scene { flex: 0 0 30cqh; }
+.ending h2 { font-size: 9.6cqw; }
+.ending h2 span { display: block; color: var(--va); }
+.ending .last {
+  font-family: var(--font-mono);
+  font-size: 6cqw;
+  font-feature-settings: "zero" 1;
+}
+
+/* Fixed UI, hidden in clean mode */
+.topbar {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: calc(env(safe-area-inset-right, 0px) + 10px);
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+#clean, #lang {
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--chip);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+.dots {
+  position: fixed;
+  right: calc(env(safe-area-inset-right, 0px) + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: grid;
+  gap: 10px;
+}
+.dots button {
+  width: 10px; height: 10px; padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+.dots button[aria-current="true"] { background: var(--ink); }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  transform: translateX(-50%);
+  z-index: 11;
+  max-width: calc(100% - 32px);
+  font: 13px/1.35 var(--font-body);
+  color: var(--bg);
+  background: var(--ink);
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: opacity 0.3s;
+}
+.toast[hidden] { display: none !important; }
+body.clean .ui { opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+body.clean #clean { opacity: 0; }
+
+/* Thai needs room above and below for vowels and tone marks */
+:lang(th) h1, :lang(th) h2 { line-height: 1.32; letter-spacing: 0; font-stretch: 100%; }
+:lang(th) .hook h1 { font-size: 10.6cqw; }
+:lang(th) .hook .question, :lang(th) .proof-end .verdict { line-height: 1.35; }
+:lang(th) .eyebrow { letter-spacing: 0.06em; font-size: 3.5cqw; }
+:lang(th) .cue { letter-spacing: 0.04em; font-size: 3.6cqw; }
+:lang(th) .lede, :lang(th) .caption, :lang(th) .claim .gloss, :lang(th) .footnote { line-height: 1.6; }
+:lang(th) .line .gloss { font-size: 3.6cqw; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hook .scene { animation: none; }
+  .play .line, .play .proof-end { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button id="lang" class="ui" type="button" aria-label="Switch to English">EN</button>
+  <button id="clean" type="button" aria-pressed="false" data-i18n="hide">ซ่อน UI</button>
+</div>
+<nav class="dots ui" aria-label="Screens"></nav>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<main id="reel">
+
+  <!-- 1 · Hook -->
+  <section class="story hook" id="s1">
+    <div class="inner">
+      <p class="eyebrow" data-i18n="s1_eye">สามเหลี่ยมเพนโรส</p>
+      <h1 data-i18n="s1_h">คุณกำลังมองมันอยู่ตอนนี้เลย</h1>
+      <div class="scene" data-scene="hero"></div>
+      <p class="question" data-i18n="s1_q">แต่ทำไมยังไม่เคยมีใคร<em>สร้าง</em>มันได้จริงเลย?</p>
+      <p class="cue" data-i18n="s1_cue">มาพิสูจน์ด้วยเวกเตอร์กัน →</p>
+    </div>
+  </section>
+
+  <!-- 2 · Bars become vectors -->
+  <section class="story vectors" id="s2">
+    <div class="inner">
+      <p class="eyebrow" data-i18n="s2_eye">ขั้นที่ 1 · เปลี่ยนแท่งเป็นเวกเตอร์</p>
+      <h2 data-i18n="s2_h">ให้แต่ละแท่งเป็นลูกศรหนึ่งเส้น</h2>
+      <div class="scene" data-scene="vectors"></div>
+      <div class="claims">
+        <div class="claim">
+          <span class="eq mono"><b class="v va">a</b> + <b class="v vb">b</b> + <b class="v vc">c</b> = <b class="v">0</b></span>
+          <span class="gloss" data-i18n="s2_c1">รูปปิดสนิท เดินตามลูกศรครบทั้งสามเส้น แล้วจะกลับมาที่จุดเริ่มต้น</span>
+        </div>
+        <div class="claim">
+          <span class="eq mono"><b class="v va">a</b>·<b class="v vb">b</b> = <b class="v vb">b</b>·<b class="v vc">c</b> = <b class="v vc">c</b>·<b class="v va">a</b> = 0</span>
+          <span class="gloss" data-i18n="s2_c2">ทุกมุมเป็นมุมฉาก เวกเตอร์ที่ตั้งฉากกันมีผลคูณเชิงสเกลาร์เป็นศูนย์</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · The proof -->
+  <section class="story proof-story" id="s3">
+    <div class="inner">
+      <p class="eyebrow" data-i18n="s3_eye">ห้าบรรทัด หนึ่งข้อขัดแย้ง</p>
+      <div class="proof">
+        <div class="line">
+          <span class="eq mono"><b class="v va">a</b> + <b class="v vb">b</b> + <b class="v vc">c</b> = <b class="v">0</b></span>
+          <span class="gloss" data-i18n="s3_g1">สามเหลี่ยมปิดสนิท</span>
+        </div>
+        <div class="line">
+          <span class="eq mono"><b class="v va">a</b>·<b class="v vb">b</b> = 0, <b class="v vb">b</b>·<b class="v vc">c</b> = 0, <b class="v vc">c</b>·<b class="v va">a</b> = 0</span>
+          <span class="gloss" data-i18n="s3_g2">ทุกมุมเป็นมุมฉาก</span>
+        </div>
+        <div class="line">
+          <span class="eq mono"><b class="v va">a</b>·(<b class="v va">a</b> + <b class="v vb">b</b> + <b class="v vc">c</b>) = <b class="v va">a</b>·<b class="v">0</b> = 0</span>
+          <span class="gloss" data-i18n="s3_g3">นำ a ไปดอตทั้งสองข้าง</span>
+        </div>
+        <div class="line">
+          <span class="eq mono"><b class="v va">a</b>·<b class="v va">a</b> + <b class="v va">a</b>·<b class="v vb">b</b> + <b class="v va">a</b>·<b class="v vc">c</b> = 0</span>
+          <span class="gloss" data-i18n="s3_g4">กระจายออก</span>
+        </div>
+        <div class="line final">
+          <span class="eq mono">|<b class="v va">a</b>|² + 0 + 0 = 0</span>
+          <span class="eq mono boom">⟹ |<b class="v">a</b>| = 0</span>
+          <span class="gloss" data-i18n="s3_g5">มุมฉากสองมุมทำให้สองพจน์หลังเป็นศูนย์</span>
+        </div>
+      </div>
+      <div class="proof-end">
+        <p class="verdict" data-i18n="s3_v">แท่ง <span class="va">a</span> ยาวเป็นศูนย์ สามเหลี่ยมนี้จึงไม่มีอยู่จริง</p>
+        <p class="footnote" data-i18n="s3_fn">ใช้วิธีเดียวกันกับ <b class="v vb">b</b> และ <b class="v vc">c</b> ก็ได้ผลเหมือนกัน ลูกศรสามเส้นที่ตั้งฉากกันทุกคู่ชี้ไปสามทิศทางที่เป็นอิสระต่อกัน จึงบวกกันแล้วเป็นศูนย์ไม่ได้เลย</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · The reveal -->
+  <section class="story reveal" id="s4">
+    <div class="inner">
+      <p class="eyebrow" data-i18n="s4_eye">แล้วที่เห็นอยู่คืออะไร?</p>
+      <h2 data-i18n="s4_h">มันคือวัตถุจริง ลองลากหมุนดู</h2>
+      <div class="scene" data-scene="reveal" id="revealScene"></div>
+      <dl class="readout" aria-live="off">
+        <dt>a + b + c</dt><dd>(4, 4, 4)</dd>
+        <dt data-i18n="s4_r2">ช่องว่างใน 3 มิติ</dt><dd>6.93</dd>
+        <dt data-i18n="s4_r3">ช่องว่างบนจอ</dt><dd class="big" id="gapScreen">0.00</dd>
+      </dl>
+      <p class="caption" id="revealCaption"></p>
+      <div class="controls ui">
+        <button class="btn" id="play" type="button" aria-pressed="false">เล่นเฉลย</button>
+        <button class="btn" id="snap" type="button" data-i18n="snap">กลับมุมลวงตา</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Ending -->
+  <section class="story ending" id="s5">
+    <div class="inner">
+      <p class="eyebrow" data-i18n="s5_eye">สรุป</p>
+      <h2 data-i18n="s5_h">ภาพนี้วาดได้ <span>แต่วัตถุนี้สร้างไม่ได้</span></h2>
+      <div class="scene" data-scene="end"></div>
+      <p class="lede" data-i18n="s5_p">ทุกมุมเป็นมุมฉากที่ถูกต้องสมบูรณ์ ตาของเราตรวจ<strong>ทีละมุม</strong> แต่ละมุมจึงดูไม่มีปัญหา ส่วนคณิตศาสตร์ตรวจ<strong>ทั้งสามมุมพร้อมกัน</strong> และพบว่ามันเป็นจริงพร้อมกันไม่ได้</p>
+      <p class="last"><b class="v va">a</b> + <b class="v vb">b</b> + <b class="v vc">c</b> ≠ <b class="v">0</b></p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const css = getComputedStyle(document.documentElement);
+  const tok = name => css.getPropertyValue(name).trim();
+  const hex = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- language ---------- */
+  const STRINGS = {
+    th: {
+      title: "สามเหลี่ยมที่เป็นไปไม่ได้",
+      hide: "ซ่อน UI", show: "แสดง UI",
+      hidden: "ซ่อน UI แล้ว แตะมุมขวาบนเพื่อแสดงอีกครั้ง", shown: "แสดง UI แล้ว",
+      langBtn: "EN", langLabel: "Switch to English",
+      goto: n => `ไปหน้าที่ ${n}`,
+      webgl: "ภาพ 3 มิติต้องใช้ WebGL ซึ่งเบราว์เซอร์นี้ปิดไว้",
+      s1_eye: "สามเหลี่ยมเพนโรส",
+      s1_h: "คุณกำลังมองมันอยู่ตอนนี้เลย",
+      s1_q: "แต่ทำไมยังไม่เคยมีใคร<em>สร้าง</em>มันได้จริงเลย?",
+      s1_cue: "มาพิสูจน์ด้วยเวกเตอร์กัน →",
+      s2_eye: "ขั้นที่ 1 · เปลี่ยนแท่งเป็นเวกเตอร์",
+      s2_h: "ให้แต่ละแท่งเป็นลูกศรหนึ่งเส้น",
+      s2_c1: "รูปปิดสนิท เดินตามลูกศรครบทั้งสามเส้น แล้วจะกลับมาที่จุดเริ่มต้น",
+      s2_c2: "ทุกมุมเป็นมุมฉาก เวกเตอร์ที่ตั้งฉากกันมีผลคูณเชิงสเกลาร์เป็นศูนย์",
+      s3_eye: "ห้าบรรทัด หนึ่งข้อขัดแย้ง",
+      s3_g1: "สามเหลี่ยมปิดสนิท",
+      s3_g2: "ทุกมุมเป็นมุมฉาก",
+      s3_g3: "นำ a ไปดอตทั้งสองข้าง",
+      s3_g4: "กระจายออก",
+      s3_g5: "มุมฉากสองมุมทำให้สองพจน์หลังเป็นศูนย์",
+      s3_v: 'แท่ง <span class="va">a</span> ยาวเป็นศูนย์ สามเหลี่ยมนี้จึงไม่มีอยู่จริง',
+      s3_fn: 'ใช้วิธีเดียวกันกับ <b class="v vb">b</b> และ <b class="v vc">c</b> ก็ได้ผลเหมือนกัน ลูกศรสามเส้นที่ตั้งฉากกันทุกคู่ชี้ไปสามทิศทางที่เป็นอิสระต่อกัน จึงบวกกันแล้วเป็นศูนย์ไม่ได้เลย',
+      s4_eye: "แล้วที่เห็นอยู่คืออะไร?",
+      s4_h: "มันคือวัตถุจริง ลองลากหมุนดู",
+      s4_r2: "ช่องว่างใน 3 มิติ",
+      s4_r3: "ช่องว่างบนจอ",
+      capMagic: "จากมุมพอดีเป๊ะเพียงมุมเดียว ช่องว่างจะชี้<strong>ตรงเข้าหาตาคุณ</strong> จึงหดเหลือแค่จุดเดียว",
+      capOpen: "พอหมุน ช่องว่างก็โผล่ออกมา แท่งทั้งสามไม่เคยต่อกันเลย <strong>a + b + c</strong> ไม่เคยเป็นศูนย์",
+      play: "เล่นเฉลย", stop: "หยุด", snap: "กลับมุมลวงตา",
+      s5_eye: "สรุป",
+      s5_h: "ภาพนี้วาดได้ <span>แต่วัตถุนี้สร้างไม่ได้</span>",
+      s5_p: "ทุกมุมเป็นมุมฉากที่ถูกต้องสมบูรณ์ ตาของเราตรวจ<strong>ทีละมุม</strong> แต่ละมุมจึงดูไม่มีปัญหา ส่วนคณิตศาสตร์ตรวจ<strong>ทั้งสามมุมพร้อมกัน</strong> และพบว่ามันเป็นจริงพร้อมกันไม่ได้",
+    },
+    en: {
+      title: "The Impossible Triangle",
+      hide: "Hide UI", show: "Show UI",
+      hidden: "UI hidden. Tap the top-right corner to bring it back.", shown: "UI shown.",
+      langBtn: "ไทย", langLabel: "เปลี่ยนเป็นภาษาไทย",
+      goto: n => `Go to screen ${n}`,
+      webgl: "3D needs WebGL, which this browser has turned off.",
+      s1_eye: "The Penrose triangle",
+      s1_h: "You're looking at it right&nbsp;now.",
+      s1_q: "So why has nobody ever <em>built</em> one?",
+      s1_cue: "Let's prove it with vectors →",
+      s2_eye: "Step 1 · Bars become vectors",
+      s2_h: "Give each bar an&nbsp;arrow.",
+      s2_c1: "It closes. Walk along all three arrows and you end where you started.",
+      s2_c2: "Every corner is square. Perpendicular vectors have a dot product of zero.",
+      s3_eye: "Five lines, one contradiction",
+      s3_g1: "the triangle closes",
+      s3_g2: "every corner is a right angle",
+      s3_g3: "dot both sides with a",
+      s3_g4: "expand",
+      s3_g5: "the two right angles make both terms zero",
+      s3_v: 'Bar <span class="va">a</span> has zero length. There is no&nbsp;triangle.',
+      s3_fn: 'The same works for <b class="v vb">b</b> and <b class="v vc">c</b>. Three arrows at right angles to each other point in three independent directions, so they can never add up to zero.',
+      s4_eye: "So what are you looking at?",
+      s4_h: "It's a real object. Drag&nbsp;it.",
+      s4_r2: "gap in 3D",
+      s4_r3: "gap on your screen",
+      capMagic: "From one exact angle the gap points <strong>straight at your eye</strong>, so it shrinks to a single dot.",
+      capOpen: "Turn it and the gap opens. The bars never met. <strong>a + b + c</strong> was never zero.",
+      play: "Play reveal", stop: "Stop", snap: "Magic angle",
+      s5_eye: "So",
+      s5_h: "The picture is possible. <span>The object isn't.</span>",
+      s5_p: "Every corner is a perfectly good right angle. Your eye checks them <strong>one at a time</strong>, and each one looks fine. The math checks <strong>all three at once</strong>, and they can't agree.",
+    },
+  };
+  let lang = "th";
+  try { if (localStorage.getItem("it-lang") === "en") lang = "en"; } catch (e) {}
+  const T = () => STRINGS[lang];
+
+  /* ---------- vector helpers ---------- */
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const len = a => Math.hypot(a[0], a[1], a[2]);
+  const norm = a => mul(a, 1 / len(a));
+  const rot = (v, k, ang) => { // Rodrigues
+    const c = Math.cos(ang), s = Math.sin(ang);
+    return add(add(mul(v, c), mul(cross(k, v), s)), mul(k, dot(k, v) * (1 - c)));
+  };
+
+  /* ---------- the object ----------
+     Three square bars along x, then y, then z. Each corner is a true right angle.
+     The z-bar is cut by the plane z = y - 1, which contains the view direction (1,1,1):
+     from exactly that direction the cut is edge-on and the bar seems to join the x-bar. */
+  const N = 4, H = 0.5, LO = N - H, HI = N + H;
+  const box = (x0, x1, y0, y1, z0, z1) => [
+    { k: "+x", v: [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]] },
+    { k: "-x", v: [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]] },
+    { k: "+y", v: [[x0, y1, z0], [x0, y1, z1], [x1, y1, z1], [x1, y1, z0]] },
+    { k: "-y", v: [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]] },
+    { k: "+z", v: [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]] },
+    { k: "-z", v: [[x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [x1, y0, z0]] },
+  ];
+  const zt = y => y - 1; // top of the cut z-bar
+  const FACES = [
+    ...box(-H, HI, -H, H, -H, H),   // bar a, along x
+    ...box(LO, HI, H, HI, -H, H),   // bar b, along y
+    // bar c, along z, with its angled end
+    { k: "-y", v: [[LO, LO, H], [HI, LO, H], [HI, LO, zt(LO)], [LO, LO, zt(LO)]] },
+    { k: "+y", v: [[LO, HI, H], [HI, HI, H], [HI, HI, zt(HI)], [LO, HI, zt(HI)]] },
+    { k: "-x", v: [[LO, LO, H], [LO, HI, H], [LO, HI, zt(HI)], [LO, LO, zt(LO)]] },
+    { k: "+x", v: [[HI, LO, H], [HI, HI, H], [HI, HI, zt(HI)], [HI, LO, zt(LO)]] },
+    { k: "cut", v: [[LO, LO, zt(LO)], [HI, LO, zt(LO)], [HI, HI, zt(HI)], [LO, HI, zt(HI)]] },
+  ];
+  const TONES = {
+    "+z": hex(tok("--face-light")), "+y": hex(tok("--face-mid")), "+x": hex(tok("--face-dark")),
+    "-z": hex("#5d6064"), "-y": hex("#b7b9bb"), "-x": hex("#6e7175"), "cut": hex("#e9a8a3"),
+  };
+  const INK = hex(tok("--ink"));
+  const P = [[0, 0, 0], [N, 0, 0], [N, N, 0], [N, N, N]]; // path along the bar centres
+  const VCOL = [tok("--va"), tok("--vb"), tok("--vc")];
+
+  const positions = [], colors = [];
+  for (const f of FACES) {
+    const c = TONES[f.k];
+    for (let i = 1; i < f.v.length - 1; i++) {
+      for (const p of [f.v[0], f.v[i], f.v[i + 1]]) { positions.push(...p); colors.push(...c); }
+    }
+  }
+  const VCOUNT = positions.length / 3;
+
+  /* ---------- the magic view ---------- */
+  const F0 = norm([1, 1, 1]);                                   // direction toward the viewer
+  const Z = [0, 0, 1];
+  let U = norm(sub(Z, mul(F0, dot(Z, F0))));
+  let R = cross(U, F0);
+  { // rotate the picture so bar b lies flat and the apex points up
+    const v = sub(P[2], P[1]);
+    let phi = Math.atan2(dot(v, U), dot(v, R));
+    const basis = ph => ({ r: add(mul(R, Math.cos(ph)), mul(U, Math.sin(ph))), u: add(mul(R, -Math.sin(ph)), mul(U, Math.cos(ph))) });
+    let b = basis(phi);
+    if (dot(sub(P[0], P[1]), b.u) < 0) b = basis(phi + Math.PI);
+    R = b.r; U = b.u;
+  }
+  let TARGET = [5 * N / 6, N / 2, N / 6];
+  let EX, EY;
+  {
+    let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+    for (let i = 0; i < positions.length; i += 3) {
+      const q = sub([positions[i], positions[i + 1], positions[i + 2]], TARGET);
+      const x = dot(q, R), y = dot(q, U);
+      minx = Math.min(minx, x); maxx = Math.max(maxx, x); miny = Math.min(miny, y); maxy = Math.max(maxy, y);
+    }
+    TARGET = add(TARGET, add(mul(R, (minx + maxx) / 2), mul(U, (miny + maxy) / 2)));
+    EX = (maxx - minx) / 2; EY = (maxy - miny) / 2;
+  }
+  const camera = (yaw, pitch) => {
+    let f = rot(F0, U, yaw), r = rot(R, U, yaw);
+    f = rot(f, r, pitch);
+    const u = rot(U, r, pitch);
+    return { f, r, u };
+  };
+
+  /* ---------- renderer ---------- */
+  const VS = `attribute vec3 p; attribute vec3 c; uniform mat4 m; uniform vec2 off; varying vec3 vc;
+    void main(){ gl_Position = m * vec4(p, 1.0); gl_Position.xy += off; vc = c; }`;
+  const FS = `precision mediump float; varying vec3 vc; uniform float ink; uniform vec3 inkc;
+    void main(){ gl_FragColor = vec4(mix(vc, inkc, ink), 1.0); }`;
+
+  class Scene {
+    constructor(el, opts) {
+      this.el = el; this.opts = opts;
+      this.yaw = 0; this.pitch = 0; this.progress = 1; this.visible = false; this.dirty = true;
+      this.glc = document.createElement("canvas");
+      this.ov = document.createElement("canvas");
+      el.append(this.glc, this.ov);
+      const gl = this.glc.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: true });
+      if (!gl) { const d = document.createElement("div"); d.className = "webgl-missing"; d.textContent = T().webgl; el.append(d); return; }
+      this.gl = gl;
+      const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(pr); gl.useProgram(pr);
+      const buf = (data, name) => {
+        const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+        const loc = gl.getAttribLocation(pr, name); gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 0, 0);
+      };
+      buf(positions, "p"); buf(colors, "c");
+      this.u = { m: gl.getUniformLocation(pr, "m"), off: gl.getUniformLocation(pr, "off"), ink: gl.getUniformLocation(pr, "ink"), inkc: gl.getUniformLocation(pr, "inkc") };
+      gl.uniform3fv(this.u.inkc, INK);
+      gl.clearColor(0, 0, 0, 0);
+      new ResizeObserver(() => this.resize()).observe(el);
+      this.resize();
+    }
+    resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const w = Math.max(1, this.el.clientWidth), h = Math.max(1, this.el.clientHeight);
+      this.W = Math.round(w * dpr); this.H = Math.round(h * dpr); this.dpr = dpr;
+      for (const c of [this.glc, this.ov]) { c.width = this.W; c.height = this.H; }
+      const m = this.opts.margin || 1.12, A = this.W / this.H;
+      this.hh = Math.max(EY, EX / A) * m; this.hw = this.hh * A;
+      this.dirty = true;
+    }
+    project(p, cam) {
+      const q = sub(p, TARGET);
+      return [(dot(q, cam.r) / this.hw * 0.5 + 0.5) * this.W, (0.5 - dot(q, cam.u) / this.hh * 0.5) * this.H];
+    }
+    render() {
+      if (!this.gl) return;
+      const gl = this.gl, cam = camera(this.yaw, this.pitch);
+      const { r, u, f } = cam, hw = this.hw, hh = this.hh, D = 20;
+      const t = TARGET;
+      const m = new Float32Array([
+        r[0] / hw, u[0] / hh, -f[0] / D, 0,
+        r[1] / hw, u[1] / hh, -f[1] / D, 0,
+        r[2] / hw, u[2] / hh, -f[2] / D, 0,
+        -dot(r, t) / hw, -dot(u, t) / hh, dot(f, t) / D, 1,
+      ]);
+      gl.viewport(0, 0, this.W, this.H);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.uniformMatrix4fv(this.u.m, false, m);
+      // ink outline: the silhouette drawn in 8 offset copies underneath
+      const o = this.opts.outline ?? 0.0045, ox = o * 2 * Math.max(this.W, this.H) / this.W * 0.5, oy = ox * this.W / this.H;
+      gl.disable(gl.DEPTH_TEST); gl.depthMask(false); gl.uniform1f(this.u.ink, 1);
+      for (let i = 0; i < 8; i++) {
+        const a = i * Math.PI / 4;
+        gl.uniform2f(this.u.off, Math.cos(a) * ox, Math.sin(a) * oy);
+        gl.drawArrays(gl.TRIANGLES, 0, VCOUNT);
+      }
+      gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
+      gl.uniform1f(this.u.ink, 0); gl.uniform2f(this.u.off, 0, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, VCOUNT);
+      this.overlay(cam);
+      this.dirty = false;
+    }
+    overlay(cam) {
+      const ctx = this.ov.getContext("2d");
+      ctx.clearRect(0, 0, this.W, this.H);
+      if (!this.opts.arrows) return;
+      const s = Math.min(this.W, this.H) / 100; // overlay unit
+      const pts = P.map(p => this.project(p, cam));
+      const cen = [(pts[0][0] + pts[1][0] + pts[2][0]) / 3, (pts[0][1] + pts[1][1] + pts[2][1]) / 3];
+      const k = this.progress;
+
+      if (this.opts.markers) {
+        const cornerAt = (c, d1, d2, alpha) => {
+          const z = 0.75;
+          const q = [c, add(c, mul(d1, z)), add(add(c, mul(d1, z)), mul(d2, z)), add(c, mul(d2, z))].map(p => this.project(p, cam));
+          ctx.save(); ctx.globalAlpha = alpha;
+          ctx.lineWidth = 0.9 * s; ctx.strokeStyle = "#ffffff"; ctx.lineJoin = "round";
+          ctx.beginPath(); ctx.moveTo(...q[1]); ctx.lineTo(...q[2]); ctx.lineTo(...q[3]); ctx.stroke();
+          ctx.restore();
+        };
+        const a = Math.max(0, Math.min(1, (k - 0.85) / 0.15));
+        if (a > 0) {
+          cornerAt(P[1], [-1, 0, 0], [0, 1, 0], a);
+          cornerAt(P[2], [0, -1, 0], [0, 0, 1], a);
+          cornerAt(P[0], [1, 0, 0], [0, 0, 1], a); // looks like c meets a here
+        }
+      }
+
+      if (this.opts.gap) {
+        const g0 = pts[0], g1 = pts[3], gl = Math.hypot(g1[0] - g0[0], g1[1] - g0[1]);
+        ctx.save();
+        ctx.strokeStyle = tok("--ink"); ctx.fillStyle = tok("--ink");
+        if (gl > 2 * s) {
+          ctx.setLineDash([2.2 * s, 1.6 * s]); ctx.lineWidth = 0.9 * s;
+          ctx.beginPath(); ctx.moveTo(...g0); ctx.lineTo(...g1); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        ctx.beginPath(); ctx.arc(g0[0], g0[1], 1.4 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 0.6 * s;
+        ctx.beginPath(); ctx.arc(g1[0], g1[1], 2.6 * s, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+
+      for (let i = 0; i < 3; i++) {
+        const local = Math.max(0, Math.min(1, k * 3.4 - i * 1.1));
+        if (local <= 0) continue;
+        const p0 = pts[i], p1 = pts[i + 1];
+        const e = [p0[0] + (p1[0] - p0[0]) * local, p0[1] + (p1[1] - p0[1]) * local];
+        this.arrow(ctx, p0, e, VCOL[i], s);
+        if (local > 0.6) {
+          const mid = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+          let nx = -(p1[1] - p0[1]), ny = p1[0] - p0[0];
+          const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+          if ((mid[0] - cen[0]) * nx + (mid[1] - cen[1]) * ny < 0) { nx = -nx; ny = -ny; }
+          const off = (this.opts.labelOff || 0) * s;
+          this.chip(ctx, [mid[0] + nx * off, mid[1] + ny * off], "abc"[i], VCOL[i], s, (local - 0.6) / 0.4);
+        }
+      }
+    }
+    arrow(ctx, p0, p1, color, s) {
+      const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy);
+      if (L < 1) return;
+      const ux = dx / L, uy = dy / L, head = Math.min(5.2 * s, L * 0.6), wid = 2.6 * s;
+      const bx = p1[0] - ux * head, by = p1[1] - uy * head;
+      ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (const [col, lw] of [["#ffffff", 3.4 * s], [color, 1.6 * s]]) {
+        ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw;
+        ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(...p1);
+        ctx.lineTo(bx - uy * wid, by + ux * wid);
+        ctx.lineTo(bx + uy * wid, by - ux * wid);
+        ctx.closePath();
+        if (col === "#ffffff") { ctx.lineWidth = 1.8 * s; ctx.stroke(); }
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    chip(ctx, c, letter, color, s, alpha) {
+      ctx.save(); ctx.globalAlpha = Math.min(1, alpha);
+      ctx.fillStyle = color; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 0.8 * s;
+      ctx.beginPath(); ctx.arc(c[0], c[1], 4.4 * s, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `500 ${5.6 * s}px ${tok("--font-mono")}`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(letter, c[0], c[1] + 0.3 * s);
+      ctx.restore();
+    }
+  }
+
+  /* ---------- scenes ---------- */
+  const scenes = {};
+  const config = {
+    hero: { margin: 1.06 },
+    vectors: { margin: 1.12, arrows: true, markers: true, labelOff: 0 },
+    reveal: { margin: 1.3, arrows: true, gap: true, labelOff: 0 },
+    end: { margin: 1.06, outline: 0.006 },
+  };
+  document.querySelectorAll("[data-scene]").forEach(el => { scenes[el.dataset.scene] = new Scene(el, config[el.dataset.scene]); });
+
+  /* ---------- story 2: draw the arrows in ---------- */
+  let vecStart = null;
+  const startVectors = () => { if (!reduceMotion) { vecStart = performance.now(); scenes.vectors.progress = 0; } };
+
+  /* ---------- story 4: drag, play, snap ---------- */
+  const rv = scenes.reveal, sceneEl = document.getElementById("revealScene");
+  const gapOut = document.getElementById("gapScreen"), caption = document.getElementById("revealCaption");
+  const playBtn = document.getElementById("play"), snapBtn = document.getElementById("snap");
+  const G = sub(P[3], P[0]);
+  let mode = "idle", playT0 = 0, tween = null, drag = null, lastCap = null;
+  const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const PEAK = { yaw: 0.95, pitch: -0.32 };
+
+  const setPlay = on => { mode = on ? "play" : "idle"; playBtn.setAttribute("aria-pressed", on); playBtn.textContent = on ? T().stop : T().play; if (on) playT0 = performance.now(); };
+  playBtn.addEventListener("click", () => { tween = null; setPlay(mode !== "play"); });
+  snapBtn.addEventListener("click", () => {
+    setPlay(false);
+    tween = { t0: performance.now(), dur: reduceMotion ? 1 : 900, from: { yaw: rv.yaw, pitch: rv.pitch } };
+  });
+  sceneEl.addEventListener("pointerdown", e => {
+    setPlay(false); tween = null;
+    drag = { x: e.clientX, y: e.clientY, yaw: rv.yaw, pitch: rv.pitch };
+    sceneEl.setPointerCapture(e.pointerId);
+  });
+  sceneEl.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const k = 3.2 / sceneEl.clientWidth;
+    rv.yaw = drag.yaw + (e.clientX - drag.x) * k;
+    rv.pitch = Math.max(-1.3, Math.min(1.3, drag.pitch + (e.clientY - drag.y) * k));
+    rv.dirty = true;
+  });
+  const endDrag = () => { drag = null; };
+  sceneEl.addEventListener("pointerup", endDrag);
+  sceneEl.addEventListener("pointercancel", endDrag);
+
+  const updateReveal = now => {
+    if (mode === "play") {
+      // hold closed, swing open, hold, swing back: a loop made for screen recording
+      const T = (now - playT0) / 1000 % 10;
+      let k = 0;
+      if (T < 1.6) k = 0; else if (T < 4.6) k = ease((T - 1.6) / 3); else if (T < 6.4) k = 1; else if (T < 9.2) k = 1 - ease((T - 6.4) / 2.8); else k = 0;
+      rv.yaw = PEAK.yaw * k; rv.pitch = PEAK.pitch * k; rv.dirty = true;
+    } else if (tween) {
+      const t = Math.min(1, (now - tween.t0) / tween.dur), e = ease(t);
+      rv.yaw = tween.from.yaw * (1 - e); rv.pitch = tween.from.pitch * (1 - e); rv.dirty = true;
+      if (t >= 1) tween = null;
+    }
+    if (rv.dirty) {
+      const f = camera(rv.yaw, rv.pitch).f;
+      const onScreen = len(sub(G, mul(f, dot(G, f))));
+      gapOut.textContent = onScreen.toFixed(2);
+      const cap = onScreen < 0.05 ? T().capMagic : T().capOpen;
+      if (cap !== lastCap) { caption.innerHTML = cap; lastCap = cap; }
+    }
+  };
+
+  /* ---------- loop ---------- */
+  const frame = now => {
+    if (vecStart !== null) {
+      const t = Math.min(1, (now - vecStart) / 2600);
+      scenes.vectors.progress = t; scenes.vectors.dirty = true;
+      if (t >= 1) vecStart = null;
+    }
+    updateReveal(now);
+    for (const s of Object.values(scenes)) if (s.visible && s.dirty) s.render();
+    requestAnimationFrame(frame);
+  };
+
+  /* ---------- visibility, dots, clean mode ---------- */
+  const stories = [...document.querySelectorAll(".story")];
+  const dots = document.querySelector(".dots");
+  stories.forEach((st, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.addEventListener("click", () => st.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" }));
+    dots.append(b);
+  });
+  const io = new IntersectionObserver(entries => {
+    for (const en of entries) {
+      const st = en.target, i = stories.indexOf(st);
+      st.querySelectorAll("[data-scene]").forEach(el => {
+        const s = scenes[el.dataset.scene];
+        s.visible = en.isIntersecting; if (s.visible) s.dirty = true;
+      });
+      if (en.intersectionRatio > 0.6) {
+        dots.children[i].setAttribute("aria-current", "true");
+        if (st.id === "s2") startVectors();
+        if (st.id === "s3" && !reduceMotion) { st.classList.remove("play"); void st.offsetWidth; st.classList.add("play"); }
+      } else if (en.intersectionRatio < 0.4) {
+        dots.children[i].removeAttribute("aria-current");
+      }
+    }
+  }, { threshold: [0, 0.4, 0.6] });
+  stories.forEach(st => io.observe(st));
+
+  const cleanBtn = document.getElementById("clean"), toast = document.getElementById("toast");
+  let toastTimer;
+  const say = msg => { toast.textContent = msg; toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 2600); };
+  cleanBtn.addEventListener("click", () => {
+    const on = document.body.classList.toggle("clean");
+    cleanBtn.setAttribute("aria-pressed", on);
+    cleanBtn.textContent = on ? T().show : T().hide;
+    say(on ? T().hidden : T().shown);
+  });
+
+  const langBtn = document.getElementById("lang");
+  const applyLang = () => {
+    const t = T();
+    document.documentElement.lang = lang;
+    document.title = t.title;
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.innerHTML = t[el.dataset.i18n]; });
+    cleanBtn.textContent = document.body.classList.contains("clean") ? t.show : t.hide;
+    playBtn.textContent = mode === "play" ? t.stop : t.play;
+    langBtn.textContent = t.langBtn; langBtn.setAttribute("aria-label", t.langLabel);
+    [...dots.children].forEach((b, i) => b.setAttribute("aria-label", t.goto(i + 1)));
+    lastCap = null; rv.dirty = true;
+    if (!rv.gl) updateReveal(performance.now());
+  };
+  langBtn.addEventListener("click", () => {
+    lang = lang === "th" ? "en" : "th";
+    try { localStorage.setItem("it-lang", lang); } catch (e) {}
+    applyLang();
+  });
+  applyLang();
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
