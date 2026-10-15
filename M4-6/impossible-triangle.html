@@ -509,14 +509,22 @@ body.clean #clean { opacity: 0; }
     { k: "-z", v: [[x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [x1, y0, z0]] },
   ];
   const zt = y => y - 1; // top of the cut z-bar
+  const E = 0.02;        // bars overlap slightly so their joins have no hairline cracks
+  // Faces buried inside a joint are dropped or trimmed: where their edge meets the outer
+  // surface they would otherwise peek through as a hairline.
+  const only = (faces, keep) => faces.filter(f => keep.includes(f.k));
   const FACES = [
-    ...box(-H, HI, -H, H, -H, H),   // bar a, along x
-    ...box(LO, HI, H, HI, -H, H),   // bar b, along y
+    // bar a, along x (its +y side stops where bar b begins)
+    ...only(box(-H, HI, -H, H, -H, H), ["+x", "-x", "-y", "+z", "-z"]),
+    { k: "+y", v: [[-H, H, -H], [-H, H, H], [LO, H, H], [LO, H, -H]] },
+    // bar b, along y (its top stops where bar c begins)
+    ...only(box(LO, HI, H - E, HI, -H, H), ["+x", "-x", "+y", "-z"]),
+    { k: "+z", v: [[LO, H - E, H], [HI, H - E, H], [HI, LO, H], [LO, LO, H]] },
     // bar c, along z, with its angled end
-    { k: "-y", v: [[LO, LO, H], [HI, LO, H], [HI, LO, zt(LO)], [LO, LO, zt(LO)]] },
-    { k: "+y", v: [[LO, HI, H], [HI, HI, H], [HI, HI, zt(HI)], [LO, HI, zt(HI)]] },
-    { k: "-x", v: [[LO, LO, H], [LO, HI, H], [LO, HI, zt(HI)], [LO, LO, zt(LO)]] },
-    { k: "+x", v: [[HI, LO, H], [HI, HI, H], [HI, HI, zt(HI)], [HI, LO, zt(LO)]] },
+    { k: "-y", v: [[LO, LO, H - E], [HI, LO, H - E], [HI, LO, zt(LO)], [LO, LO, zt(LO)]] },
+    { k: "+y", v: [[LO, HI, H - E], [HI, HI, H - E], [HI, HI, zt(HI)], [LO, HI, zt(HI)]] },
+    { k: "-x", v: [[LO, LO, H - E], [LO, HI, H - E], [LO, HI, zt(HI)], [LO, LO, zt(LO)]] },
+    { k: "+x", v: [[HI, LO, H - E], [HI, HI, H - E], [HI, HI, zt(HI)], [HI, LO, zt(LO)]] },
     { k: "cut", v: [[LO, LO, zt(LO)], [HI, LO, zt(LO)], [HI, HI, zt(HI)], [LO, HI, zt(HI)]] },
   ];
   const TONES = {
