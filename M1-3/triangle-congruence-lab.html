@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Triangle Congruence Lab — SAS &amp; ASA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --paper:#EEF2EF;
+    --paper-deep:#E3E9E4;
+    --ink:#1F2B2E;
+    --ink-soft:#5B6C6C;
+    --grid:#D3DEDA;
+    --grid-strong:#AEC0BA;
+    --blue:#2E6F9E;
+    --blue-soft:#E3EEF5;
+    --amber:#C9871B;
+    --amber-deep:#8F5F0C;
+    --amber-soft:#F7ECD9;
+    --teal:#1F8F7A;
+    --teal-soft:#E1F1EC;
+    --stamp:#3C7A54;
+    --white:#FFFFFF;
+    --radius-lg:22px;
+    --radius-md:13px;
+    --radius-sm:8px;
+    --shadow-card:0 24px 55px -24px rgba(31,43,46,.38), 0 2px 10px rgba(31,43,46,.07);
+    --font-display:'Space Grotesk', 'Arial Narrow', system-ui, sans-serif;
+    --font-body:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(175,192,186,.35) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(175,192,186,.35) 28px),
+      var(--paper-deep);
+    font-family:var(--font-body);
+    color:var(--ink);
+    min-height:100vh;
+  }
+
+  .page{
+    display:flex;
+    justify-content:center;
+    padding:40px 16px 64px;
+  }
+
+  .sheet{
+    width:100%;
+    max-width:700px;
+    background:var(--paper);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-card);
+    padding:30px 28px 26px;
+    position:relative;
+  }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(24px,4.6vw,32px);
+    line-height:1.12;
+    margin:0 0 10px;
+    letter-spacing:-.01em;
+  }
+
+  .sub{
+    font-size:14.5px;
+    line-height:1.55;
+    color:var(--ink-soft);
+    max-width:52ch;
+    margin:0 0 22px;
+  }
+
+  /* ---- postulate tabs ---- */
+  .tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .tab{
+    position:relative;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:9px 14px;
+    border-radius:999px;
+    border:1.5px solid var(--grid-strong);
+    background:var(--white);
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .tab:hover{ transform:translateY(-1px); }
+  .tab:focus-visible{ outline:2.5px solid var(--ink); outline-offset:2px; }
+  .tab.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper);
+    box-shadow:0 4px 10px -4px rgba(31,43,46,.5);
+  }
+  .tab.soon{ color:#93A19D; padding-right:40px; }
+  .tab.soon .stamp-tag{
+    position:absolute;
+    top:50%; right:6px;
+    transform:translateY(-50%) rotate(-9deg);
+    font-size:8.5px;
+    font-weight:600;
+    letter-spacing:.06em;
+    border:1px solid #B7C2BD;
+    color:#8B9995;
+    border-radius:4px;
+    padding:1px 4px;
+    background:rgba(255,255,255,.6);
+  }
+
+  /* ---- stage ---- */
+  .stage-wrap{
+    border-radius:var(--radius-md);
+    overflow:visible;
+    margin-bottom:20px;
+  }
+  #stage{ width:100%; height:auto; display:block; overflow:visible; }
+  #stage text{ font-family:var(--font-body); user-select:none; pointer-events:none; }
+  .mono-label{ font-family:var(--font-mono) !important; }
+
+  .piece{ cursor:grab; touch-action:none; }
+  .piece.dragging{ cursor:grabbing; }
+  .piece.dragging .piece-line, .piece.dragging .ray{ filter:drop-shadow(0 5px 8px rgba(31,43,46,.28)); }
+  /* Once a piece is inactive, done (locked), or a static reference, it must
+     never intercept a pointer event again. Two separate mechanisms are
+     needed: pointer-events:none on the whole group blocks plain children
+     like piece-line via inheritance, but hit-line/hit-wedge each declare
+     their OWN explicit pointer-events value — an explicit child value
+     always overrides an inherited one, regardless of the parent's state —
+     so they need direct overrides too, or a "done" piece painted over an
+     active one at a shared vertex can silently steal its clicks. */
+  .piece.locked, .piece.reference{ cursor:default; pointer-events:none; }
+  .piece.inactive{ opacity:.38; pointer-events:none; }
+  .piece.inactive .hit-line, .piece.inactive .hit-wedge,
+  .piece.locked .hit-line, .piece.locked .hit-wedge,
+  .piece.reference .hit-line, .piece.reference .hit-wedge{ pointer-events:none; }
+  .piece:focus-visible{ outline:3px solid var(--ink); outline-offset:5px; border-radius:6px; }
+
+  .ray{ opacity:0; transition:opacity .15s ease; }
+  .piece.dragging .ray{ opacity:.85; }
+  .ray-persist{ opacity:.8; stroke-dasharray:5 5; transition:opacity .2s ease; }
+  .piece.done-extend .ray-persist{ opacity:0; }
+
+  #layer-guide{ pointer-events:none; }
+  .hit-line{ pointer-events:stroke; }
+  .hit-wedge{ pointer-events:all; fill:transparent; }
+
+  .marker-dot{ cursor:grab; touch-action:none; }
+  .marker-dot:focus-visible{ outline:3px solid var(--ink); outline-offset:3px; border-radius:50%; }
+  .marker-dot.selected circle.ring{ opacity:1; }
+
+  @keyframes pulseRing{
+    0%{ r:11; opacity:.65; }
+    100%{ r:22; opacity:0; }
+  }
+  .pulse{ animation:pulseRing 1.4s ease-out infinite; transform-origin:center; }
+
+  .stamp-group{ opacity:0; pointer-events:none; }
+  .stamp-group.show{ opacity:1; }
+  .stamp-group.animate{ animation:stampIn .5s cubic-bezier(.19,1.3,.4,1) forwards; }
+  @keyframes stampIn{
+    0%{ opacity:0; transform:scale(1.55) rotate(3deg); }
+    60%{ opacity:1; }
+    100%{ opacity:1; transform:scale(1) rotate(0deg); }
+  }
+
+  /* ---- step tracker ---- */
+  .tracker{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .step{
+    border:1.5px solid var(--grid-strong);
+    border-radius:var(--radius-sm);
+    padding:9px 10px 10px;
+    background:var(--white);
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .step .num{
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:600;
+    color:var(--ink-soft);
+    display:block;
+    margin-bottom:3px;
+  }
+  .step .lbl{
+    font-size:12.5px;
+    font-weight:500;
+    line-height:1.25;
+  }
+  .step.active{ border-color:var(--ink); background:var(--white); }
+  .step.active .num{ color:var(--ink); }
+  .step.done{ border-color:var(--teal); background:var(--teal-soft); }
+  .step.done .num{ color:var(--teal); }
+  .step.done .lbl::after{ content:" ✓"; color:var(--teal); }
+
+  /* ---- instruction banner ---- */
+  .banner{
+    border-left:4px solid var(--blue);
+    background:var(--white);
+    border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+    padding:12px 14px;
+    font-size:14px;
+    line-height:1.5;
+    margin-bottom:18px;
+    transition:border-color .25s ease;
+  }
+  .banner.step-angle{ border-color:var(--amber); }
+  .banner.step-s2{ border-color:var(--teal); }
+  .banner.step-close{ border-color:var(--ink); }
+  .banner.step-done{ border-color:var(--stamp); background:#F1F7F3; }
+  .banner b{ font-weight:600; }
+
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button.ghost{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13.5px;
+    padding:9px 16px;
+    border-radius:999px;
+    border:1.5px solid var(--grid-strong);
+    background:var(--white);
+    color:var(--ink);
+    cursor:pointer;
+    transition:transform .12s ease;
+  }
+  button.ghost:hover{ transform:translateY(-1px); }
+  button.ghost:focus-visible{ outline:2.5px solid var(--ink); outline-offset:2px; }
+  button.primary{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px;
+    padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  .toast{
+    position:fixed;
+    left:50%; bottom:26px;
+    transform:translate(-50%,12px);
+    background:var(--ink);
+    color:var(--paper);
+    font-size:13px;
+    font-weight:500;
+    padding:10px 18px;
+    border-radius:999px;
+    box-shadow:0 12px 30px -10px rgba(0,0,0,.4);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease;
+    z-index:50;
+    max-width:88vw;
+    text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  @media (max-width:480px){
+    .sheet{ padding:22px 16px 20px; }
+    .tracker{ grid-template-columns:repeat(2,1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse{ animation:none; }
+    .stamp-group.animate{ animation:none; }
+    * { transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <main class="sheet">
+    <p class="eyebrow">Triangle Congruence Lab</p>
+    <h1>Rebuild the triangle, piece by piece.</h1>
+    <p class="sub" id="subCopy">Drag the given side, angle, and side into the workspace below. If Side‑Angle‑Side is enough to guarantee a match, only one triangle can possibly form.</p>
+
+    <nav class="tabs" aria-label="Congruence postulate">
+      <button class="tab active" type="button" data-mode="SAS" aria-pressed="true">SAS</button>
+      <button class="tab" type="button" data-mode="SSS" aria-pressed="false">SSS</button>
+      <button class="tab" type="button" data-mode="ASA" aria-pressed="false">ASA</button>
+      <button class="tab" type="button" data-mode="AAS" aria-pressed="false">AAS</button>
+      <button class="tab" type="button" data-mode="HL" aria-pressed="false">HL</button>
+    </nav>
+
+    <div class="stage-wrap">
+      <svg id="stage" viewBox="0 0 640 980" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="stageTitle stageDesc">
+        <title id="stageTitle">SAS triangle construction workspace</title>
+        <desc id="stageDesc">A given triangle at the top with one side, the included angle, and another side highlighted. Below, a blank construction area where those three pieces can be dragged and assembled into a matching triangle.</desc>
+        <defs>
+          <pattern id="graph" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0H0V20" fill="none" stroke="var(--grid)" stroke-width="1"></path>
+          </pattern>
+        </defs>
+
+        <!-- static chrome -->
+        <text x="26" y="30" class="mono-label" font-size="11.5" font-weight="600" letter-spacing="2" fill="var(--ink-soft)">GIVEN</text>
+
+        <line x1="40" y1="416" x2="600" y2="416" stroke="var(--grid-strong)" stroke-width="2" stroke-dasharray="1 8" stroke-linecap="round"></line>
+
+        <rect x="40" y="440" width="560" height="460" rx="18" fill="url(#graph)" stroke="var(--grid-strong)" stroke-width="2" stroke-dasharray="9 7"></rect>
+        <text x="60" y="468" class="mono-label" font-size="11.5" font-weight="600" letter-spacing="2" fill="var(--ink-soft)">CONSTRUCT</text>
+        <text id="dropHint" x="320" y="700" text-anchor="middle" font-size="14" fill="#96A6A1" font-style="italic">Drag the blue side S down here to begin</text>
+
+        <g id="layer-original"></g>
+        <g id="layer-reveal"></g>
+        <g id="layer-guide"></g>
+        <g id="layer-pieces"></g>
+        <g id="layer-markers"></g>
+        <g id="layer-final"></g>
+        <g id="layer-stamp"></g>
+      </svg>
+    </div>
+
+    <div class="tracker" id="tracker">
+      <div class="step active" data-step="1"><span class="num">01</span><span class="lbl">Place the side</span></div>
+      <div class="step" data-step="2"><span class="num">02</span><span class="lbl">Attach the angle</span></div>
+      <div class="step" data-step="3"><span class="num">03</span><span class="lbl">Attach the 2nd side</span></div>
+      <div class="step" data-step="4"><span class="num">04</span><span class="lbl">Close the triangle</span></div>
+    </div>
+
+    <p class="banner" id="banner" aria-live="polite">Drag the blue side (<b>S</b>) down into the Construct area.</p>
+
+    <div class="controls">
+      <button class="ghost" id="resetBtn" type="button">Reset construction</button>
+      <button class="ghost primary" id="overlayBtn" type="button" style="display:none;">Slide onto the original</button>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById('stage');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------- geometry helpers ---------------- */
+  const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
+  const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+  const scl=(a,s)=>({x:a.x*s,y:a.y*s});
+  const len=(a)=>Math.hypot(a.x,a.y);
+  const unit=(a)=>{ const l=len(a)||1; return {x:a.x/l,y:a.y/l}; };
+  const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+  const dist=(a,b)=>len(sub(a,b));
+
+  function outwardPerp(A,B,centroid){
+    const d = unit(sub(B,A));
+    let p = {x:-d.y,y:d.x};
+    const M = mid(A,B);
+    const toM = sub(M,centroid);
+    if (p.x*toM.x + p.y*toM.y < 0) p = {x:-p.x,y:-p.y};
+    return p;
+  }
+
+  function arcSample(V,u1,u2,r,steps){
+    steps = steps || 20;
+    const a1 = Math.atan2(u1.y,u1.x), a2 = Math.atan2(u2.y,u2.x);
+    let diff = a2-a1;
+    while(diff <= -Math.PI) diff += Math.PI*2;
+    while(diff > Math.PI) diff -= Math.PI*2;
+    const pts=[];
+    for(let i=0;i<=steps;i++){
+      const t=i/steps, ang=a1+diff*t;
+      pts.push({x:V.x+r*Math.cos(ang), y:V.y+r*Math.sin(ang)});
+    }
+    return {pts, angleDeg: Math.abs(diff*180/Math.PI)};
+  }
+
+  function pointsAttr(pts){ return pts.map(p=>`${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' '); }
+
+  function SVGE(tag, attrs, kids){
+    const e = document.createElementNS(SVGNS, tag);
+    if(attrs) for(const k in attrs){ if(attrs[k]!==undefined && attrs[k]!==null) e.setAttribute(k, attrs[k]); }
+    if(kids) kids.forEach(k=>{ if(k) e.appendChild(k); });
+    return e;
+  }
+
+  function toSvgPoint(evt){
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const ctm = svg.getScreenCTM();
+    if(!ctm) return {x:0,y:0};
+    const loc = pt.matrixTransform(ctm.inverse());
+    return {x:loc.x, y:loc.y};
+  }
+
+  function clearLayer(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+
+  /* ---------------- triangle geometry (regenerated fresh for each exercise) ---------------- */
+  const Q_ANCHOR = {x:450, y:330}; // Q stays put; only the shape/size of the triangle varies
+
+  function randRange(min,max){ return min + Math.random()*(max-min); }
+
+  function angleBetweenDeg(v1,v2){
+    const c = (v1.x*v2.x + v1.y*v2.y) / (len(v1)*len(v2));
+    return Math.acos(Math.max(-1,Math.min(1,c))) * 180/Math.PI;
+  }
+
+  // Builds a fresh scalene triangle: two side lengths + the angle at Q chosen
+  // at random, then rejection-sampled so all three sides are clearly distinct
+  // (never near-isosceles) and no angle is too thin to read comfortably.
+  function generateTriangle(){
+    let P0,Q0,R0;
+    for(let tries=0; tries<50; tries++){
+      Q0 = Q_ANCHOR;
+      const lenQP = randRange(150,255);
+      const lenQR = randRange(150,235);
+      const includedDeg = randRange(42,112);
+      P0 = {x:Q0.x-lenQP, y:Q0.y};
+      const rad = (180+includedDeg) * Math.PI/180;
+      R0 = {x:Q0.x+lenQR*Math.cos(rad), y:Q0.y+lenQR*Math.sin(rad)};
+      const lenPR = dist(P0,R0);
+
+      const distinctEnough =
+        Math.abs(lenQP-lenQR) > 18 &&
+        Math.abs(lenQP-lenPR) > 18 &&
+        Math.abs(lenQR-lenPR) > 18;
+
+      const angleAtP = angleBetweenDeg(sub(Q0,P0), sub(R0,P0));
+      const angleAtR = 180 - includedDeg - angleAtP;
+      const anglesOK = angleAtP>22 && angleAtP<130 && angleAtR>22 && angleAtR<130;
+
+      if(distinctEnough && anglesOK) return {P0,Q0,R0};
+    }
+    // extremely unlikely fallback if 50 tries all failed
+    return {P0:{x:190,y:330}, Q0:Q_ANCHOR, R0:{x:330,y:118}};
+  }
+
+  // Builds a fresh right triangle for HL: the right angle sits at Q, with
+  // the two legs at random (but clearly different) lengths along
+  // perpendicular directions, so the hypotenuse and its length emerge from
+  // the Pythagorean relationship rather than being chosen directly.
+  function generateRightTriangle(){
+    let P0,Q0,R0;
+    for(let tries=0; tries<50; tries++){
+      Q0 = Q_ANCHOR;
+      const legQP = randRange(150,255);
+      const legQR = randRange(140,230);
+      P0 = {x:Q0.x-legQP, y:Q0.y};
+      R0 = {x:Q0.x, y:Q0.y-legQR}; // straight up from Q: perpendicular to QP
+      const hyp = dist(P0,R0);
+
+      const distinctEnough =
+        Math.abs(legQP-legQR) > 18 &&
+        Math.abs(hyp-legQP) > 18 &&
+        Math.abs(hyp-legQR) > 18;
+
+      const angleAtP = angleBetweenDeg(sub(Q0,P0), sub(R0,P0));
+      const anglesOK = angleAtP>20 && angleAtP<70; // keeps both non-right angles readable (they sum to 90)
+
+      if(distinctEnough && anglesOK) return {P0,Q0,R0};
+    }
+    // extremely unlikely fallback if 50 tries all failed
+    return {P0:{x:190,y:330}, Q0:Q_ANCHOR, R0:{x:450,y:118}};
+  }
+
+  let P0, Q0, R0, centroid;
+  function regenerateTriangle(kind){
+    const t = (kind === 'right') ? generateRightTriangle() : generateTriangle();
+    P0 = t.P0; Q0 = t.Q0; R0 = t.R0;
+    centroid = {x:(P0.x+Q0.x+R0.x)/3, y:(P0.y+Q0.y+R0.y)/3};
+  }
+
+  const ARC_R = 32, RAY_LEN = 46;
+  const SNAP_THRESH = 34;
+  const NEAR_THRESH = 60;
+  const SAFE_MIN_X = 60, SAFE_MAX_X = 620, SAFE_MIN_Y = 460, SAFE_MAX_Y = 940;
+
+  function offsetValid(off){
+    return [P0,Q0,R0].every(p=>{
+      const q = add(p,off);
+      return q.x>=SAFE_MIN_X && q.x<=SAFE_MAX_X && q.y>=SAFE_MIN_Y && q.y<=SAFE_MAX_Y;
+    });
+  }
+
+  /* ---------------- layer / DOM references ---------------- */
+  const layerOriginal = document.getElementById('layer-original');
+  const layerReveal = document.getElementById('layer-reveal');
+  const layerGuide = document.getElementById('layer-guide');
+  const layerPieces = document.getElementById('layer-pieces');
+  const layerMarkers = document.getElementById('layer-markers');
+  const layerFinal = document.getElementById('layer-final');
+  const layerStamp = document.getElementById('layer-stamp');
+
+  const banner = document.getElementById('banner');
+  const tracker = document.getElementById('tracker');
+  const dropHint = document.getElementById('dropHint');
+  const overlayBtn = document.getElementById('overlayBtn');
+  const toastEl = document.getElementById('toast');
+  const subCopy = document.getElementById('subCopy');
+  let toastTimer = null;
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2200);
+  }
+
+  /* ---------------- shared visual builders ---------------- */
+  function makeChip(pos, letter, colorVar, textColor){
+    const g = SVGE('g',{});
+    g.appendChild(SVGE('rect',{x:pos.x-14,y:pos.y-14,width:28,height:28,rx:8,fill:colorVar,stroke:'var(--paper)','stroke-width':2}));
+    g.appendChild(SVGE('text',{x:pos.x,y:pos.y+5,'text-anchor':'middle','font-size':15,'font-weight':700,fill:textColor},[document.createTextNode(letter)]));
+    return g;
+  }
+
+  function addTickMarks(container, A, B, count, colorVar){
+    const m = mid(A,B);
+    const d = unit(sub(B,A));
+    const perp = {x:-d.y, y:d.x};
+    const offsets = count===1 ? [0] : count===2 ? [-6,6] : [-10,0,10];
+    offsets.forEach(off=>{
+      const c = add(m, scl(d, off));
+      const t1 = add(c, scl(perp,7)), t2 = sub(c, scl(perp,7));
+      container.appendChild(SVGE('line',{x1:t1.x,y1:t1.y,x2:t2.x,y2:t2.y,stroke:colorVar,'stroke-width':3.2,'stroke-linecap':'round'}));
+    });
+  }
+
+  // Static (non-draggable) arc annotation marking an angle as "revealed" —
+  // used by SSS, where no angle is given up front, so once the construction
+  // succeeds the payoff is showing that all three angles had to match too.
+  // arcCount (1/2/3 concentric arcs) distinguishes which of the three
+  // angle-pairs this is, mirroring the tick-count convention used for sides.
+  function addAngleRevealMark(container, vertex, dir1, dir2, arcCount, colorVar){
+    const radii = arcCount===1 ? [ARC_R] : arcCount===2 ? [ARC_R-6,ARC_R+3] : [ARC_R-10,ARC_R-1,ARC_R+8];
+    radii.forEach(r=>{
+      const info = arcSample(vertex, dir1, dir2, r, 20);
+      container.appendChild(SVGE('polyline',{points:pointsAttr(info.pts), fill:'none', stroke:colorVar,'stroke-width':2.2}));
+    });
+  }
+
+  function buildSidePiece(connectPt, freePt, colorVar, textColor, tickCount, letter){
+    letter = letter || 'S';
+    const g = SVGE('g',{class:'piece', tabindex:'0', role:'group'});
+    const d = `M ${freePt.x} ${freePt.y} L ${connectPt.x} ${connectPt.y}`;
+    g.appendChild(SVGE('path',{d, class:'hit-line', stroke:'transparent','stroke-width':26,fill:'none'}));
+    g.appendChild(SVGE('path',{d, class:'piece-line', stroke:colorVar,'stroke-width':6,'stroke-linecap':'round',fill:'none'}));
+
+    addTickMarks(g, connectPt, freePt, tickCount, colorVar);
+
+    const m = mid(connectPt, freePt);
+    const outPerp = outwardPerp(connectPt, freePt, centroid);
+    const chipPos = add(m, scl(outPerp,26));
+    g.appendChild(makeChip(chipPos,letter,colorVar,textColor));
+
+    g._connect = connectPt; g._free = freePt;
+    return g;
+  }
+
+  // opts: { arcCount:1|2|3, persistIndex: 0|1, persistBoth: true }
+  // persistBoth keeps both rays visible (used when this piece is placed
+  // FIRST, before anything else exists to make either ray redundant).
+  // persistIndex marks which ray (0=dir1, 1=dir2) stays visible after the
+  // piece settles, because nothing else will ever cover that direction —
+  // used for ASA's "open arm," which the student later extends by hand.
+  function buildAnglePiece(vertex, dir1, dir2, colorVar, textColor, opts){
+    opts = opts || {};
+    const arcCount = opts.arcCount || 1;
+    const g = SVGE('g',{class:'piece', tabindex:'0', role:'group'});
+
+    const infoOuter = arcSample(vertex, dir1, dir2, ARC_R, 22);
+    const wedgePts = [vertex].concat(infoOuter.pts);
+    g.appendChild(SVGE('path',{
+      d:'M '+wedgePts.map(p=>`${p.x} ${p.y}`).join(' L ')+' Z',
+      fill:colorVar, opacity:0.14
+    }));
+    g.appendChild(SVGE('polyline',{points:pointsAttr(infoOuter.pts), fill:'none', stroke:colorVar,'stroke-width':2.6}));
+    if(arcCount === 2){
+      const infoInner = arcSample(vertex, dir1, dir2, ARC_R-7, 22);
+      g.appendChild(SVGE('polyline',{points:pointsAttr(infoInner.pts), fill:'none', stroke:colorVar,'stroke-width':2.2}));
+    } else if(arcCount === 3){
+      [ARC_R-7, ARC_R-14].forEach(r=>{
+        const info = arcSample(vertex, dir1, dir2, r, 22);
+        g.appendChild(SVGE('polyline',{points:pointsAttr(info.pts), fill:'none', stroke:colorVar,'stroke-width':2.2}));
+      });
+    }
+
+    const rayLen = opts.rayLen || RAY_LEN;
+    const rayEls = [];
+    [dir1,dir2].forEach((dir,i)=>{
+      const rEnd = add(vertex, scl(dir, rayLen));
+      const persist = opts.persistBoth || opts.persistIndex === i;
+      const rayEl = SVGE('line',{x1:vertex.x,y1:vertex.y,x2:rEnd.x,y2:rEnd.y,stroke:colorVar,'stroke-width':2.5,class: persist ? 'ray-persist':'ray','stroke-linecap':'round'});
+      g.appendChild(rayEl);
+      rayEls.push(rayEl);
+    });
+    g._rays = rayEls; // [ray toward dir1, ray toward dir2] — for selectively hiding one later
+
+    g.appendChild(SVGE('circle',{cx:vertex.x,cy:vertex.y,r:4,fill:colorVar}));
+
+    const bis = unit(add(dir1,dir2));
+    const chipPos = add(vertex, scl(bis, ARC_R+24));
+    g.appendChild(makeChip(chipPos,'A',colorVar,textColor));
+
+    const hitR = SVGE('circle',{cx:vertex.x,cy:vertex.y,r:84, class:'hit-wedge'});
+    g.insertBefore(hitR, g.firstChild);
+
+    g._connect = vertex;
+    return g;
+  }
+
+  // Right-angle piece: a small square corner-mark instead of an arc, plus
+  // an "attach" ray (fades once it lines up with the placed leg) and a
+  // "free" ray (stays visible, dashed, until the hypotenuse's swing locks
+  // in). No letter chip: unlike H and L, the right angle isn't a measured
+  // given value — it's the structural fact that both triangles are right
+  // triangles — so the mark itself is the whole label.
+  function buildRightAnglePiece(vertex, dirAttach, dirFree, colorVar){
+    const g = SVGE('g',{class:'piece', tabindex:'0', role:'group'});
+    const s = 16;
+    const c1 = add(vertex, scl(dirAttach, s));
+    const c2 = add(c1, scl(dirFree, s));
+    const c3 = add(vertex, scl(dirFree, s));
+    g.appendChild(SVGE('path',{d:`M ${c1.x} ${c1.y} L ${c2.x} ${c2.y} L ${c3.x} ${c3.y}`, fill:'none', stroke:colorVar,'stroke-width':2.6,'stroke-linejoin':'round'}));
+
+    const rAttachEnd = add(vertex, scl(dirAttach, RAY_LEN));
+    const rFreeEnd = add(vertex, scl(dirFree, RAY_LEN));
+    g.appendChild(SVGE('line',{x1:vertex.x,y1:vertex.y,x2:rAttachEnd.x,y2:rAttachEnd.y,stroke:colorVar,'stroke-width':2.5,class:'ray','stroke-linecap':'round'}));
+    g.appendChild(SVGE('line',{x1:vertex.x,y1:vertex.y,x2:rFreeEnd.x,y2:rFreeEnd.y,stroke:colorVar,'stroke-width':2.5,class:'ray-persist','stroke-linecap':'round'}));
+
+    g.appendChild(SVGE('circle',{cx:vertex.x,cy:vertex.y,r:4,fill:colorVar}));
+
+    const hitR = SVGE('circle',{cx:vertex.x,cy:vertex.y,r:58, class:'hit-wedge'});
+    g.insertBefore(hitR, g.firstChild);
+
+    g._connect = vertex;
+    return g;
+  }
+
+  function makeMarker(pt){
+    const g = SVGE('g',{class:'marker-dot', tabindex:'0', role:'group', style:'display:none'});
+    g.appendChild(SVGE('circle',{class:'ring', cx:pt.x, cy:pt.y, r:11, fill:'none', stroke:'var(--ink)','stroke-width':2, opacity:0}));
+    g.appendChild(SVGE('circle',{class:'pulse', cx:pt.x, cy:pt.y, r:11, fill:'none', stroke:'var(--ink)','stroke-width':2}));
+    g.appendChild(SVGE('circle',{cx:pt.x, cy:pt.y, r:7, fill:'var(--ink)'}));
+    g._pt = pt;
+    return g;
+  }
+
+  function drawOriginalBase(captionText){
+    clearLayer(layerOriginal);
+    layerOriginal.appendChild(SVGE('line',{x1:P0.x,y1:P0.y,x2:Q0.x,y2:Q0.y,stroke:'var(--grid-strong)','stroke-width':2.5,'stroke-linecap':'round'}));
+    layerOriginal.appendChild(SVGE('line',{x1:Q0.x,y1:Q0.y,x2:R0.x,y2:R0.y,stroke:'var(--grid-strong)','stroke-width':2.5,'stroke-linecap':'round'}));
+    layerOriginal.appendChild(SVGE('line',{x1:R0.x,y1:R0.y,x2:P0.x,y2:P0.y,stroke:'var(--grid-strong)','stroke-width':2.5,'stroke-linecap':'round'}));
+    function vlabel(pt, dx, dy, text){
+      layerOriginal.appendChild(SVGE('text',{x:pt.x+dx,y:pt.y+dy,'font-size':14,'font-weight':600,fill:'var(--ink-soft)','text-anchor':'middle'},[document.createTextNode(text)]));
+    }
+    vlabel(P0,-20,8,'P');
+    vlabel(Q0,22,8,'Q');
+    vlabel(R0,0,-16,'R');
+    layerOriginal.appendChild(SVGE('text',{x:230,y:372,'font-size':12.5,fill:'var(--ink-soft)'},[document.createTextNode(captionText)]));
+  }
+
+  function buildStamp(){
+    const g = SVGE('g',{class:'stamp-group'});
+    const cx=460, cy=790;
+    const w=210,h=108;
+    const rot = -7;
+    const wrap = SVGE('g',{transform:`translate(${cx} ${cy}) rotate(${rot})`});
+    wrap.appendChild(SVGE('rect',{x:-w/2,y:-h/2,width:w,height:h,rx:14,fill:'#F1F7F3',stroke:'var(--stamp)','stroke-width':3}));
+    wrap.appendChild(SVGE('rect',{x:-w/2+8,y:-h/2+8,width:w-16,height:h-16,rx:9,fill:'none',stroke:'var(--stamp)','stroke-width':1.4}));
+    wrap.appendChild(SVGE('text',{x:0,y:-30,'text-anchor':'middle','font-size':10.5,'font-weight':600,'letter-spacing':2,fill:'var(--stamp)',class:'mono-label'},[document.createTextNode('PROVEN')]));
+    wrap.appendChild(SVGE('text',{x:0,y:2,'text-anchor':'middle','font-size':19,'font-weight':700,fill:'var(--stamp)'},[document.createTextNode('CONGRUENT')]));
+    const postulateText = SVGE('text',{x:0,y:30,'text-anchor':'middle','font-size':11,'font-weight':600,fill:'var(--stamp)',class:'mono-label'},[document.createTextNode('△P′Q′R′ ≅ △PQR  ·  SAS')]);
+    wrap.appendChild(postulateText);
+    g.appendChild(wrap);
+    layerStamp.appendChild(g);
+    g._postulateText = postulateText;
+    return g;
+  }
+  const stampGroup = buildStamp();
+
+  function fadeInOpacity(el, target, duration){
+    if(reduceMotion){ el.setAttribute('opacity', target); return; }
+    let t0=null;
+    function frame(now){
+      if(t0===null) t0=now;
+      const p = Math.min(1,(now-t0)/duration);
+      el.setAttribute('opacity', target*p);
+      if(p<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function animateOffset(g, from, to, duration, onDone){
+    if(reduceMotion){
+      g.setAttribute('transform', `translate(${to.x} ${to.y})`);
+      onDone && onDone();
+      return;
+    }
+    const start = performance.now();
+    function ease(t){ return 1-Math.pow(1-t,3); }
+    function frame(now){
+      const t = Math.min(1,(now-start)/duration);
+      const e = ease(t);
+      const x = from.x + (to.x-from.x)*e;
+      const y = from.y + (to.y-from.y)*e;
+      g.setAttribute('transform', `translate(${x} ${y})`);
+      if(t<1) requestAnimationFrame(frame); else onDone && onDone();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // Projects `point` onto the infinite line through rayOrigin in direction
+  // rayDir (a unit vector). Returns both the projected point and t (the
+  // signed distance along rayDir from rayOrigin) so callers can require
+  // t>0 (the forward ray, not behind the origin).
+  function projectOntoRay(point, rayOrigin, rayDir){
+    const rel = sub(point, rayOrigin);
+    const t = rel.x*rayDir.x + rel.y*rayDir.y;
+    return { point: add(rayOrigin, scl(rayDir, t)), t };
+  }
+
+  // Like animateOffset, but drives several elements with the same
+  // interpolated translate simultaneously — used to snap a piece and its
+  // rigidly-linked companion (e.g. angle Q and the side attached to it)
+  // into their final position together.
+  function animateOffsetLinked(elements, from, to, duration, onDone){
+    if(reduceMotion){
+      elements.forEach(el=>el.setAttribute('transform', `translate(${to.x} ${to.y})`));
+      onDone && onDone();
+      return;
+    }
+    const start = performance.now();
+    function ease(t){ return 1-Math.pow(1-t,3); }
+    function frame(now){
+      const t = Math.min(1,(now-start)/duration);
+      const e = ease(t);
+      const x = from.x + (to.x-from.x)*e;
+      const y = from.y + (to.y-from.y)*e;
+      elements.forEach(el=>el.setAttribute('transform', `translate(${x} ${y})`));
+      if(t<1) requestAnimationFrame(frame); else onDone && onDone();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function currentOffset(g){
+    const t = g.getAttribute('transform') || '';
+    const m = t.match(/translate\(([-\d.]+)[ ,]+([-\d.]+)\)/);
+    return m ? {x:parseFloat(m[1]), y:parseFloat(m[2])} : {x:0,y:0};
+  }
+
+  /* ---------------- generic drag controller ---------------- */
+  function attachDrag(g, opts){
+    let dragging = false;
+    let startSvg = null;
+    let baseOffset = {x:0,y:0};
+    let cur = {x:0,y:0};
+
+    function begin(clientPt){
+      startSvg = clientPt;
+      baseOffset = currentOffset(g);
+      dragging = true;
+      g.classList.add('dragging');
+    }
+    function moveBy(dx,dy){
+      cur = {x:baseOffset.x+dx, y:baseOffset.y+dy};
+      g.setAttribute('transform', `translate(${cur.x} ${cur.y})`);
+      if(opts.onMove) opts.onMove(cur);
+    }
+    function finish(){
+      g.classList.remove('dragging');
+      dragging = false;
+      opts.onEnd(cur, g);
+    }
+
+    g.addEventListener('pointerdown', e=>{
+      if(g.classList.contains('inactive') || g.classList.contains('locked')) return;
+      g.setPointerCapture(e.pointerId);
+      begin(toSvgPoint(e));
+      e.preventDefault();
+    });
+    g.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const p = toSvgPoint(e);
+      moveBy(p.x-startSvg.x, p.y-startSvg.y);
+    });
+    function up(e){
+      if(!dragging) return;
+      finish();
+    }
+    g.addEventListener('pointerup', up);
+    g.addEventListener('pointercancel', up);
+
+    g.addEventListener('keydown', e=>{
+      if(g.classList.contains('inactive') || g.classList.contains('locked')) return;
+      const step = e.shiftKey ? 22 : 9;
+      let handled = true;
+      const base = currentOffset(g);
+      if(e.key==='ArrowLeft'){ cur = {x:base.x-step, y:base.y}; }
+      else if(e.key==='ArrowRight'){ cur = {x:base.x+step, y:base.y}; }
+      else if(e.key==='ArrowUp'){ cur = {x:base.x, y:base.y-step}; }
+      else if(e.key==='ArrowDown'){ cur = {x:base.x, y:base.y+step}; }
+      else if(e.key==='Enter' || e.key===' '){ cur = base; opts.onEnd(cur,g); e.preventDefault(); return; }
+      else handled = false;
+      if(handled){
+        g.setAttribute('transform', `translate(${cur.x} ${cur.y})`);
+        if(opts.onMove) opts.onMove(cur);
+        e.preventDefault();
+      }
+    });
+  }
+
+  function attachZoneDrag(piece, onLocked){
+    attachDrag(piece, {
+      onEnd(cur){
+        if(offsetValid(cur)){
+          offset1 = {x:cur.x, y:cur.y};
+          piece.classList.add('locked');
+          dropHint.style.display = 'none';
+          onLocked();
+        } else {
+          animateOffset(piece, cur, {x:0,y:0}, 260);
+          toast('Drop it inside the Construct area, below the line.');
+        }
+      }
+    });
+  }
+
+  function attachSnapDrag(piece, onLocked, hintMsg, targetFn){
+    targetFn = targetFn || (()=>offset1);
+    attachDrag(piece, {
+      onEnd(cur){
+        if(!offset1) return;
+        const target = targetFn();
+        const d = dist(cur, target);
+        if(d <= SNAP_THRESH){
+          animateOffset(piece, cur, target, reduceMotion?0:120, ()=>{
+            piece.classList.add('locked','settled');
+            onLocked();
+          });
+        } else {
+          animateOffset(piece, cur, {x:0,y:0}, 260);
+          toast(hintMsg);
+        }
+      }
+    });
+  }
+
+  // AAS's angle-Q piece, in three phases:
+  //  1) align  — free 2D drag; releasing near angle R's ray snaps onto it
+  //     (direction only — not yet the correct distance along it)
+  //  2) paused — frozen while the side attaches to wherever it landed
+  //  3) slide  — dragging now only moves it along that same ray, carrying
+  //     the linked side with it, until the side's far end reaches the
+  //     *other* ray from the same origin (the one point that closes the
+  //     triangle, per the two-ray/fixed-rod geometry).
+  // Returns a controller object so the caller can advance phase 2->3 once
+  // the side has actually attached.
+  function attachAngleQAAS(piece, vertexLocal, rayOriginFn, rayDir, opts){
+    let phase = 1;
+    let dragging = false;
+    let startSvg = null;
+    let baseOffset = {x:0,y:0};
+    let cur = {x:0,y:0};
+
+    function setTransforms(off){
+      piece.setAttribute('transform', `translate(${off.x} ${off.y})`);
+      if(phase === 3){
+        opts.getLinkedSide().setAttribute('transform', `translate(${off.x} ${off.y})`);
+      }
+    }
+
+    piece.addEventListener('pointerdown', e=>{
+      if(piece.classList.contains('inactive') || phase===2 || piece.classList.contains('final-locked')) return;
+      piece.setPointerCapture(e.pointerId);
+      startSvg = toSvgPoint(e);
+      baseOffset = currentOffset(piece);
+      dragging = true;
+      piece.classList.add('dragging');
+      e.preventDefault();
+    });
+
+    piece.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const p = toSvgPoint(e);
+      const raw = {x: baseOffset.x+(p.x-startSvg.x), y: baseOffset.y+(p.y-startSvg.y)};
+      if(phase === 1){
+        cur = raw;
+      } else {
+        const proj = projectOntoRay(add(vertexLocal, raw), rayOriginFn(), rayDir);
+        cur = sub(proj.point, vertexLocal);
+      }
+      setTransforms(cur);
+    });
+
+    function attemptAlign(){
+      const proj = projectOntoRay(add(vertexLocal, cur), rayOriginFn(), rayDir);
+      const perpDist = dist(add(vertexLocal, cur), proj.point);
+      if(perpDist <= SNAP_THRESH && proj.t > 0){
+        const targetOffset = sub(proj.point, vertexLocal);
+        animateOffset(piece, cur, targetOffset, reduceMotion?0:150, ()=>{
+          cur = targetOffset;
+          phase = 2;
+          opts.onRayLocked(targetOffset);
+        });
+        return true;
+      }
+      toast(opts.hintAlign);
+      return false;
+    }
+
+    function attemptFinish(){
+      const farPoint = add(opts.farPointLocal, cur);
+      const proj = projectOntoRay(farPoint, opts.targetRayOriginFn(), opts.targetRayDir);
+      const perpDist = dist(farPoint, proj.point);
+      if(perpDist <= SNAP_THRESH && proj.t > 0){
+        const side = opts.getLinkedSide();
+        animateOffsetLinked([piece, side], cur, offset1, reduceMotion?0:220, ()=>{
+          piece.classList.add('locked','settled','final-locked');
+          opts.onFinalDone();
+        });
+        return true;
+      }
+      toast(opts.hintSlide);
+      return false;
+    }
+
+    function up(){
+      if(!dragging) return;
+      dragging = false;
+      piece.classList.remove('dragging');
+      if(phase === 1){
+        if(!attemptAlign()) animateOffset(piece, cur, {x:0,y:0}, 260);
+      } else if(phase === 3){
+        attemptFinish();
+      }
+    }
+    piece.addEventListener('pointerup', up);
+    piece.addEventListener('pointercancel', up);
+
+    piece.addEventListener('keydown', e=>{
+      if(piece.classList.contains('inactive') || phase===2 || piece.classList.contains('final-locked')) return;
+      const step = e.shiftKey ? 20 : 8;
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        if(phase===1) attemptAlign(); else if(phase===3) attemptFinish();
+        return;
+      }
+      let delta = null;
+      if(e.key==='ArrowLeft') delta={x:-step,y:0};
+      else if(e.key==='ArrowRight') delta={x:step,y:0};
+      else if(e.key==='ArrowUp') delta={x:0,y:-step};
+      else if(e.key==='ArrowDown') delta={x:0,y:step};
+      if(!delta) return;
+      e.preventDefault();
+      if(phase === 1){
+        cur = add(cur, delta);
+      } else {
+        const proj = projectOntoRay(add(add(vertexLocal,cur), delta), rayOriginFn(), rayDir);
+        cur = sub(proj.point, vertexLocal);
+      }
+      setTransforms(cur);
+    });
+
+    return {
+      enterSlidePhase(){ phase = 3; }
+    };
+  }
+
+  /* ---------------- compass-swing drag (HL's hypotenuse) ---------------- */
+  // Rotates a piece around a fixed pivot instead of translating it — used
+  // to swing the hypotenuse, at a fixed length, around its anchored end
+  // until the tip reaches the one point where it also lands on the right
+  // angle's open ray. The pivot is translated by offset1 like everything
+  // else; only the rotation angle is under the student's control.
+  function rotatePoint(p, pivot, thetaDeg){
+    const rad = thetaDeg*Math.PI/180;
+    const dx=p.x-pivot.x, dy=p.y-pivot.y;
+    const cosT=Math.cos(rad), sinT=Math.sin(rad);
+    return {x:pivot.x+dx*cosT-dy*sinT, y:pivot.y+dx*sinT+dy*cosT};
+  }
+
+  function normalizeAngle(deg){
+    let d = deg % 360;
+    if(d>180) d-=360;
+    if(d<=-180) d+=360;
+    return d;
+  }
+
+  function animateRotation(piece, from, to, pivot, duration, onDone){
+    if(reduceMotion){
+      piece.setAttribute('transform', `translate(${offset1.x} ${offset1.y}) rotate(${to} ${pivot.x} ${pivot.y})`);
+      onDone && onDone();
+      return;
+    }
+    const start = performance.now();
+    function ease(t){ return 1-Math.pow(1-t,3); }
+    function frame(now){
+      const t = Math.min(1,(now-start)/duration);
+      const cur = from + (to-from)*ease(t);
+      piece.setAttribute('transform', `translate(${offset1.x} ${offset1.y}) rotate(${cur} ${pivot.x} ${pivot.y})`);
+      if(t<1) requestAnimationFrame(frame); else onDone && onDone();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function attachCompassDrag(piece, pivotLocal, tipLocal, startThetaDeg, onSnap, hintMsg){
+    let theta = startThetaDeg;
+    const baseAngle = Math.atan2(tipLocal.y-pivotLocal.y, tipLocal.x-pivotLocal.x) * 180/Math.PI;
+
+    function apply(){
+      piece.setAttribute('transform', `translate(${offset1.x} ${offset1.y}) rotate(${theta} ${pivotLocal.x} ${pivotLocal.y})`);
+    }
+    apply();
+
+    function currentTip(){ return add(rotatePoint(tipLocal, pivotLocal, theta), offset1); }
+
+    function pointerAngleFromPivot(evt){
+      const p = toSvgPoint(evt);
+      const pivotAbs = add(pivotLocal, offset1);
+      return Math.atan2(p.y-pivotAbs.y, p.x-pivotAbs.x) * 180/Math.PI;
+    }
+
+    function attemptSnap(){
+      const target = add(tipLocal, offset1);
+      if(dist(currentTip(), target) <= SNAP_THRESH){
+        animateRotation(piece, theta, 0, pivotLocal, reduceMotion?0:200, ()=>{
+          theta = 0;
+          piece.classList.add('locked','settled');
+          onSnap();
+        });
+      } else {
+        toast(hintMsg);
+      }
+    }
+
+    let dragging = false;
+    piece.addEventListener('pointerdown', e=>{
+      if(piece.classList.contains('inactive') || piece.classList.contains('locked')) return;
+      piece.setPointerCapture(e.pointerId);
+      dragging = true;
+      piece.classList.add('dragging');
+      e.preventDefault();
+    });
+    piece.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      theta = normalizeAngle(pointerAngleFromPivot(e) - baseAngle);
+      apply();
+    });
+    function up(){
+      if(!dragging) return;
+      dragging = false;
+      piece.classList.remove('dragging');
+      attemptSnap();
+    }
+    piece.addEventListener('pointerup', up);
+    piece.addEventListener('pointercancel', up);
+
+    piece.addEventListener('keydown', e=>{
+      if(piece.classList.contains('inactive') || piece.classList.contains('locked')) return;
+      const step = e.shiftKey ? 15 : 4;
+      if(e.key==='ArrowLeft'){ theta = normalizeAngle(theta-step); apply(); e.preventDefault(); }
+      else if(e.key==='ArrowRight'){ theta = normalizeAngle(theta+step); apply(); e.preventDefault(); }
+      else if(e.key==='Enter' || e.key===' '){ attemptSnap(); e.preventDefault(); }
+    });
+  }
+
+  /* ---------------- connector gesture: drag or click to one fixed target ---------------- */
+  function wireConnector(handle, targetPt, onSuccess){
+    handle.addEventListener('pointerdown', e=>{
+      e.preventDefault();
+      const startPt = toSvgPoint(e);
+      let dragged = false;
+      const temp = SVGE('line',{x1:handle._pt.x,y1:handle._pt.y,x2:handle._pt.x,y2:handle._pt.y,stroke:'var(--ink)','stroke-width':3,'stroke-dasharray':'6 5','stroke-linecap':'round'});
+      layerGuide.appendChild(temp);
+      function move(ev){
+        const p = toSvgPoint(ev);
+        if(dist(p,startPt) > 4) dragged = true;
+        temp.setAttribute('x2', p.x);
+        temp.setAttribute('y2', p.y);
+      }
+      function up(ev){
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        const p = toSvgPoint(ev);
+        temp.remove();
+        if(!dragged){ onSuccess(); return; }
+        if(dist(p, targetPt) <= NEAR_THRESH){ onSuccess(); }
+        else { toast('Drag out to the marked point to extend the arm.'); }
+      }
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    });
+    handle.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); onSuccess(); }
+    });
+  }
+
+  /* ---------------- connector gesture: drag between two open ends ---------------- */
+  function wirePairConnector(markerA, markerB, onComplete){
+    let selected = null;
+    function other(m){ return m===markerA ? markerB : markerA; }
+    function clickConnect(m){
+      if(!selected){
+        selected = m;
+        m.classList.add('selected');
+        m.querySelector('.ring').setAttribute('opacity', 1);
+      } else if(selected === m){
+        selected = null;
+        m.classList.remove('selected');
+        m.querySelector('.ring').setAttribute('opacity', 0);
+      } else {
+        onComplete();
+      }
+    }
+    [markerA, markerB].forEach(m=>{
+      m.addEventListener('pointerdown', e=>{
+        e.preventDefault();
+        const startPt = toSvgPoint(e);
+        let dragged = false;
+        const temp = SVGE('line',{x1:m._pt.x,y1:m._pt.y,x2:m._pt.x,y2:m._pt.y,stroke:'var(--ink)','stroke-width':3,'stroke-dasharray':'6 5','stroke-linecap':'round'});
+        layerGuide.appendChild(temp);
+        function move(ev){
+          const p = toSvgPoint(ev);
+          if(dist(p,startPt) > 4) dragged = true;
+          temp.setAttribute('x2', p.x);
+          temp.setAttribute('y2', p.y);
+        }
+        function up(ev){
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          const p = toSvgPoint(ev);
+          temp.remove();
+          if(!dragged){ clickConnect(m); return; }
+          const target = other(m);
+          if(dist(p, target._pt) <= NEAR_THRESH){ onComplete(); }
+          else { toast('Drag to the other open end to connect it.'); }
+        }
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+      m.addEventListener('keydown', e=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); clickConnect(m); }
+      });
+    });
+  }
+
+  /* ---------------- step tracker / instruction banner ---------------- */
+  function setTrackerLabels(labels){
+    [...tracker.children].forEach((el,i)=>{
+      const lbl = el.querySelector('.lbl');
+      if(lbl) lbl.textContent = labels[i];
+    });
+  }
+
+  function setBannerText(html, colorClass){
+    banner.classList.remove('step-angle','step-s2','step-close','step-done');
+    if(colorClass) banner.classList.add(colorClass);
+    banner.innerHTML = html;
+  }
+
+  function setStep(n){
+    step = n;
+    [...tracker.children].forEach(el=>{
+      const s = parseInt(el.dataset.step,10);
+      el.classList.toggle('active', s===n);
+      el.classList.toggle('done', s<n);
+    });
+    const cfg = MODES[currentMode];
+    setBannerText(cfg.banners[n], cfg.stepColors[n]);
+  }
+
+  /* ---------------- mode configuration (copy + labels only) ---------------- */
+  const MODES = {
+    SAS: {
+      sub: 'Drag the given side, angle, and side into the workspace below — if SAS is enough to guarantee a match, only one triangle can form.',
+      caption: 'Two sides and the angle between them — fixed and unchanged.',
+      trackerLabels: ['Place the side','Attach the angle','Attach the 2nd side','Close the triangle'],
+      dropHint: 'Drag the blue side (S) down here to begin',
+      banners: {
+        1:'Drag the blue side (<b>S</b>) down into the Construct area.',
+        2:'Now drag the angle (<b>A</b>) — line up its vertex with the side you placed.',
+        3:'Drag the second side (<b>S</b>) so it meets the open arm of the angle.',
+        4:'Drag from one open dot to the other to draw the closing side.',
+        5:'Even the third side lined up on its own — the two sides and the angle between them were enough to force one exact triangle. That\u2019s <b>SAS</b>.'
+      },
+      stepColors: {2:'step-angle',3:'step-s2',4:'step-close',5:'step-done'}
+    },
+    ASA: {
+      sub: 'Drag the given angle, side, and angle into the workspace below — if ASA is enough to guarantee a match, only one triangle can form.',
+      caption: 'Two angles and the side between them — fixed and unchanged.',
+      trackerLabels: ['Place the angle','Attach the side','Attach 2nd angle','Extend to meet'],
+      dropHint: 'Drag the amber angle (A) down here to begin',
+      banners: {
+        1:'Drag the amber angle (<b>A</b>) down into the Construct area.',
+        2:'Now drag the side (<b>S</b>) so it lines up with the angle you placed.',
+        3:'Drag the second angle (<b>A</b>) so its vertex meets the other end of the side.',
+        4:'Drag outward from each angle to extend its open arm until they meet at the marked point.',
+        5:'The two arms met at exactly one point — the side and its two angles were enough to force one exact triangle. That\u2019s <b>ASA</b>.'
+      },
+      stepColors: {1:'step-angle',3:'step-angle',4:'step-close',5:'step-done'}
+    },
+    HL: {
+      sub: 'Drag the given right angle, leg, and hypotenuse into the workspace below — if HL is enough to guarantee a match, only one triangle can form.',
+      caption: 'A right angle, one leg, and the hypotenuse — fixed and unchanged.',
+      trackerLabels: ['Place the leg','Attach the right angle','Swing the hypotenuse','Triangle closes'],
+      dropHint: 'Drag the blue leg (L) down here to begin',
+      banners: {
+        1:'Drag the blue leg (<b>L</b>) down into the Construct area.',
+        2:'Now drag the right angle \u2014 line up its vertex with the end of the leg.',
+        3:'Rotate the hypotenuse (<b>H</b>) like a compass around its anchor, until the tip reaches the marked point.',
+        4:'Almost there.',
+        5:'The last leg landed exactly on the ray \u2014 the right angle, one leg, and the hypotenuse were enough to force one exact triangle. That\u2019s <b>HL</b>.'
+      },
+      stepColors: {2:'step-angle',3:'step-s2',5:'step-done'}
+    },
+    SSS: {
+      sub: 'Drag all three given sides into the workspace below — if SSS is enough to guarantee a match, only one triangle can form, angles and all.',
+      caption: 'Three side lengths — fixed and unchanged, with no angle given at all.',
+      trackerLabels: ['Place the base side','Swing the sides','Almost there','Triangle closes'],
+      dropHint: 'Drag the blue side (S) down here to begin',
+      banners: {
+        1:'Drag the blue side (<b>S</b>) down into the Construct area.',
+        2:'Now swing the other two sides (<b>S</b>) \u2014 each pivots around its own end of the base until it reaches the marked point.',
+        3:'One side found the mark \u2014 swing the other to meet it too.',
+        4:'Almost there.',
+        5:'Both arcs met at exactly one point \u2014 three side lengths alone were enough to force one exact triangle. That\u2019s <b>SSS</b>.'
+      },
+      stepColors: {2:'step-close',3:'step-close',5:'step-done'}
+    },
+    AAS: {
+      sub: 'Drag the two given angles and the side into the workspace below — align, attach, then slide until only one triangle fits.',
+      caption: 'Two angles and the side beside one of them — fixed and unchanged.',
+      trackerLabels: ['Place the angle','Align 2nd angle','Attach the side','Slide to close'],
+      dropHint: 'Drag the amber angle (A) down here to begin',
+      banners: {
+        1:'Drag the amber angle (<b>A</b>) down into the Construct area.',
+        2:'Now drag the second angle (<b>A</b>) so it lines up along the first angle\u2019s dashed arm.',
+        3:'Now drag the side (<b>S</b>) so it lines up with the second angle you placed.',
+        4:'Slide the second angle in or out along the arm, carrying the side with it, until the far end meets the other arm.',
+        5:'Only one distance along that arm let the far end reach the other arm \u2014 the two angles and the side already forced one exact triangle. That\u2019s <b>AAS</b>.'
+      },
+      stepColors: {1:'step-angle',2:'step-angle',4:'step-close',5:'step-done'}
+    }
+  };
+
+  /* ---------------- shared mutable state ---------------- */
+  let currentMode = 'SAS';
+  let step = 1;
+  let offset1 = null;
+  let currentPieces = [];
+
+  /* ================= SAS ================= */
+  function initSAS(){
+    clearLayer(layerReveal); clearLayer(layerPieces); clearLayer(layerMarkers);
+    clearLayer(layerFinal); clearLayer(layerGuide);
+    layerFinal.removeAttribute('transform');
+    offset1 = null;
+    regenerateTriangle();
+
+    drawOriginalBase(MODES.SAS.caption);
+    setTrackerLabels(MODES.SAS.trackerLabels);
+    subCopy.textContent = MODES.SAS.sub;
+    dropHint.textContent = MODES.SAS.dropHint;
+
+    const u1 = unit(sub(P0,Q0));
+    const u2 = unit(sub(R0,Q0));
+
+    const pieceS1 = buildSidePiece(Q0, P0, 'var(--blue)', '#fff', 1);
+    const pieceAngle = buildAnglePiece(Q0, u1, u2, 'var(--amber)', 'var(--ink)', {arcCount:1});
+    const pieceS2 = buildSidePiece(Q0, R0, 'var(--teal)', '#fff', 2);
+    pieceAngle.classList.add('inactive');
+    pieceS2.classList.add('inactive');
+    layerPieces.append(pieceS1, pieceAngle, pieceS2);
+    currentPieces = [pieceS1, pieceAngle, pieceS2];
+
+    attachZoneDrag(pieceS1, ()=>{
+      pieceAngle.classList.remove('inactive');
+      setStep(2);
+    });
+    attachSnapDrag(pieceAngle, ()=>{
+      pieceS2.classList.remove('inactive');
+      setStep(3);
+    }, 'Line up the angle\u2019s vertex with the placed side.');
+    attachSnapDrag(pieceS2, ()=>{
+      beginClosingSAS();
+    }, 'Attach the second side to the angle\u2019s open arm.');
+
+    dropHint.style.display = '';
+    stampGroup.classList.remove('show','animate');
+    overlayBtn.style.display = 'none';
+    overlayBtn.disabled = false;
+    setStep(1);
+  }
+
+  function beginClosingSAS(){
+    const Pp = add(P0, offset1), Rp = add(R0, offset1);
+
+    const guide = SVGE('line',{x1:Pp.x,y1:Pp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--grid-strong)','stroke-width':1.5,'stroke-dasharray':'3 5',opacity:0.5});
+    layerGuide.appendChild(guide);
+
+    const markerP = makeMarker(Pp); markerP.style.display='';
+    const markerR = makeMarker(Rp); markerR.style.display='';
+    layerMarkers.appendChild(markerP);
+    layerMarkers.appendChild(markerR);
+
+    wirePairConnector(markerP, markerR, ()=>{
+      guide.setAttribute('opacity',0);
+      markerP.style.display='none';
+      markerR.style.display='none';
+      completeTriangleSAS(Pp, Rp);
+    });
+
+    setStep(4);
+  }
+
+  function completeTriangleSAS(Pp, Rp){
+    if(step >= 5) return;
+    const Qp = add(Q0, offset1);
+
+    const fillTri = SVGE('polygon',{points:pointsAttr([Pp,Qp,Rp]), fill:'var(--teal)', opacity:0});
+    const closingLine = SVGE('line',{x1:Pp.x,y1:Pp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--ink)','stroke-width':5,'stroke-linecap':'round'});
+    layerFinal.appendChild(fillTri);
+    layerFinal.appendChild(closingLine);
+    addTickMarks(layerFinal, Rp, Pp, 3, 'var(--ink)');
+    addTickMarks(layerReveal, R0, P0, 3, 'var(--ink)');
+    addVertexLabels(Pp,Qp,Rp);
+
+    fadeInOpacity(fillTri, 0.16, 500);
+
+    stampGroup._postulateText.textContent = '△P′Q′R′ ≅ △PQR  ·  SAS';
+    stampGroup.classList.add('show');
+    if(!reduceMotion) stampGroup.classList.add('animate');
+
+    overlayBtn.style.display = '';
+    setStep(5);
+  }
+
+  /* ================= ASA ================= */
+  function initASA(){
+    clearLayer(layerReveal); clearLayer(layerPieces); clearLayer(layerMarkers);
+    clearLayer(layerFinal); clearLayer(layerGuide);
+    layerFinal.removeAttribute('transform');
+    offset1 = null;
+    regenerateTriangle();
+
+    drawOriginalBase(MODES.ASA.caption);
+    setTrackerLabels(MODES.ASA.trackerLabels);
+    subCopy.textContent = MODES.ASA.sub;
+    dropHint.textContent = MODES.ASA.dropHint;
+
+    const dirPQ = unit(sub(Q0,P0)), dirPR = unit(sub(R0,P0));
+    const dirQP = unit(sub(P0,Q0)), dirQR = unit(sub(R0,Q0));
+
+    // Angle P goes first here, so nothing exists yet to make either of its
+    // rays redundant — both stay visible (persistBoth) until the side
+    // attaches to the dirPQ ray specifically (which we then fade by hand).
+    const pieceAngleP = buildAnglePiece(P0, dirPQ, dirPR, 'var(--amber)', 'var(--ink)', {arcCount:1, persistBoth:true});
+    const pieceSide = buildSidePiece(P0, Q0, 'var(--blue)', '#fff', 1);
+    const pieceAngleQ = buildAnglePiece(Q0, dirQP, dirQR, 'var(--amber)', 'var(--ink)', {arcCount:2, persistIndex:1});
+    pieceSide.classList.add('inactive');
+    pieceAngleQ.classList.add('inactive');
+    layerPieces.append(pieceAngleP, pieceSide, pieceAngleQ);
+    currentPieces = [pieceAngleP, pieceSide, pieceAngleQ];
+
+    attachZoneDrag(pieceAngleP, ()=>{
+      pieceSide.classList.remove('inactive');
+      setStep(2);
+    });
+    attachSnapDrag(pieceSide, ()=>{
+      pieceAngleP._rays[0].style.opacity = '0'; // now redundant with the placed side (inline style wins over the .ray-persist class rule)
+      pieceAngleQ.classList.remove('inactive');
+      setStep(3);
+    }, 'Line up the side with the angle you placed.');
+    attachSnapDrag(pieceAngleQ, ()=>{
+      beginClosingASA(pieceAngleP, pieceAngleQ);
+    }, 'Line up this angle\u2019s vertex with the other end of the side.');
+
+    dropHint.style.display = '';
+    stampGroup.classList.remove('show','animate');
+    overlayBtn.style.display = 'none';
+    overlayBtn.disabled = false;
+    setStep(1);
+  }
+
+  function beginClosingASA(pieceAngleP, pieceAngleQ){
+    const Pp = add(P0, offset1), Qp = add(Q0, offset1), Rp = add(R0, offset1);
+
+    const guideA = SVGE('line',{x1:Pp.x,y1:Pp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--grid-strong)','stroke-width':1.5,'stroke-dasharray':'3 5',opacity:0.5});
+    const guideB = SVGE('line',{x1:Qp.x,y1:Qp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--grid-strong)','stroke-width':1.5,'stroke-dasharray':'3 5',opacity:0.5});
+    layerGuide.appendChild(guideA);
+    layerGuide.appendChild(guideB);
+
+    const targetR = makeMarker(Rp); targetR.setAttribute('tabindex','-1'); targetR.style.display='';
+    const handleP = makeMarker(Pp); handleP.style.display='';
+    const handleQ = makeMarker(Qp); handleQ.style.display='';
+    layerMarkers.append(targetR, handleP, handleQ);
+
+    let doneP=false, doneQ=false;
+
+    function finishSide(which){
+      if(which==='P' && !doneP){
+        doneP = true;
+        layerFinal.appendChild(SVGE('line',{x1:Pp.x,y1:Pp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--ink)','stroke-width':5,'stroke-linecap':'round'}));
+        pieceAngleP.classList.add('done-extend');
+        handleP.style.display = 'none';
+        guideA.setAttribute('opacity',0);
+      } else if(which==='Q' && !doneQ){
+        doneQ = true;
+        layerFinal.appendChild(SVGE('line',{x1:Qp.x,y1:Qp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--ink)','stroke-width':5,'stroke-linecap':'round'}));
+        pieceAngleQ.classList.add('done-extend');
+        handleQ.style.display = 'none';
+        guideB.setAttribute('opacity',0);
+      }
+      if(doneP && doneQ){
+        targetR.style.display = 'none';
+        completeTriangleASA(Pp,Qp,Rp);
+      } else {
+        setBannerText(`Nice — now extend the ${doneP ? 'second' : 'first'} angle\u2019s arm to meet the mark, too.`, 'step-close');
+      }
+    }
+
+    wireConnector(handleP, Rp, ()=>finishSide('P'));
+    wireConnector(handleQ, Rp, ()=>finishSide('Q'));
+
+    setStep(4);
+  }
+
+  function completeTriangleASA(Pp,Qp,Rp){
+    if(step >= 5) return;
+    const fillTri = SVGE('polygon',{points:pointsAttr([Pp,Qp,Rp]), fill:'var(--teal)', opacity:0});
+    layerFinal.insertBefore(fillTri, layerFinal.firstChild);
+
+    addTickMarks(layerFinal, Pp, Rp, 2, 'var(--ink)');
+    addTickMarks(layerFinal, Qp, Rp, 3, 'var(--ink)');
+    addTickMarks(layerReveal, P0, R0, 2, 'var(--ink)');
+    addTickMarks(layerReveal, Q0, R0, 3, 'var(--ink)');
+    addVertexLabels(Pp,Qp,Rp);
+
+    fadeInOpacity(fillTri, 0.16, 500);
+
+    stampGroup._postulateText.textContent = '△P′Q′R′ ≅ △PQR  ·  ASA';
+    stampGroup.classList.add('show');
+    if(!reduceMotion) stampGroup.classList.add('animate');
+
+    overlayBtn.style.display = '';
+    setStep(5);
+  }
+
+  /* ================= HL ================= */
+  function initHL(){
+    clearLayer(layerReveal); clearLayer(layerPieces); clearLayer(layerMarkers);
+    clearLayer(layerFinal); clearLayer(layerGuide);
+    layerFinal.removeAttribute('transform');
+    offset1 = null;
+    regenerateTriangle('right');
+
+    drawOriginalBase(MODES.HL.caption);
+    setTrackerLabels(MODES.HL.trackerLabels);
+    subCopy.textContent = MODES.HL.sub;
+    dropHint.textContent = MODES.HL.dropHint;
+
+    const dirQP = unit(sub(P0,Q0)); // attach ray at Q, toward the leg
+    const dirQR = unit(sub(R0,Q0)); // free ray at Q, toward the (as yet unknown) other leg
+
+    const pieceLeg = buildSidePiece(Q0, P0, 'var(--blue)', '#fff', 1, 'L');
+    const pieceRA = buildRightAnglePiece(Q0, dirQP, dirQR, 'var(--amber)');
+    const pieceHyp = buildSidePiece(P0, R0, 'var(--teal)', '#fff', 2, 'H');
+    pieceRA.classList.add('inactive');
+    pieceHyp.classList.add('inactive');
+    layerPieces.append(pieceLeg, pieceRA, pieceHyp);
+    currentPieces = [pieceLeg, pieceRA, pieceHyp];
+
+    attachZoneDrag(pieceLeg, ()=>{
+      pieceRA.classList.remove('inactive');
+      setStep(2);
+    });
+    attachSnapDrag(pieceRA, ()=>{
+      pieceHyp.classList.remove('inactive');
+      beginCompassHL(pieceRA, pieceHyp);
+      setStep(3);
+    }, 'Line up the right angle\u2019s vertex with the end of the leg.');
+
+    dropHint.style.display = '';
+    stampGroup.classList.remove('show','animate');
+    overlayBtn.style.display = 'none';
+    overlayBtn.disabled = false;
+    setStep(1);
+  }
+
+  function beginCompassHL(pieceRA, pieceHyp){
+    const pivotAbs = add(P0, offset1);
+    const hypLen = dist(P0,R0);
+
+    const guideCircle = SVGE('circle',{cx:pivotAbs.x, cy:pivotAbs.y, r:hypLen, fill:'none', stroke:'var(--grid-strong)','stroke-width':1.5,'stroke-dasharray':'4 6', opacity:0.6});
+    layerGuide.appendChild(guideCircle);
+
+    const targetPt = add(R0, offset1);
+    const targetMarker = makeMarker(targetPt);
+    targetMarker.setAttribute('tabindex','-1');
+    targetMarker.style.display = '';
+    layerMarkers.appendChild(targetMarker);
+
+    const startTheta = (Math.random()<0.5 ? 1 : -1) * randRange(100,150);
+
+    attachCompassDrag(pieceHyp, P0, R0, startTheta, ()=>{
+      guideCircle.setAttribute('opacity',0);
+      targetMarker.style.display = 'none';
+      pieceRA.classList.add('done-extend');
+      completeTriangleHL();
+    }, 'Rotate the hypotenuse until its tip reaches the marked point.');
+  }
+
+  function completeTriangleHL(){
+    if(step >= 5) return;
+    const Pp = add(P0, offset1), Qp = add(Q0, offset1), Rp = add(R0, offset1);
+
+    const fillTri = SVGE('polygon',{points:pointsAttr([Pp,Qp,Rp]), fill:'var(--teal)', opacity:0});
+    const closingLine = SVGE('line',{x1:Qp.x,y1:Qp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--ink)','stroke-width':5,'stroke-linecap':'round'});
+    layerFinal.appendChild(fillTri);
+    layerFinal.appendChild(closingLine);
+    addTickMarks(layerFinal, Qp, Rp, 3, 'var(--ink)');
+    addTickMarks(layerReveal, Q0, R0, 3, 'var(--ink)');
+    addVertexLabels(Pp,Qp,Rp);
+
+    fadeInOpacity(fillTri, 0.16, 500);
+
+    stampGroup._postulateText.textContent = '△P′Q′R′ ≅ △PQR  ·  HL';
+    stampGroup.classList.add('show');
+    if(!reduceMotion) stampGroup.classList.add('animate');
+
+    overlayBtn.style.display = '';
+    setStep(5);
+  }
+
+  /* ================= SSS ================= */
+  function initSSS(){
+    clearLayer(layerReveal); clearLayer(layerPieces); clearLayer(layerMarkers);
+    clearLayer(layerFinal); clearLayer(layerGuide);
+    layerFinal.removeAttribute('transform');
+    offset1 = null;
+    regenerateTriangle();
+
+    drawOriginalBase(MODES.SSS.caption);
+    setTrackerLabels(MODES.SSS.trackerLabels);
+    subCopy.textContent = MODES.SSS.sub;
+    dropHint.textContent = MODES.SSS.dropHint;
+
+    const pieceSide1 = buildSidePiece(Q0, P0, 'var(--blue)', '#fff', 1, 'S');
+    const pieceSide2 = buildSidePiece(Q0, R0, 'var(--teal)', '#fff', 2, 'S');
+    const pieceSide3 = buildSidePiece(R0, P0, 'var(--amber)', 'var(--ink)', 3, 'S');
+    pieceSide2.classList.add('inactive');
+    pieceSide3.classList.add('inactive');
+    layerPieces.append(pieceSide1, pieceSide2, pieceSide3);
+    currentPieces = [pieceSide1, pieceSide2, pieceSide3];
+
+    attachZoneDrag(pieceSide1, ()=>{
+      pieceSide2.classList.remove('inactive');
+      pieceSide3.classList.remove('inactive');
+      beginCompassSSS(pieceSide2, pieceSide3);
+      setStep(2);
+    });
+
+    dropHint.style.display = '';
+    stampGroup.classList.remove('show','animate');
+    overlayBtn.style.display = 'none';
+    overlayBtn.disabled = false;
+    setStep(1);
+  }
+
+  function beginCompassSSS(pieceSide2, pieceSide3){
+    const targetPt = add(R0, offset1);
+    const targetMarker = makeMarker(targetPt);
+    targetMarker.setAttribute('tabindex','-1');
+    targetMarker.style.display = '';
+    layerMarkers.appendChild(targetMarker);
+
+    const r2 = dist(Q0,R0), r3 = dist(R0,P0);
+    const pivot2Abs = add(Q0, offset1), pivot3Abs = add(P0, offset1);
+
+    const guideCircle2 = SVGE('circle',{cx:pivot2Abs.x, cy:pivot2Abs.y, r:r2, fill:'none', stroke:'var(--teal)','stroke-width':1.5,'stroke-dasharray':'4 6', opacity:0.4});
+    const guideCircle3 = SVGE('circle',{cx:pivot3Abs.x, cy:pivot3Abs.y, r:r3, fill:'none', stroke:'var(--amber)','stroke-width':1.5,'stroke-dasharray':'4 6', opacity:0.4});
+    layerGuide.appendChild(guideCircle2);
+    layerGuide.appendChild(guideCircle3);
+
+    let done2=false, done3=false;
+
+    function checkBoth(){
+      if(done2 && done3){
+        targetMarker.style.display = 'none';
+        completeTriangleSSS();
+      } else {
+        setStep(3);
+      }
+    }
+
+    const startTheta2 = (Math.random()<0.5 ? 1 : -1) * randRange(90,150);
+    const startTheta3 = (Math.random()<0.5 ? 1 : -1) * randRange(90,150);
+
+    attachCompassDrag(pieceSide2, Q0, R0, startTheta2, ()=>{
+      done2 = true;
+      guideCircle2.setAttribute('opacity',0);
+      checkBoth();
+    }, 'Swing this side until its tip reaches the marked point.');
+
+    attachCompassDrag(pieceSide3, P0, R0, startTheta3, ()=>{
+      done3 = true;
+      guideCircle3.setAttribute('opacity',0);
+      checkBoth();
+    }, 'Swing this side until its tip reaches the marked point.');
+  }
+
+  function completeTriangleSSS(){
+    if(step >= 5) return;
+    const Pp = add(P0, offset1), Qp = add(Q0, offset1), Rp = add(R0, offset1);
+
+    const fillTri = SVGE('polygon',{points:pointsAttr([Pp,Qp,Rp]), fill:'var(--teal)', opacity:0});
+    layerFinal.insertBefore(fillTri, layerFinal.firstChild);
+
+    const dirQP=unit(sub(Q0,P0)), dirRP=unit(sub(R0,P0));
+    const dirPQ=unit(sub(P0,Q0)), dirRQ=unit(sub(R0,Q0));
+    const dirPR=unit(sub(P0,R0)), dirQR=unit(sub(Q0,R0));
+
+    addAngleRevealMark(layerReveal, P0, dirQP, dirRP, 1, 'var(--ink)');
+    addAngleRevealMark(layerReveal, Q0, dirPQ, dirRQ, 2, 'var(--ink)');
+    addAngleRevealMark(layerReveal, R0, dirPR, dirQR, 3, 'var(--ink)');
+
+    addAngleRevealMark(layerFinal, Pp, dirQP, dirRP, 1, 'var(--ink)');
+    addAngleRevealMark(layerFinal, Qp, dirPQ, dirRQ, 2, 'var(--ink)');
+    addAngleRevealMark(layerFinal, Rp, dirPR, dirQR, 3, 'var(--ink)');
+
+    addVertexLabels(Pp,Qp,Rp);
+    fadeInOpacity(fillTri, 0.16, 500);
+
+    stampGroup._postulateText.textContent = '△P′Q′R′ ≅ △PQR  ·  SSS';
+    stampGroup.classList.add('show');
+    if(!reduceMotion) stampGroup.classList.add('animate');
+
+    overlayBtn.style.display = '';
+    setStep(5);
+  }
+
+  /* ================= AAS ================= */
+  function initAAS(){
+    clearLayer(layerReveal); clearLayer(layerPieces); clearLayer(layerMarkers);
+    clearLayer(layerFinal); clearLayer(layerGuide);
+    layerFinal.removeAttribute('transform');
+    offset1 = null;
+    regenerateTriangle();
+
+    drawOriginalBase(MODES.AAS.caption);
+    setTrackerLabels(MODES.AAS.trackerLabels);
+    subCopy.textContent = MODES.AAS.sub;
+    dropHint.textContent = MODES.AAS.dropHint;
+
+    const AAS_RAY_LEN = 320; // long guide rays: enough room to align and later slide along
+
+    const dirRP = unit(sub(P0,R0)), dirRQ = unit(sub(Q0,R0));
+    const dirQP = unit(sub(P0,Q0)), dirQR = unit(sub(R0,Q0));
+
+    // Angle R (the far/topmost angle) goes first, with both long dashed
+    // rays visible — one is the track angle Q will align onto and later
+    // slide along; the other is the target angle Q's side needs to reach.
+    const pieceAngleR = buildAnglePiece(R0, dirRP, dirRQ, 'var(--amber)', 'var(--ink)', {arcCount:1, persistBoth:true, rayLen:AAS_RAY_LEN});
+    // Angle Q also gets long rays: its toward-R ray is what needs to
+    // align with (and then fade against) angle R's toward-Q ray.
+    const pieceAngleQ = buildAnglePiece(Q0, dirQP, dirQR, 'var(--amber)', 'var(--ink)', {arcCount:2, persistBoth:true, rayLen:AAS_RAY_LEN});
+    const pieceSide = buildSidePiece(Q0, P0, 'var(--blue)', '#fff', 1, 'S');
+    pieceAngleQ.classList.add('inactive');
+    pieceSide.classList.add('inactive');
+    layerPieces.append(pieceAngleR, pieceAngleQ, pieceSide);
+    currentPieces = [pieceAngleR, pieceAngleQ, pieceSide];
+
+    attachZoneDrag(pieceAngleR, ()=>{
+      pieceAngleQ.classList.remove('inactive');
+      setStep(2);
+    });
+
+    let qRayOffset = null;
+
+    const angleQCtrl = attachAngleQAAS(pieceAngleQ, Q0, ()=>add(R0,offset1), dirRQ, {
+      onRayLocked: (targetOffset)=>{
+        qRayOffset = targetOffset;
+        pieceAngleQ._rays[1].style.opacity = '0'; // toward R, now aligned/redundant with angle R's ray
+        pieceSide.classList.remove('inactive');
+        setStep(3);
+      },
+      getLinkedSide: ()=>pieceSide,
+      farPointLocal: P0,
+      targetRayOriginFn: ()=>add(R0,offset1),
+      targetRayDir: dirRP,
+      onFinalDone: ()=>{
+        pieceAngleR.classList.add('done-extend');
+        completeTriangleAAS();
+      },
+      hintAlign: 'Line this angle up along the first angle\u2019s dashed arm.',
+      hintSlide: 'Keep sliding \u2014 the far end needs to reach the other dashed arm.'
+    });
+
+    attachSnapDrag(pieceSide, ()=>{
+      pieceAngleQ._rays[0].style.opacity = '0'; // toward P, now redundant with the placed side
+      angleQCtrl.enterSlidePhase();
+      setStep(4);
+    }, 'Line up the side with the second angle you placed.', ()=>qRayOffset);
+
+    dropHint.style.display = '';
+    stampGroup.classList.remove('show','animate');
+    overlayBtn.style.display = 'none';
+    overlayBtn.disabled = false;
+    setStep(1);
+  }
+
+  function completeTriangleAAS(){
+    if(step >= 5) return;
+    const Pp = add(P0, offset1), Qp = add(Q0, offset1), Rp = add(R0, offset1);
+
+    const fillTri = SVGE('polygon',{points:pointsAttr([Pp,Qp,Rp]), fill:'var(--teal)', opacity:0});
+    layerFinal.insertBefore(fillTri, layerFinal.firstChild);
+
+    // Neither QR nor RP was ever drawn as its own piece (only the one side
+    // was given) — reveal both directly here.
+    layerFinal.appendChild(SVGE('line',{x1:Qp.x,y1:Qp.y,x2:Rp.x,y2:Rp.y,stroke:'var(--ink)','stroke-width':5,'stroke-linecap':'round'}));
+    layerFinal.appendChild(SVGE('line',{x1:Rp.x,y1:Rp.y,x2:Pp.x,y2:Pp.y,stroke:'var(--ink)','stroke-width':5,'stroke-linecap':'round'}));
+
+    addTickMarks(layerFinal, Qp, Rp, 2, 'var(--ink)');
+    addTickMarks(layerFinal, Rp, Pp, 3, 'var(--ink)');
+    addTickMarks(layerReveal, Q0, R0, 2, 'var(--ink)');
+    addTickMarks(layerReveal, R0, P0, 3, 'var(--ink)');
+
+    addVertexLabels(Pp,Qp,Rp);
+    fadeInOpacity(fillTri, 0.16, 500);
+
+    stampGroup._postulateText.textContent = '△P′Q′R′ ≅ △PQR  ·  AAS';
+    stampGroup.classList.add('show');
+    if(!reduceMotion) stampGroup.classList.add('animate');
+
+    overlayBtn.style.display = '';
+    setStep(5);
+  }
+
+  /* ---------------- shared completion helper ---------------- */
+  function addVertexLabels(Pp,Qp,Rp){
+    ['P','Q','R'].forEach((letter,i)=>{
+      const pt=[Pp,Qp,Rp][i];
+      const dx=[-20,22,0][i], dy=[8,8,-16][i];
+      layerFinal.appendChild(SVGE('text',{x:pt.x+dx,y:pt.y+dy,'font-size':14,'font-weight':600,fill:'var(--ink-soft)','text-anchor':'middle'},[document.createTextNode(letter+'\u2032')]));
+    });
+  }
+
+  /* ---------------- overlay-on-original bonus (mode-agnostic) ---------------- */
+  overlayBtn.addEventListener('click', ()=>{
+    if(!offset1) return;
+    overlayBtn.disabled = true;
+    const duration = reduceMotion ? 0 : 650;
+    const t0 = performance.now();
+    function frame(now){
+      const t = reduceMotion ? 1 : Math.min(1,(now-t0)/duration);
+      const e = 1-Math.pow(1-t,3);
+      const pieceX = offset1.x*(1-e), pieceY = offset1.y*(1-e);
+      const finalX = -offset1.x*e, finalY = -offset1.y*e;
+      currentPieces.forEach(g=>g.setAttribute('transform', `translate(${pieceX} ${pieceY})`));
+      layerFinal.setAttribute('transform', `translate(${finalX} ${finalY})`);
+      if(t<1){ requestAnimationFrame(frame); }
+      else {
+        toast('Slid onto the original — a perfect match.');
+        setTimeout(()=>{
+          const back0 = performance.now();
+          function back(now2){
+            const t2 = reduceMotion ? 1 : Math.min(1,(now2-back0)/duration);
+            const e2 = 1-Math.pow(1-t2,3);
+            const pieceX2 = offset1.x*e2, pieceY2 = offset1.y*e2;
+            const finalX2 = -offset1.x*(1-e2), finalY2 = -offset1.y*(1-e2);
+            currentPieces.forEach(g=>g.setAttribute('transform', `translate(${pieceX2} ${pieceY2})`));
+            layerFinal.setAttribute('transform', `translate(${finalX2} ${finalY2})`);
+            if(t2<1) requestAnimationFrame(back); else overlayBtn.disabled=false;
+          }
+          requestAnimationFrame(back);
+        }, 1500);
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+
+  /* ---------------- mode dispatch ---------------- */
+  const modeInitFns = { SAS: initSAS, ASA: initASA, HL: initHL, SSS: initSSS, AAS: initAAS };
+
+  /* ---------------- reset (re-initializes whichever mode is active) ---------------- */
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    modeInitFns[currentMode]();
+  });
+
+  /* ---------------- postulate tabs ---------------- */
+  document.querySelectorAll('.tab[data-mode]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const mode = btn.dataset.mode;
+      if(mode === currentMode) return;
+      currentMode = mode;
+      document.querySelectorAll('.tab[data-mode]').forEach(t=>{
+        const active = t.dataset.mode === mode;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      modeInitFns[mode]();
+    });
+  });
+  document.querySelectorAll('.tab.soon').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      toast(btn.dataset.name + ' is coming soon.');
+    });
+  });
+
+  /* ---------------- boot ---------------- */
+  modeInitFns[currentMode]();
+})();
+
+</script>
+</body>
+</html>
