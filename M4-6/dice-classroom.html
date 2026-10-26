@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ลูกเต๋าสามลูก ระยะสั้นกับระยะยาว</title>
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --surface:#ffffff;
+    --surface-2:#eef2f8;
+    --ink:#1b2333;
+    --muted:#5a667d;
+    --line:#d6dce8;
+    --accent:#2f5fd0;
+    --accent-ink:#ffffff;
+    --accent-soft:#e3ebfc;
+    --gain:#1e8a52;
+    --loss:#c23a3a;
+    --theory:#d27a0a;
+    --die:#ffffff;
+    --pip:#1b2333;
+    --shadow:0 1px 2px rgba(20,30,60,.06), 0 4px 14px rgba(20,30,60,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#11151d;
+      --surface:#1a2030;
+      --surface-2:#232b3d;
+      --ink:#e8ecf4;
+      --muted:#a0abc0;
+      --line:#334058;
+      --accent:#7aa2ff;
+      --accent-ink:#0d1220;
+      --accent-soft:#25335a;
+      --gain:#4cc98a;
+      --loss:#ff7b7b;
+      --theory:#ffb44d;
+      --die:#f4f6fb;
+      --pip:#1b2333;
+      --shadow:none;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#11151d; --surface:#1a2030; --surface-2:#232b3d; --ink:#e8ecf4; --muted:#a0abc0;
+    --line:#334058; --accent:#7aa2ff; --accent-ink:#0d1220; --accent-soft:#25335a;
+    --gain:#4cc98a; --loss:#ff7b7b; --theory:#ffb44d; --die:#f4f6fb; --pip:#1b2333; --shadow:none;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Sukhumvit Set","Thonburi","Noto Sans Thai","Leelawadee UI","Tahoma",sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    overflow-x:hidden;
+  }
+  button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  button:focus-visible, summary:focus-visible, a:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px calc(32px + env(safe-area-inset-bottom));}
+
+  header.top{padding:18px 0 6px;}
+  .back{display:inline-block;color:var(--accent);text-decoration:none;font-size:.9rem;margin-bottom:6px;}
+  h1{font-size:1.45rem;line-height:1.3;margin:0 0 4px;}
+  .sub{margin:0;color:var(--muted);font-size:.92rem;}
+  .badge{display:inline-block;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:2px 10px;font-size:.82rem;margin-top:8px;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;box-shadow:var(--shadow);}
+  .card h2{font-size:1.08rem;margin:0 0 10px;}
+  .card h3{font-size:1rem;margin:16px 0 8px;}
+  .muted{color:var(--muted);}
+  .small{font-size:.88rem;}
+
+  /* bet picker */
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .seg button{
+    border:2px solid var(--line);background:var(--surface-2);border-radius:12px;
+    padding:10px 6px;min-height:56px;font-weight:600;line-height:1.25;
+  }
+  .seg button small{display:block;font-weight:400;font-size:.78rem;color:var(--muted);}
+  .seg button[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);}
+  .nums{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;}
+  .nums button{
+    border:2px solid var(--line);background:var(--surface-2);border-radius:10px;
+    padding:6px 0 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;
+  }
+  .nums button[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);}
+  .nums button span{font-size:.8rem;font-weight:600;}
+  .nums[hidden]{display:none;}
+  .bet-desc{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--surface-2);font-size:.95rem;}
+  details.rules{margin-top:10px;}
+  details.rules summary{cursor:pointer;color:var(--accent);font-size:.92rem;}
+  details.rules ul{margin:8px 0 0;padding-left:20px;font-size:.92rem;}
+  .seg button:disabled, .nums button:disabled{opacity:.55;cursor:not-allowed;}
+
+  /* tabs */
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:16px 0 0;background:var(--surface-2);border-radius:12px;padding:4px;border:1px solid var(--line);}
+  .tabs button{border:0;background:transparent;border-radius:9px;padding:10px 6px;font-weight:600;min-height:44px;}
+  .tabs button[aria-selected="true"]{background:var(--surface);box-shadow:var(--shadow);color:var(--accent);}
+
+  /* dice */
+  .die{
+    --s:64px;
+    width:var(--s);height:var(--s);border-radius:calc(var(--s) * .18);
+    background:var(--die);border:2px solid #b9c2d3;
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+    padding:calc(var(--s) * .12);gap:calc(var(--s) * .04);
+    box-shadow:0 2px 0 #b9c2d3;
+  }
+  .die i{border-radius:50%;background:var(--pip);visibility:hidden;align-self:center;justify-self:center;width:78%;height:78%;}
+  .die i.on{visibility:visible;}
+  .die.mini{--s:26px;border-width:1px;box-shadow:none;padding:3px;gap:1px;}
+  .die.tiny{--s:20px;border-width:1px;box-shadow:none;padding:2px;gap:1px;display:inline-grid;vertical-align:middle;}
+  .die.hit{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .tray{display:flex;justify-content:center;gap:14px;padding:12px 0 6px;}
+  .tray .die{--s:clamp(58px, 20vw, 86px);}
+  .rolling .die{animation:shake .12s linear infinite;}
+  @keyframes shake{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
+  @media (prefers-reduced-motion: reduce){ .rolling .die{animation:none;} }
+
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .stat{background:var(--surface-2);border-radius:12px;padding:10px 12px;}
+  .stat .k{font-size:.8rem;color:var(--muted);}
+  .stat .v{font-size:1.5rem;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;}
+  .stats.four{grid-template-columns:repeat(2,1fr);}
+  @media (min-width:620px){ .stats.four{grid-template-columns:repeat(4,1fr);} }
+
+  .result{min-height:2.8em;text-align:center;font-weight:600;margin:4px 0 8px;}
+  .gain{color:var(--gain);}
+  .loss{color:var(--loss);}
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn{
+    border:0;border-radius:12px;padding:12px 18px;min-height:48px;font-weight:700;
+    background:var(--accent);color:var(--accent-ink);
+  }
+  .btn.ghost{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);font-weight:600;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .actions .btn.grow{flex:1 1 180px;}
+  .sim-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  @media (min-width:620px){ .sim-btns{grid-template-columns:repeat(4,1fr);} }
+  .sim-btns .btn{line-height:1.2;}
+  .sim-btns .btn small{display:block;font-weight:400;font-size:.76rem;opacity:.9;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+  .chip{font-size:.8rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-variant-numeric:tabular-nums;}
+  .chip.gain{border-color:var(--gain);}
+  .chip.loss{border-color:var(--loss);}
+
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px;border:1px solid var(--line);border-radius:12px;}
+  table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums;}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;}
+  th{background:var(--surface-2);font-weight:600;font-size:.82rem;position:sticky;top:0;}
+  tr:last-child td{border-bottom:0;}
+  td.left, th.left{text-align:left;}
+  .play-tbl{max-height:340px;overflow-y:auto;}
+  .play-tbl .dicecell{display:inline-flex;gap:3px;}
+
+  .bar{position:relative;height:12px;min-width:90px;background:var(--surface-2);border-radius:6px;overflow:visible;}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:6px;opacity:.85;}
+  .bar .mark{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;background:var(--theory);border-radius:2px;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.82rem;color:var(--muted);margin:6px 0 0;}
+  .legend .sw{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px;}
+  .legend .sw.dash{background:repeating-linear-gradient(90deg,var(--theory) 0 5px,transparent 5px 8px);}
+
+  canvas.chart{display:block;width:100%;height:240px;margin-top:8px;}
+  @media (min-width:620px){ canvas.chart{height:300px;} }
+
+  .groups{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
+  @media (min-width:620px){ .groups{grid-template-columns:repeat(8,1fr);} }
+  .group{background:var(--surface-2);border-radius:10px;padding:6px 4px;text-align:center;font-size:.8rem;}
+  .group b{display:block;font-size:1.15rem;font-variant-numeric:tabular-nums;}
+
+  .note{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:.92rem;margin-top:12px;}
+  .note ol, .note ul{margin:6px 0 0;padding-left:20px;}
+  .warn{border-left:4px solid var(--theory);}
+  .empty{color:var(--muted);text-align:center;padding:14px 0;font-size:.92rem;}
+  [hidden]{display:none !important;}
+
+  details.compare > summary{cursor:pointer;font-weight:600;padding:4px 0;}
+  .test-list{list-style:none;padding:0;margin:0;font-size:.9rem;}
+  .test-list li{padding:4px 0;border-bottom:1px solid var(--line);}
+  footer{color:var(--muted);font-size:.8rem;text-align:center;margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <a class="back" href="../index.html">← กลับหน้ารวม</a>
+  <h1>ลูกเต๋า 3 ลูก: ผลระยะสั้นกับผลระยะยาว</h1>
+  <p class="sub">ค32201 ความน่าจะเป็นฯ · หน่วยที่ 1 · กิจกรรมในห้องเรียน</p>
+  <span class="badge">ใช้แต้มสมมติเท่านั้น ไม่ใช่เงินจริง ไม่มีรางวัล</span>
+</header>
+
+<section class="card" aria-labelledby="betTitle">
+  <h2 id="betTitle">เลือกแบบที่จะแทง</h2>
+  <div class="seg" role="radiogroup" aria-label="แบบที่แทง" id="betTypes">
+    <button type="button" role="radio" data-type="tang" aria-checked="true">เต็ง 1 เลข<small>เลือกเลข 1–6</small></button>
+    <button type="button" role="radio" data-type="high" aria-checked="false">สูง<small>ผลรวม 11–17</small></button>
+    <button type="button" role="radio" data-type="low" aria-checked="false">ต่ำ<small>ผลรวม 4–10</small></button>
+  </div>
+  <div class="nums" role="radiogroup" aria-label="เลขที่เต็ง" id="numPick"></div>
+  <p class="bet-desc" id="betDesc" aria-live="polite"></p>
+  <details class="rules">
+    <summary>กติกาทั้งหมด</summary>
+    <ul>
+      <li>เริ่มต้นมี <b>20 แต้มสมมติ</b> แทงรอบละ 1 แต้ม เล่น 20 รอบ</li>
+      <li>ทอยลูกเต๋า 3 ลูกพร้อมกัน แต่ละรอบเลือกแทงได้ 1 แบบ</li>
+      <li><b>เต็ง:</b> เลือกเลข 1 ตัว ออกตรงกี่ลูกได้เท่านั้นแต้ม (1 ลูก ได้ 1, 2 ลูก ได้ 2, 3 ลูก ได้ 3) ถ้าไม่ตรงเลยเสีย 1</li>
+      <li><b>สูง:</b> ผลรวม 11–17 ได้ 1 นอกนั้นเสีย 1</li>
+      <li><b>ต่ำ:</b> ผลรวม 4–10 ได้ 1 นอกนั้นเสีย 1</li>
+      <li>ถ้าออก<b>ตอง</b> (3 ลูกเหมือนกัน) คนที่แทงสูงหรือต่ำเสียทั้งหมด</li>
+    </ul>
+  </details>
+</section>
+
+<div class="tabs" role="tablist" aria-label="โหมด">
+  <button type="button" role="tab" id="tabPlay" aria-controls="panelPlay" aria-selected="true">เล่นเอง 20 รอบ</button>
+  <button type="button" role="tab" id="tabSim" aria-controls="panelSim" aria-selected="false" tabindex="-1">จำลองหลายครั้ง</button>
+</div>
+
+<!-- ============ PLAY ============ -->
+<section id="panelPlay" role="tabpanel" aria-labelledby="tabPlay">
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="k">แต้มคงเหลือ</div><div class="v" id="playPoints">20</div></div>
+      <div class="stat"><div class="k">รอบที่เล่นแล้ว</div><div class="v" id="playRound">0 / 20</div></div>
+    </div>
+    <div class="tray" id="tray" aria-hidden="true"></div>
+    <p class="result" id="playResult" aria-live="polite">เลือกแบบที่จะแทง แล้วกด “ทอยลูกเต๋า”</p>
+    <div class="actions">
+      <button type="button" class="btn grow" id="rollBtn">ทอยลูกเต๋า</button>
+      <button type="button" class="btn ghost" id="resetBtn">เริ่มใหม่</button>
+    </div>
+    <div class="chips" id="playChips" aria-label="ประวัติผลแต่ละรอบ"></div>
+    <div class="note" id="playEnd" hidden></div>
+  </div>
+
+  <div class="card">
+    <h2>แต้มคงเหลือในแต่ละรอบ</h2>
+    <canvas class="chart" id="playChart" role="img" aria-label="กราฟแต้มคงเหลือหลังแต่ละรอบ"></canvas>
+    <div class="legend"><span><span class="sw" style="background:var(--accent)"></span>แต้มคงเหลือ</span><span><span class="sw dash"></span>แต้มเริ่มต้น 20</span></div>
+  </div>
+
+  <div class="card">
+    <h2>ตารางบันทึกผล</h2>
+    <div class="tbl-wrap play-tbl">
+      <table>
+        <thead><tr><th>รอบ</th><th>แทง</th><th>ลูกเต๋า</th><th>ผลรวม</th><th>ได้/เสีย</th><th>คงเหลือ</th></tr></thead>
+        <tbody id="playBody"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="playEmpty">ยังไม่มีข้อมูล</p>
+  </div>
+
+  <div class="card">
+    <details class="compare">
+      <summary>เทียบผลที่ออกจริงกับจำนวนกรณีจาก 216</summary>
+      <p class="small muted">ข้อมูลจากรอบที่เล่นเองข้างบน (ลองสังเกตว่ารอบน้อย ๆ ผลตรงกับทฤษฎีแค่ไหน)</p>
+      <div id="playCompare"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ SIMULATE ============ -->
+<section id="panelSim" role="tabpanel" aria-labelledby="tabSim" hidden>
+  <div class="card">
+    <h2>จำลองการทอย</h2>
+    <p class="small muted" style="margin-top:0">ทุกครั้งใช้การแทงแบบที่เลือกไว้ด้านบน ครั้งละ 1 แต้ม (แต่ละปุ่มเริ่มนับใหม่)</p>
+    <div class="sim-btns">
+      <button type="button" class="btn" data-n="20">20 ครั้ง<small>1 กลุ่ม</small></button>
+      <button type="button" class="btn" data-n="160">160 ครั้ง<small>ทั้งห้อง 8 กลุ่ม × 20</small></button>
+      <button type="button" class="btn" data-n="1000">1,000 ครั้ง<small>&nbsp;</small></button>
+      <button type="button" class="btn" data-n="10000">10,000 ครั้ง<small>&nbsp;</small></button>
+    </div>
+    <p class="note warn" id="simStale" hidden></p>
+  </div>
+
+  <div id="simOut" hidden>
+    <div class="card">
+      <h2 id="simTitle"></h2>
+      <div class="stats four">
+        <div class="stat"><div class="k">จำนวนครั้งที่แทง</div><div class="v" id="simN"></div></div>
+        <div class="stat"><div class="k">แต้มเปลี่ยนไปรวม</div><div class="v" id="simNet"></div></div>
+        <div class="stat"><div class="k">เฉลี่ยต่อการแทง 1 ครั้ง</div><div class="v" id="simAvg"></div></div>
+        <div class="stat"><div class="k">ค่าทางทฤษฎี (ต่อการแทง)</div><div class="v" id="simTheory" style="color:var(--theory)"></div></div>
+      </div>
+      <p class="small muted" id="simTheoryNote"></p>
+    </div>
+
+    <div class="card">
+      <h2>ถ้าแบ่งเป็นกลุ่มละ 20 รอบ (เริ่มกลุ่มละ 20 แต้ม)</h2>
+      <div id="groupsOut"></div>
+    </div>
+
+    <div class="card">
+      <h2>ค่าเฉลี่ยแต้มต่อการแทงแบบสะสม</h2>
+      <p class="small muted" style="margin:0">จุดบนกราฟที่ครั้งที่ k = แต้มที่เปลี่ยนไปรวมตั้งแต่ครั้งที่ 1 ถึง k หารด้วย k</p>
+      <canvas class="chart" id="simChart" role="img" aria-label="กราฟค่าเฉลี่ยแต้มต่อการแทงแบบสะสมเทียบกับค่าทางทฤษฎี"></canvas>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--accent)"></span>ค่าเฉลี่ยสะสมจากการจำลอง</span>
+        <span><span class="sw dash"></span>ค่าทางทฤษฎี</span>
+        <span><span class="sw" style="background:var(--muted);height:2px"></span>เสมอตัว (0)</span>
+      </div>
+      <h3>ค่าเฉลี่ยสะสม ณ จุดต่าง ๆ</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>หลังแทงครบ</th><th>แต้มเปลี่ยนไปรวม</th><th>เฉลี่ยต่อการแทง</th><th>ห่างจากค่าทางทฤษฎี</th></tr></thead>
+          <tbody id="checkBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>เทียบความถี่ที่ออกจริงกับจำนวนกรณีจาก 216</h2>
+      <div id="simCompare"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>ชวนคิด</h2>
+    <ol class="small" style="margin:0;padding-left:20px">
+      <li>กดจำลอง 20 ครั้งซ้ำหลาย ๆ ที ผลแต่ละทีต่างกันมากไหม มีทีที่แต้มเพิ่มขึ้นหรือไม่</li>
+      <li>ทั้งห้อง 160 ครั้ง กี่กลุ่มที่แต้มเพิ่ม กี่กลุ่มที่แต้มลด แล้วรวมทั้งห้องเป็นอย่างไร</li>
+      <li>เมื่อจำลอง 1,000 และ 10,000 ครั้ง เส้นในกราฟเข้าใกล้เส้นใด</li>
+      <li>เต็ง สูง และต่ำ แบบไหนที่แต้มลดเร็วกว่าเมื่อเล่นไปนาน ๆ</li>
+    </ol>
+  </div>
+</section>
+
+<section class="card" id="testPanel" hidden>
+  <h2>ผลการทดสอบในหน้าเว็บ</h2>
+  <ul class="test-list" id="testList"></ul>
+</section>
+
+<footer>ทำงานในเครื่องทั้งหมด ไม่ส่งข้อมูลออก ไม่เก็บข้อมูลนักเรียน · <a href="?test" style="color:inherit">ตรวจสอบตัวเลข</a></footer>
+</div>
+
+<!-- Core logic: no DOM access. Also loaded by tests/dice-classroom.test.mjs -->
+<script id="dice-core">
+(function (root) {
+  'use strict';
+
+  var FACES = 6;
+  // 252 = 6 x 42: bytes 252..255 are rejected so every face gets exactly 42 byte values.
+  var ACCEPT_BELOW = 252;
+
+  function faceFromByte(b) {
+    return b < ACCEPT_BELOW ? (b % FACES) + 1 : 0; // 0 = reject, draw again
+  }
+
+  function makeByteSource(fill) {
+    var buf = new Uint8Array(1024);
+    var i = buf.length;
+    return function () {
+      if (i >= buf.length) { fill(buf); i = 0; }
+      return buf[i++];
+    };
+  }
+
+  function cryptoByteSource() {
+    var c = root.crypto;
+    if (!c || typeof c.getRandomValues !== 'function') {
+      throw new Error('เบราว์เซอร์นี้ไม่รองรับ crypto.getRandomValues');
+    }
+    return makeByteSource(function (a) { c.getRandomValues(a); });
+  }
+
+  function rollDie(nextByte) {
+    for (;;) {
+      var f = faceFromByte(nextByte());
+      if (f) return f;
+    }
+  }
+
+  function roll3(nextByte) {
+    return [rollDie(nextByte), rollDie(nextByte), rollDie(nextByte)];
+  }
+
+  function sumOf(d) { return d[0] + d[1] + d[2]; }
+  function isTriple(d) { return d[0] === d[1] && d[1] === d[2]; }
+  function countMatch(d, n) { return (d[0] === n) + (d[1] === n) + (d[2] === n); }
+  function isHighWin(d) { var s = sumOf(d); return !isTriple(d) && s >= 11 && s <= 17; }
+  function isLowWin(d) { var s = sumOf(d); return !isTriple(d) && s >= 4 && s <= 10; }
+
+  // Points gained (+) or lost (-) for a 1-point bet.
+  function payout(bet, d) {
+    if (bet.type === 'tang') {
+      var k = countMatch(d, bet.num);
+      return k > 0 ? k : -1;
+    }
+    if (bet.type === 'high') return isHighWin(d) ? 1 : -1;
+    if (bet.type === 'low') return isLowWin(d) ? 1 : -1;
+    throw new Error('unknown bet');
+  }
+
+  function allOutcomes() {
+    var out = [];
+    for (var a = 1; a <= 6; a++)
+      for (var b = 1; b <= 6; b++)
+        for (var c = 1; c <= 6; c++) out.push([a, b, c]);
+    return out;
+  }
+
+  function newTally() {
+    var m = [];
+    for (var n = 0; n <= 6; n++) m.push([0, 0, 0, 0]);
+    var sums = [];
+    for (var s = 0; s <= 18; s++) sums.push(0);
+    return { n: 0, net: 0, sums: sums, triples: 0, highWins: 0, lowWins: 0, matches: m };
+  }
+
+  // Records the dice in the tally; returns the payout for the bet (or 0 if no bet given).
+  function addToTally(t, d, bet) {
+    var p = bet ? payout(bet, d) : 0;
+    t.n++;
+    t.net += p;
+    t.sums[sumOf(d)]++;
+    if (isTriple(d)) t.triples++;
+    if (isHighWin(d)) t.highWins++;
+    if (isLowWin(d)) t.lowWins++;
+    for (var n = 1; n <= 6; n++) t.matches[n][countMatch(d, n)]++;
+    return p;
+  }
+
+  function theory() {
+    var all = allOutcomes();
+    var t = newTally();
+    var net = { high: 0, low: 0, tang: [0, 0, 0, 0, 0, 0, 0] };
+    all.forEach(function (d) {
+      addToTally(t, d, null);
+      net.high += payout({ type: 'high' }, d);
+      net.low += payout({ type: 'low' }, d);
+      for (var n = 1; n <= 6; n++) net.tang[n] += payout({ type: 'tang', num: n }, d);
+    });
+    return {
+      total: all.length,
+      sums: t.sums,
+      triples: t.triples,
+      highWins: t.highWins,
+      lowWins: t.lowWins,
+      matches: t.matches,
+      net: net
+    };
+  }
+
+  // Net points over all 216 equally likely outcomes for this bet (divide by 216 for the per-bet value).
+  function theoryNet(th, bet) {
+    return bet.type === 'tang' ? th.net.tang[bet.num] : th.net[bet.type];
+  }
+
+  function simulate(n, bet, nextByte, groupSize) {
+    groupSize = groupSize || 20;
+    var t = newTally();
+    var cumAvg = new Float64Array(n);
+    var cumNet = new Int32Array(n);
+    var groups = [];
+    var g = 0;
+    for (var i = 0; i < n; i++) {
+      var p = addToTally(t, roll3(nextByte), bet);
+      g += p;
+      cumNet[i] = t.net;
+      cumAvg[i] = t.net / (i + 1);
+      if ((i + 1) % groupSize === 0) { groups.push(g); g = 0; }
+    }
+    t.bet = bet;
+    t.cumAvg = cumAvg;
+    t.cumNet = cumNet;
+    t.groups = groups;
+    return t;
+  }
+
+  // ---------- self test (also used by the Node test) ----------
+  function selfTest(nextByte) {
+    nextByte = nextByte || cryptoByteSource();
+    var res = [];
+    function check(name, pass, detail) { res.push({ name: name, pass: !!pass, detail: detail || '' }); }
+
+    var th = theory();
+    check('ผลทั้งหมด 216 กรณี', th.total === 216, String(th.total));
+    check('ตอง 6 กรณี', th.triples === 6, String(th.triples));
+    check('สูงชนะ 105 กรณี', th.highWins === 105, String(th.highWins));
+    check('ต่ำชนะ 105 กรณี', th.lowWins === 105, String(th.lowWins));
+    check('ผลรวม 10 มี 27 กรณี', th.sums[10] === 27, String(th.sums[10]));
+    var expectSums = [1, 3, 6, 10, 15, 21, 25, 27, 27, 25, 21, 15, 10, 6, 3, 1];
+    check('ผลรวม 3–18 = 1,3,6,10,15,21,25,27,27,25,21,15,10,6,3,1',
+      th.sums.slice(3).join() === expectSums.join(), th.sums.slice(3).join());
+    var okMatch = true;
+    for (var n = 1; n <= 6; n++) if (th.matches[n].join() !== '125,75,15,1') okMatch = false;
+    check('เต็งตรง 0/1/2/3 ลูก = 125/75/15/1 (ทุกเลข 1–6)', okMatch, th.matches[1].join('/'));
+    check('สูง: แต้มรวมทุกกรณี = −6 (−6/216 ≈ −2.78%)', th.net.high === -6, String(th.net.high));
+    check('ต่ำ: แต้มรวมทุกกรณี = −6 (−6/216 ≈ −2.78%)', th.net.low === -6, String(th.net.low));
+    var okTang = true;
+    for (n = 1; n <= 6; n++) if (th.net.tang[n] !== -17) okTang = false;
+    check('เต็ง: แต้มรวมทุกกรณี = −17 (−17/216 ≈ −7.87%) ทุกเลข', okTang, th.net.tang.slice(1).join());
+
+    var faceCount = [0, 0, 0, 0, 0, 0, 0], rejected = 0;
+    for (var b = 0; b < 256; b++) { var f = faceFromByte(b); if (f) faceCount[f]++; else rejected++; }
+    check('สุ่มไม่เอนเอียง: ทุกหน้าได้ 42 ค่าจาก 0–251, ทิ้ง 252–255',
+      faceCount.slice(1).every(function (c) { return c === 42; }) && rejected === 4,
+      faceCount.slice(1).join() + ' / ทิ้ง ' + rejected);
+
+    // Simulations of 10,000 bets: compare with theory within 4.5 standard errors.
+    var N = 10000, Z = 4.5;
+    var bets = [{ type: 'high' }, { type: 'low' }, { type: 'tang', num: rollDie(nextByte) }];
+    bets.forEach(function (bet) {
+      var sim = simulate(N, bet, nextByte);
+      var mu = theoryNet(th, bet) / 216;
+      var ex2 = 0;
+      allOutcomes().forEach(function (d) { var p = payout(bet, d); ex2 += p * p; });
+      var sd = Math.sqrt(ex2 / 216 - mu * mu);
+      var avg = sim.net / N, tol = Z * sd / Math.sqrt(N);
+      var label = bet.type === 'tang' ? 'เต็งเลข ' + bet.num : (bet.type === 'high' ? 'สูง' : 'ต่ำ');
+      check('จำลอง 10,000 ครั้ง (' + label + '): ค่าเฉลี่ยใกล้ ' + mu.toFixed(4),
+        Math.abs(avg - mu) <= tol, 'ได้ ' + avg.toFixed(4) + ' (ยอมให้ห่าง ±' + tol.toFixed(4) + ')');
+      if (bet.type === 'high') {
+        var worst = 0, bad = [];
+        var prop = function (name, count, cases) {
+          var p = cases / 216, se = Math.sqrt(p * (1 - p) / N), z = Math.abs(count / N - p) / se;
+          if (z > worst) worst = z;
+          if (z > Z) bad.push(name);
+        };
+        for (var s = 3; s <= 18; s++) prop('ผลรวม ' + s, sim.sums[s], th.sums[s]);
+        prop('ตอง', sim.triples, 6);
+        for (var k = 0; k <= 3; k++) prop('ตรง ' + k + ' ลูก', sim.matches[1][k], th.matches[1][k]);
+        check('จำลอง 10,000 ครั้ง: ความถี่ผลรวม/ตอง/เต็งตรง 0–3 ลูก ใกล้สัดส่วนจาก 216',
+          bad.length === 0, bad.length ? 'ห่างมาก: ' + bad.join(', ') : 'ห่างมากสุด ' + worst.toFixed(2) + ' SE');
+      }
+    });
+
+    var g = simulate(160, { type: 'low' }, nextByte);
+    var minGroup = Math.min.apply(null, g.groups.map(function (x) { return 20 + x; }));
+    check('จำลอง 160 ครั้ง = 8 กลุ่ม × 20 รอบ และไม่มีกลุ่มใดแต้มติดลบ', g.groups.length === 8 && minGroup >= 0,
+      g.groups.length + ' กลุ่ม, ต่ำสุด ' + minGroup);
+    return res;
+  }
+
+  root.DiceCore = {
+    faceFromByte: faceFromByte,
+    makeByteSource: makeByteSource,
+    cryptoByteSource: cryptoByteSource,
+    rollDie: rollDie,
+    roll3: roll3,
+    sumOf: sumOf,
+    isTriple: isTriple,
+    countMatch: countMatch,
+    isHighWin: isHighWin,
+    isLowWin: isLowWin,
+    payout: payout,
+    allOutcomes: allOutcomes,
+    newTally: newTally,
+    addToTally: addToTally,
+    theory: theory,
+    theoryNet: theoryNet,
+    simulate: simulate,
+    selfTest: selfTest
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- UI: builds every dynamic element with createElement/textContent (never innerHTML). -->
+<script>
+(function () {
+  'use strict';
+  var C = window.DiceCore;
+  var TH = C.theory();
+  var rng;
+  try { rng = C.cryptoByteSource(); }
+  catch (e) {
+    document.getElementById('playResult').textContent = e.message;
+    return;
+  }
+
+  var START_POINTS = 20, ROUNDS = 20;
+  var PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  var nf = new Intl.NumberFormat('en-US');
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = String(text);
+    return e;
+  }
+  function signed(x, digits) {
+    var s = digits === undefined ? nf.format(Math.abs(x)) : Math.abs(x).toFixed(digits);
+    if (x > 0) return '+' + s;
+    if (x < 0) return '−' + s;
+    return s;
+  }
+  function pct(x, digits) { return (x * 100).toFixed(digits === undefined ? 1 : digits) + '%'; }
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function makeDie(face, cls) {
+    var d = el('div', 'die' + (cls ? ' ' + cls : ''));
+    for (var i = 0; i < 9; i++) d.appendChild(el('i'));
+    setDie(d, face);
+    return d;
+  }
+  function setDie(d, face) {
+    var on = PIPS[face] || [];
+    var pips = d.children;
+    for (var i = 0; i < 9; i++) pips[i].className = on.indexOf(i) >= 0 ? 'on' : '';
+    d.setAttribute('data-face', face);
+  }
+
+  // ---------- bet selection ----------
+  var bet = { type: 'tang', num: 1 };
+  function betLabel(b) {
+    if (b.type === 'tang') return 'เต็งเลข ' + b.num;
+    return b.type === 'high' ? 'สูง' : 'ต่ำ';
+  }
+  function betDescription(b) {
+    if (b.type === 'tang') return 'เต็งเลข ' + b.num + ': ออกเลข ' + b.num + ' กี่ลูกได้เท่านั้นแต้ม (1–3) ถ้าไม่มีเลข ' + b.num + ' เลยเสีย 1';
+    if (b.type === 'high') return 'สูง: ผลรวม 11–17 ได้ 1 แต้ม ผลรวมอื่นหรือออกตองเสีย 1 แต้ม';
+    return 'ต่ำ: ผลรวม 4–10 ได้ 1 แต้ม ผลรวมอื่นหรือออกตองเสีย 1 แต้ม';
+  }
+  function sameBet(a, b) { return a.type === b.type && (a.type !== 'tang' || a.num === b.num); }
+
+  var numPick = $('numPick');
+  for (var n = 1; n <= 6; n++) {
+    var nb = el('button');
+    nb.type = 'button';
+    nb.setAttribute('role', 'radio');
+    nb.setAttribute('data-num', n);
+    nb.setAttribute('aria-label', 'เลข ' + n);
+    nb.appendChild(makeDie(n, 'mini'));
+    nb.appendChild(el('span', null, n));
+    numPick.appendChild(nb);
+  }
+
+  function renderBet() {
+    Array.prototype.forEach.call($('betTypes').children, function (b) {
+      b.setAttribute('aria-checked', b.getAttribute('data-type') === bet.type ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call(numPick.children, function (b) {
+      b.setAttribute('aria-checked', Number(b.getAttribute('data-num')) === bet.num ? 'true' : 'false');
+    });
+    numPick.hidden = bet.type !== 'tang';
+    $('betDesc').textContent = betDescription(bet);
+    renderSimStale();
+  }
+  $('betTypes').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || b.disabled) return;
+    bet = { type: b.getAttribute('data-type'), num: bet.num };
+    renderBet();
+  });
+  numPick.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || b.disabled) return;
+    bet = { type: 'tang', num: Number(b.getAttribute('data-num')) };
+    renderBet();
+  });
+  function setBetEnabled(on) {
+    document.querySelectorAll('#betTypes button, #numPick button').forEach(function (b) { b.disabled = !on; });
+  }
+
+  // ---------- tabs ----------
+  var tabs = [$('tabPlay'), $('tabSim')];
+  function selectTab(t) {
+    tabs.forEach(function (x) {
+      var on = x === t;
+      x.setAttribute('aria-selected', on ? 'true' : 'false');
+      x.tabIndex = on ? 0 : -1;
+      $(x.getAttribute('aria-controls')).hidden = !on;
+    });
+    redrawCharts();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { selectTab(t); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        var next = tabs[(i + 1) % tabs.length];
+        selectTab(next); next.focus();
+      }
+    });
+  });
+
+  // ---------- chart (canvas, drawn by hand) ----------
+  function niceStep(range, target) {
+    var raw = range / Math.max(1, target);
+    var p = Math.pow(10, Math.floor(Math.log10(raw)));
+    var m = raw / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+  }
+  function fmtTick(v, step) {
+    var d = step >= 1 ? 0 : Math.min(4, Math.ceil(-Math.log10(step)));
+    var s = Math.abs(v) < step / 1e6 ? 0 : v;
+    return s < 0 ? '−' + nf.format(Number((-s).toFixed(d))) : nf.format(Number(s.toFixed(d)));
+  }
+
+  // opts: { values, x0, xMax, yMin, yMax, refs:[{y, color, dash}], points: bool }
+  function drawChart(canvas, opts) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var ink = cssVar('--ink'), muted = cssVar('--muted'), line = cssVar('--line'), accent = cssVar('--accent');
+    var font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.font = font;
+
+    var yMin = opts.yMin, yMax = opts.yMax;
+    var ystep = niceStep(yMax - yMin, 5);
+    yMin = Math.floor(yMin / ystep) * ystep;
+    yMax = Math.ceil(yMax / ystep) * ystep;
+    if (yMax === yMin) yMax = yMin + ystep;
+
+    var labelW = 0;
+    for (var yv = yMin; yv <= yMax + ystep / 2; yv += ystep) labelW = Math.max(labelW, ctx.measureText(fmtTick(yv, ystep)).width);
+    var L = Math.ceil(labelW) + 10, R = 12, T = 10, B = 26;
+    var pw = w - L - R, ph = h - T - B;
+    var xMin = opts.x0, xMax = opts.xMax;
+    function X(x) { return L + (x - xMin) / (xMax - xMin) * pw; }
+    function Y(y) { return T + (yMax - y) / (yMax - yMin) * ph; }
+
+    // grid + y labels
+    ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.fillStyle = muted;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (yv = yMin; yv <= yMax + ystep / 2; yv += ystep) {
+      var yy = Math.round(Y(yv)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(L + pw, yy); ctx.stroke();
+      ctx.fillText(fmtTick(yv, ystep), L - 6, yy);
+    }
+    // x labels
+    var xstep = niceStep(xMax - xMin, Math.max(2, Math.floor(pw / 70)));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var xv = Math.ceil(xMin / xstep) * xstep; xv <= xMax + 1e-9; xv += xstep) {
+      ctx.fillText(nf.format(xv), X(xv), T + ph + 6);
+    }
+
+    // reference lines
+    (opts.refs || []).forEach(function (r) {
+      if (r.y < yMin || r.y > yMax) return;
+      ctx.save();
+      ctx.strokeStyle = r.color; ctx.lineWidth = r.width || 2;
+      ctx.setLineDash(r.dash ? [7, 5] : []);
+      ctx.beginPath(); ctx.moveTo(L, Y(r.y)); ctx.lineTo(L + pw, Y(r.y)); ctx.stroke();
+      ctx.restore();
+    });
+
+    // series (min/max per pixel column so early swings stay visible)
+    var v = opts.values, n = v.length;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L, T - 2, pw, ph + 4); ctx.clip();
+    ctx.strokeStyle = accent; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (n <= pw * 2) {
+      for (var i = 0; i < n; i++) {
+        var px = X(opts.x0 + i + (opts.offset || 0)), py = Y(v[i]);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+    } else {
+      var col = -1, lo = 0, hi = 0, first = true;
+      for (i = 0; i < n; i++) {
+        var c = Math.floor(X(opts.x0 + i + (opts.offset || 0)));
+        if (c !== col) {
+          if (col >= 0) { ctx.lineTo(col, Y(lo)); ctx.lineTo(col, Y(hi)); }
+          col = c; lo = hi = v[i];
+          if (first) { ctx.moveTo(c, Y(v[i])); first = false; } else ctx.lineTo(c, Y(v[i]));
+        } else {
+          if (v[i] < lo) lo = v[i];
+          if (v[i] > hi) hi = v[i];
+        }
+      }
+      ctx.lineTo(col, Y(lo)); ctx.lineTo(col, Y(hi)); ctx.lineTo(col, Y(v[n - 1]));
+    }
+    ctx.stroke();
+    if (opts.points) {
+      ctx.fillStyle = accent;
+      for (i = 0; i < n; i++) {
+        ctx.beginPath(); ctx.arc(X(opts.x0 + i), Y(v[i]), 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // axes
+    ctx.strokeStyle = ink; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(L + 0.5, T); ctx.lineTo(L + 0.5, T + ph + 0.5); ctx.lineTo(L + pw, T + ph + 0.5); ctx.stroke();
+  }
+
+  // ---------- compare tables (shared by play + sim) ----------
+  function bar(observed, theoryP, maxP) {
+    var b = el('div', 'bar');
+    var f = el('div', 'fill');
+    f.style.width = Math.min(100, observed / maxP * 100) + '%';
+    var m = el('div', 'mark');
+    m.style.left = Math.min(100, theoryP / maxP * 100) + '%';
+    b.appendChild(f); b.appendChild(m);
+    return b;
+  }
+  function compareTable(title, rows, n) {
+    var frag = document.createDocumentFragment();
+    frag.appendChild(el('h3', null, title));
+    var wrap = el('div', 'tbl-wrap');
+    var t = el('table');
+    var thead = el('thead'), hr = el('tr');
+    ['', 'กรณีจาก 216', 'ทฤษฎี', 'ออกจริง (ครั้ง)', 'ออกจริง', ''].forEach(function (h, i) {
+      var th = el('th', i === 0 ? 'left' : null, h); hr.appendChild(th);
+    });
+    thead.appendChild(hr); t.appendChild(thead);
+    var tb = el('tbody');
+    var maxP = 0;
+    rows.forEach(function (r) { maxP = Math.max(maxP, r.cases / 216, n ? r.count / n : 0); });
+    maxP = maxP * 1.1 || 1;
+    rows.forEach(function (r) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'left', r.label));
+      tr.appendChild(el('td', null, r.cases));
+      tr.appendChild(el('td', null, pct(r.cases / 216)));
+      tr.appendChild(el('td', null, nf.format(r.count)));
+      tr.appendChild(el('td', null, n ? pct(r.count / n) : '–'));
+      var bc = el('td'); bc.appendChild(bar(n ? r.count / n : 0, r.cases / 216, maxP)); tr.appendChild(bc);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); wrap.appendChild(t); frag.appendChild(wrap);
+    return frag;
+  }
+  function renderCompare(container, tally, matchNum) {
+    container.replaceChildren();
+    var n = tally.n;
+    var legend = el('div', 'legend');
+    var a = el('span'); var s1 = el('span', 'sw'); s1.style.background = 'var(--accent)'; a.appendChild(s1); a.appendChild(document.createTextNode('ออกจริง'));
+    var b = el('span'); var s2 = el('span', 'sw'); s2.style.background = 'var(--theory)'; s2.style.width = '4px'; s2.style.height = '12px'; b.appendChild(s2); b.appendChild(document.createTextNode('สัดส่วนจาก 216 กรณี'));
+    legend.appendChild(a); legend.appendChild(b);
+    container.appendChild(legend);
+
+    var rows = [];
+    for (var s = 3; s <= 18; s++) rows.push({ label: 'ผลรวม ' + s, cases: TH.sums[s], count: tally.sums[s] });
+    container.appendChild(compareTable('ผลรวมของลูกเต๋า 3 ลูก', rows, n));
+
+    container.appendChild(compareTable('ตอง สูง ต่ำ', [
+      { label: 'ออกตอง', cases: TH.triples, count: tally.triples },
+      { label: 'สูงชนะ (11–17 ไม่ตอง)', cases: TH.highWins, count: tally.highWins },
+      { label: 'ต่ำชนะ (4–10 ไม่ตอง)', cases: TH.lowWins, count: tally.lowWins }
+    ], n));
+
+    var mrows = [];
+    for (var k = 0; k <= 3; k++) mrows.push({ label: 'ตรง ' + k + ' ลูก', cases: TH.matches[matchNum][k], count: tally.matches[matchNum][k] });
+    container.appendChild(compareTable('จำนวนลูกที่ออกเลข ' + matchNum + ' (เต็งเลข ' + matchNum + ')', mrows, n));
+  }
+
+  // ---------- PLAY mode ----------
+  var play;
+  var tray = $('tray');
+  var trayDice = [makeDie(1), makeDie(2), makeDie(3)];
+  trayDice.forEach(function (d) { tray.appendChild(d); });
+  var rolling = false;
+
+  function resetPlay() {
+    play = { points: START_POINTS, rounds: [], tally: C.newTally() };
+    $('playBody').replaceChildren();
+    $('playChips').replaceChildren();
+    $('playEnd').hidden = true;
+    $('playResult').textContent = 'เลือกแบบที่จะแทง แล้วกด “ทอยลูกเต๋า”';
+    $('playResult').className = 'result';
+    trayDice.forEach(function (d, i) { d.classList.remove('hit'); setDie(d, i + 1); });
+    renderPlay();
+  }
+
+  function renderPlay() {
+    $('playPoints').textContent = play.points;
+    $('playRound').textContent = play.rounds.length + ' / ' + ROUNDS;
+    var done = play.rounds.length >= ROUNDS;
+    $('rollBtn').disabled = done || rolling;
+    $('rollBtn').textContent = done ? 'ครบ 20 รอบแล้ว' : 'ทอยลูกเต๋า (รอบที่ ' + (play.rounds.length + 1) + ')';
+    $('playEmpty').hidden = play.rounds.length > 0;
+    renderCompare($('playCompare'), play.tally, bet.type === 'tang' ? bet.num : lastTangNum());
+    drawPlayChart();
+  }
+  function lastTangNum() {
+    for (var i = play.rounds.length - 1; i >= 0; i--) if (play.rounds[i].bet.type === 'tang') return play.rounds[i].bet.num;
+    return bet.num;
+  }
+
+  function drawPlayChart() {
+    var vals = [START_POINTS];
+    play.rounds.forEach(function (r) { vals.push(r.after); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    drawChart($('playChart'), {
+      values: vals, x0: 0, xMax: ROUNDS,
+      yMin: Math.max(0, Math.min(lo, START_POINTS - 4)), yMax: Math.max(hi, START_POINTS + 4),
+      refs: [{ y: START_POINTS, color: cssVar('--theory'), dash: true }],
+      points: true
+    });
+  }
+
+  function addPlayRow(r) {
+    var tr = el('tr');
+    tr.appendChild(el('td', null, r.round));
+    tr.appendChild(el('td', null, betLabel(r.bet)));
+    var dc = el('td'); var dd = el('span', 'dicecell');
+    r.dice.forEach(function (f) {
+      var hit = r.bet.type === 'tang' && f === r.bet.num;
+      var d = makeDie(f, 'tiny' + (hit ? ' hit' : ''));
+      d.setAttribute('aria-hidden', 'true');
+      dd.appendChild(d);
+    });
+    dd.appendChild(el('span', 'small', r.dice.join('-')));
+    dc.appendChild(dd); tr.appendChild(dc);
+    tr.appendChild(el('td', null, C.sumOf(r.dice) + (C.isTriple(r.dice) ? ' (ตอง)' : '')));
+    tr.appendChild(el('td', r.delta > 0 ? 'gain' : 'loss', signed(r.delta)));
+    tr.appendChild(el('td', null, r.after));
+    $('playBody').appendChild(tr);
+    var wrap = $('playBody').closest('.tbl-wrap');
+    wrap.scrollTop = wrap.scrollHeight;
+
+    var chip = el('span', 'chip ' + (r.delta > 0 ? 'gain' : 'loss'), r.round + ': ' + signed(r.delta));
+    $('playChips').appendChild(chip);
+  }
+
+  function resultText(r) {
+    var s = C.sumOf(r.dice), parts = ['ออก ' + r.dice.join(', ') + ' ผลรวม ' + s];
+    if (C.isTriple(r.dice)) parts.push('(ตอง)');
+    if (r.bet.type === 'tang') {
+      var k = C.countMatch(r.dice, r.bet.num);
+      parts.push('· เลข ' + r.bet.num + ' ออก ' + k + ' ลูก');
+    }
+    parts.push('· ' + (r.delta > 0 ? 'ได้ ' + r.delta : 'เสีย ' + (-r.delta)) + ' แต้ม');
+    return parts.join(' ');
+  }
+
+  function finishRoll(dice) {
+    var b = { type: bet.type, num: bet.num };
+    var delta = C.addToTally(play.tally, dice, b);
+    play.points += delta;
+    var r = { round: play.rounds.length + 1, bet: b, dice: dice, delta: delta, after: play.points };
+    play.rounds.push(r);
+    trayDice.forEach(function (d, i) {
+      setDie(d, dice[i]);
+      d.classList.toggle('hit', b.type === 'tang' && dice[i] === b.num);
+    });
+    var res = $('playResult');
+    res.textContent = resultText(r);
+    res.className = 'result ' + (delta > 0 ? 'gain' : 'loss');
+    addPlayRow(r);
+    rolling = false;
+    tray.classList.remove('rolling');
+    setBetEnabled(true);
+    renderPlay();
+    if (play.rounds.length >= ROUNDS) showPlayEnd();
+  }
+
+  function showPlayEnd() {
+    var wins = play.rounds.filter(function (r) { return r.delta > 0; }).length;
+    var box = $('playEnd');
+    box.replaceChildren();
+    var diff = play.points - START_POINTS;
+    box.appendChild(el('b', null, 'จบ 20 รอบ: เหลือ ' + play.points + ' แต้ม (' + (diff === 0 ? 'เท่าเดิม' : signed(diff) + ' จากตอนเริ่ม') + ')'));
+    box.appendChild(el('div', null, 'รอบที่ได้แต้ม ' + wins + ' รอบ · รอบที่เสียแต้ม ' + (ROUNDS - wins) + ' รอบ'));
+    box.appendChild(el('div', 'small', 'ลองเทียบกับกลุ่มอื่นในห้อง แล้วไปที่ “จำลองหลายครั้ง” เพื่อดูว่าถ้าเล่นไปนาน ๆ จะเป็นอย่างไร'));
+    box.hidden = false;
+  }
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('rollBtn').addEventListener('click', function () {
+    if (rolling || play.rounds.length >= ROUNDS) return;
+    var dice = C.roll3(rng);
+    if (reduceMotion) { finishRoll(dice); return; }
+    rolling = true;
+    setBetEnabled(false);
+    $('rollBtn').disabled = true;
+    tray.classList.add('rolling');
+    var ticks = 0;
+    var timer = setInterval(function () {
+      trayDice.forEach(function (d) { d.classList.remove('hit'); setDie(d, C.rollDie(rng)); });
+      if (++ticks >= 7) { clearInterval(timer); finishRoll(dice); }
+    }, 70);
+  });
+  $('resetBtn').addEventListener('click', function () {
+    if (rolling) return;
+    if (play.rounds.length > 0 && play.rounds.length < ROUNDS && !window.confirm('เริ่มใหม่และล้างผลที่เล่นไปแล้ว?')) return;
+    resetPlay();
+  });
+
+  // ---------- SIMULATE mode ----------
+  var sim = null;
+  var CHECKPOINTS = [10, 20, 50, 100, 160, 500, 1000, 2000, 5000, 10000];
+
+  function renderSimStale() {
+    var p = $('simStale');
+    if (sim && !sameBet(sim.bet, bet)) {
+      p.textContent = 'ผลด้านล่างเป็นของการแทง “' + betLabel(sim.bet) + '” กดปุ่มอีกครั้งเพื่อจำลองด้วย “' + betLabel(bet) + '”';
+      p.hidden = false;
+    } else p.hidden = true;
+  }
+
+  function runSim(n) {
+    var b = { type: bet.type, num: bet.num };
+    sim = C.simulate(n, b, rng, 20);
+    renderSim();
+    renderSimStale();
+  }
+
+  function renderSim() {
+    if (!sim) return;
+    var n = sim.n, mu = C.theoryNet(TH, sim.bet) / 216;
+    $('simOut').hidden = false;
+    $('simTitle').textContent = 'ผลจำลอง ' + nf.format(n) + ' ครั้ง · แทง' + betLabel(sim.bet) + ' ทุกครั้ง';
+    $('simN').textContent = nf.format(n);
+    var net = $('simNet'); net.textContent = signed(sim.net); net.className = 'v ' + (sim.net > 0 ? 'gain' : sim.net < 0 ? 'loss' : '');
+    var avg = $('simAvg'); avg.textContent = signed(sim.net / n, 3); avg.className = 'v ' + (sim.net > 0 ? 'gain' : sim.net < 0 ? 'loss' : '');
+    $('simTheory').textContent = signed(mu, 3);
+    var num = C.theoryNet(TH, sim.bet);
+    $('simTheoryNote').textContent = 'ค่าทางทฤษฎีของ' + betLabel(sim.bet) + ' คือ ' + signed(num) + '/216 ≈ ' + signed(mu, 4) +
+      ' แต้มต่อการแทง 1 ครั้ง (≈ ' + signed(mu * 100, 2) + '% ของแต้มที่แทง) ได้จากการนับทั้ง 216 กรณีที่โอกาสเท่ากัน';
+
+    // groups of 20
+    var go = $('groupsOut');
+    go.replaceChildren();
+    var finals = sim.groups.map(function (g) { return START_POINTS + g; });
+    var up = finals.filter(function (x) { return x > START_POINTS; }).length;
+    var same = finals.filter(function (x) { return x === START_POINTS; }).length;
+    var down = finals.length - up - same;
+    go.appendChild(el('p', 'small', 'มีทั้งหมด ' + nf.format(finals.length) + ' กลุ่ม: แต้มเพิ่ม ' + nf.format(up) + ' กลุ่ม · เท่าเดิม ' + nf.format(same) + ' กลุ่ม · แต้มลด ' + nf.format(down) + ' กลุ่ม'));
+    if (finals.length <= 8) {
+      var grid = el('div', 'groups');
+      finals.forEach(function (f, i) {
+        var g = el('div', 'group');
+        g.appendChild(el('span', null, 'กลุ่ม ' + (i + 1)));
+        g.appendChild(el('b', f > START_POINTS ? 'gain' : f < START_POINTS ? 'loss' : '', f));
+        g.appendChild(el('span', 'muted', 'แต้ม'));
+        grid.appendChild(g);
+      });
+      go.appendChild(grid);
+    } else {
+      var best = Math.max.apply(null, finals), worst = Math.min.apply(null, finals);
+      go.appendChild(el('p', 'small muted', 'กลุ่มที่โชคดีที่สุดจบที่ ' + best + ' แต้ม · กลุ่มที่โชคร้ายที่สุดจบที่ ' + worst + ' แต้ม'));
+    }
+    go.appendChild(el('p', 'small muted', 'แต่ละกลุ่มเพียง 20 รอบ ผลแกว่งได้มาก แต่เมื่อรวมทุกกลุ่มแล้วแต้มเปลี่ยนไปรวม ' + signed(sim.net)));
+
+    // checkpoints
+    var cb = $('checkBody');
+    cb.replaceChildren();
+    CHECKPOINTS.filter(function (k) { return k <= n; }).forEach(function (k) {
+      var a = sim.cumAvg[k - 1];
+      var tr = el('tr');
+      tr.appendChild(el('td', null, nf.format(k) + ' ครั้ง'));
+      tr.appendChild(el('td', null, signed(sim.cumNet[k - 1])));
+      tr.appendChild(el('td', null, signed(a, 3)));
+      tr.appendChild(el('td', null, Math.abs(a - mu).toFixed(3)));
+      cb.appendChild(tr);
+    });
+
+    renderCompare($('simCompare'), sim, sim.bet.type === 'tang' ? sim.bet.num : bet.num);
+    drawSimChart();
+  }
+
+  function drawSimChart() {
+    if (!sim || $('panelSim').hidden) return;
+    var mu = C.theoryNet(TH, sim.bet) / 216;
+    var lo = Math.min(mu, 0), hi = Math.max(mu, 0);
+    for (var i = 0; i < sim.n; i++) { var v = sim.cumAvg[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+    var pad = Math.max(0.05, (hi - lo) * 0.06);
+    drawChart($('simChart'), {
+      values: sim.cumAvg, x0: 0, offset: 1, xMax: sim.n,
+      yMin: lo - pad, yMax: hi + pad,
+      refs: [
+        { y: 0, color: cssVar('--muted'), width: 1 },
+        { y: mu, color: cssVar('--theory'), dash: true }
+      ]
+    });
+  }
+
+  document.querySelectorAll('.sim-btns .btn').forEach(function (b) {
+    b.addEventListener('click', function () { runSim(Number(b.getAttribute('data-n'))); });
+  });
+
+  // ---------- redraw on resize / theme change ----------
+  function redrawCharts() {
+    if (!$('panelPlay').hidden) drawPlayChart();
+    if (!$('panelSim').hidden) drawSimChart();
+  }
+  var rt;
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(redrawCharts, 120); });
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', redrawCharts);
+  }
+
+  // ---------- in-page self test (?test) ----------
+  if (/[?&#]test\b/.test(location.search + location.hash)) {
+    var list = $('testList');
+    var results = C.selfTest(rng);
+    results.forEach(function (r) {
+      var li = el('li', r.pass ? 'gain' : 'loss', (r.pass ? '✓ ' : '✗ ') + r.name);
+      if (r.detail) li.appendChild(el('span', 'muted small', ' — ' + r.detail));
+      list.appendChild(li);
+    });
+    var passed = results.filter(function (r) { return r.pass; }).length;
+    list.insertBefore(el('li', null, 'ผ่าน ' + passed + ' / ' + results.length), list.firstChild);
+    $('testPanel').hidden = false;
+  }
+
+  renderBet();
+  resetPlay();
+})();
+</script>
+</body>
+</html>
