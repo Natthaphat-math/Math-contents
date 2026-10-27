@@ -1,0 +1,42 @@
+// กฎ Firestore สำหรับ dice-classroom.html (คอลเลกชัน dice_games)
+// โปรเจกต์ expectation-game-2026 ใช้ร่วมกับ casino-expected-value.html และมีกฎได้ชุดเดียว:
+// ห้ามวางไฟล์นี้ทับทั้งไฟล์ ให้นำส่วน "dice-classroom" ไปต่อในกฎเดิมของโปรเจกต์
+// (ภายใน match /databases/{database}/documents { ... } ที่มีอยู่แล้ว)
+// แล้วเปลี่ยน TEACHER_EMAIL เป็นอีเมล Google ของครูใน Firebase Console เท่านั้น
+// อย่าใส่อีเมลจริงในไฟล์นี้ เพราะ repo นี้เป็น public
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ... กฎเดิมของหน้า Casino (leaderboard) อยู่ตรงนี้ ห้ามลบ ...
+
+    // ---------- dice-classroom ----------
+    function isDiceTeacher() {
+      return request.auth != null
+        && request.auth.token.email == 'TEACHER_EMAIL'
+        && request.auth.token.email_verified == true;
+    }
+
+    // เก็บแค่เลขกลุ่ม 1-12 กับผลลูกเต๋า (ไม่เกิน 20 รอบ) ไม่มีชื่อหรือข้อความอิสระ
+    // รูปแบบ rounds ต้องตรงกับ ROUNDS_PATTERN ใน dice-classroom.html (มี test ตรวจ)
+    function isValidDiceGame(d) {
+      return d.keys().hasOnly(['group', 'rounds', 'updatedAt'])
+        && d.keys().hasAll(['group', 'rounds', 'updatedAt'])
+        && d.group is int && d.group >= 1 && d.group <= 12
+        && d.rounds is string && d.rounds.size() <= 119
+        && d.rounds.matches('(t[1-6]|h|l)[1-6]{3}(,(t[1-6]|h|l)[1-6]{3}){0,19}')
+        && d.updatedAt == request.time;
+    }
+
+    match /dice_games/{uid} {
+      allow get: if request.auth != null;
+      allow list: if request.auth != null && request.query.limit <= 500;
+      // แต่ละเครื่องเขียนได้เฉพาะเอกสารของตัวเอง
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && isValidDiceGame(request.resource.data);
+      // ครูลบได้ทุกเอกสาร นักเรียนลบได้เฉพาะของตัวเอง (ตอนกดเริ่มใหม่)
+      allow delete: if isDiceTeacher()
+        || (request.auth != null && request.auth.uid == uid);
+    }
+  }
+}
