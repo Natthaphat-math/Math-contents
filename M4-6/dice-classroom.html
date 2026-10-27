@@ -180,6 +180,7 @@
   .warn{border-left:4px solid var(--theory);}
   .empty{color:var(--muted);text-align:center;padding:14px 0;font-size:.92rem;}
   [hidden]{display:none !important;}
+  body:not(.show-theory) .theory-only{display:none !important;}
 
   details.compare > summary{cursor:pointer;font-weight:600;padding:4px 0;}
   .test-list{list-style:none;padding:0;margin:0;font-size:.9rem;}
@@ -291,6 +292,7 @@
         <div class="stat"><div class="k">ค่าทางทฤษฎี (ต่อการแทง)</div><div class="v" id="simTheory" style="color:var(--theory)"></div></div>
       </div>
       <p class="small muted" id="simTheoryNote"></p>
+      <button type="button" class="btn ghost" id="revealBtn" aria-pressed="false" style="margin-top:10px">เฉลยค่าทางทฤษฎี</button>
     </div>
 
     <div class="card">
@@ -304,13 +306,13 @@
       <canvas class="chart" id="simChart" role="img" aria-label="กราฟค่าเฉลี่ยแต้มต่อการแทงแบบสะสมเทียบกับค่าทางทฤษฎี"></canvas>
       <div class="legend">
         <span><span class="sw" style="background:var(--accent)"></span>ค่าเฉลี่ยสะสมจากการจำลอง</span>
-        <span><span class="sw dash"></span>ค่าทางทฤษฎี</span>
+        <span class="theory-only"><span class="sw dash"></span>ค่าทางทฤษฎี</span>
         <span><span class="sw" style="background:var(--muted);height:2px"></span>เสมอตัว (0)</span>
       </div>
       <h3>ค่าเฉลี่ยสะสม ณ จุดต่าง ๆ</h3>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>หลังแทงครบ</th><th>แต้มเปลี่ยนไปรวม</th><th>เฉลี่ยต่อการแทง</th><th>ห่างจากค่าทางทฤษฎี</th></tr></thead>
+          <thead><tr><th>หลังแทงครบ</th><th>แต้มเปลี่ยนไปรวม</th><th>เฉลี่ยต่อการแทง</th><th class="theory-only">ห่างจากค่าทางทฤษฎี</th></tr></thead>
           <tbody id="checkBody"></tbody>
         </table>
       </div>
@@ -327,7 +329,7 @@
     <ol class="small" style="margin:0;padding-left:20px">
       <li>กดจำลอง 20 ครั้งซ้ำหลาย ๆ ที ผลแต่ละทีต่างกันมากไหม มีทีที่แต้มเพิ่มขึ้นหรือไม่</li>
       <li>ทั้งห้อง 160 ครั้ง กี่กลุ่มที่แต้มเพิ่ม กี่กลุ่มที่แต้มลด แล้วรวมทั้งห้องเป็นอย่างไร</li>
-      <li>เมื่อจำลอง 1,000 และ 10,000 ครั้ง เส้นในกราฟเข้าใกล้เส้นใด</li>
+      <li>เมื่อจำลอง 1,000 และ 10,000 ครั้ง ค่าเฉลี่ยในกราฟเข้าใกล้ค่าใด ลองทำนายก่อน แล้วค่อยกด “เฉลยค่าทางทฤษฎี”</li>
       <li>เต็ง สูง และต่ำ แบบไหนที่แต้มลดเร็วกว่าเมื่อเล่นไปนาน ๆ</li>
     </ol>
   </div>
@@ -718,9 +720,10 @@
 
     var labelW = 0;
     for (var yv = yMin; yv <= yMax + ystep / 2; yv += ystep) labelW = Math.max(labelW, ctx.measureText(fmtTick(yv, ystep)).width);
-    var L = Math.ceil(labelW) + 10, R = 12, T = 10, B = 26;
-    var pw = w - L - R, ph = h - T - B;
     var xMin = opts.x0, xMax = opts.xMax;
+    // Leave room for half of the widest x label so the last one is not cut off.
+    var L = Math.ceil(labelW) + 10, R = Math.max(12, Math.ceil(ctx.measureText(nf.format(xMax)).width / 2) + 4), T = 10, B = 26;
+    var pw = w - L - R, ph = h - T - B;
     function X(x) { return L + (x - xMin) / (xMax - xMin) * pw; }
     function Y(y) { return T + (yMax - y) / (yMax - yMin) * ph; }
 
@@ -741,7 +744,7 @@
 
     // reference lines
     (opts.refs || []).forEach(function (r) {
-      if (r.y < yMin || r.y > yMax) return;
+      if (r.hide || r.y < yMin || r.y > yMax) return;
       ctx.save();
       ctx.strokeStyle = r.color; ctx.lineWidth = r.width || 2;
       ctx.setLineDash(r.dash ? [7, 5] : []);
@@ -845,6 +848,7 @@
       { label: 'ต่ำชนะ (4–10 ไม่ตอง)', cases: TH.lowWins, count: tally.lowWins }
     ], n));
 
+    if (!matchNum) return;
     var mrows = [];
     for (var k = 0; k <= 3; k++) mrows.push({ label: 'ตรง ' + k + ' ลูก', cases: TH.matches[matchNum][k], count: tally.matches[matchNum][k] });
     container.appendChild(compareTable('จำนวนลูกที่ออกเลข ' + matchNum + ' (เต็งเลข ' + matchNum + ')', mrows, n));
@@ -875,12 +879,12 @@
     $('rollBtn').disabled = done || rolling;
     $('rollBtn').textContent = done ? 'ครบ 20 รอบแล้ว' : 'ทอยลูกเต๋า (รอบที่ ' + (play.rounds.length + 1) + ')';
     $('playEmpty').hidden = play.rounds.length > 0;
-    renderCompare($('playCompare'), play.tally, bet.type === 'tang' ? bet.num : lastTangNum());
+    renderCompare($('playCompare'), play.tally, lastTangNum());
     drawPlayChart();
   }
   function lastTangNum() {
     for (var i = play.rounds.length - 1; i >= 0; i--) if (play.rounds[i].bet.type === 'tang') return play.rounds[i].bet.num;
-    return bet.num;
+    return null;
   }
 
   function drawPlayChart() {
@@ -1010,8 +1014,9 @@
     $('simN').textContent = nf.format(n);
     var net = $('simNet'); net.textContent = signed(sim.net); net.className = 'v ' + (sim.net > 0 ? 'gain' : sim.net < 0 ? 'loss' : '');
     var avg = $('simAvg'); avg.textContent = signed(sim.net / n, 3); avg.className = 'v ' + (sim.net > 0 ? 'gain' : sim.net < 0 ? 'loss' : '');
-    $('simTheory').textContent = signed(mu, 3);
+    $('simTheory').textContent = showTheory ? signed(mu, 3) : '?';
     var num = C.theoryNet(TH, sim.bet);
+    $('simTheoryNote').hidden = !showTheory;
     $('simTheoryNote').textContent = 'ค่าทางทฤษฎีของ' + betLabel(sim.bet) + ' คือ ' + signed(num) + '/216 ≈ ' + signed(mu, 4) +
       ' แต้มต่อการแทง 1 ครั้ง (≈ ' + signed(mu * 100, 2) + '% ของแต้มที่แทง) ได้จากการนับทั้ง 216 กรณีที่โอกาสเท่ากัน';
 
@@ -1048,11 +1053,11 @@
       tr.appendChild(el('td', null, nf.format(k) + ' ครั้ง'));
       tr.appendChild(el('td', null, signed(sim.cumNet[k - 1])));
       tr.appendChild(el('td', null, signed(a, 3)));
-      tr.appendChild(el('td', null, Math.abs(a - mu).toFixed(3)));
+      tr.appendChild(el('td', 'theory-only', Math.abs(a - mu).toFixed(3)));
       cb.appendChild(tr);
     });
 
-    renderCompare($('simCompare'), sim, sim.bet.type === 'tang' ? sim.bet.num : bet.num);
+    renderCompare($('simCompare'), sim, sim.bet.type === 'tang' ? sim.bet.num : null);
     drawSimChart();
   }
 
@@ -1067,10 +1072,20 @@
       yMin: lo - pad, yMax: hi + pad,
       refs: [
         { y: 0, color: cssVar('--muted'), width: 1 },
-        { y: mu, color: cssVar('--theory'), dash: true }
+        { y: mu, color: cssVar('--theory'), dash: true, hide: !showTheory }
       ]
     });
   }
+
+  // The theoretical value stays hidden until the teacher reveals it, so students predict first.
+  var showTheory = false;
+  $('revealBtn').addEventListener('click', function () {
+    showTheory = !showTheory;
+    document.body.classList.toggle('show-theory', showTheory);
+    this.setAttribute('aria-pressed', showTheory ? 'true' : 'false');
+    this.textContent = showTheory ? 'ซ่อนค่าทางทฤษฎี' : 'เฉลยค่าทางทฤษฎี';
+    renderSim();
+  });
 
   document.querySelectorAll('.sim-btns .btn').forEach(function (b) {
     b.addEventListener('click', function () { runSim(Number(b.getAttribute('data-n'))); });
