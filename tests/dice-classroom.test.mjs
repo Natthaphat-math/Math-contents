@@ -73,7 +73,7 @@ check('ตัวเกมไม่ติดต่อเครือข่าย�
   !/\bfetch\(|XMLHttpRequest|sendBeacon|WebSocket/.test(scripts));
 check('ไม่เก็บข้อมูลในเครื่อง (ไม่มี localStorage / sessionStorage / indexedDB / cookie)',
   !/localStorage|sessionStorage|indexedDB|document\.cookie/.test(scripts));
-const imports = [...modules.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]);
+const imports = [...modules.matchAll(/import\("([^"]+)"\)/g)].map((m) => m[1]);
 check('ไฟล์ภายนอกมีแค่ Firebase SDK จาก gstatic (ไม่มี CDN อื่น / ฟอนต์ออนไลน์)',
   imports.length === 3 && imports.every((u) => u.startsWith('https://www.gstatic.com/firebasejs/')) &&
   !/<script[^>]+src=|<link[^>]+href=["']https?:|@import|url\(\s*["']?https?:/i.test(html) &&

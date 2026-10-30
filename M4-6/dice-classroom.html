@@ -359,10 +359,23 @@
   <div class="card">
     <h2>ผลทั้งห้อง (อัปเดตสด)</h2>
     <p class="small muted" id="classStatus" aria-live="polite">กำลังเชื่อมต่อ…</p>
+    <div id="demoBox" hidden>
+      <p class="note warn">โหมดสาธิต: ทุกกลุ่มเป็นข้อมูลจำลองในเครื่องนี้ ไม่ได้มาจากนักเรียนจริง และไม่ส่งข้อมูลออก</p>
+      <div class="group-row" style="margin-top:10px">
+        <button type="button" class="btn" id="demoPlay">เริ่มสาธิต</button>
+        <button type="button" class="btn ghost" id="demoReset">เริ่มใหม่</button>
+        <label for="demoSpeed">ความเร็ว</label>
+        <select id="demoSpeed">
+          <option value="1500">ช้า</option>
+          <option value="600" selected>ปกติ</option>
+          <option value="150">เร็ว</option>
+        </select>
+      </div>
+    </div>
     <div class="actions">
       <button type="button" class="btn ghost" id="revealBtn2" aria-pressed="false">เฉลยค่าทางทฤษฎี</button>
     </div>
-    <details class="rules">
+    <details class="rules" id="teacherTools">
       <summary>สำหรับครู: เคลียร์ข้อมูลก่อนเริ่มคาบ</summary>
       <p class="small muted">ลบได้เฉพาะบัญชี Google ของครูที่ตั้งไว้ในกฎ Firestore</p>
       <p class="small" id="teacherWho"></p>
@@ -401,7 +414,7 @@
   <ul class="test-list" id="testList"></ul>
 </section>
 
-<footer>เกมและการจำลองทำงานในเครื่อง · ถ้าเลือกกลุ่ม จะส่งเฉพาะเลขกลุ่มและผลลูกเต๋าให้ครู ไม่มีชื่อหรือข้อมูลนักเรียน · <a href="?test" style="color:inherit">ตรวจสอบตัวเลข</a></footer>
+<footer>เกมและการจำลองทำงานในเครื่อง · ถ้าเลือกกลุ่ม จะส่งเฉพาะเลขกลุ่มและผลลูกเต๋าให้ครู ไม่มีชื่อหรือข้อมูลนักเรียน · <a href="?test" style="color:inherit">ตรวจสอบตัวเลข</a> · <a href="?demo" style="color:inherit">โหมดสาธิต</a></footer>
 </div>
 
 <!-- Core logic: no DOM access. Also loaded by tests/dice-classroom.test.mjs -->
@@ -752,7 +765,10 @@
   }
 
   // ---------- tabs ----------
-  var TEACHER = /[?&]teacher\b/.test(location.search);
+  var DEMO = /[?&]demo\b/.test(location.search);
+  // ?demo shows the teacher view fed by a simulated class instead of Firebase.
+  if (DEMO) window.DiceSync = makeDemoSync();
+  var TEACHER = DEMO || /[?&]teacher\b/.test(location.search);
   var tabs = [$('tabPlay'), $('tabSim')];
   if (TEACHER) {
     $('tabClass').hidden = false;
@@ -1269,7 +1285,7 @@
           return;
         }
         classRows = rows;
-        $('classStatus').textContent = 'เชื่อมต่อแล้ว · อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH');
+        $('classStatus').textContent = (DEMO ? 'โหมดสาธิต' : 'เชื่อมต่อแล้ว') + ' · อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH');
         renderClass();
       });
     });
@@ -1396,26 +1412,112 @@
     $('testPanel').hidden = false;
   }
 
+  // ---------- demo: a local stand-in for Firebase plus a simulated class ----------
+  function makeDemoSync() {
+    var docs = {}, listener = null;
+    function emit() {
+      if (!listener) return;
+      listener(Object.keys(docs).map(function (id) {
+        return { id: id, group: docs[id].group, rounds: docs[id].rounds, updatedAt: docs[id].t };
+      }), null);
+    }
+    return {
+      put: function (id, group, rounds) { docs[id] = { group: group, rounds: rounds, t: Date.now() }; emit(); },
+      save: function (group, rounds) { docs.me = { group: group, rounds: rounds, t: Date.now() }; emit(); return Promise.resolve(); },
+      remove: function () { delete docs.me; emit(); return Promise.resolve(); },
+      subscribe: function (cb) { listener = cb; emit(); },
+      onUser: function (cb) { cb(null); },
+      teacherSignIn: function () { return Promise.reject(new Error('demo')); },
+      teacherSignOut: function () { return Promise.resolve(); },
+      clearAll: function (ids) { ids.forEach(function (id) { delete docs[id]; }); emit(); return Promise.resolve(); }
+    };
+  }
+
+  // Unbiased integer in [0, n) from the crypto byte source (n <= 256).
+  function randInt(n) {
+    var lim = 256 - (256 % n), b;
+    do { b = rng(); } while (b >= lim);
+    return b % n;
+  }
+
+  var DEMO_GROUPS = 8, DEMO_TYPES = ['tang', 'high', 'low'];
+  var demo = { groups: [], timer: null };
+
+  // Each group mostly sticks to one kind of bet but sometimes switches, like a real class.
+  function demoReset() {
+    demoStop();
+    var ids = demo.groups.map(function (g) { return g.id; });
+    if (ids.length) window.DiceSync.clearAll(ids);
+    demo.groups = [];
+    for (var g = 1; g <= DEMO_GROUPS; g++) {
+      demo.groups.push({ id: 'demo' + g, group: g, rounds: [], fav: DEMO_TYPES[(g - 1) % 3], num: 1 + randInt(6) });
+    }
+    $('demoPlay').disabled = false;
+    $('demoPlay').textContent = 'เริ่มสาธิต';
+  }
+  function demoStep() {
+    var open = demo.groups.filter(function (g) { return g.rounds.length < ROUNDS; });
+    if (!open.length) {
+      demoStop();
+      $('demoPlay').disabled = true;
+      $('demoPlay').textContent = 'ครบทุกกลุ่ม 20 รอบแล้ว';
+      return;
+    }
+    var g = open[randInt(open.length)];
+    var type = randInt(10) < 7 ? g.fav : DEMO_TYPES[randInt(3)];
+    var b = type === 'tang' ? { type: 'tang', num: g.num } : { type: type };
+    g.rounds.push({ bet: b, dice: C.roll3(rng) });
+    window.DiceSync.put(g.id, g.group, C.encodeRounds(g.rounds));
+  }
+  function demoStart() {
+    demoStop();
+    demo.timer = setInterval(demoStep, Number($('demoSpeed').value));
+    $('demoPlay').textContent = 'หยุดชั่วคราว';
+  }
+  function demoStop() {
+    if (demo.timer) clearInterval(demo.timer);
+    demo.timer = null;
+    $('demoPlay').textContent = 'เล่นต่อ';
+  }
+
+  if (DEMO) {
+    $('demoBox').hidden = false;
+    $('teacherTools').hidden = true;
+    $('tabClass').textContent = 'ผลทั้งห้อง (สาธิต)';
+    $('demoPlay').addEventListener('click', function () { if (demo.timer) demoStop(); else demoStart(); });
+    $('demoReset').addEventListener('click', demoReset);
+    $('demoSpeed').addEventListener('change', function () { if (demo.timer) demoStart(); });
+  }
+
   renderBet();
   resetPlay();
   if (TEACHER) {
     selectTab($('tabClass'));
     startClass();
   }
+  if (DEMO) demoReset();
 })();
 </script>
 
 <!-- Firebase: only for sending group results to the teacher view. If it cannot load (offline),
      the game and the simulations still work. Same project as casino-expected-value.html,
-     collection "dice_games"; rules in dice-classroom.firestore.rules. -->
+     collection "dice_games"; rules in dice-classroom.firestore.rules.
+     Not loaded at all in ?demo, where the page supplies its own DiceSync. -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import {
-    getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, limit, writeBatch, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-  import {
-    getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
-  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+const mods = window.DiceSync ? null : await Promise.all([
+  import("https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js"),
+  import("https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js"),
+  import("https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js")
+]).catch((err) => {
+  console.warn('โหลด Firebase ไม่ได้ (ออฟไลน์?) เล่นได้ตามปกติแต่ไม่ส่งผล:', err);
+  return null;
+});
+if (mods) {
+  const [
+    { initializeApp },
+    { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, limit, writeBatch, serverTimestamp },
+    { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut }
+  ] = mods;
 
   const firebaseConfig = {
     apiKey: "AIzaSyA9zO5FTkHyVaUSUFGNXQpgdI0K4Ox1x7Q",
@@ -1498,6 +1600,7 @@
     }
   };
   window.dispatchEvent(new Event('dicesync-ready'));
+}
 </script>
 </body>
 </html>
