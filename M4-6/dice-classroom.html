@@ -179,6 +179,18 @@
   .note ol, .note ul{margin:6px 0 0;padding-left:20px;}
   .warn{border-left:4px solid var(--theory);}
   .empty{color:var(--muted);text-align:center;padding:14px 0;font-size:.92rem;}
+  .tabs.three{grid-template-columns:repeat(3,1fr);}
+  .group-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:12px;}
+  .group-row label{font-weight:600;}
+  .group-row select{font:inherit;color:var(--ink);background:var(--surface-2);border:2px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px;}
+  .group-row .btn{min-height:40px;padding:8px 14px;}
+  .sync{font-size:.85rem;color:var(--muted);}
+  .sync.ok{color:var(--gain);}
+  .sync.err{color:var(--loss);}
+  .class-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px;}
+  .class-group{background:var(--surface-2);border-radius:12px;padding:8px 10px;font-size:.8rem;}
+  .class-group b{display:block;font-size:1.6rem;line-height:1.2;font-variant-numeric:tabular-nums;}
+  .btn.danger{background:var(--loss);color:#fff;}
   [hidden]{display:none !important;}
   body:not(.show-theory) .theory-only{display:none !important;}
 
@@ -198,7 +210,7 @@
   <span class="badge">ใช้แต้มสมมติเท่านั้น ไม่ใช่เงินจริง ไม่มีรางวัล</span>
 </header>
 
-<section class="card" aria-labelledby="betTitle">
+<section class="card" id="betCard" aria-labelledby="betTitle">
   <h2 id="betTitle">เลือกแบบที่จะแทง</h2>
   <div class="seg" role="radiogroup" aria-label="แบบที่แทง" id="betTypes">
     <button type="button" role="radio" data-type="tang" aria-checked="true">เต็ง 1 เลข<small>เลือกเลข 1–6</small></button>
@@ -223,11 +235,18 @@
 <div class="tabs" role="tablist" aria-label="โหมด">
   <button type="button" role="tab" id="tabPlay" aria-controls="panelPlay" aria-selected="true">เล่นเอง 20 รอบ</button>
   <button type="button" role="tab" id="tabSim" aria-controls="panelSim" aria-selected="false" tabindex="-1">จำลองหลายครั้ง</button>
+  <button type="button" role="tab" id="tabClass" aria-controls="panelClass" aria-selected="false" tabindex="-1" hidden>ผลทั้งห้อง</button>
 </div>
 
 <!-- ============ PLAY ============ -->
 <section id="panelPlay" role="tabpanel" aria-labelledby="tabPlay">
   <div class="card">
+    <div class="group-row">
+      <label for="groupSel">กลุ่มของเรา</label>
+      <select id="groupSel"><option value="">— เลือกกลุ่ม —</option></select>
+      <span class="sync" id="syncStatus" aria-live="polite"></span>
+      <button type="button" class="btn ghost" id="retryBtn" hidden>ส่งผลอีกครั้ง</button>
+    </div>
     <div class="stats">
       <div class="stat"><div class="k">แต้มคงเหลือ</div><div class="v" id="playPoints">20</div></div>
       <div class="stat"><div class="k">รอบที่เล่นแล้ว</div><div class="v" id="playRound">0 / 20</div></div>
@@ -335,12 +354,67 @@
   </div>
 </section>
 
+<!-- ============ CLASS RESULTS (teacher, ?teacher) ============ -->
+<section id="panelClass" role="tabpanel" aria-labelledby="tabClass" hidden>
+  <div class="card">
+    <h2>ผลทั้งห้อง (อัปเดตสด)</h2>
+    <p class="small muted" id="classStatus" aria-live="polite">กำลังเชื่อมต่อ…</p>
+    <div id="demoBox" hidden>
+      <p class="note warn">โหมดสาธิต: ทุกกลุ่มเป็นข้อมูลจำลองในเครื่องนี้ ไม่ได้มาจากนักเรียนจริง และไม่ส่งข้อมูลออก</p>
+      <div class="group-row" style="margin-top:10px">
+        <button type="button" class="btn" id="demoPlay">เริ่มสาธิต</button>
+        <button type="button" class="btn ghost" id="demoReset">เริ่มใหม่</button>
+        <label for="demoSpeed">ความเร็ว</label>
+        <select id="demoSpeed">
+          <option value="1500">ช้า</option>
+          <option value="600" selected>ปกติ</option>
+          <option value="150">เร็ว</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="revealBtn2" aria-pressed="false">เฉลยค่าทางทฤษฎี</button>
+    </div>
+    <details class="rules" id="teacherTools">
+      <summary>สำหรับครู: เคลียร์ข้อมูลก่อนเริ่มคาบ</summary>
+      <p class="small muted">ลบได้เฉพาะบัญชี Google ของครูที่ตั้งไว้ในกฎ Firestore</p>
+      <p class="small" id="teacherWho"></p>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="teacherIn">เข้าสู่ระบบครูด้วย Google</button>
+        <button type="button" class="btn danger" id="clearBtn" hidden>เคลียร์ข้อมูลทุกกลุ่ม</button>
+        <button type="button" class="btn ghost" id="teacherOut" hidden>ออกจากระบบ</button>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>แต้มของแต่ละกลุ่ม (เริ่มกลุ่มละ 20 แต้ม)</h2>
+    <p class="small" id="classSummary"></p>
+    <div class="class-groups" id="classGroups"></div>
+  </div>
+
+  <div class="card">
+    <h2>รวมทั้งห้อง แยกตามแบบที่แทง</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th class="left">แบบที่แทง</th><th>จำนวนครั้ง</th><th>แต้มเปลี่ยนไปรวม</th><th>เฉลี่ยต่อการแทง</th><th class="theory-only">ค่าทางทฤษฎี</th></tr></thead>
+        <tbody id="classBets"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>ลูกเต๋าทุกรอบของทั้งห้อง เทียบกับจำนวนกรณีจาก 216</h2>
+    <div id="classCompare"></div>
+  </div>
+</section>
+
 <section class="card" id="testPanel" hidden>
   <h2>ผลการทดสอบในหน้าเว็บ</h2>
   <ul class="test-list" id="testList"></ul>
 </section>
 
-<footer>ทำงานในเครื่องทั้งหมด ไม่ส่งข้อมูลออก ไม่เก็บข้อมูลนักเรียน · <a href="?test" style="color:inherit">ตรวจสอบตัวเลข</a></footer>
+<footer>เกมและการจำลองทำงานในเครื่อง · ถ้าเลือกกลุ่ม จะส่งเฉพาะเลขกลุ่มและผลลูกเต๋าให้ครู ไม่มีชื่อหรือข้อมูลนักเรียน · <a href="?test" style="color:inherit">ตรวจสอบตัวเลข</a> · <a href="?demo" style="color:inherit">โหมดสาธิต</a></footer>
 </div>
 
 <!-- Core logic: no DOM access. Also loaded by tests/dice-classroom.test.mjs -->
@@ -542,7 +616,34 @@
     return res;
   }
 
+  // ---------- class results: compact text form of a game (also checked by the Firestore rules) ----------
+  var MAX_GROUPS = 12;
+  // One round = bet ("t1".."t6" for tang, "h" high, "l" low) + 3 dice, rounds joined by ",", at most 20.
+  var ROUNDS_PATTERN = '(t[1-6]|h|l)[1-6]{3}(,(t[1-6]|h|l)[1-6]{3}){0,19}';
+  var ROUNDS_RE = new RegExp('^' + ROUNDS_PATTERN + '$');
+
+  function encodeRounds(rounds) {
+    return rounds.map(function (r) {
+      var b = r.bet.type === 'tang' ? 't' + r.bet.num : (r.bet.type === 'high' ? 'h' : 'l');
+      return b + r.dice.join('');
+    }).join(',');
+  }
+
+  // Returns [{bet, dice}] or null when the text is not a valid game.
+  function decodeRounds(text) {
+    if (typeof text !== 'string' || !ROUNDS_RE.test(text)) return null;
+    return text.split(',').map(function (tok) {
+      var bet = tok[0] === 't' ? { type: 'tang', num: Number(tok[1]) } : { type: tok[0] === 'h' ? 'high' : 'low' };
+      var d = tok.slice(-3);
+      return { bet: bet, dice: [Number(d[0]), Number(d[1]), Number(d[2])] };
+    });
+  }
+
   root.DiceCore = {
+    MAX_GROUPS: MAX_GROUPS,
+    ROUNDS_PATTERN: ROUNDS_PATTERN,
+    encodeRounds: encodeRounds,
+    decodeRounds: decodeRounds,
     faceFromByte: faceFromByte,
     makeByteSource: makeByteSource,
     cryptoByteSource: cryptoByteSource,
@@ -664,7 +765,16 @@
   }
 
   // ---------- tabs ----------
+  var DEMO = /[?&]demo\b/.test(location.search);
+  // ?demo shows the teacher view fed by a simulated class instead of Firebase.
+  if (DEMO) window.DiceSync = makeDemoSync();
+  var TEACHER = DEMO || /[?&]teacher\b/.test(location.search);
   var tabs = [$('tabPlay'), $('tabSim')];
+  if (TEACHER) {
+    $('tabClass').hidden = false;
+    tabs.push($('tabClass'));
+    document.querySelector('.tabs').classList.add('three');
+  }
   function selectTab(t) {
     tabs.forEach(function (x) {
       var on = x === t;
@@ -672,13 +782,14 @@
       x.tabIndex = on ? 0 : -1;
       $(x.getAttribute('aria-controls')).hidden = !on;
     });
+    $('betCard').hidden = t.id === 'tabClass';
     redrawCharts();
   }
   tabs.forEach(function (t, i) {
     t.addEventListener('click', function () { selectTab(t); });
     t.addEventListener('keydown', function (e) {
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        var next = tabs[(i + 1) % tabs.length];
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
         selectTab(next); next.focus();
       }
     });
@@ -829,7 +940,8 @@
     t.appendChild(tb); wrap.appendChild(t); frag.appendChild(wrap);
     return frag;
   }
-  function renderCompare(container, tally, matchNum) {
+  // match: { counts: [0..3 matches], n, title } for the tang table, or null to leave it out.
+  function renderCompare(container, tally, match) {
     container.replaceChildren();
     var n = tally.n;
     var legend = el('div', 'legend');
@@ -848,10 +960,14 @@
       { label: 'ต่ำชนะ (4–10 ไม่ตอง)', cases: TH.lowWins, count: tally.lowWins }
     ], n));
 
-    if (!matchNum) return;
+    if (!match) return;
     var mrows = [];
-    for (var k = 0; k <= 3; k++) mrows.push({ label: 'ตรง ' + k + ' ลูก', cases: TH.matches[matchNum][k], count: tally.matches[matchNum][k] });
-    container.appendChild(compareTable('จำนวนลูกที่ออกเลข ' + matchNum + ' (เต็งเลข ' + matchNum + ')', mrows, n));
+    for (var k = 0; k <= 3; k++) mrows.push({ label: 'ตรง ' + k + ' ลูก', cases: TH.matches[1][k], count: match.counts[k] });
+    container.appendChild(compareTable(match.title, mrows, match.n));
+  }
+  // Tang rounds counted against each round's own number (any number has the same 125/75/15/1 cases).
+  function tangRoundsMatch(t) {
+    return t.n ? { counts: t.counts, n: t.n, title: 'เฉพาะรอบที่แทงเต็ง: ลูกที่ตรงเลขที่เต็ง (' + nf.format(t.n) + ' รอบ)' } : null;
   }
 
   // ---------- PLAY mode ----------
@@ -862,7 +978,12 @@
   var rolling = false;
 
   function resetPlay() {
-    play = { points: START_POINTS, rounds: [], tally: C.newTally() };
+    if (play && play.rounds.length && currentGroup() && window.DiceSync) {
+      window.DiceSync.remove().catch(function () {});
+    }
+    play = { points: START_POINTS, rounds: [], tally: C.newTally(), tang: { n: 0, counts: [0, 0, 0, 0] } };
+    saveToken++;
+    showGroupHint();
     $('playBody').replaceChildren();
     $('playChips').replaceChildren();
     $('playEnd').hidden = true;
@@ -876,16 +997,61 @@
     $('playPoints').textContent = play.points;
     $('playRound').textContent = play.rounds.length + ' / ' + ROUNDS;
     var done = play.rounds.length >= ROUNDS;
-    $('rollBtn').disabled = done || rolling;
-    $('rollBtn').textContent = done ? 'ครบ 20 รอบแล้ว' : 'ทอยลูกเต๋า (รอบที่ ' + (play.rounds.length + 1) + ')';
+    var noGroup = currentGroup() === null;
+    groupSel.disabled = play.rounds.length > 0;
+    $('rollBtn').disabled = done || rolling || noGroup;
+    $('rollBtn').textContent = done ? 'ครบ 20 รอบแล้ว' : noGroup ? 'เลือกกลุ่มก่อนเริ่มทอย' : 'ทอยลูกเต๋า (รอบที่ ' + (play.rounds.length + 1) + ')';
     $('playEmpty').hidden = play.rounds.length > 0;
-    renderCompare($('playCompare'), play.tally, lastTangNum());
+    renderCompare($('playCompare'), play.tally, tangRoundsMatch(play.tang));
     drawPlayChart();
   }
-  function lastTangNum() {
-    for (var i = play.rounds.length - 1; i >= 0; i--) if (play.rounds[i].bet.type === 'tang') return play.rounds[i].bet.num;
-    return null;
+
+  // ---------- sending results to the teacher (Firebase module at the end of the page) ----------
+  var groupSel = $('groupSel');
+  var saveToken = 0;
+  for (var gi = 1; gi <= C.MAX_GROUPS; gi++) {
+    var opt = el('option', null, 'กลุ่ม ' + gi);
+    opt.value = String(gi);
+    groupSel.appendChild(opt);
   }
+  var soloOpt = el('option', null, 'เล่นเอง ไม่ส่งผลให้ครู');
+  soloOpt.value = '0';
+  groupSel.appendChild(soloOpt);
+
+  function currentGroup() { return groupSel.value === '' ? null : Number(groupSel.value); }
+  function setSync(text, cls) {
+    var s = $('syncStatus');
+    s.textContent = text;
+    s.className = 'sync' + (cls ? ' ' + cls : '');
+  }
+  function showGroupHint() {
+    var g = currentGroup();
+    $('retryBtn').hidden = true;
+    setSync(g === null ? 'เลือกกลุ่มก่อนเริ่มเล่น' : g === 0 ? 'ไม่ส่งผลให้ครู' : 'ผลจะส่งให้ครูทุกครั้งที่ทอย');
+  }
+  groupSel.addEventListener('change', function () { showGroupHint(); renderPlay(); });
+
+  // Sends the whole game each time, so a failed send is fixed by the next roll or the retry button.
+  function pushSave() {
+    var g = currentGroup();
+    if (!g || !play.rounds.length) return;
+    $('retryBtn').hidden = true;
+    if (!window.DiceSync) {
+      setSync('ยังเชื่อมต่อไม่ได้ (ไม่มีอินเทอร์เน็ต?) เล่นต่อได้ตามปกติ', 'err');
+      $('retryBtn').hidden = false;
+      return;
+    }
+    var n = play.rounds.length, token = ++saveToken;
+    setSync('กำลังส่งผล…');
+    window.DiceSync.save(g, C.encodeRounds(play.rounds)).then(function () {
+      if (token === saveToken) setSync('ส่งผลให้ครูแล้ว (' + n + ' รอบ)', 'ok');
+    }).catch(function () {
+      if (token !== saveToken) return;
+      setSync('ส่งผลไม่สำเร็จ', 'err');
+      $('retryBtn').hidden = false;
+    });
+  }
+  $('retryBtn').addEventListener('click', pushSave);
 
   function drawPlayChart() {
     var vals = [START_POINTS];
@@ -937,6 +1103,7 @@
   function finishRoll(dice) {
     var b = { type: bet.type, num: bet.num };
     var delta = C.addToTally(play.tally, dice, b);
+    if (b.type === 'tang') { play.tang.n++; play.tang.counts[C.countMatch(dice, b.num)]++; }
     play.points += delta;
     var r = { round: play.rounds.length + 1, bet: b, dice: dice, delta: delta, after: play.points };
     play.rounds.push(r);
@@ -952,6 +1119,7 @@
     tray.classList.remove('rolling');
     setBetEnabled(true);
     renderPlay();
+    pushSave();
     if (play.rounds.length >= ROUNDS) showPlayEnd();
   }
 
@@ -1057,7 +1225,9 @@
       cb.appendChild(tr);
     });
 
-    renderCompare($('simCompare'), sim, sim.bet.type === 'tang' ? sim.bet.num : null);
+    var tn = sim.bet.num;
+    renderCompare($('simCompare'), sim, sim.bet.type === 'tang'
+      ? { counts: sim.matches[tn], n: sim.n, title: 'จำนวนลูกที่ออกเลข ' + tn + ' (เต็งเลข ' + tn + ')' } : null);
     drawSimChart();
   }
 
@@ -1079,12 +1249,137 @@
 
   // The theoretical value stays hidden until the teacher reveals it, so students predict first.
   var showTheory = false;
-  $('revealBtn').addEventListener('click', function () {
+  function toggleTheory() {
     showTheory = !showTheory;
     document.body.classList.toggle('show-theory', showTheory);
-    this.setAttribute('aria-pressed', showTheory ? 'true' : 'false');
-    this.textContent = showTheory ? 'ซ่อนค่าทางทฤษฎี' : 'เฉลยค่าทางทฤษฎี';
+    [$('revealBtn'), $('revealBtn2')].forEach(function (b) {
+      b.setAttribute('aria-pressed', showTheory ? 'true' : 'false');
+      b.textContent = showTheory ? 'ซ่อนค่าทางทฤษฎี' : 'เฉลยค่าทางทฤษฎี';
+    });
     renderSim();
+  }
+  $('revealBtn').addEventListener('click', toggleTheory);
+  $('revealBtn2').addEventListener('click', toggleTheory);
+
+  // ---------- CLASS results (teacher view) ----------
+  // Every value read from Firestore is re-validated here and shown with textContent only.
+  var classRows = [];
+  var BET_NAMES = { tang: 'เต็ง', high: 'สูง', low: 'ต่ำ' };
+
+  function whenSync(cb) {
+    if (window.DiceSync) cb(window.DiceSync);
+    else window.addEventListener('dicesync-ready', function () { cb(window.DiceSync); }, { once: true });
+  }
+
+  function startClass() {
+    var connected = false;
+    setTimeout(function () {
+      if (!connected) $('classStatus').textContent = 'ยังเชื่อมต่อ Firebase ไม่ได้ ตรวจอินเทอร์เน็ตแล้วโหลดหน้าใหม่';
+    }, 10000);
+    whenSync(function (S) {
+      S.onUser(showTeacher);
+      S.subscribe(function (rows, err) {
+        connected = true;
+        if (err) {
+          $('classStatus').textContent = 'โหลดผลไม่สำเร็จ (' + String(err.code || err.message || 'ไม่ทราบสาเหตุ') + ')';
+          return;
+        }
+        classRows = rows;
+        $('classStatus').textContent = (DEMO ? 'โหมดสาธิต' : 'เชื่อมต่อแล้ว') + ' · อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH');
+        renderClass();
+      });
+    });
+  }
+
+  function renderClass() {
+    var games = [];
+    classRows.forEach(function (r) {
+      var g = r.group, rounds = C.decodeRounds(r.rounds);
+      if (typeof g !== 'number' || g % 1 !== 0 || g < 1 || g > C.MAX_GROUPS || !rounds) return;
+      games.push({ group: g, rounds: rounds, t: typeof r.updatedAt === 'number' ? r.updatedAt : 0 });
+    });
+    games.sort(function (a, b) { return a.group - b.group || a.t - b.t; });
+
+    var perGroup = {};
+    games.forEach(function (gm) { perGroup[gm.group] = (perGroup[gm.group] || 0) + 1; });
+    var tally = C.newTally(), tang = { n: 0, counts: [0, 0, 0, 0] };
+    var per = { tang: { n: 0, net: 0 }, high: { n: 0, net: 0 }, low: { n: 0, net: 0 } };
+    var grid = $('classGroups'), seen = {}, up = 0, same = 0, down = 0;
+    grid.replaceChildren();
+
+    games.forEach(function (gm) {
+      var net = 0, mix = { tang: 0, high: 0, low: 0 };
+      gm.rounds.forEach(function (r) {
+        var p = C.addToTally(tally, r.dice, r.bet);
+        net += p;
+        per[r.bet.type].n++;
+        per[r.bet.type].net += p;
+        mix[r.bet.type]++;
+        if (r.bet.type === 'tang') { tang.n++; tang.counts[C.countMatch(r.dice, r.bet.num)]++; }
+      });
+      seen[gm.group] = (seen[gm.group] || 0) + 1;
+      var pts = START_POINTS + net;
+      if (pts > START_POINTS) up++; else if (pts < START_POINTS) down++; else same++;
+
+      var card = el('div', 'class-group');
+      card.appendChild(el('div', null, 'กลุ่ม ' + gm.group + (perGroup[gm.group] > 1 ? ' (เครื่องที่ ' + seen[gm.group] + ')' : '')));
+      card.appendChild(el('b', pts > START_POINTS ? 'gain' : pts < START_POINTS ? 'loss' : '', pts));
+      card.appendChild(el('div', 'muted', 'ทอยแล้ว ' + gm.rounds.length + '/' + ROUNDS + ' รอบ'));
+      var parts = [];
+      ['tang', 'high', 'low'].forEach(function (k) { if (mix[k]) parts.push(BET_NAMES[k] + ' ' + mix[k]); });
+      card.appendChild(el('div', 'muted', parts.join(' · ')));
+      grid.appendChild(card);
+    });
+
+    var totalNet = per.tang.net + per.high.net + per.low.net;
+    $('classSummary').textContent = games.length
+      ? 'ส่งผลมาแล้ว ' + games.length + ' กลุ่ม · ทอยรวม ' + nf.format(tally.n) + ' รอบ · แต้มเพิ่ม ' + up + ' กลุ่ม · เท่าเดิม ' + same + ' กลุ่ม · แต้มลด ' + down + ' กลุ่ม · แต้มเปลี่ยนไปรวมทั้งห้อง ' + signed(totalNet)
+      : 'ยังไม่มีกลุ่มส่งผล ให้นักเรียนเลือกกลุ่มในแท็บ “เล่นเอง 20 รอบ” แล้วเริ่มทอย';
+
+    var tb = $('classBets');
+    tb.replaceChildren();
+    var theoryOf = { tang: -17 / 216, high: -6 / 216, low: -6 / 216 };
+    ['tang', 'high', 'low', 'all'].forEach(function (k) {
+      var row = k === 'all' ? { n: tally.n, net: totalNet } : per[k];
+      var tr = el('tr');
+      tr.appendChild(el('td', 'left', k === 'all' ? 'รวมทุกแบบ' : BET_NAMES[k]));
+      tr.appendChild(el('td', null, nf.format(row.n)));
+      tr.appendChild(el('td', null, signed(row.net)));
+      tr.appendChild(el('td', null, row.n ? signed(row.net / row.n, 3) : '–'));
+      tr.appendChild(el('td', 'theory-only', k === 'all' ? '–' : signed(theoryOf[k], 3)));
+      tb.appendChild(tr);
+    });
+
+    renderCompare($('classCompare'), tally, tangRoundsMatch(tang));
+  }
+
+  function showTeacher(info) {
+    var google = info && !info.anonymous && info.email;
+    $('teacherWho').textContent = google ? 'เข้าสู่ระบบเป็น ' + info.email : '';
+    $('teacherIn').hidden = !!google;
+    $('clearBtn').hidden = !google;
+    $('teacherOut').hidden = !google;
+  }
+  $('teacherIn').addEventListener('click', function () {
+    if (!window.DiceSync) { $('teacherWho').textContent = 'ยังเชื่อมต่อ Firebase ไม่ได้'; return; }
+    window.DiceSync.teacherSignIn().catch(function (e) {
+      $('teacherWho').textContent = 'เข้าสู่ระบบไม่สำเร็จ (' + String((e && e.code) || 'ไม่ทราบสาเหตุ') + ')';
+    });
+  });
+  $('teacherOut').addEventListener('click', function () {
+    if (window.DiceSync) window.DiceSync.teacherSignOut().catch(function () {});
+  });
+  $('clearBtn').addEventListener('click', function () {
+    var ids = classRows.map(function (r) { return r.id; });
+    if (!ids.length) { $('teacherWho').textContent = 'ไม่มีข้อมูลให้เคลียร์'; return; }
+    if (!window.confirm('ลบผลของทุกกลุ่ม (' + ids.length + ' รายการ)? ย้อนกลับไม่ได้')) return;
+    window.DiceSync.clearAll(ids).then(function () {
+      $('teacherWho').textContent = 'เคลียร์ข้อมูลแล้ว';
+    }).catch(function (e) {
+      $('teacherWho').textContent = e && e.code === 'permission-denied'
+        ? 'บัญชีนี้ไม่มีสิทธิ์ลบ (อีเมลไม่ตรงกับในกฎ Firestore)'
+        : 'เคลียร์ไม่สำเร็จ (' + String((e && e.code) || 'ไม่ทราบสาเหตุ') + ')';
+    });
   });
 
   document.querySelectorAll('.sim-btns .btn').forEach(function (b) {
@@ -1117,9 +1412,195 @@
     $('testPanel').hidden = false;
   }
 
+  // ---------- demo: a local stand-in for Firebase plus a simulated class ----------
+  function makeDemoSync() {
+    var docs = {}, listener = null;
+    function emit() {
+      if (!listener) return;
+      listener(Object.keys(docs).map(function (id) {
+        return { id: id, group: docs[id].group, rounds: docs[id].rounds, updatedAt: docs[id].t };
+      }), null);
+    }
+    return {
+      put: function (id, group, rounds) { docs[id] = { group: group, rounds: rounds, t: Date.now() }; emit(); },
+      save: function (group, rounds) { docs.me = { group: group, rounds: rounds, t: Date.now() }; emit(); return Promise.resolve(); },
+      remove: function () { delete docs.me; emit(); return Promise.resolve(); },
+      subscribe: function (cb) { listener = cb; emit(); },
+      onUser: function (cb) { cb(null); },
+      teacherSignIn: function () { return Promise.reject(new Error('demo')); },
+      teacherSignOut: function () { return Promise.resolve(); },
+      clearAll: function (ids) { ids.forEach(function (id) { delete docs[id]; }); emit(); return Promise.resolve(); }
+    };
+  }
+
+  // Unbiased integer in [0, n) from the crypto byte source (n <= 256).
+  function randInt(n) {
+    var lim = 256 - (256 % n), b;
+    do { b = rng(); } while (b >= lim);
+    return b % n;
+  }
+
+  var DEMO_GROUPS = 8, DEMO_TYPES = ['tang', 'high', 'low'];
+  var demo = { groups: [], timer: null };
+
+  // Each group mostly sticks to one kind of bet but sometimes switches, like a real class.
+  function demoReset() {
+    demoStop();
+    var ids = demo.groups.map(function (g) { return g.id; });
+    if (ids.length) window.DiceSync.clearAll(ids);
+    demo.groups = [];
+    for (var g = 1; g <= DEMO_GROUPS; g++) {
+      demo.groups.push({ id: 'demo' + g, group: g, rounds: [], fav: DEMO_TYPES[(g - 1) % 3], num: 1 + randInt(6) });
+    }
+    $('demoPlay').disabled = false;
+    $('demoPlay').textContent = 'เริ่มสาธิต';
+  }
+  function demoStep() {
+    var open = demo.groups.filter(function (g) { return g.rounds.length < ROUNDS; });
+    if (!open.length) {
+      demoStop();
+      $('demoPlay').disabled = true;
+      $('demoPlay').textContent = 'ครบทุกกลุ่ม 20 รอบแล้ว';
+      return;
+    }
+    var g = open[randInt(open.length)];
+    var type = randInt(10) < 7 ? g.fav : DEMO_TYPES[randInt(3)];
+    var b = type === 'tang' ? { type: 'tang', num: g.num } : { type: type };
+    g.rounds.push({ bet: b, dice: C.roll3(rng) });
+    window.DiceSync.put(g.id, g.group, C.encodeRounds(g.rounds));
+  }
+  function demoStart() {
+    demoStop();
+    demo.timer = setInterval(demoStep, Number($('demoSpeed').value));
+    $('demoPlay').textContent = 'หยุดชั่วคราว';
+  }
+  function demoStop() {
+    if (demo.timer) clearInterval(demo.timer);
+    demo.timer = null;
+    $('demoPlay').textContent = 'เล่นต่อ';
+  }
+
+  if (DEMO) {
+    $('demoBox').hidden = false;
+    $('teacherTools').hidden = true;
+    $('tabClass').textContent = 'ผลทั้งห้อง (สาธิต)';
+    $('demoPlay').addEventListener('click', function () { if (demo.timer) demoStop(); else demoStart(); });
+    $('demoReset').addEventListener('click', demoReset);
+    $('demoSpeed').addEventListener('change', function () { if (demo.timer) demoStart(); });
+  }
+
   renderBet();
   resetPlay();
+  if (TEACHER) {
+    selectTab($('tabClass'));
+    startClass();
+  }
+  if (DEMO) demoReset();
 })();
+</script>
+
+<!-- Firebase: only for sending group results to the teacher view. If it cannot load (offline),
+     the game and the simulations still work. Same project as casino-expected-value.html,
+     collection "dice_games"; rules in dice-classroom.firestore.rules.
+     Not loaded at all in ?demo, where the page supplies its own DiceSync. -->
+<script type="module">
+const mods = window.DiceSync ? null : await Promise.all([
+  import("https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js"),
+  import("https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js"),
+  import("https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js")
+]).catch((err) => {
+  console.warn('โหลด Firebase ไม่ได้ (ออฟไลน์?) เล่นได้ตามปกติแต่ไม่ส่งผล:', err);
+  return null;
+});
+if (mods) {
+  const [
+    { initializeApp },
+    { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, limit, writeBatch, serverTimestamp },
+    { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut }
+  ] = mods;
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA9zO5FTkHyVaUSUFGNXQpgdI0K4Ox1x7Q",
+    authDomain: "expectation-game-2026.firebaseapp.com",
+    projectId: "expectation-game-2026",
+    storageBucket: "expectation-game-2026.firebasestorage.app",
+    messagingSenderId: "670025922049",
+    appId: "1:670025922049:web:39f86815c9bbda7077b200"
+  };
+  const COLL = 'dice_games';
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Signs in anonymously only when something actually needs Firebase.
+  let authPromise = null;
+  function ensureAuth() {
+    if (auth.currentUser) return Promise.resolve(auth.currentUser);
+    if (!authPromise) {
+      authPromise = auth.authStateReady()
+        .then(() => auth.currentUser || signInAnonymously(auth).then((c) => c.user))
+        .catch((err) => { authPromise = null; throw err; });
+    }
+    return authPromise;
+  }
+
+  let listener = null, unsub = null, userCb = null;
+  function attach() {
+    if (!listener || !auth.currentUser) return;
+    if (unsub) unsub();
+    unsub = onSnapshot(query(collection(db, COLL), limit(500)), (snap) => {
+      const rows = [];
+      snap.forEach((d) => {
+        const v = d.data();
+        rows.push({
+          id: d.id,
+          group: v.group,
+          rounds: v.rounds,
+          updatedAt: v.updatedAt && typeof v.updatedAt.toMillis === 'function' ? v.updatedAt.toMillis() : 0
+        });
+      });
+      listener(rows, null);
+    }, (err) => listener(null, err));
+  }
+  onAuthStateChanged(auth, (u) => {
+    if (userCb) userCb(u ? { anonymous: u.isAnonymous, email: u.email || '' } : null);
+    if (u) attach();
+  });
+
+  window.DiceSync = {
+    save(group, rounds) {
+      return ensureAuth().then((u) => setDoc(doc(db, COLL, u.uid), { group, rounds, updatedAt: serverTimestamp() }));
+    },
+    remove() {
+      const u = auth.currentUser;
+      return u ? deleteDoc(doc(db, COLL, u.uid)) : Promise.resolve();
+    },
+    subscribe(cb) {
+      listener = cb;
+      ensureAuth().then(attach).catch((err) => cb(null, err));
+    },
+    onUser(cb) {
+      userCb = cb;
+      const u = auth.currentUser;
+      cb(u ? { anonymous: u.isAnonymous, email: u.email || '' } : null);
+    },
+    teacherSignIn() {
+      return signInWithPopup(auth, new GoogleAuthProvider());
+    },
+    teacherSignOut() {
+      return signOut(auth).then(() => { authPromise = null; return ensureAuth(); });
+    },
+    async clearAll(ids) {
+      for (let i = 0; i < ids.length; i += 400) {
+        const batch = writeBatch(db);
+        ids.slice(i, i + 400).forEach((id) => batch.delete(doc(db, COLL, id)));
+        await batch.commit();
+      }
+    }
+  };
+  window.dispatchEvent(new Event('dicesync-ready'));
+}
 </script>
 </body>
 </html>
